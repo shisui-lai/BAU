@@ -160,92 +160,95 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 <template>
   <div class="card">
     <div class="fault-page">
-      <!--  筛选控制面板 -->
-      <Panel header="故障筛选与统计"
-             :class="['filter-panel', 'mb-2', { 'filter-panel-compact': clusterStore.faultFilterMode === 'all' }]"
-             :toggleable="false">
-        <div class="filter-content">
-        <!-- 筛选模式选择 -->
-        <div class="filter-section mb-2">
-          <div class="flex items-center justify-between">
-            <div class="filter-buttons flex gap-2">
-              <Button
-                label="全部故障"
-                :severity="clusterStore.faultFilterMode === 'all' ? 'primary' : 'secondary'"
-                :outlined="clusterStore.faultFilterMode !== 'all'"
-                @click="setFilterMode('all')"
-                class="filter-button-small"
-              />
-              <Button
-                label="按堆筛选"
-                :severity="clusterStore.faultFilterMode === 'block' ? 'primary' : 'secondary'"
-                :outlined="clusterStore.faultFilterMode !== 'block'"
-                @click="setFilterMode('block')"
-                class="filter-button-small"
-              />
-              <Button
-                label="按簇筛选"
-                :severity="clusterStore.faultFilterMode === 'cluster' ? 'primary' : 'secondary'"
-                :outlined="clusterStore.faultFilterMode !== 'cluster'"
-                @click="setFilterMode('cluster')"
-                class="filter-button-small"
-              />
+      <!--  统一的故障数据表格 -->
+      <DataTable
+        :value="pageRows"
+        paginator
+        lazy
+        :totalRecords="total"
+        :rows="rows"
+        :rowsPerPageOptions="[30, 100, 200]"
+        :first="first"
+        @page="onPageChange"
+        :dataKey="(item: any) => `${item.cluster}-${item.label}-${item.ts}`"
+        class="fault-table-unified"
+        :emptyMessage="total === 0 ? '暂无符合条件的故障' : '暂无故障'"
+        stripedRows
+        responsiveLayout="scroll"
+      >
+        <!-- 统一的表格头部 - 包含筛选功能 -->
+        <template #header>
+          <div class="unified-header">
+            <!-- 蓝色标题区域 -->
+            <div class="header-title-blue">
+              <h3 class="title-text">故障筛选与统计</h3>
             </div>
-            <!-- 故障统计信息 -->
-            <div class="fault-count-badge">
-              <i class="pi pi-info-circle mr-1"></i>
-              <span>当前共 {{ total }} 条故障</span>
+
+            <!-- 白色筛选控制区域 -->
+            <div class="filter-content-white">
+              <!-- 单行布局：按钮 + 下拉框 + 统计 -->
+              <div class="filter-single-row">
+                <!-- 左侧：筛选按钮和下拉框组合 -->
+                <div class="filter-left-group">
+                  <div class="filter-buttons flex gap-2">
+                    <Button
+                      label="全部故障"
+                      :severity="clusterStore.faultFilterMode === 'all' ? 'primary' : 'secondary'"
+                      :outlined="clusterStore.faultFilterMode !== 'all'"
+                      @click="setFilterMode('all')"
+                      class="filter-button-small"
+                    />
+                    <Button
+                      label="按堆筛选"
+                      :severity="clusterStore.faultFilterMode === 'block' ? 'primary' : 'secondary'"
+                      :outlined="clusterStore.faultFilterMode !== 'block'"
+                      @click="setFilterMode('block')"
+                      class="filter-button-small"
+                    />
+                    <Button
+                      label="按簇筛选"
+                      :severity="clusterStore.faultFilterMode === 'cluster' ? 'primary' : 'secondary'"
+                      :outlined="clusterStore.faultFilterMode !== 'cluster'"
+                      @click="setFilterMode('cluster')"
+                      class="filter-button-small"
+                    />
+                  </div>
+
+                  <!-- 紧跟按钮的下拉框 -->
+                  <div class="filter-dropdown" v-if="clusterStore.faultFilterMode !== 'all'">
+                    <!-- 堆筛选 -->
+                    <MultiSelect
+                      v-if="clusterStore.faultFilterMode === 'block'"
+                      v-model="clusterStore.selectedBlocksForFault"
+                      :options="clusterStore.availableBlocks"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="请选择要查看的堆"
+                      class="filter-multiselect-compact"
+                    />
+
+                    <!-- 簇筛选 -->
+                    <MultiSelect
+                      v-if="clusterStore.faultFilterMode === 'cluster'"
+                      v-model="clusterStore.selectedClustersForFault"
+                      :options="clusterStore.availableFaultClusters"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="请选择要查看的簇"
+                      class="filter-multiselect-compact"
+                    />
+                  </div>
+                </div>
+
+                <!-- 右侧：故障统计信息 -->
+                <div class="fault-count-badge">
+                  <i class="pi pi-info-circle mr-1"></i>
+                  <span>当前共 {{ total }} 条故障</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-
-        <!-- 筛选选项 -->
-        <div class="filter-options" v-if="clusterStore.faultFilterMode !== 'all'">
-          <!-- 堆筛选 -->
-          <MultiSelect
-            v-if="clusterStore.faultFilterMode === 'block'"
-            v-model="clusterStore.selectedBlocksForFault"
-            :options="clusterStore.availableBlocks"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="请选择要查看的堆"
-            class="filter-multiselect-compact"
-          />
-
-          <!-- 簇筛选 -->
-          <MultiSelect
-            v-if="clusterStore.faultFilterMode === 'cluster'"
-            v-model="clusterStore.selectedClustersForFault"
-            :options="clusterStore.availableFaultClusters"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="请选择要查看的簇"
-            class="filter-multiselect-compact"
-          />
-        </div>
-
-
-      </div>
-    </Panel>
-
-    <!--  故障数据表格 -->
-    <Card class="fault-table-card">
-      <template #content>
-        <DataTable
-          :value="pageRows"
-          paginator
-          lazy
-          :totalRecords="total"
-          :rows="rows"
-          :rowsPerPageOptions="[30, 100, 200]"
-          :first="first"
-          @page="onPageChange"
-          :dataKey="(item: any) => `${item.cluster}-${item.label}-${item.ts}`"
-          class="fault-table"
-          :emptyMessage="total === 0 ? '暂无符合条件的故障' : '暂无故障'"
-          stripedRows
-          responsiveLayout="scroll"
-        >
+        </template>
         
 
 
@@ -289,9 +292,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
           />
         </template>
       </Column>
-        </DataTable>
-      </template>
-    </Card>
+      </DataTable>
     </div>
   </div>
 </template>
@@ -302,27 +303,59 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   padding: 3px;
 }
 
-/* 筛选面板样式 */
-.filter-panel {
+/* 统一表格样式 */
+.fault-table-unified {
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
+  overflow: hidden;
 }
 
-.filter-content {
-  padding: 4px 0;
+/* 统一头部样式 */
+.unified-header {
+  overflow: hidden;
 }
 
-.filter-section {
-  margin-bottom: 0;
+/* 蓝色标题区域 */
+.header-title-blue {
+  background: #007ad9;
+  color: white;
+  padding: 14px 20px;
+  margin: 0;
 }
 
-.filter-label {
-  min-width: 80px;
-  color: #374151;
+.title-text {
+  margin: 0;
   font-size: 14px;
+  font-weight: 600;
+  color: white;
 }
+
+/* 白色筛选区域 */
+.filter-content-white {
+  background: white;
+  padding: 8px 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* 单行布局 */
+.filter-single-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 20px;
+}
+
+/* 左侧按钮和下拉框组合 */
+.filter-left-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+}
+
+
 
 .filter-buttons {
   gap: 6px;
@@ -345,13 +378,12 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 /*  故障统计徽章样式 */
 .fault-count-badge {
   background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #7e91b3;
-  color: #698ea2;
+  border: 1px solid #0ea5e9;
+  color: #0369a1;
   font-size: 12px;
   font-weight: 600;
   padding: 4px 12px;
   border-radius: 16px;
-  margin-left: 20px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -365,63 +397,38 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   box-shadow: 0 2px 6px rgba(14, 165, 233, 0.15);
 }
 
-.filter-options {
-  border-top: 1px solid #f3f4f6;
-  padding-top: 6px;
-  margin-bottom: 4px;
+/* 下拉框区域 */
+.filter-dropdown {
+  flex-shrink: 0;
 }
 
 .filter-multiselect-compact {
-  width: 200px;
+  width: 180px;
   height: 28px;
 }
 
 
 
-/*  全部故障模式的紧凑样式 */
-.filter-panel-compact :deep(.p-panel-content) {
-  padding: 8px 20px !important;
-}
-
-/*  表格卡片样式 */
-.fault-table-card {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-  overflow: hidden;
-}
-
-.fault-table {
-  border-radius: 0;
-}
-
 /*  深度样式优化 */
-:deep(.p-panel-header) {
-  background: #007ad9;
-  color: white;
+:deep(.fault-table-unified) {
+  border: none;
+  border-radius: 12px;
+}
+
+:deep(.fault-table-unified .p-datatable-header) {
+  background: transparent;
+  border: none;
   border-radius: 12px 12px 0 0;
-  padding: 12px 20px;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-:deep(.p-panel-content) {
-  padding: 12px 20px;
-  border-radius: 0 0 12px 12px;
-}
-
-:deep(.p-card-content) {
   padding: 0;
 }
 
-:deep(.p-datatable) {
-  border: none;
-  border-radius: 0;
+/* 确保蓝色标题区域的圆角 */
+.header-title-blue {
+  border-radius: 12px 12px 0 0;
 }
 
-:deep(.p-datatable-header) {
-  display: none; /* 隐藏原有的header，使用我们自定义的筛选面板 */
+:deep(.fault-table-unified .p-datatable-wrapper) {
+  border-radius: 0 0 12px 12px;
 }
 
 :deep(.p-datatable-thead > tr > th) {
@@ -430,7 +437,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   color: #374151;
   font-weight: 600;
   font-size: 12px;
-  padding: 8px 6px;
+  padding: 6px 6px;
 }
 
 :deep(.p-datatable-tbody > tr) {
@@ -533,8 +540,6 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   color: #1d4ed8;
 }
 
-
-
 /*  标签样式优化 */
 :deep(.p-tag) {
   font-size: 10px;
@@ -549,11 +554,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
     padding: 8px;
   }
 
-  .filter-content {
-    padding: 12px 0;
-  }
-
-  .filter-section {
+  .filter-single-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;

@@ -398,7 +398,6 @@ export const useClusterStore = defineStore('cluster', () => {
         cluster: item.cluster
       }))
     
-    console.log('[clusterStore] updateFaultOptions: blocks:', availableBlocks.value.length, 'clusters:', availableFaultClusters.value.length)
   }
   
   /**
@@ -410,7 +409,19 @@ export const useClusterStore = defineStore('cluster', () => {
       console.warn('[clusterStore] setFaultFilterMode: invalid mode', mode)
       return
     }
+
     faultFilterMode.value = mode
+
+    // 清理其他模式的选中状态，避免状态残留导致筛选混乱
+    if (mode === 'block') {
+      selectedClustersForFault.value = []  // 切换到按堆筛选时，清空簇选择
+    } else if (mode === 'cluster') {
+      selectedBlocksForFault.value = []   // 切换到按簇筛选时，清空堆选择
+    } else if (mode === 'all') {
+      selectedBlocksForFault.value = []   // 切换到显示全部时，清空所有选择
+      selectedClustersForFault.value = []
+    }
+
     console.log('[clusterStore] setFaultFilterMode:', mode)
   }
   
@@ -464,6 +475,15 @@ export const useClusterStore = defineStore('cluster', () => {
     console.log('[clusterStore] toggleSelectAllClustersForFault:', selectedClustersForFault.value.length, 'selected')
   }
   
+  // 添加缓存机制
+  let filterCache = {
+    lastInput: null,
+    lastMode: null,
+    lastSelectedBlocks: null,
+    lastSelectedClusters: null,
+    lastResult: null
+  }
+
   /**
    * 根据筛选条件过滤故障数据
    * @param {Array} allFaults - 所有故障数据
@@ -473,50 +493,103 @@ export const useClusterStore = defineStore('cluster', () => {
     if (!Array.isArray(allFaults)) {
       return []
     }
-    
+
     if (faultFilterMode.value === 'all') {
       return allFaults
     }
-    
-    return allFaults.filter(fault => {
-      if (!fault.cluster) return false
-      
-      const clusterStr = String(fault.cluster)
-      
+
+    // 检查缓存
+    const currentMode = faultFilterMode.value
+    const currentSelectedBlocks = JSON.stringify([...selectedBlocksForFault.value].sort())
+    const currentSelectedClusters = JSON.stringify([...selectedClustersForFault.value].sort())
+    const inputHash = allFaults.length + '_' + (allFaults[0]?.label || '') + '_' + (allFaults[allFaults.length-1]?.label || '')
+
+    if (filterCache.lastInput === inputHash &&
+        filterCache.lastMode === currentMode &&
+        filterCache.lastSelectedBlocks === currentSelectedBlocks &&
+        filterCache.lastSelectedClusters === currentSelectedClusters &&
+        filterCache.lastResult) {
+      // console.log('[性能优化] 使用缓存结果')
+      return filterCache.lastResult
+    }
+
+    const filtered = allFaults.filter(fault => {
+      if (!fault.cluster) {
+        return false
+      }
+
+      const clusterStr = String(fault.cluster).trim()
+
       // 解析故障的堆-簇信息
       let blockNum = null
+      let clusterNum = null
       let isClusterFault = false
-      
+
       if (clusterStr.includes('-')) {
-        // 簇故障格式 "1-8"
+        // 簇故障格式 "1-1", "2-1" 等，堆告警格式 "1-0", "2-0" 等
         const parts = clusterStr.split('-')
         if (parts.length === 2) {
           blockNum = parseInt(parts[0])
-          isClusterFault = true
+          clusterNum = parseInt(parts[1])
+          // 簇号为0表示堆告警，不是簇故障
+          isClusterFault = clusterNum > 0
         }
       } else {
-        // 堆告警格式 "1"
+        // 纯堆告警格式 "1", "2" 等
         blockNum = parseInt(clusterStr)
+        clusterNum = null
         isClusterFault = false
       }
-      
-      if (isNaN(blockNum)) return false
-      
+
+      if (isNaN(blockNum)) {
+        return false
+      }
+
+
       if (faultFilterMode.value === 'block') {
         // 按堆筛选：包括堆告警和该堆下的所有簇故障
-        return selectedBlocksForFault.value.length === 0 || 
-               selectedBlocksForFault.value.includes(blockNum)
+        if (selectedBlocksForFault.value.length === 0) {
+          return true
+        }
+
+        // 确保比较的是相同类型（都转为数字）
+        const selectedBlocks = selectedBlocksForFault.value.map(b => parseInt(b))
+        const result = selectedBlocks.includes(blockNum)
+
+
+
+        return result
       }
-      
+
       if (faultFilterMode.value === 'cluster') {
         // 按簇筛选：只包括指定的簇故障（不包括堆告警）
-        return isClusterFault && 
-               (selectedClustersForFault.value.length === 0 || 
-                selectedClustersForFault.value.includes(clusterStr))
+        if (!isClusterFault) {
+          return false  // 排除堆告警
+        }
+
+        if (selectedClustersForFault.value.length === 0) {
+          return true  // 如果没有选中任何簇，显示所有簇故障
+        }
+
+        const selectedClusters = [...selectedClustersForFault.value]
+        const isMatch = selectedClusters.includes(clusterStr)
+
+
+
+        return isMatch
       }
-      
+
       return true
     })
+
+    // 性能优化：更新缓存
+    filterCache.lastInput = inputHash
+    filterCache.lastMode = currentMode
+    filterCache.lastSelectedBlocks = currentSelectedBlocks
+    filterCache.lastSelectedClusters = currentSelectedClusters
+    filterCache.lastResult = filtered
+
+    return filtered
   }
 
   // ================== 页面类型管理 ==================

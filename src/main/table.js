@@ -940,7 +940,7 @@ export const TOTAL_FAULT = [
 
 
   export const ERROR_CODES = {
-    0xE0:'成功', 0xE1: '失败', 0xE2: '超时', 0xE3: '繁忙', 0xE4:'参数错误', 0xE5: '当前模式不可配置'
+    0xE0:'成功', 0xE1: '失败', 0xE2: '超时', 0xE3: '繁忙', 0xE4:'参数错误', 0xE5: '当前模式不可配置', 0xE6: '最小并簇数必须小于当前使能簇'
   };
 
 

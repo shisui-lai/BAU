@@ -26,11 +26,20 @@ function onMqttStatusClick() {
     <div class="menu-area">
       <app-menu></app-menu>
     </div>
-    
-    <!-- 连接状态区域 - 固定在底部 -->
-    <div class="connection-area">
+
+    <!-- 底部固定区域 - 包含公司链接和MQTT状态 -->
+    <div class="bottom-fixed-area">
+      <!-- 公司链接 -->
+      <div class="company-link">
+        <a href="https://risenstorage.com/" target="_blank">
+          <i class="pi pi-external-link"></i>
+          <span>东方日升储能</span>
+        </a>
+      </div>
+
+      <!-- MQTT连接状态 -->
       <div class="mqtt-connection-status">
-        <button 
+        <button
           class="mqtt-status-button"
           :class="{
             'mqtt-connected': mqttStore?.isConnected,
@@ -54,17 +63,55 @@ function onMqttStatusClick() {
   height: 100%;
 }
 
-.menu-area { flex: 1; }
+.menu-area {
+  flex: 1;
+  overflow: hidden; /* 确保菜单区域不会溢出 */
+}
 
-.connection-area {
-  padding: 1rem;
+.bottom-fixed-area {
   border-top: 1px solid var(--surface-border);
   background: var(--surface-ground);
+}
+
+.company-link {
+  padding: 0.75rem 1rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--surface-border);
+
+  a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-color-secondary, #6c757d);
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 0.5rem;
+    transition: color 0.15s ease;
+    border-radius: 6px;
+
+    &:hover {
+      color: var(--primary-color, #007ad9);
+      background-color: var(--surface-hover, #e9ecef);
+    }
+
+    i {
+      margin-right: 0.5rem;
+      font-size: 0.75rem;
+      flex-shrink: 0;
+    }
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+  }
 }
 
 .mqtt-connection-status {
   display: flex;
   justify-content: center;
+  padding: 0.75rem 1rem 1rem 1rem;
 }
 
 .mqtt-status-button {

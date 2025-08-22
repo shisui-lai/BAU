@@ -101,7 +101,6 @@ function cleanupOldFaults() {
   }
   
   if (cleanedCount > 0) {
-    console.log(`[cleanup] 清理了 ${cleanedCount} 条过期故障记录`)
     throttledUpdate() // 使用节流更新
   }
 }
@@ -138,7 +137,7 @@ watch(
         arr.push({ ...record, cluster })
       }
     }
-    
+
     // 排序并缓存结果
     arr.sort(sortFaults).reverse()
     sortedAllFaults.value = arr;
@@ -161,9 +160,25 @@ export function useAllFaults() {
 }
 
 /* ---------- 排序逻辑 ---------- */
+
+// 故障严重程度排序映射表 - 用于确保严重故障优先显示
+// 注意：由于最终会执行 .reverse()，所以严重故障使用较大数值
+// 如果性能消耗过大，可以删除下面的 SEVERITY_ORDER 和相关排序逻辑
+const SEVERITY_ORDER = { 'severe': 3, 'medium': 2, 'mild': 1 } as const
+
 function sortFaults (a: FaultRecord & { cluster: string },
                      b: typeof a) {
 
+  // ========== 故障严重程度排序 (可删除部分 - 开始) ==========
+  // 优先按故障严重程度排序：严重 → 一般 → 轻微
+  // 注意：由于最终会执行 .reverse()，所以这里使用升序排序
+  // 如果性能消耗过大，删除下面4行代码即可恢复原有排序
+  const aSeverity = SEVERITY_ORDER[a.levelTag as keyof typeof SEVERITY_ORDER] || 0
+  const bSeverity = SEVERITY_ORDER[b.levelTag as keyof typeof SEVERITY_ORDER] || 0
+  if (aSeverity !== bSeverity) return aSeverity - bSeverity
+  // ========== 故障严重程度排序 (可删除部分 - 结束) ==========
+
+  // 原有排序逻辑保持不变
   if (a.typeRank !== b.typeRank) return a.typeRank - b.typeRank
   const [ablock, acluster] = a.cluster.split('-').map(Number)
   const [bblock, bcluster] = b.cluster.split('-').map(Number)
@@ -190,7 +205,10 @@ export function parseFault (msg: any) {
   const rank  = dataType.startsWith('FAULT_LEVEL3') ? 3 :
                 dataType.startsWith('FAULT_LEVEL2') ? 2 :
                 dataType.startsWith('FAULT_LEVEL1') ? 1 :
-                dataType.startsWith('BLOCK_') ? 3 : 0  // 堆故障按三级故障处理（严重故障）
+                dataType.startsWith('BLOCK_') ? 3 :      // 堆故障按三级故障处理（严重故障）
+                dataType === 'HARDWARE_FAULT' ? 3 :      // 硬件故障按二级处理
+                dataType === 'TOTAL_FAULT' ? 3 :         // 总故障按一级处理
+                0  // 其他未知类型默认最低优先级
   const now   = Date.now()
   const tsStr = new Date(now).toLocaleString()
 
@@ -200,16 +218,33 @@ export function parseFault (msg: any) {
       if (typeof value === 'boolean') {
         if (value) {
           const { bmu, afe, cellInBmu } = locateCell(label, msg.baseConfig||{})
-          map.set(label, {
-            label,
-            desc : label.replace(/^BMU\d+\s*第\s*\d+\s*节\s*/, ''),
-            time : tsStr,
-            ts   : now,
-            levelTxt: LEVEL_CONFIG.SEVERE.txt,  // 统一使用"严重"
-            levelTag: LEVEL_CONFIG.SEVERE.tag,
-            typeRank: rank,
-            bmu, afe, cell: cellInBmu
-          })
+
+          // 检查故障是否已存在，保持首次发生时间
+          const existingRecord = map.get(label)
+
+          if (existingRecord) {
+            // 故障已存在，只更新必要字段，保持原始时间
+            map.set(label, {
+              ...existingRecord,
+              // 保持原始时间：time 和 ts 不更新
+              levelTxt: LEVEL_CONFIG.SEVERE.txt,  // 可能需要更新等级
+              levelTag: LEVEL_CONFIG.SEVERE.tag,
+              typeRank: rank,  // 可能需要更新优先级
+              // 其他字段保持不变
+            })
+          } else {
+            // 故障首次出现，记录完整信息包括首次发生时间
+            map.set(label, {
+              label,
+              desc : label.replace(/^BMU\d+\s*第\s*\d+\s*节\s*/, ''),
+              time : tsStr,  //  只在首次出现时记录时间
+              ts   : now,    //  只在首次出现时记录时间戳
+              levelTxt: LEVEL_CONFIG.SEVERE.txt,
+              levelTag: LEVEL_CONFIG.SEVERE.tag,
+              typeRank: rank,
+              bmu, afe, cell: cellInBmu
+            })
+          }
         } else {
           // 只有当故障确实存在时才删除（故障恢复）
           if (map.has(label)) {
@@ -241,16 +276,33 @@ export function parseFault (msg: any) {
         }
         const { bmu, afe, cellInBmu } = locateCell(label, msg.baseConfig||{})
         const level = LEVEL_MAPPING[code] || LEVEL_CONFIG.SEVERE // 默认严重
-        map.set(label, {
-          label,
-          desc : label.replace(/^BMU\d+\s*第\s*\d+\s*节\s*/, ''),
-          time : tsStr,
-          ts   : now,
-          levelTxt: level.txt,  // 统一使用配置的等级文本
-          levelTag: level.tag,
-          typeRank: rank,
-          bmu, afe, cell: cellInBmu
-        })
+
+        //检查故障是否已存在，保持首次发生时间
+        const existingRecord = map.get(label)
+
+        if (existingRecord) {
+          // 故障已存在，只更新必要字段，保持原始时间
+          map.set(label, {
+            ...existingRecord,
+            // 保持原始时间：time 和 ts 不更新
+            levelTxt: level.txt,  // 更新等级文本（可能变化）
+            levelTag: level.tag,  // 更新等级标签（可能变化）
+            typeRank: rank,       // 更新优先级（可能变化）
+            // 其他字段保持不变
+          })
+        } else {
+          // 故障首次出现，记录完整信息包括首次发生时间
+          map.set(label, {
+            label,
+            desc : label.replace(/^BMU\d+\s*第\s*\d+\s*节\s*/, ''),
+            time : tsStr,  // 只在首次出现时记录时间
+            ts   : now,    // 只在首次出现时记录时间戳
+            levelTxt: level.txt,
+            levelTag: level.tag,
+            typeRank: rank,
+            bmu, afe, cell: cellInBmu
+          })
+        }
       }
     })
   })

@@ -1299,7 +1299,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       }
     }
 
-    // ================== 原有处理逻辑 ==================
+    // ================== 原有簇级处理逻辑 ==================
     const clusterStore = useClusterStore()
     const clusterDisplayName = selectorMode === 'cluster'
       ? clusterStore.getClusterDisplayName(deviceFrameKey)
@@ -1321,7 +1321,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
         0xE2: '写入超时',       // 设备响应超时
         0xE3: '设备繁忙',       // 设备正在处理其他请求
         0xE4: '参数错误',        // 参数格式或数值错误
-        0xE5: '当前模式不可配置'
+        0xE5: '当前模式不可配置',
+        0xE6: '最小并簇数必须小于当前使能簇',
       }
       const errorCode = Number(responseData.result.code)
       const errorDescription = responseData.result.message || ERROR_CODES[errorCode] || '未知错误'

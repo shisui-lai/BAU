@@ -157,13 +157,7 @@ const hasActiveRoute = (items) => {
       </div>
     </div>
 
-    <!-- 公司链接 -->
-    <div class="company-link">
-      <a href="https://risenstorage.com/" target="_blank">
-        <i class="pi pi-external-link"></i>
-        <span>东方日升储能</span>
-      </a>
-    </div>
+
   </div>
 </template>
 
@@ -177,14 +171,29 @@ const hasActiveRoute = (items) => {
   background: transparent; // 与整体容器一致的背景
   overflow-x: hidden; // 防止内部元素横向溢出造成滚动条
   
-  // 菜单列表滚动容器（只让菜单滚动）
+  // 菜单列表滚动容器（只让菜单滚动，完全隐藏滚动条）
   .menu-list-scroll {
     flex: 1;
     overflow-y: auto;
-    scrollbar-width: none;      // Firefox
-    -ms-overflow-style: none;   // IE/Edge Legacy
+    overflow-x: hidden;
+    scrollbar-width: none;      // Firefox - 隐藏滚动条
+    -ms-overflow-style: none;   // IE/Edge Legacy - 隐藏滚动条
+
+    // Webkit浏览器 - 完全隐藏滚动条
+    &::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+    }
   }
-  .menu-list-scroll::-webkit-scrollbar { width: 0; height: 0; }
 
   // 菜单列表内容
   .menu-list {
@@ -346,44 +355,6 @@ const hasActiveRoute = (items) => {
     }
   }
 
-  // 公司链接样式
-  .company-link {
-    margin-top: auto;
-    padding: 1rem 0; // 去掉左右内边距，与菜单项保持一致
-    border-top: 1px solid var(--surface-border, #dee2e6);
-    
-    a {
-      display: flex;
-      align-items: center;
-      justify-content: center; // 居中内容，视觉更对称
-      color: var(--text-color-secondary, #6c757d);
-      text-decoration: none;
-      font-size: 0.8rem;  // 略大
-      padding: 0.5rem;
-      transition: color 0.15s ease;
-      width: 75%; // 与菜单项保持一致的宽度
-      margin: 0 auto; // 居中显示
-      min-width: 110px; // 确保最小宽度
-      border-radius: 6px;
-      
-      &:hover {
-        color: var(--primary-color, #007ad9);
-        background-color: var(--surface-hover, #e9ecef);
-      }
-      
-      i {
-        margin-right: 0.75rem; // 增加图标与文字间距，让文字略向右移
-        font-size: 0.75rem;
-        flex-shrink: 0;
-      }
-      
-      span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        min-width: 0;
-      }
-    }
-  }
+
 }
 </style>

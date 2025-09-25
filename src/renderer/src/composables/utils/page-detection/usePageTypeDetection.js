@@ -29,6 +29,8 @@ export function usePageTypeDetection() {
     '/fault-overview': 'blockread',            // 故障总览页面（备用路由）
     // 设备管理页面（独立页面：固定topic，无选择器）
     '/Block/DeviceManagement': 'standalone',
+    // BAU地址探测页面（独立页面：无选择器）
+    '/Device/BauAddressDetection': 'standalone',
     '/block/device-management': 'standalone',
     
     // ================== 簇级遥调、遥控页面 (cluster-type) ==================
@@ -55,6 +57,8 @@ export function usePageTypeDetection() {
     '/block/blockIO': 'blockread',                   // 堆IO状态页面（备用路由）
     '/Block/BlockSysAbstract': 'blockread',         // 堆系统概要页面
     '/block/blockSysAbstract': 'blockread',         // 堆系统概要页面（备用路由）
+    '/Bau/address-adaptive': 'blockread',          // 地址自适应页面
+    '/Bau/upgrade': 'blockread',
     
     // ================== 堆级遥调、遥控页面 (block-type) ==================
     // 需要显示堆选择器和下发多选框的页面（可读写）
@@ -65,6 +69,7 @@ export function usePageTypeDetection() {
     '/Block/BlockConfigParam': 'block',        // 堆配置参数页面
     '/Block/BlockRemoteCommand': 'block',      // 堆遥控页面
     '/block/block-remote-command': 'block',    // 堆遥控页面（备用路由）
+
   }
   
   /**

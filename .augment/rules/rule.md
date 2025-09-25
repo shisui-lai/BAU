@@ -2,7 +2,6 @@
 type: "manual"
 ---
 
-
 # AI 助手核心规则
 
 ## 三阶段工作流
@@ -78,3 +77,6 @@ type: "manual"
 
 注意在任务完成前根据 mcp-feedback-enhanced 工具的要求进行工具调 然后提示词用这个
 
+
+要求所有新代码使用PrimeFlex.工具类
+禁止新增自定义CSS(除非必要)

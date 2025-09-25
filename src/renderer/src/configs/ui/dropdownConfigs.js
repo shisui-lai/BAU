@@ -48,7 +48,22 @@ export const DROPDOWN_CONFIGS = {
         { label: '无消防控制器', value: 65535 },
         { label: '三沃力源（sanvalor）', value: 1 }
       ],
-      
+      '簇压模式': [
+        { label: '高压采集模式', value: 0 },
+        { label: '单体电压累加模式', value: 1 }
+      ],
+      '动力接插件温度': [
+        { label: '不存在', value: 0 },
+        { label: '存在', value: 1 }
+      ],
+      'BMU温度数据类型': [
+        { label: '普通模式', value: 0 },
+        { label: '高精度模式', value: 1 }
+      ],
+      '禁止使能簇': [
+      { label: '禁止', value: 0x5BB5 },
+      { label: '启动', value: 0x1221 }
+    ],
 
       'CAN1通讯速率/仲裁域速率': [
         { label: '500K', value: 4 },
@@ -139,7 +154,7 @@ export const DROPDOWN_CONFIGS = {
         { label: 'LEM-CAB500-C/SP5-012', value: 0 },
         { label: 'LEM-DHAB-5/118', value: 1 },
         { label: 'JC-JHAB-5/18', value: 48 },
-        { label: 'QY-PL2C-200A/75mV', value: 192 },
+        { label: 'CG-FL2C-200A/75mV', value: 192 },
       ],
 
 
@@ -150,19 +165,41 @@ export const DROPDOWN_CONFIGS = {
       ],
 
 
-      '均衡模式选项': {
+      '均衡模式选项': [
+        { label: '禁止自动均衡', value: 0 },
+        { label: '开路', value: 1 },
+        { label: '静置', value: 2 },
+        { label: '放电', value: 3 },
+        { label: '充电', value: 4 },
+        { label: '开路、静置', value: 5 },
+        { label: '开路、放电', value: 6 },
+        { label: '开路、充电', value: 7 },
+        { label: '静置、放电', value: 8 },
+        { label: '静置、充电', value: 9 },
+        { label: '放电、充电', value: 10 },
+        { label: '开路、静置、放电', value: 11 },
+        { label: '开路、静置、充电', value: 12 },
+        { label: '开路、充电、放电', value: 13 },
+        { label: '静置、充电、放电', value: 14 },
+        { label: '开路、静置、放电、充电', value: 15 }
+      ],
+      '充电均衡阈值电压区间K值': {
         options: [
-          { label: '不允许均衡', value: 0, matchValues: [0, 1] },
-          { label: '允许在开路状态下均衡', value: 2, matchValues: [2, 3] },
-          { label: '放电', value: 4, matchValues: [4, 5] },
-          { label: '放电、开路', value: 6, matchValues: [6, 7] },
-          { label: '充电', value: 8, matchValues: [8, 9] },
-          { label: '充电、开路', value: 10, matchValues: [10, 11] },
-          { label: '充电、放电', value: 12, matchValues: [12, 13] },
-          { label: '充电、放电、开路', value: 14, matchValues: [14, 15] }
+          { label: '2mv', value: 10 },
+          { label: '15mv', value: 100 },
+          { label: '150mv', value: 1000 },
+          { label: '20mv', value: '20', matchValues: 'other' }
         ]
       },
-      '充电均衡阈值电压区间K值': {
+      '放电均衡阈值电压区间K值': {
+        options: [
+          { label: '2mv', value: 10 },
+          { label: '15mv', value: 100 },
+          { label: '150mv', value: 1000 },
+          { label: '20mv', value: '20', matchValues: 'other' }
+        ]
+      },
+      '开路均衡阈值电压区间K值': {
         options: [
           { label: '2mv', value: 10 },
           { label: '15mv', value: 100 },
@@ -233,7 +270,11 @@ export const DROPDOWN_CONFIGS = {
       ],
       'I/O控制板类型': [
         { label: '无I/O控制板', value: 0 },
-        { label: '英美讯', value: 1 }
+        { label: '艾莫讯', value: 1 }
+      ],
+      'I/O控制板网卡选择': [
+        { label: '网卡1', value: 0 },
+        { label: '网卡2', value: 1 }
       ]
     },
 
@@ -250,6 +291,10 @@ export const DROPDOWN_CONFIGS = {
       '是否存在BCP控制': [
         { label: '不存在', value: 0 },
         { label: '存在', value: 1 }
+      ],
+      '簇间SOC同步开关': [
+        { label: '不使能', value: 0 },
+        { label: '使能', value: 1 }
       ]
     }
   },
@@ -420,17 +465,20 @@ export function isDropdownParameter(dataType, topicType, parameterKey) {
 export function getDisplayLabel(dataType, topicType, parameterKey, value) {
   const config = getDropdownConfig(dataType, topicType, parameterKey)
   if (!config) return ''
-  
+
+  // 获取选项数组，支持两种格式
+  const options = config.options || config
+  if (!Array.isArray(options)) return ''
+
   // 遍历所有选项，检查是否有匹配的
-  for (const option of config.options) {
+  for (const option of options) {
     // 如果有matchValues字段，使用特殊匹配逻辑
     if (option.matchValues !== undefined) {
       if (option.matchValues === 'other') {
         // 特殊处理"other"类型：除了明确指定的值外，其他所有值都匹配
-        const explicitValues = config.options
+        const explicitValues = options
           .filter(opt => opt.value !== 'other' && opt.matchValues === undefined)
           .map(opt => Number(opt.value))
-        
         if (!explicitValues.includes(Number(value))) {
           return option.label
         }
@@ -450,7 +498,6 @@ export function getDisplayLabel(dataType, topicType, parameterKey, value) {
       }
     }
   }
-  
   console.warn(`[DropdownConfig] 参数 ${parameterKey} 的值 ${value} 不在选项列表中`)
   return ''
 }
@@ -464,14 +511,18 @@ export function getDisplayLabel(dataType, topicType, parameterKey, value) {
  * @returns {*} 实际值
  */
 export function getActualValue(dataType, topicType, parameterKey, displayLabel) {
-  const options = getDropdownConfig(dataType, topicType, parameterKey)
-  if (!options) return displayLabel
-  
+  const config = getDropdownConfig(dataType, topicType, parameterKey)
+  if (!config) return displayLabel
+
+  // 获取选项数组，支持两种格式
+  const options = config.options || config
+  if (!Array.isArray(options)) return displayLabel
+
   const option = options.find(opt => opt.label === displayLabel)
   if (!option) {
     console.warn(`[DropdownConfig] 参数 ${parameterKey} 的显示值 ${displayLabel} 不在选项列表中`)
     return displayLabel
   }
-  
+
   return option.value
 }

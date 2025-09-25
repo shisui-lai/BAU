@@ -31,7 +31,7 @@ export const useMqttStore = defineStore('mqtt', {
       username: 'admin1',
       password: 'public',
       clientId: generateClientId(),
-      keepalive: 60,
+      keepalive: 30,
       subscribeTopics: ['bms/bau/d2s/+/+/#']
     },
     
@@ -115,7 +115,7 @@ export const useMqttStore = defineStore('mqtt', {
       const existingIndex = this.savedConfigs.findIndex(
         config => config.host === configToSave.host && config.port === configToSave.port
       )
-      
+
       if (existingIndex >= 0) {
         // 更新现有配置
         this.savedConfigs[existingIndex] = configToSave
@@ -127,7 +127,7 @@ export const useMqttStore = defineStore('mqtt', {
           this.savedConfigs = this.savedConfigs.slice(0, 10)
         }
       }
-      
+
       // 保存到localStorage
       localStorage.setItem('mqtt_saved_configs', JSON.stringify(this.savedConfigs))
     },

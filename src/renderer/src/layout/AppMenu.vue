@@ -31,8 +31,8 @@ const menuItems = ref([
     items: [
       { label: '簇配置参数', icon: 'pi pi-sliders-h', route: '/Cluster/BaseParam' },
       { label: '簇报警阈值', icon: 'pi pi-bell', route: '/Cluster/AlarmThreshold' },
-      { label: '堆报警阈值', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold' },
-      { label: 'SOX参数', icon: 'pi pi-chart-line', route: '/Cluster/SOXParam' }
+      { label: 'SOX参数', icon: 'pi pi-chart-line', route: '/Cluster/SOXParam' },
+      { label: '模拟量校准', icon: 'pi pi-cog', route: '/Cluster/IvCalibration' }
     ]
   },
   {
@@ -41,7 +41,9 @@ const menuItems = ref([
     expanded: false,
     type: 'group',
     items: [
-      { label: '指令下发', icon: 'pi pi-send', route: '/Cluster/Order' }
+      { label: '指令下发', icon: 'pi pi-send', route: '/Cluster/Order' },
+      { label: '设备升级', icon: 'pi pi-download', route: '/Bau/upgrade' },
+      { label: '地址自适应', icon: 'pi pi-cog', route: '/Bau/address-adaptive' }
     ]
   },
   {
@@ -52,21 +54,28 @@ const menuItems = ref([
     items: [
       { label: '堆信息', icon: 'pi pi-chart-bar', route: '/Block/BlockInfo' },
       { label: '堆版本信息', icon: 'pi pi-info-circle', route: '/Block/BlockVersion' },
+      { label: '堆报警阈值', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold' },
       { label: '堆IO状态', icon: 'pi pi-server', route: '/Block/BlockIO' },
       { label: '堆配置参数', icon: 'pi pi-cog', route: '/Block/BlockConfigParam' },
       { label: '堆命令下设', icon: 'pi pi-send', route: '/Block/BlockRemoteCommand' }
     ]
   },
     // 不可折叠的独立项
-    { 
-    label: '告警信息', 
+    {
+    label: '告警信息',
     icon: 'pi pi-exclamation-triangle',
     route: '/Cluster/Fault',
     type: 'single'
     },
-    { 
-    label: '设备管理', 
-    icon: 'pi pi-wrench', 
+    {
+    label: 'BAU地址探测',
+    icon: 'pi pi-search',
+    route: '/Device/BauAddressDetection',
+    type: 'single'
+    },
+    {
+    label: '设备管理',
+    icon: 'pi pi-wrench',
     route: '/Block/DeviceManagement',
     type: 'single' // 单独项，不可折叠
   },

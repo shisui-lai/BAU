@@ -24,7 +24,7 @@ export function useSystemConfig() {
    * @param {Object} config - 系统配置参数
    */
   function handleSystemConfigUpdate(config) {
-    console.log('🔧 [配置更新] 系统配置:', `${config.BlockCount}堆, 第一堆${config.ClusterCount1}簇, 第二堆${config.ClusterCount2}簇`)
+    console.log(' [配置更新] 系统配置:', `${config.BlockCount}堆, 第一堆${config.ClusterCount1}簇, 第二堆${config.ClusterCount2}簇`)
     
     // 验证配置参数的有效性
     const { BlockCount, ClusterCount1, ClusterCount2 } = config

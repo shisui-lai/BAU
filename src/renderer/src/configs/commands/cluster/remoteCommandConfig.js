@@ -129,10 +129,9 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要执行其他IO控制吗？',
     options: [
-      { label: 'DI1', value: 1, bit: 0 },
-      { label: 'DI2', value: 2, bit: 1 },
-      { label: '继电器1', value: 256, bit: 8 },
-      { label: '继电器2', value: 512, bit: 9 }
+      { label: 'DO1', value: 1, bit: 0 },
+      { label: 'DO2', value: 2, bit: 1 },
+      { label: 'DO3', value: 4, bit: 2 }
     ]
   },
 
@@ -258,7 +257,8 @@ export const REMOTE_COMMANDS = {
       { label: '复位实时保存数据', value: 32, bit: 5 },
       { label: '复位出厂校准参数', value: 256, bit: 8 },
       { label: '复位事件记录标志', value: 512, bit: 9 },
-      { label: '复位系统运行时间', value: 1024, bit: 10 }
+      { label: '复位系统运行时间', value: 1024, bit: 10 },
+      { label: '复位配置参数', value: 2048, bit: 11 }
     ]
   },
 
@@ -281,7 +281,8 @@ export const REMOTE_COMMANDS = {
       { name: '复位sop map', bit: 7 },
       { name: '复位出厂校准参数', bit: 8 },
       { name: '复位事件记录标志', bit: 9 },
-      { name: '复位系统运行时间', bit: 10 }
+      { name: '复位系统运行时间', bit: 10 },
+      { name: '复位配置参数', bit: 11 }
     ]
   },
 
@@ -343,6 +344,19 @@ export const REMOTE_COMMANDS = {
     ]
   },
 
+  soh_nvm_flag_reset: {
+    name: '上电SOH存储标志位复位',
+    topic: 'soh_nvm_flag_reset',
+    dataType: 'u16',
+    type: 'dropdown',
+    confirmRequired: true,
+    confirmMessage: '确定要执行上电SOH存储标志位复位吗？',
+    options: [
+      { label: '启动', value: 0x5BB5 },
+      { label: '关闭', value: 0x1221 }
+    ]
+  },
+
   // ========== 反馈状态查询命令 ==========
   get_contactor_ctrl_result: {
     name: '查询接触器执行策略结果',
@@ -357,6 +371,16 @@ export const REMOTE_COMMANDS = {
   get_insulation_detect_result: {
     name: '查询绝缘电阻检测执行结果',
     topic: 'get_insulation_detect_result',
+    dataType: 'u8',
+    type: 'query',
+    confirmRequired: false,
+    value: 0xFF,
+    isPollingCommand: true // 标记为轮询命令
+  },
+
+  get_sys_run_mode: {
+    name: '查询系统运行模式',
+    topic: 'get_sys_run_mode',
     dataType: 'u8',
     type: 'query',
     confirmRequired: false,

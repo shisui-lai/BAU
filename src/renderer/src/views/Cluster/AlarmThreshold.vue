@@ -1,6 +1,8 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, onActivated, onDeactivated, ref, computed, watch, nextTick } from 'vue'
+import { scheduleAutoRead, cancelAutoRead } from '@/composables/utils/useAutoReadScheduler'
+import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { useAlarmThreshold } from '@/composables/core/data-processing/parameter-management/useAlarmThreshold'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
@@ -38,7 +40,7 @@ const parameterClasses = Array.from(new Set(alarmThresholdHandler.ALL_ALARM_PARA
   .map(name => {
     // 使用新的getClassInfo方法获取分类信息
     const classInfo = alarmThresholdHandler.getClassInfo(name)
-    console.log(`[AlarmThreshold] 分类"${name}" 信息:`, classInfo)
+    // console.log(`[AlarmThreshold] 分类"${name}" 信息:`, classInfo)
     return {
       name,
       byteOffset: classInfo.byteOffset,
@@ -57,10 +59,10 @@ const alarmThresholdConfig = {
     parameterSerializer: (parameterDataFrame, startByteOffset, registerCount, className) => {
       // 优先使用传入的className，否则使用当前选中的分类
       const targetClassName = className || currentSelectedClass.value?.name
-      console.log(`[AlarmThreshold] 序列化参数: className=${targetClassName}`)
-      
+      // console.log(`[AlarmThreshold] 序列化参数: className=${targetClassName}`)
+
       if (!targetClassName) {
-        console.error('[AlarmThreshold] 序列化失败: 缺少分类名称')
+        // console.error('[AlarmThreshold] 序列化失败: 缺少分类名称')
         return null
       }
       
@@ -105,8 +107,25 @@ const {
   handleParameterReadError
 } = useRemoteControlCore(alarmThresholdConfig, toastService)
 
+// 重试逻辑
+const retryLogic = useRetryLogic(toastService, stopParameterReading)
+
+// 定时器引用，用于清理
+let autoReadTimer = null
+
+// 性能优化：虚拟滚动替代分批渲染（已移除分批渲染逻辑）
+
+// 带重试逻辑的多topic读取函数
+function startMultiTopicReadingWithRetry() {
+  retryLogic.startRetry()
+  startMultiTopicReading(allReadTopics)
+}
+
 // MQTT事件处理 - 簇端报警参数
 function handleClusterAlarmReadEvent(event, mqttMessage) {
+  // 标记收到响应，停止超时检查（任意topic响应即可）
+  retryLogic.markResponse()
+
   const parsedReadData = alarmThresholdHandler.parseAlarmThresholdReadResponse(mqttMessage)
   if (!parsedReadData) return
   if (parsedReadData.result?.error) {
@@ -190,8 +209,6 @@ function handleCellAlarmWriteEvent(event, mqttMessage) {
 }
 
 onMounted(() => {
-  console.log('[AlarmThreshold] 页面挂载，开始监听告警阈值事件')
-
   // 先清理可能存在的旧监听器（防止快速切换导致的残留）
   window.electron.ipcRenderer.removeAllListeners('CLUSTER_DNS_PARAM_R')
   window.electron.ipcRenderer.removeAllListeners('PACK_DNS_PARAM_R')
@@ -199,7 +216,6 @@ onMounted(() => {
   window.electron.ipcRenderer.removeAllListeners('CLUSTER_DNS_PARAM_W')
   window.electron.ipcRenderer.removeAllListeners('PACK_DNS_PARAM_W')
   window.electron.ipcRenderer.removeAllListeners('CELL_DNS_PARAM_W')
-  console.log('[AlarmThreshold] 预清理完成，开始注册新监听器')
 
   window.electron.ipcRenderer.on('CLUSTER_DNS_PARAM_R', handleClusterAlarmReadEvent)
   window.electron.ipcRenderer.on('PACK_DNS_PARAM_R', handlePackAlarmReadEvent)
@@ -207,18 +223,25 @@ onMounted(() => {
   window.electron.ipcRenderer.on('CLUSTER_DNS_PARAM_W', handleClusterAlarmWriteEvent)
   window.electron.ipcRenderer.on('PACK_DNS_PARAM_W', handlePackAlarmWriteEvent)
   window.electron.ipcRenderer.on('CELL_DNS_PARAM_W', handleCellAlarmWriteEvent)
-  console.log('[AlarmThreshold] 告警阈值监听器注册完成')
 
-  // ========== 自动读取功能 ==========
-  // 等待监听器完全注册后，自动读取一次所有topic的数据
-  setTimeout(() => {
-    console.log('[AlarmThreshold] 开始自动读取告警阈值数据')
-    autoReadMultiTopicOnce(allReadTopics)
-  }, 300) // 延迟300ms确保监听器完全就绪（优化：减少延迟）
+  // 使用全局调度器避免多页面并发读取
+  scheduleAutoRead(allReadTopics, 300, 'AlarmThreshold')
+})
+
+// keep-alive 激活时的处理
+onActivated(() => {
+  scheduleAutoRead(allReadTopics, 300, 'AlarmThreshold')
+})
+
+// keep-alive 失活时的处理
+onDeactivated(() => {
+  cancelAutoRead('AlarmThreshold')
+  stopParameterReading()
 })
 
 onUnmounted(() => {
-  console.log('[AlarmThreshold] 页面卸载，停止读取并清理资源')
+  // 取消统一调度器的待处理请求
+  cancelAutoRead('AlarmThreshold')
 
   // 首先停止读取操作
   stopParameterReading()
@@ -231,14 +254,23 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('PACK_DNS_PARAM_W')
   window.electron.ipcRenderer.removeAllListeners('CELL_DNS_PARAM_W')
 
-  console.log('[AlarmThreshold] 页面卸载完成')
+  // 清理重试逻辑资源
+  retryLogic.cleanup()
 })
+
+// 性能优化：已移除分批渲染逻辑，改用DataTable内置虚拟滚动
 
 // 获取参数备注说明
 function getParameterRemarkText(parameterKey) {
   // 这里可以添加告警阈值参数的备注说明
   return '' // 暂时返回空字符串
 }
+
+
+
+
+
+
 </script>
 
 <template>
@@ -257,7 +289,7 @@ function getParameterRemarkText(parameterKey) {
               if (isCurrentlyReading) {
                 stopParameterReading()
               } else {
-                startMultiTopicReading(allReadTopics)
+                startMultiTopicReadingWithRetry()
               }
             }"
             :severity="isCurrentlyReading ? 'danger' : 'primary'"
@@ -288,13 +320,13 @@ function getParameterRemarkText(parameterKey) {
       />
     </div>
 
-    <!-- 当前分类的参数数据表格 -->
-    <DataTable 
+    <!-- 当前分类的参数数据表格 - 直接渲染 -->
+    <DataTable
       :value="currentClassParameterList"
       class="p-datatable-sm"
-      :scrollable="true"
-      scroll-height="600px"
       :show-gridlines="true"
+      scrollable
+      tableStyle="min-width: 50rem"
     >
       <!-- 参数名称列 -->
       <Column header="参数名称" style="width: 250px" :frozen="true">
@@ -305,7 +337,7 @@ function getParameterRemarkText(parameterKey) {
           </div>
         </template>
       </Column>
-      
+
       <!-- 参数值编辑列 -->
       <Column header="参数值" style="width: 150px">
         <template #body="slotProps">
@@ -321,7 +353,7 @@ function getParameterRemarkText(parameterKey) {
           />
         </template>
       </Column>
-      
+
       <!-- 参数单位列 -->
       <Column header="单位" style="width: 80px">
         <template #body="slotProps">
@@ -330,7 +362,7 @@ function getParameterRemarkText(parameterKey) {
           </div>
         </template>
       </Column>
-      
+
       <!-- 参数备注列 -->
       <Column header="备注说明" style="width: 300px">
         <template #body="slotProps">
@@ -369,5 +401,12 @@ function getParameterRemarkText(parameterKey) {
 
 .class-tab-button {
   min-width: 100px;
+}
+
+
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 </style>

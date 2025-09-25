@@ -29,6 +29,7 @@ const pendingCommand = ref(null) // 待执行命令
 const feedbackStatus = reactive({
   contactor_ctrl_result: '-', // 接触器执行策略结果
   insulation_detect_result: '-', // 绝缘电阻检测执行结果
+  sys_run_mode: '-', // 系统运行模式
   batt_stack_ctrl_switch_result: '-' // 堆接触器执行策略结果
 })
 
@@ -125,6 +126,12 @@ function createClusterComputedProperties(getAllCommandsFunc) {
         name: '绝缘电阻检测执行结果',
         value: feedbackStatus.insulation_detect_result,
         severity: getStatusSeverity(feedbackStatus.insulation_detect_result)
+      },
+      {
+        id: 'sys_run_mode',
+        name: '系统运行模式',
+        value: feedbackStatus.sys_run_mode,
+        severity: getStatusSeverity(feedbackStatus.sys_run_mode)
       }
     ]
   })
@@ -456,22 +463,23 @@ async function handleMultiselectCommand(commandId, selectedOptions) {
  * @param {Array} selectedOptions - 选中的选项值数组
  */
 async function handleCheckboxGroupCommand(commandId, selectedOptions) {
-  if (!selectedOptions || selectedOptions.length === 0) {
-    return {
-      success: false,
-      error: '请至少选择一个控制项'
-    }
-  }
-
   const config = getCommandConfig(commandId)
   if (!config) return { success: false, error: '未找到命令配置' }
+
+  // 空选择检查已移至前端模板中处理，这里不再检查
+  // 前端会根据命令类型决定是否允许空选择：
+  // - 参数复位类命令：前端禁用按钮，不会到达这里
+  // - 控制类命令：前端允许空选择，空选择表示"断开所有"
 
   try {
     // 添加到执行中状态
     executingCommands.value.add(commandId)
 
     // 计算选中选项的组合值（按位或运算）
-    const combinedValue = selectedOptions.reduce((acc, value) => acc | value, 0)
+    // 如果没有选中任何选项，combinedValue为0，表示"断开所有"
+    const combinedValue = selectedOptions && selectedOptions.length > 0
+      ? selectedOptions.reduce((acc, value) => acc | value, 0)
+      : 0
 
     console.log(`[复选框组命令] ${config.name} 选中选项:`, {
       selectedOptions,
@@ -709,12 +717,10 @@ async function handleCheckboxBitFieldControl(commandId, commandConfig) {
         binaryValue: combinedValue.toString(2).padStart(16, '0')
       })
 
-      if (combinedValue === 0) {
-        return {
-          success: false,
-          error: '请至少选择一个控制项'
-        }
-      }
+      // 0值检查已移至前端模板中处理，这里不再检查
+      // 前端会根据命令类型决定是否允许发送0值：
+      // - 参数复位类命令：前端禁用按钮，不会到达这里
+      // - 控制类命令：前端允许发送0值，0值表示"断开所有"
     }
 
     // 检查是否需要确认
@@ -788,6 +794,26 @@ function parseInsulationDetectResult(value) {
       return '检测完成'
     default:
       return `未知状态(${value})`
+  }
+}
+
+/**
+ * 解析系统运行模式
+ * @param {number} value - 已解析的数值 (2字节数据)
+ * @returns {string} 模式文本
+ */
+function parseSysRunMode(value) {
+  console.log(`[parseSysRunMode] 输入值: ${value} (0x${value.toString(16).toUpperCase()}) 类型: ${typeof value}`)
+  switch (value) {
+    case 0x5BB5:
+      console.log(`[parseSysRunMode] 匹配到测试模式`)
+      return '测试模式'
+    case 0x1221:
+      console.log(`[parseSysRunMode] 匹配到正常模式`)
+      return '正常模式'
+    default:
+      console.log(`[parseSysRunMode] 使用默认值 - 正常模式`)
+      return '正常模式' // 其他值都是正常模式
   }
 }
 
@@ -936,12 +962,12 @@ async function executeFeedbackQuery(commandId, targetCluster) {
   try {
     const config = getCommandConfig(commandId)
     if (!config || !config.isPollingCommand) {
-      console.warn(`[反馈查询] 无效的查询命令: ${commandId}`)
+      // console.warn(`[反馈查询] 无效的查询命令: ${commandId}`)
       return
     }
 
     if (!targetCluster) {
-      console.warn(`[反馈查询] 未指定目标设备: ${commandId}`)
+      // console.warn(`[反馈查询] 未指定目标设备: ${commandId}`)
       return
     }
 
@@ -973,7 +999,7 @@ async function executeFeedbackQuery(commandId, targetCluster) {
     // console.log(`[反馈查询] 查询命令发送成功: 堆${blockId}/簇${clusterId}`)
 
   } catch (error) {
-    console.error(`[反馈查询] 查询命令执行失败 ${commandId}:`, error)
+    // console.error(`[反馈查询] 查询命令执行失败 ${commandId}:`, error)
   }
 }
 
@@ -986,27 +1012,32 @@ async function queryAllFeedbackStatus(targetDevice, mode = 'cluster') {
   if (!feedbackPollingActive.value) return
 
   if (!targetDevice) {
-    console.warn('[反馈查询] 未选择目标设备，跳过查询')
+    // console.warn('[反馈查询] 未选择目标设备，跳过查询')
     return
   }
 
   try {
     if (mode === 'cluster') {
-      // 簇模式：查询接触器执行策略结果和绝缘电阻检测结果
-      await executeFeedbackQuery('get_contactor_ctrl_result', targetDevice)
+      // 簇模式：并发查询所有状态，提高响应速度
+      const queries = [
+        executeFeedbackQuery('get_contactor_ctrl_result', targetDevice),
+        executeFeedbackQuery('get_insulation_detect_result', targetDevice),
+        executeFeedbackQuery('get_sys_run_mode', targetDevice)
+      ]
 
-    // 稍微延迟后查询绝缘电阻检测结果，避免同时发送
-    setTimeout(async () => {
-      if (feedbackPollingActive.value) {
-          await executeFeedbackQuery('get_insulation_detect_result', targetDevice)
-      }
-    }, 100)
+      // 并发执行所有查询，不等待全部完成（避免一个失败影响其他）
+      queries.forEach(query => {
+        query.catch(error => {
+          // 单个查询失败不影响其他查询
+          console.warn('[反馈查询] 单个查询失败:', error)
+        })
+      })
     } else {
       // 堆模式：查询电池堆控制开关执行结果
       await executeFeedbackQuery('get_batt_stack_ctrl_switch_result', targetDevice)
     }
   } catch (error) {
-    console.error('[反馈查询] 批量查询失败:', error)
+    // console.error('[反馈查询] 批量查询失败:', error)
   }
 }
 
@@ -1027,13 +1058,13 @@ function startFeedbackPolling(getTargetDevice, mode = 'cluster') {
   const targetDevice = getTargetDevice()
   queryAllFeedbackStatus(targetDevice, mode)
 
-  // 启动定时器，每3秒查询一次
+  // 启动定时器，每5秒查询一次
   feedbackPollingTimer = setInterval(() => {
     const currentTarget = getTargetDevice()
     queryAllFeedbackStatus(currentTarget, mode)
-  }, 3000)
+  }, 5000)
 
-  console.log(`[反馈查询] 定时查询已启动，模式：${mode}，间隔3秒`)
+  // console.log(`[反馈查询] 定时查询已启动，模式：${mode}，间隔3秒`)
 }
 
 /**
@@ -1073,22 +1104,27 @@ function handleFeedbackQueryResponse(commandId, responseData) {
     switch (commandId) {
       case 'get_contactor_ctrl_result':
         feedbackStatus.contactor_ctrl_result = parseContactorCtrlResult(dataValue)
-        console.log(`[反馈查询] 接触器执行策略结果: ${feedbackStatus.contactor_ctrl_result} (原始值: ${dataValue})`)
+        // console.log(`[反馈查询] 接触器执行策略结果: ${feedbackStatus.contactor_ctrl_result} (原始值: ${dataValue})`)
         break
 
       case 'get_insulation_detect_result':
         feedbackStatus.insulation_detect_result = parseInsulationDetectResult(dataValue)
-        console.log(`[反馈查询] 绝缘电阻检测执行结果: ${feedbackStatus.insulation_detect_result} (原始值: ${dataValue})`)
+        // console.log(`[反馈查询] 绝缘电阻检测执行结果: ${feedbackStatus.insulation_detect_result} (原始值: ${dataValue})`)
+        break
+
+      case 'get_sys_run_mode':
+        feedbackStatus.sys_run_mode = parseSysRunMode(dataValue)
+        console.log(`[反馈查询] 系统运行模式: ${feedbackStatus.sys_run_mode} (原始值: ${dataValue}, 类型: ${typeof dataValue})`)
         break
 
       case 'get_batt_stack_ctrl_switch_result':
-        console.log(`[反馈查询] 堆接触器执行策略结果 - 原始数据值: ${dataValue} (类型: ${typeof dataValue})`)
+        // console.log(`[反馈查询] 堆接触器执行策略结果 - 原始数据值: ${dataValue} (类型: ${typeof dataValue})`)
         feedbackStatus.batt_stack_ctrl_switch_result = parseBattStackCtrlSwitchResult(dataValue)
-        console.log(`[反馈查询] 堆接触器执行策略结果: ${feedbackStatus.batt_stack_ctrl_switch_result} (原始值: ${dataValue})`)
+        // console.log(`[反馈查询] 堆接触器执行策略结果: ${feedbackStatus.batt_stack_ctrl_switch_result} (原始值: ${dataValue})`)
         break
 
       default:
-        console.warn(`[反馈查询] 未知的查询命令: ${commandId}`)
+        // console.warn(`[反馈查询] 未知的查询命令: ${commandId}`)
     }
   } catch (error) {
     console.error(`[反馈查询] 处理应答数据失败 ${commandId}:`, error)
@@ -1146,7 +1182,7 @@ export function useRemoteCommand(options = {}) {
   // 创建适配当前模式的反馈轮询函数
   const adaptedStartFeedbackPolling = (getTargetDevice) => {
     if (feedbackPollingActive.value) {
-      console.log('[反馈查询] 定时查询已在运行中')
+      // console.log('[反馈查询] 定时查询已在运行中')
       return
     }
 
@@ -1162,7 +1198,7 @@ export function useRemoteCommand(options = {}) {
       adaptedQueryAllFeedbackStatus(currentTarget)
     }, 3000)
 
-    console.log(`[反馈查询] 定时查询已启动，模式：${selectorMode}，间隔3秒`)
+    // console.log(`[反馈查询] 定时查询已启动，模式：${selectorMode}，间隔3秒`)
   }
   
   // 创建适配当前模式的反馈查询函数
@@ -1223,19 +1259,24 @@ export function useRemoteCommand(options = {}) {
 
     try {
       if (selectorMode === 'cluster') {
-        // 簇模式：查询接触器执行策略结果和绝缘电阻检测结果
-        await adaptedExecuteFeedbackQuery('get_contactor_ctrl_result', targetDevice)
+        // 簇模式：并发查询所有状态，提高响应速度
+        const queries = [
+          adaptedExecuteFeedbackQuery('get_contactor_ctrl_result', targetDevice),
+          adaptedExecuteFeedbackQuery('get_insulation_detect_result', targetDevice),
+          adaptedExecuteFeedbackQuery('get_sys_run_mode', targetDevice)
+        ]
 
-        // 稍微延迟后查询绝缘电阻检测结果，避免同时发送
-        setTimeout(async () => {
-          if (feedbackPollingActive.value) {
-            await adaptedExecuteFeedbackQuery('get_insulation_detect_result', targetDevice)
-          }
-        }, 100)
-              } else {
-          // 堆模式：查询接触器执行策略结果
-          await adaptedExecuteFeedbackQuery('get_batt_stack_ctrl_switch_result', targetDevice)
-        }
+        // 并发执行所有查询，不等待全部完成（避免一个失败影响其他）
+        queries.forEach(query => {
+          query.catch(error => {
+            // 单个查询失败不影响其他查询
+            console.warn('[反馈查询] 单个查询失败:', error)
+          })
+        })
+      } else {
+        // 堆模式：查询接触器执行策略结果
+        await adaptedExecuteFeedbackQuery('get_batt_stack_ctrl_switch_result', targetDevice)
+      }
     } catch (error) {
       console.error('[反馈查询] 批量查询失败:', error)
     }

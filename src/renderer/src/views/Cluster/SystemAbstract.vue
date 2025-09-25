@@ -78,10 +78,13 @@ const cache = ref({})
 const clusterOptions = ref([])
 
 onMounted(() => {
+  // 先清理可能存在的旧监听器（防止快速切换导致的残留）
+  window.electron.ipcRenderer.removeAllListeners('SYS_ABSTRACT')
+
   window.electron.ipcRenderer.on('SYS_ABSTRACT', handler)
 })
 onBeforeUnmount(() => {
-  window.electron.ipcRenderer.removeListener('SYS_ABSTRACT', handler)
+  window.electron.ipcRenderer.removeAllListeners('SYS_ABSTRACT', handler)
 })
 
 function handler(_e, msg) {
@@ -100,7 +103,7 @@ function handler(_e, msg) {
     // console.log(`[SystemAbstract] 新簇添加: ${key}`);
   }
 
-  emit('update:selectedCluster', key);
+  // emit('update:selectedCluster', key);
 }
 
 // 数值格式化函数
@@ -226,7 +229,6 @@ function getNumberFieldName(valueLabel) {
 
 <template>
   <div>
-  
       <div
         v-for="item in viewData"
         :key="item.label"

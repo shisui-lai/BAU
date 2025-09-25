@@ -73,7 +73,7 @@
   }
 
   .layout-topbar-menu-button {
-    display: none;
+    display: none !important; /* 强制隐藏，桌面端不需要此按钮 */
 
     i {
       font-size: 1.25rem;

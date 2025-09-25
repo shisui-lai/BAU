@@ -40,6 +40,12 @@ export function useLayout() {
     }
   }
 
+  const onTopBarMenuButton = () => {
+    // 切换移动端顶部菜单的显示状态
+    layoutState.profileSidebarVisible = !layoutState.profileSidebarVisible
+    console.log('顶部菜单按钮被点击，当前状态:', layoutState.profileSidebarVisible)
+  }
+
   const isSidebarActive = computed(
     () => layoutState.overlayMenuActive || layoutState.staticMenuMobileActive
   )
@@ -51,6 +57,7 @@ export function useLayout() {
     layoutState: toRefs(layoutState),
     setScale,
     onMenuToggle,
+    onTopBarMenuButton,
     isSidebarActive,
     isDarkTheme,
     setActiveMenuItem

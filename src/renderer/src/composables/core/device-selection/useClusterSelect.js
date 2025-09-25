@@ -37,6 +37,11 @@ export const selectedCluster = computed({
     return clusterStore.selectedClusterForView
   },
   set: (value) => {
+    console.log('🔄 [useClusterSelect] selectedCluster.set 被调用:', {
+      value,
+      timestamp: new Date().toISOString(),
+      stack: new Error().stack.split('\n').slice(1, 4).map(line => line.trim())
+    })
     const clusterStore = useClusterStore()
     clusterStore.setSelectedClusterForView(value)
   }

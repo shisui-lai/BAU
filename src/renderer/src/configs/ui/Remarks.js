@@ -58,12 +58,51 @@ export const BASE_PARAM_REMARKS = {
   // 'clusterRatedPower': '0.01kW',
   
   // 均衡参数备注
-  'balanceStartTime': '开启时间停止时间',
-  'balanceStopTime': '停止时间/n例开启时间3，停止1；实际运行均衡3停止1，周期为4S；',
-  'balanceModeOption': '0/1：不允许均衡\n2/3：允许在开路状态下均衡\n4/5：放电\n6/7：放电、开路\n8/9：充电\n10/11：充电、开路\n12/13：充电、放电\n14/15：充电、放电、开路',
+  'balanceStartTime': '例开启时间3S，停止1S；实际运行均衡3S停止1S，周期为4S；',
+  'balanceStopTime': '',
+  'balanceModeOption': '0：禁止自动均衡\n1：开路\n2：静置\n3：放电\n4：充电\n5：开路、静置\n6：开路、放电\n7：开路、充电\n8：静置、放电\n9：静置、充电\n10：放电、充电\n11：开路、静置、放电\n12：开路、静置、充电\n13：开路、充电、放电\n14：静置、充电、放电\n15：开路、静置、放电、充电',
   'balanceVoltMax': '',
   'balanceVoltMin': '',
   'chargeBalanceK': '10:2mv；100:15mv；1000:150mv；其他值：20mv',
   'dischargeBalanceK': '同上',
   'openBalanceK': '同上',
+}
+
+// 出厂校正参数备注配置
+export const FACTORY_CALIB_PARAM_REMARKS = {
+  // 电流校准参数备注
+  'currentChargeSmallRangeK': '默认值1000',
+  'currentChargeSmallRangeB': '默认值0',
+  'currentDischargeSmallRangeK': '默认值1000',
+  'currentDischargeSmallRangeB': '默认值0',
+  'currentChargeLargeRangeK': '默认值1000',
+  'currentChargeLargeRangeB': '默认值0',
+  'currentDischargeLargeRangeK': '默认值1000',
+  'currentDischargeLargeRangeB': '默认值0',
+
+  // 电压校准参数备注
+  'preChargeVoltageK': '默认值1000',
+  'preChargeVoltageB': '默认值0',
+  'packVoltageK': '默认值1000',
+  'packVoltageB': '默认值0',
+
+  // 生产信息备注
+  'productionCode1': '年月日编号',
+  'productionCode2': '年月日编号',
+  'productionCode3': '年月日编号',
+  'productionCode4': '年月日编号',
+  'localId': '默认0xE8，正式版本为0xD0-0xEF',
+
+  // 网络配置备注
+  'localIp': '第一堆起始地址：192.168.10.208\n第二堆起始地址：192.168.10.231',
+  'subnetMask': '255.255.255.0',
+  'defaultGateway': '192.168.10.1',
+  'primaryDns': '8.8.8.8',
+  'secondaryDns': '8.8.4.4',
+  'port': '默认为502',
+
+  // MAC地址备注
+  'macAddr1': '暂不支持设置',
+  'macAddr2': '暂不支持设置',
+  'macAddr3': '暂不支持设置'
 }

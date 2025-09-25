@@ -46,7 +46,8 @@
     "retry": "^0.13.1",
     "rxjs": "^7.8.2",
     "vue": "^3.2.41",
-    "vue-router": "^4.1.5"
+    "vue-router": "^4.1.5",
+    "vue-virtual-scroller": "^2.0.0-beta.8"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",
@@ -55,10 +56,11 @@
     "@electron-toolkit/eslint-config": "^1.0.2",
     "@rushstack/eslint-patch": "^1.10.3",
     "@vitejs/plugin-vue": "^5.0.5",
-    "@vue/devtools": "^7.7.6",
+    "@vue/devtools": "^7.7.7",
     "@vue/eslint-config-prettier": "^9.0.0",
     "electron": "^31.3.1",
     "electron-builder": "^24.13.3",
+    "electron-devtools-installer": "^4.0.0",
     "electron-vite": "^2.3.0",
     "eslint": "^8.57.0",
     "eslint-plugin-vue": "^9.26.0",
@@ -71,9 +73,9 @@
   "optionalDependencies": {
     "fsevents": "*"
   },
-    "build": {
+  "build": {
     "appId": "com.example.app",
-    "productName": "Risen-BMS++SystemMonitor",
+    "productName": "Risen-BMS-BAU",
     "copyright": "Copyright © 2022 example.com",
     "directories": {
       "buildResources": "resources"
@@ -88,8 +90,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
-      "shortcutName": "Risen-BMS++SystemMonitor",
-      "uninstallDisplayName": "Risen-BMS++SystemMonitor"
+      "shortcutName": "Risen-BMS-BAU",
+      "uninstallDisplayName": "Risen-BMS-BAU"
     }
   }
 }

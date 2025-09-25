@@ -19,7 +19,8 @@ export function parsePackSummary(msg: any) {
   /* 维护堆簇下拉 */
   // 【已禁用】动态发现机制，改用配置驱动方式
   // ensureClusterOption(key)
-  if (!selectedCluster.value) selectedCluster.value = key
+  // 【已禁用】自动选择机制，改用智能选择逻辑
+  // if (!selectedCluster.value) selectedCluster.value = key
 }
 
 /** ---- 页面取数保持原接口 ---- */

@@ -26,14 +26,18 @@ function onClusterSummary (_e, msg) {
 
 /* ---------- ② 在 onMounted 里注册 ---------- */
 onMounted(() => {
+  // 先清理可能存在的旧监听器（防止快速切换导致的残留）
+  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY')
+  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY')
+
   window.electron.ipcRenderer.on('PACK_SUMMARY',    onPackSummary)
   window.electron.ipcRenderer.on('CLUSTER_SUMMARY', onClusterSummary)
 })
 
 /* ---------- ③ 在 onUnmounted 里用同一引用解绑 ---------- */
 onUnmounted(() => {
-  window.electron.ipcRenderer.removeListener('PACK_SUMMARY',    onPackSummary)
-  window.electron.ipcRenderer.removeListener('CLUSTER_SUMMARY', onClusterSummary)
+  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY',    onPackSummary)
+  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY', onClusterSummary)
 })
 const props = defineProps({
   filterClasses: {

@@ -2,6 +2,7 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
 import { onMounted, onUnmounted, ref, computed  } from 'vue'
+import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useBlockStore } from '@/stores/device/blockStore'
@@ -29,6 +30,8 @@ blockStore.setCurrentPageType('block')
 // 计算分类范围（按 class 聚合，过滤保留）
 function getFieldByteSize(t) {
   if (typeof t === 'string' && t.startsWith('skip')) return Number(t.slice(4))
+  // bits字段不占用独立字节空间
+  if (t === 'bits' || t === 'bit') return 0
   const map = { u8:1,s8:1,u16:2,s16:2,u32:4,s32:4,f32:4, ipv4:4 }
   return map[t] || 2
 }
@@ -171,6 +174,22 @@ const {
   enhancedParameterList: operateEnhancedParameterList
 } = useRemoteControlCore(operateConfig, toastService, { selectorMode: 'block' })
 
+// 统一的停止函数
+function stopAllReading() {
+  if (isReadingBattery.value) stopBatteryReading()
+  if (isReadingCommDev.value) stopCommDevReading()
+  if (isReadingOperate.value) stopOperateReading()
+}
+
+// 重试逻辑
+const retryLogic = useRetryLogic(toastService, stopAllReading)
+
+// 带重试逻辑的读取函数
+function startReadingWithRetry() {
+  retryLogic.startRetry()
+  startReading()
+}
+
 // 下拉相关函数已从各自实例解构，无需重复创建实例
 
 // 方案：顶部TabMenu仅作导航，内容区始终是一张表（两层框架）
@@ -311,6 +330,9 @@ function getDecimalPlaces(row){
 function handleBatteryReadEvent(event, mqttMessage){
   console.log('[BlockConfigParam] 收到电池配置读取事件:', mqttMessage)
   if (mqttMessage.dataType !== 'BLOCK_BATT_PARAM_R') return
+
+  // 标记收到响应，停止超时检查
+  retryLogic.markResponse()
   const parsed = parseParameterReadResponse(mqttMessage, '[useBlockBattParam]', '系统簇端电池配置')
   if (!parsed) return
   if (parsed.result?.error) return handleBatteryReadError(parsed)
@@ -328,6 +350,9 @@ function handleBatteryWriteEvent(event, mqttMessage){
 
 function handleCommDevReadEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_COMM_DEV_CFG_R') return
+
+  // 标记收到响应，停止超时检查
+  retryLogic.markResponse()
   const parsed = parseParameterReadResponse(mqttMessage, '[useBlockCommDevCfg]', '系统通讯设备配置')
   if (!parsed) return
   if (parsed.result?.error) return handleCommDevReadError(parsed)
@@ -343,6 +368,9 @@ function handleCommDevWriteEvent(event, mqttMessage){
 
 function handleOperateReadEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_OPERATE_CFG_R') return
+
+  // 标记收到响应，停止超时检查
+  retryLogic.markResponse()
   const parsed = parseParameterReadResponse(mqttMessage, '[useBlockOperateCfg]', '系统操作配置')
   if (!parsed) return
   if (parsed.result?.error) return handleOperateReadError(parsed)
@@ -412,22 +440,25 @@ onUnmounted(() => {
   const ipc = window.electron?.ipcRenderer
   if (ipc){
     // 簇端电池配置参数
-    ipc.removeListener('BLOCK_BATT_PARAM_R', handleBatteryReadEvent)
-    ipc.removeListener('BLOCK_BATT_PARAM_W', handleBatteryWriteEvent)
+    ipc.removeAllListeners('BLOCK_BATT_PARAM_R', handleBatteryReadEvent)
+    ipc.removeAllListeners('BLOCK_BATT_PARAM_W', handleBatteryWriteEvent)
     
     // 通讯设备配置参数
-    ipc.removeListener('BLOCK_COMM_DEV_CFG_R', handleCommDevReadEvent)
-    ipc.removeListener('BLOCK_COMM_DEV_CFG_W', handleCommDevWriteEvent)
+    ipc.removeAllListeners('BLOCK_COMM_DEV_CFG_R', handleCommDevReadEvent)
+    ipc.removeAllListeners('BLOCK_COMM_DEV_CFG_W', handleCommDevWriteEvent)
     
     // 操作配置参数
-    ipc.removeListener('BLOCK_OPERATE_CFG_R', handleOperateReadEvent)
-    ipc.removeListener('BLOCK_OPERATE_CFG_W', handleOperateWriteEvent)
+    ipc.removeAllListeners('BLOCK_OPERATE_CFG_R', handleOperateReadEvent)
+    ipc.removeAllListeners('BLOCK_OPERATE_CFG_W', handleOperateWriteEvent)
   }
   
   // 停止所有读取
   if (isReadingBattery.value) stopBatteryReading()
   if (isReadingCommDev.value) stopCommDevReading()
   if (isReadingOperate.value) stopOperateReading()
+
+  // 清理重试逻辑资源
+  retryLogic.cleanup()
 })
 
 // 备注（预留）
@@ -517,7 +548,7 @@ function selectAllClusters(parameterDefinition) {
             </div>
           </div>
           <div class="button-group">
-            <Button :label="currentIsReading ? '停止读取' : '开始读取'" :severity="currentIsReading ? 'danger' : 'primary'" size="small" @click="currentIsReading ? stopReading() : startReading()" />
+            <Button :label="currentIsReading ? '停止读取' : '开始读取'" :severity="currentIsReading ? 'danger' : 'primary'" size="small" @click="currentIsReading ? stopReading() : startReadingWithRetry()" />
             <Button label="下发参数" severity="warning" size="small" :disabled="currentIsReading" @click="sendParameters" />
           </div>
         </div>

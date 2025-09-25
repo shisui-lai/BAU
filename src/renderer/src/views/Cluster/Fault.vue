@@ -16,6 +16,7 @@ declare global {
       ipcRenderer: {
         on: (channel: string, callback: (...args: any[]) => void) => void;
         removeListener: (channel: string, callback: (...args: any[]) => void) => void;
+         removeAllListeners: (channel: string, callback: (...args: any[]) => void) => void;
       };
     };
   }
@@ -28,10 +29,16 @@ const clusterStore = useClusterStore()
 const first = ref(0)      // 当前偏移量
 const rows = ref(30)     // 每页条数
 
+/* ---------- 手动排序状态 ---------- */
+const sortOrder = ref<'none' | 'asc' | 'desc'>('none') // none: 无排序, asc: 轻微到严重, desc: 严重到轻微
+
 /* ---------- MQTT 监听 ---------- */
 const FAULT_CHANNELS = [
-  'HARDWARE_FAULT',
+  //协议修改删除 - HARDWARE_FAULT不再使用，改为TOTAL_FAULT中的接触器详细故障
+  // 'HARDWARE_FAULT',
   'TOTAL_FAULT',
+  'OUTPUT_FAULT_MAP',
+  'SAVED_FAULT_MAP',
   'FAULT_LEVEL1',
   'FAULT_LEVEL2',
   'CELL_OV_FAULT_LEVEL3',
@@ -44,7 +51,12 @@ const FAULT_CHANNELS = [
   'SOC_UNDER_FAULT_LEVEL3',
   // 堆故障频道
   'BLOCK_HARDWARE_FAULT',
-  'BLOCK_TOTAL_FAULT'
+  'BLOCK_TOTAL_FAULT',
+  'BLOCK_ANALOG_FAULT_GRADE',
+  // 簇通讯失联频道
+  'BLOCK_COMM_LOST',
+  // 掉线信息频道
+  'BROKENWIRE'
 ]
 
 // 防抖更新筛选选项，避免频繁计算
@@ -98,37 +110,78 @@ onBeforeUnmount(() => {
 
   // 清理监听器
   if (attached) {
-    FAULT_CHANNELS.forEach(ch =>
-      window.electron.ipcRenderer.removeListener(ch, onFaultMsg)
-    )
+    // 🚀 修复：使用正确的API清理监听器
+    FAULT_CHANNELS.forEach(ch => {
+      try {
+        window.electron.ipcRenderer.removeAllListeners(ch, onFaultMsg)
+      } catch (error) {
+        console.warn(`清理监听器失败: ${ch}`, error)
+      }
+    })
     attached = false
     console.log('[debug] Fault listeners removed')
   }
 })
 
 /* ---------- 筛选数据计算 ---------- */
-// 性能优化：使用缓存的computed
 const filteredFaults = computed(() => {
-  return clusterStore.filterFaultData(sortedAllFaults.value)
+  let faults = clusterStore.filterFaultData(sortedAllFaults.value)
+
+  // 手动排序：根据故障等级排序
+  if (sortOrder.value !== 'none') {
+    const severityOrder: Record<string, number> = { 'severe': 3, 'medium': 2, 'mild': 1, 'none': 0 }
+
+    faults = [...faults].sort((a, b) => {
+      const aLevel = severityOrder[a.levelTag] ?? 0
+      const bLevel = severityOrder[b.levelTag] ?? 0
+
+      if (sortOrder.value === 'desc') {
+        return bLevel - aLevel // 严重到轻微
+      } else {
+        return aLevel - bLevel // 轻微到严重
+      }
+    })
+  }
+
+  return faults
 })
 
 /* ---------- 分页计算 ---------- */
-// 性能优化：使用shallowRef避免深度响应式
 const total = computed(() => filteredFaults.value.length)
 
-// 性能优化：使用nextTick延迟分页计算，避免阻塞UI
 const pageRows = computed(() => {
   const faults = filteredFaults.value
   const start = first.value
   const end = Math.min(start + rows.value, faults.length)
-
-  // 避免重复访问filteredFaults.value
   return faults.slice(start, end)
 })
 
 function onPageChange(e: any) {
   first.value = e.first
   rows.value = e.rows
+}
+
+/* ---------- 故障等级颜色映射 ---------- */
+function getSeverityColor(levelTag: string): string {
+  const severityColorMap: Record<string, string> = {
+    'severe': 'danger',
+    'medium': 'warning',
+    'mild': 'info',
+    'none': 'secondary'
+  }
+  return severityColorMap[levelTag] || 'secondary'
+}
+
+/* ---------- 手动排序函数 ---------- */
+function toggleSort() {
+  // 循环切换排序状态：无排序 → 严重到轻微 → 轻微到严重 → 无排序
+  if (sortOrder.value === 'none') {
+    sortOrder.value = 'desc' // 严重到轻微
+  } else if (sortOrder.value === 'desc') {
+    sortOrder.value = 'asc'  // 轻微到严重
+  } else {
+    sortOrder.value = 'none' // 无排序
+  }
 }
 
 // 性能优化：使用防抖的watch，减少频繁重置
@@ -187,10 +240,10 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
             <!-- 白色筛选控制区域 -->
             <div class="filter-content-white">
               <!-- 单行布局：按钮 + 下拉框 + 统计 -->
-              <div class="filter-single-row">
+              <div class="flex align-items-center justify-content-start gap-5">
                 <!-- 左侧：筛选按钮和下拉框组合 -->
-                <div class="filter-left-group">
-                  <div class="filter-buttons flex gap-2">
+                <div class="flex align-items-center gap-3 mr-auto">
+                  <div class="flex gap-2">
                     <Button
                       label="全部故障"
                       :severity="clusterStore.faultFilterMode === 'all' ? 'primary' : 'secondary'"
@@ -215,7 +268,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
                   </div>
 
                   <!-- 紧跟按钮的下拉框 -->
-                  <div class="filter-dropdown" v-if="clusterStore.faultFilterMode !== 'all'">
+                  <div class="flex-shrink-0" v-if="clusterStore.faultFilterMode !== 'all'">
                     <!-- 堆筛选 -->
                     <MultiSelect
                       v-if="clusterStore.faultFilterMode === 'block'"
@@ -270,25 +323,38 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
             {{ data.bmu === null || data.bmu === 0 ? '-' : data.bmu }}
           </template>
         </Column>
-      <Column header="AFE" style="width:90px;text-align:center">
-        <template #body="{ data }">
-          {{ data.afe === null || data.afe === 0 ? '-' : data.afe }}
-        </template>
-      </Column>
       <Column header="Cell" style="width:100px;text-align:center">
         <template #body="{ data }">
           {{ data.cell === null || data.cell === 0 ? '-' : data.cell }}
         </template>
       </Column>
-      <Column header="故障等级" style="width:120px;text-align:center">
+      <Column header="全局序号" style="width:120px;text-align:center">
+        <template #body="{ data }">
+          {{
+            data.globalTemp !== null && data.globalTemp !== 0 ? data.globalTemp :
+            data.globalCell !== null && data.globalCell !== 0 ? data.globalCell :
+            '-'
+          }}
+        </template>
+      </Column>
+      <Column style="width:120px;text-align:center">
+        <template #header>
+          <div class="flex align-items-center justify-content-center gap-1 cursor-pointer" @click="toggleSort">
+            <span>故障等级</span>
+            <i
+              :class="{
+                'pi pi-sort': sortOrder === 'none',
+                'pi pi-sort-amount-down': sortOrder === 'desc',
+                'pi pi-sort-amount-up': sortOrder === 'asc'
+              }"
+              class="text-sm"
+            ></i>
+          </div>
+        </template>
         <template #body="{ data }">
           <Tag
             :value="data.levelTxt"
-            :severity="{
-              severe: 'danger',
-              medium: 'warning',
-                mild: 'info'
-            }[data.levelTag] || 'secondary'"
+            :severity="getSeverityColor(data.levelTag)"
           />
         </template>
       </Column>
@@ -340,22 +406,6 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 }
 
 /* 单行布局 */
-.filter-single-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 20px;
-}
-
-/* 左侧按钮和下拉框组合 */
-.filter-left-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-right: auto;
-}
-
-
 
 .filter-buttons {
   gap: 6px;
@@ -460,6 +510,18 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 /* 确保最后一行也有边框 */
 :deep(.p-datatable-tbody > tr:last-child > td) {
   border-bottom: 2px solid #e5e7eb;
+
+/* 手动排序按钮样式 */
+.cursor-pointer {
+  cursor: pointer;
+  user-select: none;
+}
+
+.cursor-pointer:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
 }
 
 :deep(.p-paginator) {
@@ -554,11 +616,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
     padding: 8px;
   }
 
-  .filter-single-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
+
 
   .filter-buttons {
     flex-wrap: wrap;

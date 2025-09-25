@@ -1,5 +1,5 @@
   <script setup>  
-  import { ref, reactive, computed, onMounted, onBeforeUnmount,onActivated, onDeactivated } from 'vue'
+  import { ref, reactive, computed, onMounted, onBeforeUnmount, onActivated, onDeactivated } from 'vue'
   import Dropdown  from 'primevue/dropdown'
   import Button    from 'primevue/button'
   import DataTable from 'primevue/datatable'
@@ -31,6 +31,8 @@
     BMU_VOLT:         { label: 'BMU 电压',     decimals: 1 },
     BMU_TEMP:         { label: 'BMU 温度',     decimals: 1 },
     BMU_PLUGIN_TEMP:  { label: '动力接插件温度',     decimals: 1 },
+    BMU_SOC:          { label: 'BMU SOC',      decimals: 1 },    // 协议修改新增
+    BMU_PRODUCT_CODE: { label: 'BMU产品编码',   decimals: -1 },  // 协议修改新增
     // BMU_PLUGIN_TEMP2:  { label: '动力接插件温度2',     decimals: 1 }
     //decimals 保留小数位数，-1 表示不显示小数
   }
@@ -40,6 +42,8 @@
   // const clusterOptions  = ref([])            // 下拉选项
   // const selectedCluster = ref(null)          // 当前簇 key，如 "1-1"
   const activeView      = ref('CELL_VOLT')   // 当前数据类型按钮
+
+  const dataTableRef = ref(null)             // DataTable引用（保留用于其他可能的操作）
 
   /* ────────── MQTT / IPC 监听 ────────── */
 
@@ -58,21 +62,34 @@ function onCellMsg (_e, msg) {
 }  // 保留原 handler
 
 onMounted(() => {
-  CELL_CHANNELS.forEach(ch =>
+  // 先清理可能存在的旧监听器（防止快速切换导致的残留）
+  CELL_CHANNELS.forEach(ch => {
+    window.electron.ipcRenderer.removeAllListeners(ch)
+  })
+  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY')
+  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY')
+
+  CELL_CHANNELS.forEach(ch => {
     window.electron.ipcRenderer.on(ch, onCellMsg)
-  )
+  })
   window.electron.ipcRenderer.on('PACK_SUMMARY',    onPackSummary)
   window.electron.ipcRenderer.on('CLUSTER_SUMMARY', onClusterSummary)
-  // window.electron.ipcRenderer.on('SYS_ABSTRACT',    handler)        // 仍走原 handler
+  // window.electron.ipcRenderer.on('SYS_ABSTRACT',    handler)     
+
+  // 立即检查是否已有可用数据，避免等待新数据
+  // console.log('[cellData] 页面挂载，检查已有数据')
+  if (selectedCluster.value && clusterCache[activeView.value]?.has(selectedCluster.value)) {
+    // console.log('[cellData] 发现已有数据，立即渲染')
+  }
 })
 
 onBeforeUnmount(() => {
-  CELL_CHANNELS.forEach(ch =>
-    window.electron.ipcRenderer.removeListener(ch, onCellMsg)
-  )
-  window.electron.ipcRenderer.removeListener('PACK_SUMMARY',    onPackSummary)
-  window.electron.ipcRenderer.removeListener('CLUSTER_SUMMARY', onClusterSummary)
-  // window.electron.ipcRenderer.removeListener('SYS_ABSTRACT',    handler)
+  CELL_CHANNELS.forEach(ch => {
+    window.electron.ipcRenderer.removeAllListeners(ch, onCellMsg)
+  })
+  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY',    onPackSummary)
+  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY', onClusterSummary)
+  // window.electron.ipcRenderer.removeAllListeners('SYS_ABSTRACT',    handler)
 })
 
 
@@ -82,7 +99,7 @@ onBeforeUnmount(() => {
   //   // logCount('mounted')
   // })
   // onBeforeUnmount(() =>{
-  //   window.electron.ipcRenderer.removeListener('mqtt-message', handler)
+  //   window.electron.ipcRenderer.removeAllListeners('mqtt-message', handler)
   //   // logCount('beforeUnmount')
   // })
  
@@ -230,13 +247,12 @@ onBeforeUnmount(() => {
   )
   const displayCols = computed(() => Array.from({ length: maxCols.value }, (_, i) => i + 1))
 
-  function formatCell(v){          // ★ 模板内按需格式化
+  function formatCell(v){          //  模板内按需格式化
     return v === '--' ? v : Number(v).toFixed(DATA_TYPE_MAP[activeView.value].decimals)
   }
 
 
   //簇端数据
-
   // 当前页面需要展示的三类数据
   const NEED = ['系统信息', '温度信息', '电池信息']
 
@@ -316,7 +332,6 @@ onBeforeUnmount(() => {
     FIELD_ORDER.map(fieldLabel => {
       // 尝试多种匹配方式
       let found = flatElems.value.find(e => e.label === fieldLabel);
-      
       // 如果直接匹配失败，尝试带单位的匹配
       if (!found) {
         const unit = UNIT_MAP[fieldLabel];
@@ -324,7 +339,6 @@ onBeforeUnmount(() => {
           found = flatElems.value.find(e => e.label === `${fieldLabel}(${unit})`);
         }
       }
-      
       // 如果还是没找到，返回默认值
       if (!found) {
         return { label: fieldLabel, value: '–' };
@@ -343,11 +357,6 @@ onBeforeUnmount(() => {
     })
   );
 
-  /* 注释掉不再使用的kvRow，因为已改用卡片布局 */
-  // const kvRow = computed(() => [{
-  //   id: 0,            // dataKey 用
-  //   elems: orderedElems.value
-  // }]);
 
 
   //BMU数据
@@ -355,17 +364,65 @@ onBeforeUnmount(() => {
     if (activeView.value === 'BMU_VOLT') return ['BMU电压'];
     if (activeView.value === 'BMU_TEMP') return ['BMU电路板温度'];
     if (activeView.value === 'BMU_PLUGIN_TEMP') return ['动力接插件温度1','动力接插件温度2'];
+    if (activeView.value === 'BMU_SOC') return ['BMU SOC'];              // 协议修改新增
+    if (activeView.value === 'BMU_PRODUCT_CODE') return ['BMU产品编码'];   // 协议修改新增
     // if (activeView.value === 'BMU_PLUGIN_TEMP2') return ['动力接插件温度2'];
     return [];
   });
 
+  // 标签转换函数
+  function transformPluginLabel(originalLabel, pluginNumber, bmuIndex) {
+    // 从原标签中提取BMU编号：BMU1 插件1温度(℃) → BMU1
+    const bmuMatch = originalLabel.match(/^BMU(\d+)/)
+    if (!bmuMatch) return originalLabel
+
+    const bmuNumber = parseInt(bmuMatch[1])
+
+    // 计算全局编号：(BMU编号-1)*2 + 插件编号
+    const globalIndex = (bmuNumber - 1) * 2 + pluginNumber
+
+    // 生成新标签：BMU1-1(℃) #1
+    return `BMU${bmuNumber}-${pluginNumber}(℃) #${globalIndex}`
+  }
+
   const bmuRows = computed(() => {
-    if (!['BMU_VOLT', 'BMU_TEMP', 'BMU_PLUGIN_TEMP'].includes(activeView.value)) {
+    if (!['BMU_VOLT', 'BMU_TEMP', 'BMU_PLUGIN_TEMP', 'BMU_SOC', 'BMU_PRODUCT_CODE'].includes(activeView.value)) {
       return [];
     }
     const secs = pickPack(selectedCluster.value, NEED_FIELDS.value) || []
-    // return secs.length ? secs[0].element : [];
-    return secs.flatMap(sec => sec.element) 
+    // 对于动力接插件温度，需要重新排序：插件1温度一排，插件2温度一排
+    if (activeView.value === 'BMU_PLUGIN_TEMP') {
+      const plugin1Data = secs.find(sec => sec.class === '动力接插件温度1')?.element || []
+      const plugin2Data = secs.find(sec => sec.class === '动力接插件温度2')?.element || []
+
+      // 重新排序：按BMU编号交替显示插件1和插件2
+      const reorderedData = []
+      const maxLength = Math.max(plugin1Data.length, plugin2Data.length)
+
+      for (let i = 0; i < maxLength; i++) {
+        if (plugin1Data[i]) {
+          // 转换插件1标签：BMU1 插件1温度(℃) → BMU1-1(℃) #1
+          const transformedItem = {
+            ...plugin1Data[i],
+            label: transformPluginLabel(plugin1Data[i].label, 1, i + 1)
+          }
+          reorderedData.push(transformedItem)
+        }
+        if (plugin2Data[i]) {
+          // 转换插件2标签：BMU6 插件2温度(℃) → BMU6-2(℃) #12
+          const transformedItem = {
+            ...plugin2Data[i],
+            label: transformPluginLabel(plugin2Data[i].label, 2, i + 1)
+          }
+          reorderedData.push(transformedItem)
+        }
+      }
+
+      return reorderedData
+    }
+
+    // 其他情况保持原有逻辑
+    return secs.flatMap(sec => sec.element)
   });
   </script>
 
@@ -413,20 +470,17 @@ onBeforeUnmount(() => {
     </div>
     
     <!-- ▼▼ BMU 表卡片 ▼▼ -->
-    <SystemAbstract v-show="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH','BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP'].includes(activeView)"
+    <SystemAbstract v-if="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH','BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC','BMU_PRODUCT_CODE'].includes(activeView)"
                     :activeView="activeView"
                     :selectedCluster="selectedCluster" />
 
-    <!-- ▼▼ 单体数据表（唯一保留）▼▼ -->
-    <keep-alive>
-      <DataTable v-show="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH'].includes(activeView)"
-                 :key="'cell-table'"
-                 :value="matrixRows"
-                 scrollable
-                 scrollHeight="560px"
-                 :virtualScrollerOptions="{ itemSize: 28 }"
-                 showGridlines
-                 style="width:auto">
+    <!-- ▼▼ 单体数据表（完整渲染，无内部滚动）▼▼ -->
+    <DataTable v-if="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH'].includes(activeView)"
+               ref="dataTableRef"
+               :key="`cell-table-${activeView}-${selectedCluster}`"
+               :value="matrixRows"
+               showGridlines
+               style="width:auto">
 
         <!-- 冻结 BMU-AFE 列 -->
         <Column frozen header="BMU-AFE" style="width:120px">
@@ -438,18 +492,16 @@ onBeforeUnmount(() => {
                 :key="col"
                 :header="col"
                 :field="`cells[${col-1}]`"
-                style="width:80px">
+                style="width:90px">
           <template #body="{ data }">
-            <span>{{ formatCell(data.cells[col-1]) }}</span>
-            <template v-if="data.cells[col-1] !== '--'">
-              &nbsp;#{{ ((data.rowIdx * cellsPerAfe) + col) }}
-            </template>
+            <span class="cell-content">
+              {{ formatCell(data.cells[col-1]) }}<template v-if="data.cells[col-1] !== '--'"> #{{ ((data.rowIdx * cellsPerAfe) + col) }}</template>
+            </span>
           </template>
         </Column>
       </DataTable>
-    </keep-alive>
 
-    <div v-if="['BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP'].includes(activeView)"
+    <div v-if="['BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC','BMU_PRODUCT_CODE'].includes(activeView)"
          class="card-grid">
       <div v-for="e in bmuRows"
            :key="e.label"
@@ -481,14 +533,24 @@ onBeforeUnmount(() => {
     flex-direction: column;
     gap: 6px; /* 减少容器内各元素间距 */
     padding: 2px 0; /* 进一步减少上下内边距 */
+    width: 100%;
   }
 
   .cluster-info-row {
-    display: grid;
-    grid-template-columns: repeat(14, 1fr); /* 固定14列，正好占满整行 */
+    display: grid; /* 恢复grid布局 */
+    grid-template-columns: repeat(12, 1fr); /* 固定12列 */
     gap: 6px; /* 减少卡片间距 */
     justify-content: center; /* 让卡片整体居中 */
-    padding-left: 12px; /* 向右移动整体卡片 */
+    padding: 0 12px; /* 左右对称的内边距 */
+  }
+
+  /* 在小屏幕下改用flex换行布局 */
+  @media (max-width: 1400px) {
+    .cluster-info-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
   }
 
   .cluster-divider {
@@ -511,6 +573,14 @@ onBeforeUnmount(() => {
     min-width: 100px; /* 确保卡片有足够宽度 */
   }
 
+  /* 在小屏幕下保持固定大小 */
+  @media (max-width: 1400px) {
+    .cluster-info-card {
+      flex: 0 0 auto; /* 不拉伸，保持固定大小 */
+      width: 120px; /* 固定宽度 */
+    }
+  }
+
   .cluster-card-label {
     font-size: 0.85rem; /* 进一步增大标签字体 */
     color: #51606d; /* 灰色文字 */
@@ -528,22 +598,41 @@ onBeforeUnmount(() => {
     font-variant-numeric: tabular-nums;
   }
 
-  /* 改善DataTable滚动体验 */
+  /* DataTable完整渲染，无内部滚动 */
   :deep(.p-datatable-wrapper) {
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible; /* 允许内容完整显示 */
   }
 
   :deep(.p-datatable-table) {
-    min-width: max-content;
+    width: 100%;
+    min-width: max-content; /* 保持表格最小宽度 */
   }
 
-  :deep(.p-datatable-scrollable-header) {
-    overflow: hidden;
-  }
-
+  /* 确保表格头部和主体都完整显示 */
+  :deep(.p-datatable-scrollable-header),
   :deep(.p-datatable-scrollable-body) {
-    overflow: hidden;
+    overflow: visible;
+  }
+
+  /* 单元格样式优化 */
+  :deep(.p-datatable-tbody td) {
+    padding: 4px 8px; /* 适当的内边距 */
+    font-size: 0.95rem; /* 稍微减小字体以适应更多内容 */
+    vertical-align: top; /* 顶部对齐，适应换行内容 */
+  }
+
+  /* 确保冻结列不换行 */
+  :deep(.p-datatable-tbody td.p-frozen-column) {
+    white-space: nowrap;
+  }
+
+  /* 优化单元格内容显示 */
+  .cell-content {
+    display: inline-block;
+    width: 100%;
+    word-wrap: break-word; /* 允许长单词换行 */
+    white-space: normal; /* 允许正常换行 */
+    font-family: 'Consolas', 'Monaco', monospace; /* 使用等宽字体，数字对齐更好 */
   }
   
   /* ====== 卡片网格容器 ====== */

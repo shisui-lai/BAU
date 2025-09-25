@@ -19,17 +19,43 @@ function onBrokenwire (_e, msg) {
 
 /* ---------- ② 在 onMounted 里注册 ---------- */
 onMounted(() => {
+  // 先清理可能存在的旧监听器（防止快速切换导致的残留）
+  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY')
+  window.electron.ipcRenderer.removeAllListeners('BROKENWIRE')
+
   window.electron.ipcRenderer.on('PACK_SUMMARY',    onPackSummary)
   window.electron.ipcRenderer.on('BROKENWIRE',    onBrokenwire)
 })
 
 /* ---------- ③ 在 onUnmounted 里用同一引用解绑 ---------- */
 onUnmounted(() => {
-  window.electron.ipcRenderer.removeListener('PACK_SUMMARY',    onPackSummary)
-  window.electron.ipcRenderer.removeListener('BROKENWIRE', onBrokenwire)
+  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY',    onPackSummary)
+  window.electron.ipcRenderer.removeAllListeners('BROKENWIRE', onBrokenwire)
 })
 
 const { clusterOptions, selectedCluster } = useClusterSelect()
+
+/* —— 掉线信息状态转换函数 —— */
+function getBrokenwireDisplayValue(label, value, originalClass) {
+  // 采集掉线类型：0正常 1掉线 - 需要反转逻辑，但统一显示为"失联"
+  const collectionOfflineFields = [
+    '电压采集状态',
+    '温度采集状态',
+    '电压二级掉线',
+    '温度二级掉线'
+  ]
+
+  // 检查是否为采集掉线类型
+  const isCollectionOffline = collectionOfflineFields.some(field =>
+    originalClass.includes(field) || label.includes(field)
+  )
+  if (isCollectionOffline) {
+    return value === false ? '正常' : '失联'  // 反转逻辑：0正常 1失联
+  }
+
+  // 其他类型：使用原有逻辑（1正常 0失联）
+  return value === true ? '正常' : '失联'
+}
 
 /* —— 2. 分类常量 —— */
 const SKIP_CLASS      = new Set(['电压一级掉线', '温度一级掉线'])
@@ -110,8 +136,8 @@ const tableRows = computed(() => {
         if (!map.has(bmu)) map.set(bmu, [])
         map.get(bmu).push({
           label: renameLabel(e.label, originalCls),
-          value: e.value === true  ? '正常'
-                : e.value === false ? '失联'
+          value: typeof e.value === 'boolean'
+                ? getBrokenwireDisplayValue(e.label, e.value, originalCls)
                 : e.value
         })
       }
@@ -128,8 +154,8 @@ const tableRows = computed(() => {
       /* 4-2 普通分类 → 一张卡 */
       const ele = list.map(e => ({
         label: renameLabel(e.label, originalCls),
-        value: e.value === true  ? '正常'
-             : e.value === false ? '失联'
+        value: typeof e.value === 'boolean'
+             ? getBrokenwireDisplayValue(e.label, e.value, originalCls)
              : e.value
       }))
       rows.push({

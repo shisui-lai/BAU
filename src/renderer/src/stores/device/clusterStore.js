@@ -213,10 +213,11 @@ export const useClusterStore = defineStore('cluster', () => {
    * 清空所有簇选项
    */
   function clearClusterOptions() {
+    const oldSelected = selectedClusterForView.value
     availableClusters.value = []
     selectedClusterForView.value = null
     selectedClustersForWrite.value = []
-    console.log('[clusterStore] clearClusterOptions: cleared')
+    // console.log('🧹 [簇清理] 清空所有选项，之前选中:', oldSelected)
   }
 
   // ================== 自动选择逻辑 ==================
@@ -229,24 +230,34 @@ export const useClusterStore = defineStore('cluster', () => {
    * @returns {string} 最佳堆簇键值
    */
   function findBestCluster(clusters) {
-    if (!clusters || clusters.length === 0) return null
+    console.log('🎯 [智能选择] 开始智能选择，可用簇列表:', clusters)
+
+    if (!clusters || clusters.length === 0) {
+      console.log('🎯 [智能选择] 没有可用的簇，返回null')
+      return null
+    }
 
     // 提取所有键值
     const clusterKeys = clusters.map(c => c.value || c)
+    console.log('🎯 [智能选择] 提取的簇键值:', clusterKeys)
 
     // 优先级1：查找 1-1
     if (clusterKeys.includes('1-1')) {
+      console.log('🎯 [智能选择] 找到1-1，优先选择')
       return '1-1'
     }
 
     // 优先级2：查找 1-x（堆1的其他簇）
     const block1Clusters = clusterKeys.filter(key => key.startsWith('1-')).sort()
+    console.log('🎯 [智能选择] 堆1的簇:', block1Clusters)
     if (block1Clusters.length > 0) {
+      console.log('🎯 [智能选择] 选择堆1的第一个簇:', block1Clusters[0])
       return block1Clusters[0]
     }
 
     // 优先级3：选择最小的堆簇号
     const sortedClusters = clusterKeys.sort()
+
     return sortedClusters[0]
   }
 
@@ -254,22 +265,30 @@ export const useClusterStore = defineStore('cluster', () => {
    * 延迟自动选择堆簇
    */
   function scheduleAutoSelect() {
+
+
     // 清除之前的定时器
     if (autoSelectTimer) {
       clearTimeout(autoSelectTimer)
     }
 
-    // 100ms后进行智能选择
+    // 50ms后进行智能选择（减少延时）
     autoSelectTimer = setTimeout(() => {
+
       if (!selectedClusterForView.value && availableClusters.value.length > 0) {
         const bestCluster = findBestCluster(availableClusters.value)
         if (bestCluster) {
           selectedClusterForView.value = bestCluster
-          console.log(`[clusterStore] 自动选择设备: ${bestCluster}`)
+        } else {
+        }
+      } else {
+        if (selectedClusterForView.value) {
+        }
+        if (availableClusters.value.length === 0) {
         }
       }
       autoSelectTimer = null
-    }, 100)
+    }, 200) 
   }
 
   // ================== 选择管理 ==================
@@ -279,8 +298,14 @@ export const useClusterStore = defineStore('cluster', () => {
    * @param {string|null} clusterKey - 簇键值或null
    */
   function setSelectedClusterForView(clusterKey) {
+    const oldValue = selectedClusterForView.value
     selectedClusterForView.value = clusterKey
-    console.log('[clusterStore] setSelectedClusterForView:', clusterKey)
+    console.log('🔄 [簇选择] 设置选中簇:', {
+      from: oldValue,
+      to: clusterKey,
+      timestamp: new Date().toISOString(),
+      stack: new Error().stack.split('\n').slice(1, 6).map(line => line.trim())
+    })
   }
 
   /**
@@ -604,7 +629,7 @@ export const useClusterStore = defineStore('cluster', () => {
       return
     }
     currentPageType.value = pageType
-    console.log('[clusterStore] setCurrentPageType:', pageType)
+    // console.log('[clusterStore] setCurrentPageType:', pageType)
   }
 
   // ================== 工具方法 ==================
@@ -648,22 +673,23 @@ export const useClusterStore = defineStore('cluster', () => {
    */
   function initializeFromSystemConfig(config) {
     const { BlockCount, ClusterCount1, ClusterCount2 } = config
-    
+
     // 验证配置参数
     if (!BlockCount || BlockCount < 1) {
-      console.warn('[clusterStore] 无效的堆数配置:', BlockCount)
+      console.warn(' [簇配置] 无效的堆数配置:', BlockCount)
       clearClusterOptions()
       return
     }
-    
+
     // 清空现有选项
     clearClusterOptions()
-    
+
     // 根据配置生成簇选项
     const newOptions = []
-    
+
     // 第一堆的簇
     if (BlockCount >= 1 && ClusterCount1 > 0) {
+
       for (let cluster = 1; cluster <= ClusterCount1; cluster++) {
         newOptions.push({
           label: `堆1/簇${cluster}`,
@@ -673,9 +699,10 @@ export const useClusterStore = defineStore('cluster', () => {
         })
       }
     }
-    
+
     // 第二堆的簇（如果存在）
     if (BlockCount >= 2 && ClusterCount2 > 0) {
+
       for (let cluster = 1; cluster <= ClusterCount2; cluster++) {
         newOptions.push({
           label: `堆2/簇${cluster}`,
@@ -685,7 +712,7 @@ export const useClusterStore = defineStore('cluster', () => {
         })
       }
     }
-    
+
     // 排序并设置选项
     newOptions.sort((a, b) => {
       if (a.block !== b.block) {
@@ -693,10 +720,9 @@ export const useClusterStore = defineStore('cluster', () => {
       }
       return a.cluster - b.cluster
     })
-    
+
     availableClusters.value = newOptions
-    console.log('🔧 [簇配置] 生成选项:', newOptions.map(o => o.value))
-    
+
     // 触发自动选择最佳簇
     if (newOptions.length > 0) {
       scheduleAutoSelect()

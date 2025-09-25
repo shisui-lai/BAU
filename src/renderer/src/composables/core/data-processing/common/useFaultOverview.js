@@ -48,8 +48,8 @@ export function useFaultOverview() {
     'CellChargeUndertempFaultGrade': '单体电池充电欠温故障',
     'CellDischargeOvertempFaultGrade': '单体电池放电过温故障',
     'CellDischargeUndertempFaultGrade': '单体电池放电欠温故障',
-    'CellSocTooHighFaultGrade': '单体soc过高故障',
-    'CellSocTooLowFaultGrade': '单体soc过低故障',
+    'CellSocTooHighFaultGrade': '单体SOC过高故障',
+    'CellSocTooLowFaultGrade': '单体SOC过低故障',
 
   }
 
@@ -57,7 +57,7 @@ export function useFaultOverview() {
   const clusterFaultGradeNames = {
     'CellVoltageDiffFaultGrade': '单体电压压差故障',
     'CellTempDiffFaultGrade': '单体温度温差故障',
-    'CellSocDiffFaultGrade': '单体soc差故障',
+    'CellSocDiffFaultGrade': '单体SOC差故障',
     'PackVoltageDiffFaultGrade': '包端电压压差故障',
     'ClusterVoltageOverFaultGrade': '簇端电压过压故障',
     'ClusterVoltageUnderFaultGrade': '簇端电压欠压故障',
@@ -82,8 +82,8 @@ export function useFaultOverview() {
     'CellChargeUndertempFaultGrade': '单体电池充电欠温故障',
     'CellDischargeOvertempFaultGrade': '单体电池放电过温故障',
     'CellDischargeUndertempFaultGrade': '单体电池放电欠温故障',
-    'CellSocTooHighFaultGrade': '单体soc过高故障',
-    'CellSocTooLowFaultGrade': '单体soc过低故障'
+    'CellSocTooHighFaultGrade': '单体SOC过高故障',
+    'CellSocTooLowFaultGrade': '单体SOC过低故障'
   }
 
   // 辅助函数：从字段名获取故障等级名称
@@ -103,16 +103,71 @@ export function useFaultOverview() {
         color: 'normal'  // 绿色
       }))
     }
-    
+
     const data = blockGradeData.value.data
     const faults = []
-    
+
+    // 处理新的数组格式数据 [{ class, element: [{ label, value }] }]
+    // 先将数组格式转换为键值对格式，便于查找
+    const flatData = {}
+    if (Array.isArray(data)) {
+      data.forEach(section => {
+        if (section.element && Array.isArray(section.element)) {
+          section.element.forEach(item => {
+            // 🚀 优化：通过label直接映射到key，不依赖于完全匹配
+            // 建立label到key的映射关系
+            const labelToKeyMap = {
+              '簇间压差过大故障等级': 'ClusterInterVoltageDiffFaultGrade',
+              '簇间电流差异过大故障等级': 'ClusterInterCurrentDiffFaultGrade',
+              '单体电压压差故障等级': 'CellVoltageDiffFaultGrade',
+              '单体温度温差故障等级': 'CellTempDiffFaultGrade',
+              '单体soc差故障等级': 'CellSocDiffFaultGrade',
+              '包端电压压差故障等级': 'PackVoltageDiffFaultGrade',
+              '簇端电压过压故障等级': 'ClusterVoltageOverFaultGrade',
+              '簇端电压欠压故障等级': 'ClusterVoltageUnderFaultGrade',
+              '绝缘电阻正对地报警等级': 'InsulationResistancePosFaultGrade',
+              '绝缘电阻负对地报警等级': 'InsulationResistanceNegFaultGrade',
+              '充电过流故障等级': 'ChargeOvercurrentFaultGrade',
+              '放电过流故障等级': 'DischargeOvercurrentFaultGrade',
+              'BCU RT1过温告警等级': 'BcuRt1OvertempFaultGrade',
+              'BCU RT2过温告警等级': 'BcuRt2OvertempFaultGrade',
+              'BCU RT3过温告警等级': 'BcuRt3OvertempFaultGrade',
+              'BCU RT4过温告警等级': 'BcuRt4OvertempFaultGrade',
+              'BCU RT5过温告警等级': 'BcuRt5OvertempFaultGrade',
+              '包过压故障等级': 'PackOvervoltageFaultGrade',
+              '包欠压故障等级': 'PackUndervoltageFaultGrade',
+              '包过温故障等级': 'PackOvertempFaultGrade',
+              '包欠温故障等级': 'PackUndertempFaultGrade',
+              '动力接插件正极过温故障等级': 'PackPowerConnectorPosOvertempFaultGrade',
+              '动力接插件负极过温故障等级': 'PackPowerConnectorNegOvertempFaultGrade',
+              '单体电池过压故障等级': 'CellOvervoltageFaultGrade',
+              '单体电池欠压故障等级': 'CellUndervoltageFaultGrade',
+              '单体电池充电过温故障等级': 'CellChargeOvertempFaultGrade',
+              '单体电池充电欠温故障等级': 'CellChargeUndertempFaultGrade',
+              '单体电池放电过温故障等级': 'CellDischargeOvertempFaultGrade',
+              '单体电池放电欠温故障等级': 'CellDischargeUndertempFaultGrade',
+              '单体SOC过高故障等级': 'CellSocTooHighFaultGrade',
+              '单体SOC过低故障等级': 'CellSocTooLowFaultGrade'
+            }
+
+            const key = labelToKeyMap[item.label]
+            if (key) {
+              flatData[key] = item.value
+            }
+          })
+        }
+      })
+    } else {
+      // 兼容旧格式（对象格式）
+      Object.assign(flatData, data)
+    }
+
     // 处理所有29个故障项
     Object.keys(faultGradeNames).forEach(key => {
-      const faultData = data[key]
+      const faultData = flatData[key]
       // 处理bits对象格式：{ raw: 数字, txt: '字符串' }
-      const level = faultData && typeof faultData === 'object' && 'raw' in faultData 
-        ? faultData.raw 
+      const level = faultData && typeof faultData === 'object' && 'raw' in faultData
+        ? faultData.raw
         : (faultData || 0)
       faults.push({
         name: faultGradeNames[key],
@@ -120,7 +175,7 @@ export function useFaultOverview() {
         color: getFaultLevelColor(level)
       })
     })
-    
+
     return faults
   })
 
@@ -132,37 +187,97 @@ export function useFaultOverview() {
     if (!clusterGradeData.value.data) {
       const defaultClusters = []
       const clusterCount = 1  // 默认1个簇
-    
+
     for (let i = 1; i <= clusterCount; i++) {
         const clusterFaults = Object.values(clusterFaultGradeNames).map(name => ({
           name: name,
           level: 0,  // 正常状态
           color: 'normal'  // 绿色
         }))
-        
+
         defaultClusters.push({
-        id: i, 
+        id: i,
           faults: clusterFaults
         })
       }
-      
+
       return defaultClusters
     }
-    
+
     const data = clusterGradeData.value.data
     const clusterCount = clusterGradeData.value.baseConfig?.clusterCount || 0
     const clusters = []
-    
+
+    // 处理新的数组格式数据 [{ class, element: [{ label, value }] }]
+    // 先将数组格式转换为键值对格式，便于查找
+    const flatData = {}
+    if (Array.isArray(data)) {
+      data.forEach(section => {
+        if (section.element && Array.isArray(section.element)) {
+          section.element.forEach(item => {
+            // 从section.class中提取簇号，例如："第1簇模拟量故障等级1" -> 1
+            const clusterMatch = section.class.match(/第(\d+)簇/)
+            if (clusterMatch) {
+              const clusterNum = parseInt(clusterMatch[1])
+
+              // 🚀 优化：通过label直接映射到baseKey，不依赖于完全匹配
+              // 建立label到baseKey的映射关系（簇级故障，不包含簇间故障）
+              const labelToBaseKeyMap = {
+                '单体电压压差故障等级': 'CellVoltageDiffFaultGrade',
+                '单体温度温差故障等级': 'CellTempDiffFaultGrade',
+                '单体soc差故障等级': 'CellSocDiffFaultGrade',
+                '包端电压压差故障等级': 'PackVoltageDiffFaultGrade',
+                '簇端电压过压故障等级': 'ClusterVoltageOverFaultGrade',
+                '簇端电压欠压故障等级': 'ClusterVoltageUnderFaultGrade',
+                '绝缘电阻正对地报警等级': 'InsulationResistancePosFaultGrade',
+                '绝缘电阻负对地报警等级': 'InsulationResistanceNegFaultGrade',
+                '充电过流故障等级': 'ChargeOvercurrentFaultGrade',
+                '放电过流故障等级': 'DischargeOvercurrentFaultGrade',
+                'BCU RT1过温告警等级': 'BcuRt1OvertempFaultGrade',
+                'BCU RT2过温告警等级': 'BcuRt2OvertempFaultGrade',
+                'BCU RT3过温告警等级': 'BcuRt3OvertempFaultGrade',
+                'BCU RT4过温告警等级': 'BcuRt4OvertempFaultGrade',
+                'BCU RT5过温告警等级': 'BcuRt5OvertempFaultGrade',
+                '包过压故障等级': 'PackOvervoltageFaultGrade',
+                '包欠压故障等级': 'PackUndervoltageFaultGrade',
+                '包过温故障等级': 'PackOvertempFaultGrade',
+                '包欠温故障等级': 'PackUndertempFaultGrade',
+                '动力接插件正极过温故障等级': 'PackPowerConnectorPosOvertempFaultGrade',
+                '动力接插件负极过温故障等级': 'PackPowerConnectorNegOvertempFaultGrade',
+                '单体电池过压故障等级': 'CellOvervoltageFaultGrade',
+                '单体电池欠压故障等级': 'CellUndervoltageFaultGrade',
+                '单体电池充电过温故障等级': 'CellChargeOvertempFaultGrade',
+                '单体电池充电欠温故障等级': 'CellChargeUndertempFaultGrade',
+                '单体电池放电过温故障等级': 'CellDischargeOvertempFaultGrade',
+                '单体电池放电欠温故障等级': 'CellDischargeUndertempFaultGrade',
+                '单体SOC过高故障等级': 'CellSocTooHighFaultGrade',
+                '单体SOC过低故障等级': 'CellSocTooLowFaultGrade'
+              }
+
+              const baseKey = labelToBaseKeyMap[item.label]
+              if (baseKey) {
+                const clusterKey = `Cluster${clusterNum}${baseKey}`
+                flatData[clusterKey] = item.value
+              }
+            }
+          })
+        }
+      })
+    } else {
+      // 兼容旧格式（对象格式）
+      Object.assign(flatData, data)
+    }
+
     for (let i = 1; i <= clusterCount; i++) {
       const clusterFaults = []
-      
+
              // 处理所有27个故障项
        Object.keys(clusterFaultGradeNames).forEach(key => {
          const clusterKey = `Cluster${i}${key}`
-         const faultData = data[clusterKey]
+         const faultData = flatData[clusterKey]
          // 处理bits对象格式：{ raw: 数字, txt: '字符串' }
-         const level = faultData && typeof faultData === 'object' && 'raw' in faultData 
-           ? faultData.raw 
+         const level = faultData && typeof faultData === 'object' && 'raw' in faultData
+           ? faultData.raw
            : (faultData || 0)
          clusterFaults.push({
            name: clusterFaultGradeNames[key],
@@ -170,13 +285,13 @@ export function useFaultOverview() {
            color: getFaultLevelColor(level)
          })
       })
-      
-      clusters.push({ 
-        id: i, 
+
+      clusters.push({
+        id: i,
         faults: clusterFaults
       })
     }
-    
+
     return clusters
   })
 

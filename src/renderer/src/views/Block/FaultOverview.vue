@@ -161,7 +161,7 @@ const unsubscribeFromMqttTopics = () => {
   ]
   
   faultTopics.forEach(topic => {
-    window.electron.ipcRenderer.removeListener(topic, handleFaultData)
+    window.electron.ipcRenderer.removeAllListeners(topic, handleFaultData)
   })
   
   console.log('已取消订阅MQTT故障主题')

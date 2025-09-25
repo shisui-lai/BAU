@@ -2,10 +2,10 @@ import { fileURLToPath, URL } from 'node:url'
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
-import path from 'path'
 
 export default defineConfig({
   build: {
+    sourcemap: true, // 启用 Source Map
     rollupOptions: {
       external: ['fsevents'] // 将 fsevents 设置为外部模块
     }
@@ -16,29 +16,28 @@ export default defineConfig({
     }
   },
   main: {
-    // 核心修改：显式声明主进程入口文件
-    /*    build: {
+    // 主进程配置：使用单一入口点，FTP服务器作为模块导入
+    build: {
+      sourcemap: true, // 主进程启用 Source Map
       rollupOptions: {
-        input: {
-          index: './src/main/index.js',
-          mbstask: './src/main/mbstask.js',
-          dataExport: './src/main/dataExport.js' // 新增入口
-        }
+        input: './src/main/index.js' // 单一入口点，避免生成多个可执行文件
       }
-    }, */
+    },
     plugins: [externalizeDepsPlugin()]
   },
   preload: {
-    /*     build: {
+    build: {
+      sourcemap: true, // 预加载脚本启用 Source Map
       rollupOptions: {
-        input: {
-          index: './src/preload/index.js' // 确保路径正确
-        }
+        input: './src/preload/index.js' // 单一入口点
       }
-    }, */
+    },
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    build: {
+      sourcemap: true // 渲染进程启用 Source Map
+    },
     resolve: {
       alias: {
         '@renderer': resolve('src/renderer/src'),

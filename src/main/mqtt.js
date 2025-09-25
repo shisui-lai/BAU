@@ -1,16 +1,18 @@
 // 该文件用于在子进程中处理 MQTT 消息的订阅、解析与转发（主→渲染），并提供发布与连接管理能力
-import { PACK_SUMMARY, IO_STATUS_SCHEMA, HARDWARE_FAULT_SCHEMA, FAULT_LEVEL2_SCHEMA, BROKENWIRE_SCHEMA, BALANCE_STATUS_SCHEMA
-   } from './packSchemaFactory'
-  import { processPackSummaryRAW ,processIoStatusRAW, processHardwareFaultRAW, processSecondFaultRAW, processThirdFaultRAW,
+import { PACK_SUMMARY, IO_STATUS_SCHEMA, /*HARDWARE_FAULT_SCHEMA,*/ FAULT_LEVEL2_SCHEMA, BROKENWIRE_SCHEMA, BALANCE_STATUS_SCHEMA } from './packSchemaFactory'
+import { OUT_FAULT_MAP, SAVED_FAULT_MAP } from './table.js'
+import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/ processSecondFaultRAW, processThirdFaultRAW,
     processBrokenwireRAW, parseSysBaseParamRAW, processBalanceRAW, parseWriteResponse,
     parseClusterDnsParamRAW,parsePackDnsParamRAW,parseCellDnsParamRAW,
     parseRealTimeSaveRAW,parseSOXCfgParamRAW,parseSOCCfgParamRAW,parseSOHCfgParamRAW,
-    createRemoteCommandParser, createQueryCommandParser, parseByTable,groupByClass, toBuf, dv, pick, g,
+    createRemoteCommandParser, createQueryCommandParser, parseByTable,groupByClass, toBuf, dv, pick,
     parseBlockSummaryRAW, parseBlockVersionRAW, parseBlockSysAbstractRAW, processBlockIoStatusRAW,
     parseCluAnalogFaultLevelSumRAW, parseBlockAnalogFaultLevelRAW, parseBlockAnalogFaultGradeRAW,
     parseCluAnalogFaultGradeRAW, parseBlockCommonParamRAW, parseBlockTimeCfgRAW, parseBlockPortCfgRAW, parseBlockDnsParamRAW,
-    parseBlockBattParamRAW, parseBlockCommDevCfgRAW, parseBlockOperateCfgRAW } from '../protocol/utils'
-  import { sendToParent, flushThrottlers, cancelThrottlers } from '../protocol/ipcThrottler.js'
+    parseBlockBattParamRAW, parseBlockCommDevCfgRAW, parseBlockOperateCfgRAW,
+    processBcuAdaptiveQueryResult, processBmuAdaptiveQueryResult,
+    processCellVoltageRAW, processCellTemperatureRAW, processCellSocRAW, processCellSohRAW, parseFactoryCalibrationRAW } from '../protocol/utils'
+  import { sendToParent, flushThrottlers, cancelThrottlers, setBackgroundMode } from '../protocol/ipcThrottler.js'
   import mqtt from 'mqtt'
   import { 
            BLOCK_COMMON_PARAM_R,//BAU通用参数配置
@@ -26,7 +28,8 @@ import { PACK_SUMMARY, IO_STATUS_SCHEMA, HARDWARE_FAULT_SCHEMA, FAULT_LEVEL2_SCH
           //  CELL_ALARM_PARAM, //单体电芯报警参数
 
           //  IO_STATUS, //IO相关状态
-          //  HARDWARE_FAULT, 
+          //协议修改删除 - HARDWARE_FAULT不再使用
+          //  HARDWARE_FAULT,
            TOTAL_FAULT,
            FAULT_LEVEL1,
           //  FAULT_LEVEL2,
@@ -44,121 +47,16 @@ import { PACK_SUMMARY, IO_STATUS_SCHEMA, HARDWARE_FAULT_SCHEMA, FAULT_LEVEL2_SCH
            SOX_CFG_PARAM_R,         // SOX算法配置参数表
            SOC_CFG_PARAM_R,         // SOC算法配置参数表
            SOH_CFG_PARAM_R,         // SOH算法配置参数表
+           FACTORY_CALIB_PARAM_R,   // 出厂校正参数表 //协议修改新增
 
            ERROR_CODES,
            BLOCK_HARDWARE_FAULT,    // 堆硬件故障
            BLOCK_TOTAL_FAULT,       // 堆总故障
+           BLOCK_COMM_LOST,         // 簇通讯失联
+           DI_DO_TEMP_STATUS,       // 协议修改新增 - DI/DO/温度状态
         } from './table.js'
 
   const util = require('util');
-
-  function processCellData(hex, res, tag='cell') {
-    const buf  = toBuf(hex);
-    const view = dv(buf);
-
-    /*  解析表头 */
-    const { baseConfig, nextOffset } = parseByTable(view, CELL_HEADER);
-
-    // console.log(baseConfig)
-    // console.log(`buf.byteLength = ${baseConfig.dataLength}, nextOffset = ${baseConfig.nextOffset}, expected total bytes = ${nextOffset + baseConfig.totalCell * 2}`);
-
-    // 提取 & 删除 AFE-Cell/Temp 原始键
-    const afeCellCounts = [], afeTempCounts = [];
-    for (let i = 1; i <= 16; i++) {
-      afeCellCounts.push(baseConfig[`afeCell${i}`]);
-      afeTempCounts.push(baseConfig[`afeTemp${i}`]);
-      delete baseConfig[`afeCell${i}`];
-      delete baseConfig[`afeTemp${i}`];
-    }
-    Object.assign(baseConfig, { afeCellCounts, afeTempCounts });
-
-    /*  解析 N 个寄存器 */
-    const valueArr = [];
-    for (let i = 0; i < baseConfig.totalCell; i++) {
-      const raw = pick.u16(view, nextOffset + i * 2);
-      valueArr.push((raw * res).toFixed(res < 0.01 ? 3 : 1) * 1);
-    }
-
-    /*  组装成 BMU-AFE-Cell 树 */
-    const data = [];
-    let idx = 0;
-    for (let b = 1; b <= baseConfig.bmuTotal; b++) {
-      for (let a = 1; a <= baseConfig.afePerBmu; a++) {
-        const cellNum = afeCellCounts[a - 1] || 0;
-        if (!cellNum) continue;
-        data.push({
-          bmuId  : b,
-          afeId  : a,
-          class: tag.toUpperCase(),
-          element: Array.from({ length: cellNum }, (_, i) => ({
-            label:`#${i+1}`, value: valueArr[idx + i] ?? '-'
-          }))
-        });
-        idx += cellNum;
-      }
-    }
-
-    const parsed = { baseConfig, data };
-    // console.log(` 完整结构(${tag}):`, JSON.stringify(parsed, null, 2));
-    return parsed;
-  }
-
-  function processTempData(hex, res) {
-  const buf  = toBuf(hex);
-  const view = dv(buf);
-  const { baseConfig, nextOffset } = parseByTable(view, CELL_HEADER);
-
-  // 提取 & 删除 AFE-Cell/Temp 原始键
-  const afeCellCounts = [], afeTempCounts = [];
-  for (let i = 1; i <= 16; i++) {
-    afeCellCounts.push(baseConfig[`afeCell${i}`]);
-    afeTempCounts.push(baseConfig[`afeTemp${i}`]);
-    delete baseConfig[`afeCell${i}`];
-    delete baseConfig[`afeTemp${i}`];
-  }
-  Object.assign(baseConfig, { afeCellCounts, afeTempCounts });
-
-  // 使用 totalTemp 并加边界校验
-  const totalCount = baseConfig.totalTemp;
-  const remaining = view.byteLength - nextOffset;
-  const maxCount = Math.floor(remaining / 2);
-  const count = Math.min(totalCount, maxCount);
-
-  const valueArr = [];
-  for (let i = 0; i < count; i++) {
-    const raw = pick.s16(view, nextOffset + i * 2);
-    valueArr.push((raw * res).toFixed(res < 0.01 ? 3 : 1) * 1);
-  }
-
-  // 构建 BMU-AFE-Temp 树
-  const data = [];
-  let idx = 0;
-  for (let b = 1; b <= baseConfig.bmuTotal; b++) {
-    for (let a = 1; a <= baseConfig.afePerBmu; a++) {
-      const tempNum = afeTempCounts[a - 1] || 0;  
-      if (!tempNum) continue;
-      data.push({
-        bmuId : b,
-        afeId : a,
-        class : 'TEMP',
-        element : Array.from({ length: tempNum }, (_, i) => ({
-          label: `#${i+1}`, 
-          value: valueArr[idx + i] ?? '-'
-        }))
-      });
-      idx += tempNum;
-    }
-  }
-
-  const parsed = { baseConfig, data };
-  // console.log(`完整结构(temp):`, JSON.stringify(parsed, null, 2));
-  return parsed;
-}
-
-  const processVoltageData   = hex => processCellData(hex, 0.001, 'volt'); // 电压 0.001 V
-  const processTemperatureData = hex => processTempData(hex, 0.1); // 温度 0.1 ℃
-  const processSocData         = hex => processCellData(hex, 0.1,   'soc');  // SOC 0.1 %
-  const processSohData         = hex => processCellData(hex, 0.1,   'soh');  // SOH 0.1 %
 
 
 
@@ -168,7 +66,7 @@ function withResponseCheck(fn) {
     const buf = Buffer.from(hex.replace(/\s+/g, ''), 'hex');
     if (buf.byteLength === 1) {
       const code = buf.readUInt8(0);
-      // ✅ 修改：保持与成功响应相同的结构
+      //  修改：保持与成功响应相同的结构
       return {
         error: true,
         baseConfig: {},     // 空的baseConfig，保持结构一致
@@ -194,34 +92,19 @@ function withResponseCheck(fn) {
     if (defaultClass === undefined) {
       defaultClass = '配置';
     }
-    // console.log(` 原始数据：`, hex);
 
     // ---------- 把十六进制字符串转成 DataView ----------
     var buf = toBuf(hex);   // Buffer
     var view = dv(buf);     // DataView
-    // console.log('实际长度: ',   buf.length);
-    // console.log('parseByTable end offset =', off, 'buffer byteLength=', view.byteLength)
-
+    
     // ---------- 1. 先读取 2 字节的 DataLength ----------
     var headResult = parseByTable(view, [{ key: 'DataLength', type: 'u16' }]);
     var baseConfig = headResult.baseConfig;
     var offset     = headResult.nextOffset;
-
+    
     // ---------- 2. 按表定义解析正文 ----------
     var bodyResult = parseByTable(view, table, offset);
     var flat       = bodyResult.baseConfig;
-
-    // 添加hall相关字段的打印
-    // if (flat.CANHallName !== undefined) {
-    //   console.log('🔥🔥🔥 [HALL_DEBUG] Hall名称 🔥🔥🔥');
-    //   console.log('解析前原始数据:', hex);
-    //   console.log('解析后结果:', flat.CANHallName);
-    // }
-    // if (flat.CANHallSW !== undefined) {
-    //   console.log('🔥🔥🔥 [HALL_DEBUG] Hall软件 🔥🔥🔥');
-    //   console.log('解析前原始数据:', hex);
-    //   console.log('解析后结果:', flat.CANHallSW);
-    // }
 
     const dataArr = groupByClass(table, flat)
     return {
@@ -234,21 +117,28 @@ function withResponseCheck(fn) {
 
   const thirdL3 = (kind) => (hex) => processThirdFaultRAW(hex, kind);
 
-  // 具体实现 
-  // 堆通用配置参数读取：从 utils 中导入解析函数，并保持与 sys_base_param_r 一致
   const processBlockCommonParamData = withResponseCheck(buf => parseBlockCommonParamRAW(buf));
   const processSysAbstractData   = hex => parseConfigSection(hex, SYS_ABSTRACT,   '系统概要');
   const processClusterSummaryData   = hex => parseConfigSection(hex, CLUSTER_SUMMARY,   '簇端概要');
   const processBlockBattParamData = hex => parseConfigSection(hex, BLOCK_BATT_PARAM_R, '电池堆配置参数(1/2)');
   const processPackSummaryData   = hex => processPackSummaryRAW(hex, PACK_SUMMARY,   'Pack端概要');
   const processIoStatusData   = hex => processIoStatusRAW(hex, IO_STATUS_SCHEMA,   'IO概要');
-  const processHardwareFaultData = hex => processHardwareFaultRAW (hex, HARDWARE_FAULT_SCHEMA,  '硬件故障');
+  //协议修改删除 - 硬件故障不再使用，改为接触器详细故障等新结构
+  // const processHardwareFaultData = hex => processHardwareFaultRAW (hex, HARDWARE_FAULT_SCHEMA,  '硬件故障');
   const processTotalFaultData    = hex => parseConfigSection(hex, TOTAL_FAULT,    '总/保留故障');
   const processFaultLevel1Data   = hex => parseConfigSection(hex, FAULT_LEVEL1,   '常规一级故障');
+  //协议修改新增 - DI/DO/温度状态处理函数
+  const processDIDoTempStatusData = hex => parseConfigSection(hex, DI_DO_TEMP_STATUS, 'DI/DO/温度状态');
+  //协议修改新增 - 故障map处理函数
+  const processOutFaultMapData = hex => parseConfigSection(hex, OUT_FAULT_MAP, '输出的故障map');
+
+  const processSavedFaultMapData = hex => parseConfigSection(hex, SAVED_FAULT_MAP, '保留故障map');
   
   // 堆故障处理函数
   const processBlockHardwareFaultData = hex => parseConfigSection(hex, BLOCK_HARDWARE_FAULT, '堆硬件故障');
   const processBlockTotalFaultData    = hex => parseConfigSection(hex, BLOCK_TOTAL_FAULT,    '堆总故障');
+  // 簇通讯失联处理函数
+  const processBlockCommLostData      = hex => parseConfigSection(hex, BLOCK_COMM_LOST,      '簇通讯失联');
   const processFaultLevel2Data   = hex => processSecondFaultRAW(hex, FAULT_LEVEL2_SCHEMA,   '常规二级故障');
   const processBrokenWireData   = hex => processBrokenwireRAW(hex, BROKENWIRE_SCHEMA,   '掉线信息');
   const processBalanceStatusData = hex => processBalanceRAW(hex, BALANCE_STATUS_SCHEMA, '均衡状态');
@@ -264,6 +154,7 @@ function withResponseCheck(fn) {
   const processSOXCfgParamData = withResponseCheck(buf => parseSOXCfgParamRAW(buf));
   const processSOCCfgParamData = withResponseCheck(buf => parseSOCCfgParamRAW(buf));
   const processSOHCfgParamData = withResponseCheck(buf => parseSOHCfgParamRAW(buf));
+  const processFactoryCalibParamData = withResponseCheck(buf => parseFactoryCalibrationRAW(buf.toString('hex'))); //协议修改新增
 
     /* ---------- 8 种三级故障：自动带入 kind ---------- */
   const parseCellOv_L3   = thirdL3('cell_ov');
@@ -275,6 +166,7 @@ function withResponseCheck(fn) {
   const parseSocOver_L3  = thirdL3('soc_over');
   const parseSocUnder_L3 = thirdL3('soc_under');
 
+  
     // 加一个可选参数 maxArr ，默认只展开前 20 项
   function logCompact(tag, obj, maxArr = 300) {
     const util = require('util');
@@ -289,27 +181,28 @@ function withResponseCheck(fn) {
     console.groupEnd();
   }
 
-  function forward(channel, payload) {
-    // 频道 = dataType，例如 'PACK_SUMMARY'
-    process.send({ type: channel, data: payload });   // 使用 Structured-Clone 传对象 :contentReference[oaicite:0]{index=0}
-  }
-
 
   //通过topic找对应的解析函数
   const TOPIC_TABLE_MAP = {
-    // //遥测
-    cell_volt      : processVoltageData,
-    cell_temp : processTemperatureData,
-    cell_soc  : processSocData,
-    cell_soh  : processSohData,
+    // //遥测 - 使用utils.js中的标准化解析函数
+    cell_volt      : processCellVoltageRAW,
+    cell_temp : processCellTemperatureRAW,
+    cell_soc  : processCellSocRAW,
+    cell_soh  : processCellSohRAW,
     sys_abstract   :  processSysAbstractData,
     cluster_summary:  processClusterSummaryData,
     pack_summary:  processPackSummaryRAW,
 
     // // //遥信
     io_status:  processIoStatusRAW,
-    hardware_fault:  processHardwareFaultRAW  ,
+    //协议修改删除 - hardware_fault不再使用
+    // hardware_fault:  processHardwareFaultRAW  ,
     total_fault:  processTotalFaultData,
+    //协议修改新增 - DI/DO/温度状态
+    di_do_temp_status: processDIDoTempStatusData,
+    //协议修改新增 - 故障map
+    output_fault_map: processOutFaultMapData,
+    saved_fault_map: processSavedFaultMapData,
     fault_level1:  processFaultLevel1Data,
     fault_level2:  processSecondFaultRAW,
     
@@ -328,7 +221,7 @@ function withResponseCheck(fn) {
     soc_under_fault_level3 : parseSocUnder_L3,
 
     
-    // brokenwire:  processBrokenwireRAW,
+    brokenwire:  processBrokenwireRAW,
     balance_status:  processBalanceRAW,
 
     //遥调
@@ -364,10 +257,12 @@ function withResponseCheck(fn) {
     sox_cfg_param_r:  processSOXCfgParamData,
     soc_cfg_param_r:  processSOCCfgParamData,
     soh_cfg_param_r:  processSOHCfgParamData,
+    factory_calib_param_r:  processFactoryCalibParamData, //协议修改新增
     real_time_save_w:  parseWriteResponse,
     sox_cfg_param_w:  parseWriteResponse,
     soc_cfg_param_w:  parseWriteResponse,
     soh_cfg_param_w:  parseWriteResponse,
+    factory_calib_param_w:  parseWriteResponse, //协议修改新增
 
     // ========== 遥控命令响应处理器 ==========
     // 接触器控制 - BAU应答
@@ -382,7 +277,9 @@ function withResponseCheck(fn) {
     brokenwire_detect_en: createRemoteCommandParser('brokenwire_detect_en'),
 
     // 测试模式控制 - BAU应答
+    contactor_ctrl_test: createRemoteCommandParser('contactor_ctrl_test'),
     hsd_lsd_ctrl_test: createRemoteCommandParser('hsd_lsd_ctrl_test'),
+    io_ctrl_test: createRemoteCommandParser('io_ctrl_test'),
 
     // 故障控制 - BAU应答
     force_clear_bcu_fault: createRemoteCommandParser('force_clear_bcu_fault'),
@@ -401,6 +298,7 @@ function withResponseCheck(fn) {
     // 反馈查询应答处理器 - BAU应答
     get_contactor_ctrl_result: createQueryCommandParser('get_contactor_ctrl_result'),
     get_insulation_detect_result: createQueryCommandParser('get_insulation_detect_result'),
+    get_sys_run_mode: createQueryCommandParser('get_sys_run_mode'),
 
 
     // 堆汇总信息
@@ -444,8 +342,32 @@ function withResponseCheck(fn) {
     reset_block_param: createRemoteCommandParser('reset_block_param'),
     // 周期性绝缘电阻检测 - BAU应答
     period_ins_detect_en: createRemoteCommandParser('period_ins_detect_en'),
+    // 下设接触器自检指令 - BAU应答
+    contactor_selftest_en: createRemoteCommandParser('contactor_selftest_en'),
+    // 下设重启BAU指令 - BAU应答
+    reset_bau: createRemoteCommandParser('reset_bau'),
+    // 下设手动控制SD卡记录 - BAU应答
+    manual_ctrl_sd_record: createRemoteCommandParser('manual_ctrl_sd_record'),
+    // 下设堆SOC - BAU应答
+    set_block_soc: createRemoteCommandParser('set_block_soc'),
     // 堆模式反馈查询应答处理器 - BAU应答
     get_batt_stack_ctrl_switch_result: createQueryCommandParser('get_batt_stack_ctrl_switch_result'),
+    // 升级应答处理器 - BAU应答
+    upgrade: createRemoteCommandParser('upgrade'),
+
+    // BCU地址自适应查询结果 
+    get_bcu_adaptive_addr_result: processBcuAdaptiveQueryResult,
+    // BMU地址自适应查询结果 
+    get_bmu_adaptive_addr_result: processBmuAdaptiveQueryResult,
+
+    // 簇通讯失联信息 
+    block_comm_lost: processBlockCommLostData,
+
+    // BCU地址自适应 - BAU应答
+    bcu_adaptive_addr: createRemoteCommandParser('bcu_adaptive_addr'),
+
+    // BMU地址自适应 - BAU应答
+    bmu_adaptive_addr: createRemoteCommandParser('bmu_adaptive_addr'),
 
   }
 
@@ -454,6 +376,7 @@ function withResponseCheck(fn) {
   let client = null
   let currentConfig = null
   let isConnected = false
+  let isBackgroundMode = false // 后台模式标识
 
   // 动态连接函数
   function connectMqtt(config) {
@@ -476,9 +399,10 @@ function withResponseCheck(fn) {
           username: config.username,
           password: config.password,
           clientId: config.clientId,
-          keepalive: config.keepalive || 60,
-          connectTimeout: 10000, // 10秒连接超时
-          reconnectPeriod: 0 // 禁用自动重连，由前端控制
+          keepalive: config.keepalive || 30,
+          connectTimeout: 5000, // 5秒连接超时，更快检测连接失败
+          reconnectPeriod: 0, // 禁用自动重连，由前端控制
+          clean: false // 保持会话持久化，确保设备重连后消息路由正常
         })
         
         console.log('[MQTT Child]  MQTT客户端已创建，等待连接事件...')
@@ -521,14 +445,14 @@ function withResponseCheck(fn) {
         // 连接超时处理
         setTimeout(() => {
           if (!isConnected) {
-            console.error('[MQTT Child]  连接超时 (10秒)')
+            console.error('[MQTT Child]  连接超时 (5秒)')
             if (client) {
               client.end(true)
               client.removeAllListeners()
             }
             reject(new Error('连接超时'))
           }
-        }, 10000)
+        }, 5000)
 
         // 连接关闭事件
         client.on('close', () => {
@@ -577,8 +501,9 @@ function withResponseCheck(fn) {
         username: config.username,
         password: config.password,
         clientId: config.clientId + '_test',
-        keepalive: config.keepalive || 60,
-        connectTimeout: 5000 // 5秒超时
+        keepalive: config.keepalive || 30,
+        connectTimeout: 5000, // 5秒超时
+        clean: true // 测试连接使用clean session，避免影响正式连接
       })
 
       const timeout = setTimeout(() => {
@@ -609,19 +534,23 @@ function withResponseCheck(fn) {
       if (!isConnected || !client) {
         return
       }
-      
+
+
+
     const parts = topic.split('/')
     const suffix    = parts.at(-1)               // cell_volt / sys_abstract / …
     const blockId   = Number(parts[3].slice(1))  // b1 -> 1
-    
+
     // 堆级数据没有簇号，簇级数据有簇号
     let clusterId = 0  // 默认值
     if (parts.length > 4 && parts[4].startsWith('c')) {
       clusterId = Number(parts[4].slice(1))  // c1 -> 1
     }
-    
+
+
+
     const tRecv = performance.now(); //收到时间戳
-    const dataType = suffix.toUpperCase();          
+    const dataType = suffix.toUpperCase();
     const buf      = payload;
     const len      = buf.length;
     const hex      = buf.toString('hex');
@@ -630,10 +559,9 @@ function withResponseCheck(fn) {
      /*  读取 / 遥测 / 遥信：按 TOPIC_TABLE_MAP 常规解析 —— */
     const parseFun  = TOPIC_TABLE_MAP[suffix]
     if (!parseFun) {
-      // console.warn(`[SKIP] 未注册解析表: ${suffix}`);
-      return;                                        
-    }                      
-
+      // console.warn(`[MQTT Child] ⚠️ 跳过未知消息 - 未注册解析表: ${suffix}`);
+      return;
+    }
 
   let result;
   try {
@@ -642,25 +570,26 @@ function withResponseCheck(fn) {
   } catch (err) {
     console.error(
       `[PARSE_ERR] ${dataType} len=${len} topic=${topic}\n` +
-      `hex=${hex.slice(0, 40)}...`,      // 打印前 20 Byte 
+      `hex=${hex.slice(0, 40)}...`,      // 打印前 20 Byte
       err                                // 堆栈
     )
     // console.log(hex);
-    return                               
+    return
   }
 
-  const tParsed = performance.now(); 
-  const { baseConfig, data } = result    
+  const tParsed = performance.now();
+  const { baseConfig, data } = result
 
     const msg = {
-      blockId, 
+      blockId,
       clusterId,
       dataType: suffix.toUpperCase(),//转大写
-      topic, 
-      baseConfig, 
+      topic,
+      baseConfig,
       data,
       tRecv,
-      tParsed 
+      tParsed,
+      payloadSize: len  // 添加原始MQTT payload字节大小
     }
 
     sendToParent(msg)
@@ -673,7 +602,14 @@ function withResponseCheck(fn) {
 
     /* --- 接收主进程指令 --- */
     process.on('message', (message) => {
-      const { cmd, topic, payloadHex, config } = message
+      const { cmd, topic, payloadHex, config, type, data, isBackground } = message
+      
+      // 设置后台模式
+      if (cmd === 'SET_BACKGROUND_MODE') {
+        isBackgroundMode = isBackground
+        setBackgroundMode(isBackground) // 同步到限流器
+        return
+      }
       
       // console.log('[MQTT Child]  收到主进程指令:', cmd)
       
@@ -705,6 +641,8 @@ function withResponseCheck(fn) {
         })
         return
       }
+      
+      // 升级功能已简化，复用现有的MQTT_PUBLISH逻辑
       
       // 原有的MQTT发布指令处理
       if (cmd === 'MQTT_PUBLISH') {

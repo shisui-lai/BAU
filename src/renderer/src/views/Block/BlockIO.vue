@@ -15,8 +15,7 @@
               <i class="pi pi-info-circle"></i>
               <span>暂无数据</span>
             </div>
-                         <div v-else class="io-scroll-container">
-               <div class="io-items">
+            <div v-else class="io-items">
                 <!-- 系统DI状态 -->
                 <div class="io-section">
                   <div class="section-header">
@@ -109,9 +108,8 @@
                       </div>
                     </div>
                   </div>
-                                 </div>
-               </div>
-             </div>
+                </div>
+              </div>
           </div>
         </template>
       </Card>
@@ -159,15 +157,12 @@ const getLEDClass = (value) => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 1rem;
-  height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .io-container {
   flex: 1;
-  height: 100%;
 }
 
 .io-card {
@@ -175,8 +170,6 @@ const getLEDClass = (value) => {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(33, 150, 243, 0.08);
   transition: all 0.3s ease;
-  height: 100%;
-  overflow: hidden;
   
 
   
@@ -191,8 +184,6 @@ const getLEDClass = (value) => {
   
   :deep(.p-card-content) {
     padding: 1rem;
-    height: 100%;
-    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
   }
 }
 
@@ -214,7 +205,6 @@ const getLEDClass = (value) => {
 .card-content {
   display: flex;
   flex-direction: column;
-  height: 100%;
   min-height: 0;
   
   .no-data {
@@ -222,7 +212,7 @@ const getLEDClass = (value) => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100%;
+    padding: 2rem;
     color: #999;
     gap: 0.5rem;
     
@@ -236,37 +226,7 @@ const getLEDClass = (value) => {
     }
   }
   
-  .io-scroll-container {
-    height: calc(100vh - 200px);
-    overflow-y: auto;
-    
-    /* 自定义滚动条样式 - 参考配置参数页面 */
-    &::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 4px;
-      /* 强制设置滚动条高度为固定值 */
-      height: 30px !important;
-      min-height: 30px !important;
-      max-height: 30px !important;
-    }
-    
-    &::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8;
-    }
-    
-    /* Firefox 滚动条样式 */
-    scrollbar-width: thin;
-    scrollbar-color: #c1c1c1 #f1f1f1;
-  }
+
   
   .io-items {
     display: flex;

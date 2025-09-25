@@ -2,22 +2,31 @@ import { app, Menu, shell, BrowserWindow, ipcMain, dialog, screen, session } fro
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+const { fork } = require('child_process')
+// FTP服务器功能将在下面通过require导入
+import {
+  // 网卡选择功能相关处理器 - 统一BAU操作方式
+  handleGetNetworkInterfaces,
+  handleQueryIpWithInterface,
+  handleQueryMqttWithInterface,
+  handleSetIpWithInterface,
+  handleSetMqttWithInterface,
+  handleResetDefaultWithInterface,
+  handleResetDeviceWithInterface
+} from './handlers/bauAddressHandler.js'//地址探测
+
 let mainWindow
 let mqttChild;
 let quitting = false;
 import forkPath1 from './mqtt.js?modulePath'
-const { fork } = require('child_process')
-const { FtpSrv } = require('ftp-srv')
-// const child = fork('resources/child.js')
-
 // 启动MQTT子进程
-console.log('[Main]  启动MQTT子进程...')
+console.log('[Main] 启动MQTT子进程...')
 let mqttTask = fork(forkPath1);
-console.log('[Main]  MQTT子进程已启动，PID:', mqttTask.pid)
+console.log('[Main] MQTT子进程已启动，PID:', mqttTask.pid)
 
 // 监听MQTT子进程错误
 mqttTask.on('error', (error) => {
-  console.error('[Main]  MQTT子进程启动错误:', error)
+  console.error('[Main] MQTT子进程启动错误:', error)
 })
 
 mqttTask.on('exit', (code, signal) => {
@@ -29,6 +38,30 @@ mqttTask.on('exit', (code, signal) => {
 })
 
 process.mqttChild = mqttTask
+
+// 文件选择对话框
+ipcMain.handle('show-open-dialog', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: '选择升级文件',
+    properties: ['openFile']
+  })
+
+  if (!canceled && filePaths.length > 0) {
+    const path = require('path')
+    return {
+      canceled: false,
+      fullPath: filePaths[0],
+      fileName: path.basename(filePaths[0])
+    }
+  }
+
+  return { canceled: true }
+})
+
+// 升级功能已简化，复用现有的mqttPublish接口，无需专门的IPC处理器
+
+// 引入FTP服务器模块 - 在MQTT初始化之后
+import * as ftpServerModule from './ftpServer.js'
 
 
 process.on('uncaughtException', (err) => {
@@ -69,7 +102,7 @@ function createWindow() {
     }
   })
   mainWindow.on('close', (event) => {
-    if (quitting) return; 
+    if (quitting) return;
     // 阻止默认关闭行为
     event.preventDefault()
 
@@ -96,6 +129,20 @@ function createWindow() {
   })
   // 打开开发者工具
   mainWindow.webContents.openDevTools()
+
+  // 在开发环境中安装Vue DevTools
+  if (is.dev) {
+    try {
+      const installExtension = require('electron-devtools-installer').default
+      const { VUEJS3_DEVTOOLS } = require('electron-devtools-installer')
+
+      installExtension(VUEJS3_DEVTOOLS)
+        .then((name) => console.log(`[Main] Vue DevTools安装成功: ${name}`))
+        .catch((err) => console.log('[Main] Vue DevTools安装失败:', err))
+    } catch (error) {
+      console.log('[Main] Vue DevTools模块未找到，跳过安装:', error.message)
+    }
+  }
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.maximize()
@@ -132,7 +179,21 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-
+  // 设置FTP服务器的主窗口引用
+  ftpServerModule.setMainWindow(mainWindow)
+  
+  // 页面可见性状态管理
+  let isPageVisible = true
+  
+  // 监听渲染进程的可见性变化
+  ipcMain.on('page-visibility-change', (_e, visible) => {
+    isPageVisible = visible
+    
+    // 通知MQTT子进程调整限流策略
+    if (mqttTask && !mqttTask.killed) {
+      mqttTask.send({ cmd: 'SET_BACKGROUND_MODE', isBackground: !visible })
+    }
+  })
 
   mainWindow.webContents.once('did-finish-load', () => {
     mqttTask.on('message', (msg) => {
@@ -142,7 +203,33 @@ function createWindow() {
         // console.log('数据类型：', msg.type);
         // console.log('详细数据',msg.data.data);
         // mainWindow.webContents.send('mqtt-message', msg.data);
-        mainWindow.webContents.send(msg.type, msg.data) 
+
+
+
+        mainWindow.webContents.send(msg.type, msg.data)
+
+      // 【数据接收监控】发送心跳信号到渲染进程
+      // 功能：监控设备数据接收状态，支持5秒超时检测和数据速率统计
+      // 只有在收到真正的设备业务数据时才发送心跳，排除连接状态等控制消息
+      if (msg.data && typeof msg.data === 'object' && Object.keys(msg.data).length > 0 &&
+          msg.type !== 'mqtt-connected' &&
+          msg.type !== 'mqtt-disconnected' &&
+          msg.type !== 'mqtt-connect-result' &&
+          msg.type !== 'mqtt-disconnect-result' &&
+          msg.type !== 'mqtt-test-result') {
+
+        // 🚀 优化：使用原始MQTT payload大小，避免JSON序列化开销
+        // payloadSize在msg.data中（来自MQTT子进程的原始payload字节长度）
+        const dataSize = msg.data.payloadSize || JSON.stringify(msg.data).length
+
+        // 发送心跳信号，包含数据大小用于速率统计
+        mainWindow.webContents.send('mqtt-data-heartbeat', {
+          timestamp: Date.now(),
+          messageType: msg.type,
+          dataSize: dataSize
+        })
+      }
+
       // // } else if (msg.type === 'mqtt-err') {
       //   // console.error('子进程错误:', msg.err);
       //   // mainWindow.webContents.send('mqtt-error', msg.err);
@@ -163,18 +250,18 @@ function createWindow() {
       // console.log('[Main] publish → child', topic, payloadHex)
       return true;                                                // 立即 resolve
     });
-    
+
     // MQTT连接管理
     ipcMain.handle('mqtt-connect', async (_e, config) => {
       console.log('[Main] 🔗 收到MQTT连接请求:', config)
-      
+
       return new Promise((resolve) => {
         if (!mqttTask || mqttTask.killed) {
           console.error('[Main] ❌ MQTT子进程未运行')
           resolve(false)
           return
         }
-        
+
         try {
           // 发送连接指令到MQTT子进程
           console.log('[Main]  准备发送连接指令到MQTT子进程...')
@@ -185,9 +272,9 @@ function createWindow() {
           resolve(false)
           return
         }
-        
+
         let timeoutId = null
-        
+
         // 监听连接结果（一次性）
         const handleResult = (message) => {
           console.log('[Main]  收到MQTT子进程消息:', message.type)
@@ -198,9 +285,9 @@ function createWindow() {
             resolve(message.data.success)
           }
         }
-        
+
         mqttTask.on('message', handleResult)
-        
+
         // 设置超时
         timeoutId = setTimeout(() => {
           console.error('[Main]  MQTT连接超时 (15秒)')
@@ -217,18 +304,18 @@ function createWindow() {
           resolve(true)
           return
         }
-        
+
         mqttTask.send({ cmd: 'MQTT_DISCONNECT' })
-        
+
         const handleResult = (message) => {
           if (message.type === 'mqtt-disconnect-result') {
             mqttTask.removeListener('message', handleResult)
             resolve(message.data.success)
           }
         }
-        
+
         mqttTask.on('message', handleResult)
-        
+
         setTimeout(() => {
           mqttTask.removeListener('message', handleResult)
           resolve(true) // 断开连接总是成功
@@ -243,25 +330,25 @@ function createWindow() {
           resolve({ success: false, error: 'MQTT进程未运行' })
           return
         }
-        
+
         mqttTask.send({ cmd: 'MQTT_TEST_CONNECTION', config })
-        
+
         const handleResult = (message) => {
           if (message.type === 'mqtt-test-result') {
             mqttTask.removeListener('message', handleResult)
             resolve(message.data)
           }
         }
-        
+
         mqttTask.on('message', handleResult)
-        
+
         setTimeout(() => {
           mqttTask.removeListener('message', handleResult)
           resolve({ success: false, error: '测试超时' })
         }, 10000)
       })
     })
-    
+
 
 }
 
@@ -290,9 +377,6 @@ app.whenReady().then(() => {
   ipcMain.on('counter-value', (_event, value) => {
     console.log(value) // will print value to Node console
   })
-  ipcMain.on('mqtt-test',(event,a)=>{
-    // console.log(a)
-  })
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
@@ -300,17 +384,6 @@ app.whenReady().then(() => {
   })
 })
 
-
-// app.on('before-quit', (event) => {
-//   // 阻止默认退出行为（由我们自己的逻辑控制退出）
-//   event.preventDefault()
-
-//   // 当通过菜单退出时也触发确认流程
-//   const windows = BrowserWindow.getAllWindows()
-//   if (windows.length > 0) {
-//     windows[0].close() // 触发窗口的close事件流程
-//   }
-// })
 app.on('before-quit', async (e) => {
   quitting = true;
   if (mqttTask && !mqttTask.killed) {     // ★判空判活
@@ -325,12 +398,19 @@ app.on('before-quit', async (e) => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
-    // child.send({ API: 'modbus-exit' })
   }
 })
-// 主进程处�? get-dirname 事件
-/* ipcMain.handle('get-dirname', () => {
-  return __dirname // 返回当前目录或根据需要返回路�?
-}) */
+
+
+
+// BAU地址探测网卡选择功能IPC事件注册
+ipcMain.handle('get-network-interfaces', handleGetNetworkInterfaces)
+ipcMain.handle('bau-query-ip-with-interface', handleQueryIpWithInterface)
+ipcMain.handle('bau-query-mqtt-with-interface', handleQueryMqttWithInterface)
+ipcMain.handle('bau-set-ip-with-interface', handleSetIpWithInterface)
+ipcMain.handle('bau-set-mqtt-with-interface', handleSetMqttWithInterface)
+ipcMain.handle('bau-reset-default-with-interface', handleResetDefaultWithInterface)
+ipcMain.handle('bau-reset-device-with-interface', handleResetDeviceWithInterface)
+
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.

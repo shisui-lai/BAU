@@ -1,0 +1,1915 @@
+﻿{
+  "login": {
+    "title": "系统登录",
+    "username": "用户名",
+    "usernamePlaceholder": "请输入管理员账号",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "adminButton": "管理员登录",
+    "guestButton": "用户登录",
+    "error": "用户名或密码错误",
+    "language": "语言"
+  },
+  "network": {
+    "restart": {
+      "restarting": "正在重启网卡：{interfaceName}",
+      "success": "网卡 {interfaceName} 重启成功",
+      "failed": "网卡 {interfaceName} 重启失败: {error}"
+    }
+  },
+  "topBar": {
+    "placeholder": "批量写入BCU",
+    "selectedItems": "已选{0}项",
+    "selectIp": "请选择设备",
+    "request": "请求帧",
+    "response": "响应帧",
+    "connected": "已连接",
+    "disconnected": "已断开",
+    "interrupt": "已中断",
+    "communicating": "通讯中",
+    "stopped": "通讯停",
+    "reconnectting": "重连中",
+    "failed": "重连失败",
+    "offline": "设备离线",
+    "signalBest": "信号优",
+    "signalGood": "信号良",
+    "signalBad": "信号差"
+  },
+  "export": {
+    "dataBuffer": "导出数据使能",
+    "enabelData": "数据导出使能",
+    "enabelBuffer": "报文导出使能"
+  },
+  "menu": {
+    "admin": "管理员",
+    "guest": "游客",
+    "logout": "注销",
+    "settings": "设置",
+    "operationInformation": "运行信息",
+    "batteryInfo": "电池信息",
+    "alarmInformation": "告警信息",
+    "faultConfig": "告警汇总",
+    "disconnection": "掉线信息",
+    "version": "版本信息",
+    "systemConfig": "系统配置",
+    "configParameter": "配置参数",
+    "alramThreshold": "告警阈值",
+    "SOXConfig": "SOX配置",
+    "controlFunction": "控制功能",
+    "controlCommand": "控制指令",
+    "calibrationBalance": "校准/均衡",
+    "calibrationFilter": "深度滤波",
+    "powerMap": "功率表",
+    "eventTime": "事件/时间",
+    "upgrade": "设备升级",
+    "systemManagement": "系统管理",
+    "deviceConnection": "设备连接",
+    "peripherals": "外围设备",
+    "PCS": "PCS",
+    "refrigeration": "制冷设备",
+    "dehumidifier": "除湿机",
+    "fireController": "消防设备",
+    "didoData": "DIDO数据"
+  },
+  "about": {
+    "about": "关于",
+    "version": "软件版本",
+    "companyLabel": "公司",
+    "company": "东方日升储能",
+    "addressLabel": "地址",
+    "addressName": "浙江省宁波市宁海县东方日升梅桥一期",
+    "website": "官网",
+    "phone": "电话",
+    "Email": "邮箱"
+  },
+  "password": {
+    "error": "密码错误",
+    "header": "请输入密码",
+    "confirm": "确定",
+    "cancel": "取消",
+    "cancelTip": "请先输入密码"
+  },
+  "clusterSummHome": {
+    "bmuNum": "BMU数",
+    "afeNum": "AFE数",
+    "vNum": "电芯数",
+    "tNum": "温度数",
+    "systemTotalBits": {
+      "idle": "静止",
+      "charge": "充电",
+      "discharge": "放电",
+      "forbidCharge": "禁充",
+      "forbidDischarge": "禁放",
+      "standby": "待机",
+      "alarm": "告警",
+      "fault": "故障",
+      "chargePowerLatch": "充电功率锁存",
+      "dischargePowerLatch": "放电功率锁存",
+      "chargeCmd": "充电指令",
+      "chargeCmdDone": "充电指令完成",
+      "dischargeCmd": "放电指令",
+      "dischargeCmdDone": "放电指令完成",
+      "busOffCmd": "脱离母线指令",
+      "busOffCmdDone": "脱离母线指令完成",
+      "maintenance": "运维模式",
+      "nonMaintenance": "非运维模式",
+      "testMode": "测试模式",
+      "normalMode": "正常模式",
+      "initializing": "初始化中",
+      "initDone": "初始化完成"
+    }
+  },
+  "cell": {
+    "cellVoltage": "单体电压(V)",
+    "cellTemperature": "单体温度(℃)",
+    "cellSOC": "SOC(%)",
+    "cellSOH": "SOH(%)",
+    "BMUAFENum": "BMU‑AFE/节数",
+    "balanceModeDis": "放电均衡",
+    "balanceModeChrg": "充电均衡",
+    "balanceTime": "均衡倒计时"
+  },
+  "bmu": {
+    "bmuVoltage": "BMU电压(V)",
+    "bmuTemperature": "BMU温度(℃)",
+    "poleTemperature": "极柱温度(℃)",
+    "bmuSOC": "BMU SOC(%)"
+  },
+  "alarm": {
+    "title1": "序号",
+    "title2": "发生时间",
+    "title3": "故障",
+    "title4": "BMU",
+    "title5": "Cell/AFE",
+    "title6": "故障等级",
+    "totalNumbeOfFaults": "故障总数量",
+    "options": {
+      "totalFault": "模拟量告警汇总",
+      "faultMap": "告警使能汇总"
+    },
+    "faults": {
+      "empty": "空配置",
+      "单向菊花链断连": "单向菊花链断连",
+      "正向": "正向",
+      "反向": "反向",
+      "cellOVCritical": "单体过压严重总故障",
+      "cellOVGeneral": "单体过压一般总故障",
+      "cellOVMinor": "单体过压轻微总故障",
+
+      "cellUVCritical": "单体欠压严重总故障",
+      "cellUVGeneral": "单体欠压一般总故障",
+      "cellUVMinor": "单体欠压轻微总故障",
+
+      "cellOTChrgCritical": "充电单体过温严重总故障",
+      "cellOTChrgGeneral": "充电单体过温一般总故障",
+      "cellOTChrgMinor": "充电单体过温轻微总故障",
+
+      "cellUTChrgCritical": "充电单体欠温严重总故障",
+      "cellUTChrgGeneral": "充电单体欠温一般总故障",
+      "cellUTChrgMinor": "充电单体欠温轻微总故障",
+
+      "cellOTDischgCritical": "放电单体过温严重总故障",
+      "cellOTDischgGeneral": "放电单体过温一般总故障",
+      "cellOTDischgMinor": "放电单体过温轻微总故障",
+
+      "cellUTDischgCritical": "放电单体欠温严重总故障",
+      "cellUTDischgGeneral": "放电单体欠温一般总故障",
+      "cellUTDischgMinor": "放电单体欠温轻微总故障",
+
+      "cellSOCHighCritical": "单体SOC过高严重总故障",
+      "cellSOCHighGeneral": "单体SOC过高一般总故障",
+      "cellSOCHighMinor": "单体SOC过高轻微总故障",
+
+      "cellSOCLowCritical": "单体SOC过低严重总故障",
+      "cellSOCLowGeneral": "单体SOC过低一般总故障",
+      "cellSOCLowMinor": "单体SOC过低轻微总故障",
+
+      "cellVSuperCritical": "单体电压超级严重故障",
+
+      "bmuOVCritical": "BMU过压严重总故障",
+      "bmuOVGeneral": "BMU过压一般总故障",
+      "bmuOVMinor": "BMU过压轻微总故障",
+
+      "bmuUVCritical": "BMU欠压严重总故障",
+      "bmuUVGeneral": "BMU欠压一般总故障",
+      "bmuUVMinor": "BMU欠压轻微总故障",
+
+      "bmuOTCritical": "BMU过温严重总故障",
+      "bmuOTGeneral": "BMU过温一般总故障",
+      "bmuOTMinor": "BMU过温轻微总故障",
+
+      "bmuUTCritical": "BMU欠温严重总故障",
+      "bmuUTGeneral": "BMU欠温一般总故障",
+      "bmuUTMinor": "BMU欠温轻微总故障",
+
+      "connectOTCritical": "动力接插件过温严重总故障",
+      "connectOTGeneral": "动力接插件过温一般总故障",
+      "connectOTMinor": "动力接插件过温轻微总故障",
+
+      "connectUTCritical": "动力接插件欠温严重总故障",
+      "connectUTGeneral": "动力接插件欠温一般总故障",
+      "connectUTMinor": "动力接插件欠温轻微总故障",
+
+      "cellVDiffHCritical": "单体压差过大严重故障",
+      "cellVDiffHGeneral": "单体压差过大一般故障",
+      "cellVDiffHMinor": "单体压差过大轻微故障",
+
+      "cellTDiffHCritical": "单体温差过大严重故障",
+      "cellTDiffHGeneral": "单体温差过大一般故障",
+      "cellTDiffHMinor": "单体温差过大轻微故障",
+
+      "cellSOCDiffHCritical": "单体SOC差异过大严重故障",
+      "cellSOCDiffHGeneral": "单体SOC差异过大一般故障",
+      "cellSOCDiffHMinor": "单体SOC差异过大轻微故障",
+
+      "bmuVDiffHCritical": "BMU压差过大严重故障",
+      "bmuVDiffHGeneral": "BMU压差过大一般故障",
+      "bmuVDiffHMinor": "BMU压差过大轻微故障",
+
+      "clusterOVCritical": "簇端过压严重故障",
+      "clusterOVGeneral": "簇端过压一般故障",
+      "clusterOVMinor": "簇端过压轻微故障",
+
+      "clusterUVCritical": "簇端欠压严重故障",
+      "clusterUVGeneral": "簇端欠压一般故障",
+      "clusterUVMinor": "簇端欠压轻微故障",
+
+      "R+Critical": "绝缘电阻正对地严重故障",
+      "R+General": "绝缘电阻正对地一般故障",
+      "R+Minor": "绝缘电阻正对地轻微故障",
+
+      "R-Critical": "绝缘电阻负对地严重故障",
+      "R-General": "绝缘电阻负对地一般故障",
+      "R-Minor": "绝缘电阻负对地轻微故障",
+
+      "chrOCCritical": "充电过流严重故障",
+      "chrOCGeneral": "充电过流一般故障",
+      "chrOCMinor": "充电过流轻微故障",
+
+      "dischrgOCCritical": "放电过流严重故障",
+      "dischrgOCGeneral": "放电过流一般故障",
+      "dischrgOCMinor": "放电过流轻微故障",
+
+      "envTOTCritical": "环境温度过温严重故障",
+      "envTOTGeneral": "环境温度过温一般故障",
+      "envTOTMinor": "环境温度过温轻微故障",
+
+      "B+OTCritical": "B+连接器过温严重故障",
+      "B+OTGeneral": "B+连接器过温一般故障",
+      "B+OTMinor": "B+连接器过温轻微故障",
+
+      "B-OTCritical": "B-连接器过温严重故障",
+      "B-OTGeneral": "B-连接器过温一般故障",
+      "B-OTMinor": "B-连接器过温轻微故障",
+
+      "P+OTCritical": "P+连接器过温严重故障",
+      "P+OTGeneral": "P+连接器过温一般故障",
+      "P+OTMinor": "P+连接器过温轻微故障",
+
+      "P-OTCritical": "P-连接器过温严重故障",
+      "P-OTGeneral": "P-连接器过温一般故障",
+      "P-OTMinor": "P-连接器过温轻微故障",
+
+      "fuse1OTCritical": "熔断器1过温严重故障",
+      "fuse1OTGeneral": "熔断器1过温一般故障",
+      "fuse1OTMinor": "熔断器1过温轻微故障",
+
+      "fuse2OTCritical": "熔断器2过温严重故障",
+      "fuse2OTGeneral": "熔断器2过温一般故障",
+      "fuse2OTMinor": "熔断器2过温轻微故障",
+
+      "contactorFeedbackFault": "接触器总故障",
+      "isolationSwitchFeedbackFault": "隔离开关反馈故障",
+      "mainBreakerFeedbackFault": "主断路器反馈故障",
+      "fanFeedbackFault": "风扇反馈故障",
+      "dcPowerKMFeedbackFault": "直流供电KM反馈故障",
+      "doorAccessFeedbackFault": "门禁反馈故障",
+      "spdFeedbackFault": "SPD反馈故障",
+      "acVoltageFeedbackFault": "交流电压反馈故障",
+      "smokeFeedbackFault": "烟感反馈故障",
+      "fireFeedbackFault": "消防反馈故障",
+      "tempFeedbackFault": "温感反馈故障",
+      "ventilationFeedbackFault": "排风系统反馈故障",
+      "auxBreakerFeedbackFault": "辅助断路器反馈故障",
+      "h2DetectorFeedbackFault": "氢气（H2）探测器反馈故障",
+      "msdFeedbackFault": "MSD信号反馈故障",
+      "emergencyStopFeedbackFault": "急停反馈故障",
+      "cabinetFanFeedbackFault": "柜体风机反馈故障",
+
+      "pContactorHSFeedbackFault": "主正高边驱动反馈故障",
+      "nContactorHSFeedbackFault": "主负高边驱动反馈故障",
+      "prechargeContactorHSFeedbackFault": "预充高边驱动反馈故障",
+      "redLightHSFeedbackFault": "红灯高边驱动反馈故障",
+      "yellowLightHSFeedbackFault": "黄灯高边驱动反馈故障",
+      "greenLightHSFeedbackFault": "绿灯高边驱动反馈故障",
+      "fanHSFeedbackFault": "风机高边驱动反馈故障",
+      "mainBreakerHSFeedbackFault": "主断分励高边驱动反馈故障",
+      "dcPowerHSFeedbackFault": "直流供电高边驱动反馈故障",
+      "pcsControlHSFeedbackFault": "PCS封波高边驱动反馈故障",
+      "auxBreakerHSFeedbackFault": "辅助断路器分励高边驱动反馈故障",
+      "airExhaustHSFeedbackFault": "排风系统高边驱动反馈故障",
+      "cabinetFanHSFeedbackFault": "柜体风机高边驱动反馈故障",
+
+      "refrigeratorCommuFault": "制冷设备通讯故障",
+      "pcsCommuFault": "PCS通讯故障",
+      "dehumidifierCommuFault": "除湿器通讯故障",
+      "fireCommuFault": "消防设备通讯故障",
+      "bmuCommuFault": "BMU通讯故障",
+      "canHallCommuFault": "CAN霍尔通讯故障",
+      "bcuCommuFault": "BCU对上通讯故障",
+      "daisyChainDisconnectFault": "菊花链断开故障",
+      "afeCommuFault": "AFE通讯故障",
+
+      "envTSenFault": "环境温度传感器故障",
+      "b+TSenFault": "B+连接器温度传感器故障",
+      "b-TSenFault": "B-连接器温度传感器故障",
+      "p+TSenFault": "P+连接器温度传感器故障",
+      "p-TSenFault": "P-连接器温度传感器故障",
+      "fuse1TSenFault": "熔断器1温度传感器故障",
+      "fuse2TSenFault": "熔断器2温度传感器故障",
+
+      "hallFault": "霍尔故障",
+      "invalidDataFault": "无效数据故障",
+      "framFault": "铁电存储器故障",
+      "EEPROMFault": "EEPROM故障",
+      "FLASHFault": "FLASH故障",
+      "vSensorDisconnect": "电压传感器断开",
+      "tSensorDisconnect": "温度传感器断开",
+      "retainFaultSSummary": "保留故障汇总"
+    },
+    "totalFaults": {
+      "pContactorFeedbackFault": "主正接触器反馈故障",
+      "pContactorHSFeedbackFault": "主正接触器高边反馈故障",
+      "pContactorOxidation": "主正接触器氧化",
+      "pContactorAdhesion": "主正接触器黏连",
+      "pContactorFaultSummary": "主正接触器故障汇总",
+      "nContactorFeedbackFault": "主负接触器反馈故障",
+      "nContactorHSFeedbackFault": "主负接触器高边反馈故障",
+      "nContactorOxidation": "主负接触器氧化",
+      "nContactorAdhesion": "主负接触器黏连",
+      "nContactorFaultSummary": "主负接触器故障汇总",
+      "prechargeContactorFeedbackFault": "预充接触器反馈故障",
+      "prechargeContactorHSFeedbackFault": "预充接触器高边反馈故障",
+      "prechargeContactorOxidation": "预充接触器氧化",
+      "prechargeContactorAdhesion": "预充接触器黏连",
+      "prechargeContactorFaultSummary": "预充接触器故障汇总",
+      "reserved": "预留",
+      "reserved1": "保留",
+      "cellVoltInvalid": "单体电压",
+      "cellTempInvalid": "单体温度",
+      "cellSOCInvalid": "单体SOC",
+      "packVoltInvalid": "包电压",
+      "bmuBordTempInvalid": "BMU板载温度",
+      "PoleT1TempInvalid": "动力接插件1温度",
+      "PoleT2TempInvalid": "动力接插件2温度",
+      "clusterTemp1Invalid": "簇温度1",
+      "clusterTemp2Invalid": "簇温度2",
+      "clusterTemp3Invalid": "簇温度3",
+      "clusterTemp4Invalid": "簇温度4",
+      "clusterTemp5Invalid": "簇温度5",
+      "cellOV": "单体电压过压",
+      "cellUV": "单体电压欠压",
+      "cellOTChrg": "单体充电过温",
+      "cellUTChrg": "单体充电欠温",
+      "cellOTDischg": "单体放电过温",
+      "cellUTDischg": "单体放电欠温",
+      "cellSOCHigh": "单体SOC过高",
+      "cellSOCLow": "单体SOC过低",
+      "packOV": "pack电压过压",
+      "packUV": "pack电压欠压",
+      "packOT": "pack温度过温",
+      "packUT": "pack温度欠温",
+      "Pole1OT": "动力接插件1过温",
+      "Pole2OT": "动力接插件2过温",
+      "cellVDiff": "单体电压差过大",
+      "cellTDiff": "单体温度差过大",
+      "cellSOCDiff": "单体SOC差过大",
+      "bmuVDiff": "BMU电压差过大",
+      "clusterOV": "簇过压",
+      "clusterUV": "簇欠压",
+      "R+": "绝缘电阻正对地过低",
+      "R-": "绝缘电阻负对地过低",
+      "chargOC": "充电过流",
+      "dischrgOC": "放电过流",
+      "rt1OT": "RT1过温",
+      "rt2OT": "RT2过温",
+      "rt3OT": "RT3过温",
+      "rt4OT": "RT4过温",
+      "rt5OT": "RT5过温",
+      "titles": {
+        "contactor": "接触器故障",
+        "invalidValue1": "无效值标志",
+        "cellFault": "单体故障",
+        "packFault": "Pack故障",
+        "clusterFault": "簇故障",
+        "faults": "故障",
+        "enableStatus": "故障使能状态",
+        "reservedStatus": "保留故障使能状态"
+      }
+    },
+    "didoTMap": {
+      "mainPosFeedback": "主正接触器反馈",
+      "mainNegFeedback": "主负接触器反馈",
+      "prechargeFeedback": "预充接触器反馈",
+      "isolationSwitchFeedback": "隔离开关反馈",
+      "mainBreakerFeedback": "主断路器反馈",
+      "fanFeedback": "风扇反馈",
+      "dcPowerKMFeedback": "直流供电KM反馈",
+      "doorAccessFeedback": "门禁反馈",
+      "spdFeedback": "SPD反馈",
+      "acVoltageFeedback": "交流电压反馈",
+      "smokeFeedback": "烟感反馈",
+      "fireFeedback": "消防反馈",
+      "tempFeedback": "温感反馈",
+      "ventilationFeedback": "排风系统反馈",
+      "auxBreakerFeedback": "辅助断路器反馈",
+      "h2DetectorFeedback": "氢气探测器反馈",
+      "msdFeedback": "MSD反馈",
+      "emergencyStopFeedback": "急停反馈",
+      "cabinetFanFeedback": "柜体风机反馈",
+      "pContactorHSFeedback": "主正接触器高边驱动反馈",
+      "nContactorHSFeedback": "主负接触器高边驱动反馈",
+      "prechargeContactorHSFeedback": "预充高边驱动反馈",
+      "greenLightHSFeedback": "绿灯高边驱动反馈",
+      "yellowLightHSFeedback": "黄灯高边驱动反馈",
+      "redLightHSFeedback": "红灯高边驱动反馈",
+      "fanHSFeedback": "风机高边驱动反馈",
+      "mainBreakerHSFeedback": "主断路器高边驱动反馈",
+      "dcPowerHSFeedback": "直流供电高边驱动反馈",
+      "pcsControlHSFeedback": "PCS封波高边驱动反馈",
+      "auxBreakerHSFeedback": "辅助断路器高边驱动反馈",
+      "airExhaustHSFeedback": "排风系统高边驱动反馈",
+      "cabinetFanHSFeedback": "柜体风机高边驱动反馈",
+      "reversed": "预留",
+      "pContactorControl": "主正接触器控制信号",
+      "nContactorControl": "主负接触器控制信号",
+      "prechargeContactorControl": "预充接触器控制信号",
+      "greenLightControl": "绿灯控制信号",
+      "yellowLightControl": "黄灯控制信号",
+      "redLightControl": "红灯控制信号",
+      "fanControl": "风机控制信号",
+      "mainBreakerControl": "主断路器控制信号",
+      "dcPowerKMControl": "直流供电KM控制信号",
+      "pcsControl": "PCS封波控制信号",
+      "auxBreakerControl": "辅助断路器控制信号",
+      "airExhaustControl": "排风系统控制信号",
+      "cabinetFanControl": "柜体风机控制信号",
+      "bcuTemp": "BCU温度",
+      "b+Temp": "B+温度",
+      "b-Temp": "B-温度",
+      "p+Temp": "P+温度",
+      "p-Temp": "P-温度",
+      "fuse1Temp": "熔断器1温度",
+      "fuse2Temp": "熔断器2温度",
+      "titles": {
+        "signalName": "信号名称",
+        "value": "状态/数值"
+      }
+    },
+    "levels": {
+      "无故障": "无故障",
+      "严重": "严重",
+      "一般": "一般",
+      "轻微": "轻微",
+      "故障": "故障",
+      "有效": "有效",
+      "无效": "无效"
+    }
+  },
+  "disconnect": {
+    "normal": "正常",
+    "disconnect": "失联",
+    "value": {
+      "正常": "正常",
+      "失联": "失联"
+    }
+  },
+  "connect": {
+    "queryConnection": "查询并连接设备",
+    "selectPCNetworkCard": "选择PC网卡",
+    "selectPCNetworkCardPlaceholder": "请选择PC网卡",
+    "queryDevice": "查询设备",
+    "queryedDevice": "查询到 {count} 台BCU",
+    "disconnectAll": "全部断开",
+    "connectAll": "全部连接",
+    "stop": "停止通讯",
+    "start": "开始通讯",
+    "disconnect": "断开连接",
+    "connect": "连接",
+    "statusSuccess": "连接成功",
+    "statusFail": "连接失败",
+    "statusDisconnect": "已断开",
+    "statusInterrupt": "通讯中断",
+    "statusConnecting": "正在连接",
+    "statusCommunicating": "通讯中...",
+    "statusStopCommunicate": "已停止通讯"
+  },
+  "addressAdapt": {
+    "bcu": {
+      "title": "BCU地址自适应",
+      "addressStart": "起始地址",
+      "addressStartPlaceholder": "从208开始输入",
+      "bcuNum": "设备数量",
+      "bcuNumPlaceholder": "实际BCU数量",
+      "startButton": "开始",
+      "error": "错误信息",
+      "currentAdpapted": "已自适应 {count}",
+      "confirmTitle": "BCU自适应确认",
+      "confirmMessage": "确定要BCU自适应吗？自适应结束后BCU会自动复位",
+      "messageMap": {
+        "toastStart": "开始自适应",
+        "toastSuccess": "自适应成功，请重新查找ip并连接",
+        "toastError": "错误",
+        "toastNumFew": "BCU数量输入过少，实际在线 {count}台",
+        "toastNumMore": "BCU数量输入过多，实际在线 {count}台"
+      }
+    },
+    "bmu": {
+      "title": "BMU地址自适应",
+      "bcuSelect": "选择BCU",
+      "bcuSelectPlaceholder": "请选BCU",
+      "addressStart": "起始地址",
+      "addressStartPlaceholder": "从b0输入",
+      "bmuNum": "设备数量",
+      "bmuNumPlaceholder": "请输入BMU实际数量",
+      "startButton": "开始",
+      "messageMap": {
+        "toastStart": "开始地址自适应"
+      }
+    }
+  },
+  "upgrade": {
+    "FTPTitle": "FTP服务器",
+    "FTPButton": {
+      "关闭FTP": "关闭FTP",
+      "启动FTP": "启动FTP"
+    },
+    "FTPIp": "FTP服务器IP",
+    "FTPPort": "FTP服务器端口",
+    "FTPUser": "FTP服务器账号",
+    "FTPPassword": "FTP服务器密码",
+    "FTPPath": "升级文件路径",
+    "FTPPathPlaceholder": "修改路径",
+    "upgradeTitle": "BCU/BMU升级",
+    "upgradeStyle": "升级类型",
+    "upgradeStyleOptions": {
+      "BCU升级": "BCU升级",
+      "BMU升级": "BMU升级",
+      "默认配置参数升级": "默认配置参数升级"
+    },
+    "upgradeBMUStyleOptions": {
+      "单机常规升级": "单机常规升级",
+      "单机强制升级": "单机强制升级",
+      "广播常规升级": "广播常规升级",
+      "广播强制升级": "广播强制升级"
+    },
+    "upgradeSelectIp": "选择BCU",
+    "upgradeSelectIpPlaceholder": "请选择ip",
+    "upgradeBCUNums": "升级数量",
+    "upgradeFile": "升级文件",
+    "upgradeFilePlaceholder": "请选择文件",
+    "upgradeFileButton": "浏览…",
+    "upgradeBMUStyle": "BMU升级类型",
+    "upgradeBMUStartAddress": "BMU升级起始地址",
+    "upgradeBMUNums": "BMU升级设备数量",
+    "upgradeButtonText": {
+      "开始升级": "开始升级",
+      "下载中": "下载中...",
+      "处理结果中": "处理结果中...",
+      "升级失败，点击重试": "升级失败，点击重试"
+    },
+    "upgradBMUProcess": "BMU升级进度",
+    "feadbackTitle": "升级反馈结果",
+    "feadbackResult": "升级执行结果",
+    "feadbackDisplaceValue": "实时值",
+    "feadbackRawValue": "原始值",
+    "BCUBMUVersion": "BCU/BMU版本",
+    "versionRefreshButton": "刷新版本号",
+    "toast": {
+      "ftpStop": "FTP服务器已关闭",
+      "ftpStopFailed": "关闭FTP服务器失败",
+      "ftpStart": "FTP服务器已启动",
+      "ftpStartFailed": "启动FTP服务器失败",
+      "filePathChanged": "升级文件路径已修改为{path}",
+      "warnStop": "请先停止通讯",
+      "warnStartFTP": "请先启动FTP服务器",
+      "infoStartUpgrade": "升级已开始，请勿离开此页面",
+      "warnUpgradeTimeOut": "升级超时，请检查网络连接",
+      "infoIssueUpgrade": "下发升级指令成功",
+      "errorResendFailed": "重发升级指令失败: {error}",
+      "infoBMUUpgradeStart": "已下发BMU升级指令，请等待BMU升级完成",
+      "infoBMUUpgradeResult": {
+        "单机升级完成": "单机升级完成",
+        "单机升级失败": "单机升级失败",
+        "广播升级完成": "广播升级完成",
+        "广播升级失败": "广播升级失败",
+        "强制单机升级完成": "强制单机升级完成",
+        "强制单机升级失败": "强制单机升级失败",
+        "强制广播升级完成": "强制广播升级完成",
+        "强制广播升级失败": "强制广播升级失败"
+      },
+      "infoBMUUpgradeFailed": "BMU升级失败",
+      "errorBMUUpgradeFailed": {
+        "warnWait30s": "请等待30秒或弹窗消失后重试",
+        "BMU应答数量过多": "BMU应答数量过多",
+        "BMU应答数量过少": "BMU应答数量过少",
+        "存在BMU应答升级失败": "存在BMU应答升级失败",
+        "地址错误": "地址错误",
+        "地址超限": "地址超限",
+        "请求升级帧应答超时": "请求升级帧应答超时",
+        "Pack开始帧应答超时": "Pack开始帧应答超时",
+        "Pack结束帧应答超时": "Pack结束帧应答超时",
+        "退出帧应答超时": "退出帧应答超时",
+        "完成帧应答超时": "完成帧应答超时",
+        "包开始-应答包错误": "包开始-应答包错误",
+        "包结束-应答包错误": "包结束-应答包错误",
+        "完成-应答包错误": "完成-应答包错误",
+        "未知错误": "未知错误"
+      },
+      "readyForReset": "以下 {count} 台设备已准备复位：\n{ips}",
+      "fileDownloadSuccess": "文件下载完成",
+      "restFaied": "复位失败",
+      "partialFailSummary": "部分设备升级失败",
+      "partialFailDetail": "以下 {count} 个设备未完成升级：\n{details}",
+      "retrySummary": "第 {n} 次重试：{ip}",
+      "retryDetail": "错误码 {code} 未消失，重新下发升级指令…",
+      "disconnected": "检测到 {ip} 通讯中断，正在等待重连…",
+      "interruptedSummary": "升级中断",
+      "interruptedDetail": "{time}s 内 {ip} 未重连成功，已终止升级流程",
+      "reconnectedSummary": "设备 {ip} 已重连",
+      "reconnectedDetail": "继续执行升级流程",
+      "resendCommandSummary": "{ip} 重新下发升级指令",
+      "resendCommandDetail": "设备重连后重新下发升级指令"
+    }
+  },
+  "eventTime": {
+    "title1": "系统时间与记录",
+    "title2": "平台时间",
+    "title3": "设备时间",
+    "buttonLable1": "下设平台时间",
+    "title4": "系统启动次数",
+    "title5": {
+      "第1次系统记录": "第1次系统记录",
+      "第2次系统记录": "第2次系统记录",
+      "第3次系统记录": "第3次系统记录"
+    },
+    "title6": "事件记录",
+    "exportPath": "导出路径",
+    "buttonLable2": "修改路径",
+    "exportOffset": "导出偏移量",
+    "exportNums": "导出数量",
+    "exportAll": "导出全部",
+    "buttonLable3": "导出",
+    "deleteNums": "删除数量",
+    "deleteAll": "删除全部",
+    "buttonLable4": "删除",
+    "tableTile1": "参数",
+    "tableTile2": "值",
+    "tableTile3": "单位",
+    "toast": {
+      "settingSuccess": "设置成功",
+      "defaultExportDir": "默认导出目录：{dir}",
+
+      "enterExportCount": "请输入要导出的记录数量",
+
+      "exportCountTooBig": "读取数量不能超过总量 {total}",
+
+      "deleteCmdFailed": "删除指令下发失败：{error}",
+      "deleteCmdSent": "已下发删除指令",
+
+      "syncSuccess": "时间同步成功",
+      "syncFailed": "时间同步失败：{error}",
+
+      "exportStart": "导出开始",
+      "exportStartDir": "导出目录：{dir}",
+
+      "exportComplete": "导出完成，已保存于：{dir}",
+      "exportAborted": "导出终止，已保存于：{dir}",
+
+      "exportError": "导出异常 – {ip}",
+      "exportErrorDetail": "异常停止：{error}"
+    },
+    "confirm": {
+      "exportHeader": "导出确认",
+      "exportAllMessage": "确定要导出全部事件记录吗？",
+      "exportPartialMessage": "确定要导出最新 {count} 条记录吗？",
+      "deleteHeader": "删除确认",
+      "deleteAllMessage": "确定要删除全部事件记录吗？",
+      "deletePartialMessage": "确定要删除最近 {count} 条记录吗？",
+      "yes": "是",
+      "no": "否",
+      "delete": "删除",
+      "cancel": "取消"
+    }
+  },
+  "powerMap": {
+    "dropDownplaceholder1": "选择功率表",
+    "buttonLable1": "导出功率表",
+    "buttonLable2": "导入功率表",
+    "buttonLable3": "写入导入的功率表",
+    "label1": "实时行数",
+    "label2": "实时列数",
+    "label3": "编辑行数",
+    "label4": "编辑列数",
+    "buttonLable4": "下设行列数",
+    "buttonLable5": "下设功率表",
+    "chargePowerTable": "充电功率表",
+    "dischargePowerTable": "放电功率表",
+    "stopReading": "停止读取",
+    "startReading": "开始读取",
+    "toast": {
+      "importValidWarn": "请先导入合法的 CSV 文件",
+      "writingDevices": "正在写入以下设备，请稍后：{devices}",
+      "writeSuccess": "写入完成：{devices}",
+      "writeFail": "以下设备写入失败：{devices}",
+      "exportSuccessSummary": "导出完成",
+      "exportSuccessDetail": "已保存到：{path}",
+      "exportCanceled": "已取消导出",
+      "exportError": "导出失败：{error}",
+      "csvMissingBlock": "CSV 格式错误：缺少区块 {block}",
+      "csvRowNumMissingField": "CSV 格式错误：ROWNUM 区块缺少字段：{fields}",
+      "csvRowNumEmpty": "CSV 格式错误：ROWNUM 区块不能为空",
+      "csvNotNumberList": "{block} 区块应为逗号分隔的数字列表",
+      "csvTableNeedHeader": "{block} 区块至少要有表头 + 一行数据",
+      "csvTableRowFormat": "{block} 区块第 {line} 行格式不对：首列应为文本，其余列应为数字",
+      "importSuccess": "CSV 导入成功",
+      "writeConfigStart": "开始写入导入配置……"
+    }
+  },
+  "vtSetShield": {
+    "calibration": {
+      "temperature": "温度校准",
+      "voltage": "电压校准",
+      "mode": "下设模式",
+      "selectMethod": "选择校准方式",
+      "bmuId": "BMU 编号：",
+      "indexTemp": "温度编号：",
+      "indexVolt": "电压编号：",
+      "value": "校准值：",
+      "set": "下设",
+      "writeImported": "写入导入值",
+      "all": "全部",
+      "single": "单个"
+    },
+    "filter": {
+      "temperature": "温度滤波",
+      "voltage": "电压滤波",
+      "selectMode": "选择滤波模式",
+      "setValue": "下设值：",
+      "processing": "处理中 ({progress}%)"
+    },
+    "actions": {
+      "exportTemp": "导出温度值",
+      "importTemp": "导入温度值",
+      "exportVolt": "导出电压值",
+      "importVolt": "导入电压值"
+    },
+    "table": {
+      "noData": "无数据",
+      "selectBmu": "选择BMU"
+    },
+    "toast": {
+      "filterAllSetSuccess": "所有设备{type}滤波下设完成",
+      "filterSetError": "{type}滤波下设出错：{error}",
+      "writingDevicesCount": "以下 {count} 个 BCU 正在写入，请稍后：",
+      "calibrationTempComplete": "温度校准完成：{devices}",
+      "calibrationVoltComplete": "电压校准完成：{devices}",
+      "writeFailDevices": "以下设备写入失败：{devices}",
+      "parseError": "解析失败：{error}",
+      "importComplete": "导入完成",
+      "writeImportedComplete": "{type}校准值已下设"
+    }
+  },
+  "ivCalibration": {
+    "title": "模拟量校准",
+    "selectLabel": "选择校准量：",
+    "table": {
+      "col": {
+        "type": "校准量",
+        "current": "实时显示值",
+        "measured": "点1点2实测值",
+        "displayed": "点1点2显示值",
+        "original": "原始KB值",
+        "new": "新KB值",
+        "actions": "操作"
+      },
+      "measured1": "实测值1：",
+      "measured2": "实测值2：",
+      "display1": "显示值1：",
+      "display2": "显示值2：",
+      "k": "K：",
+      "b": "B：",
+      "getValues": "获取实时值",
+      "calculateNew": "计算新KB值",
+      "send": "发送"
+    },
+    "tooltips": {
+      "captureWaiting": "等待有效值时捕获",
+      "capture": "点击捕获当前显示值"
+    },
+    "errors": {
+      "invalidNumber": "请输入有效的数字",
+      "incompleteData": "请填写完整的校准点数据",
+      "yDiffTooSmall": "实测值差异不足（|Y1-Y2| < 0.001），请调整输入值",
+      "kOutOfRange": "K值超出有效范围(-32768~32767)",
+      "bOutOfRange": "B值超出有效范围({min}~{max})",
+      "invalidParams": "无效的校准参数",
+      "sendFail": "发送校准参数失败：{error}"
+    },
+    "toasts": {
+      "capture1Success": "已捕获显示值1",
+      "capture2Success": "已捕获显示值2",
+      "writingDevices": "以下 {count} 台设备正在写入，请稍后：",
+      "writeSuccess": "写入完成：{devices}",
+      "writeFail": "以下设备写入失败：{devices}"
+    },
+    "kb": {
+      "currentChargeSmall": "电流充电小量程校准",
+      "currentDischargeSmall": "电流放电小量程校准",
+      "currentChargeLarge": "电流充电大量程校准",
+      "currentDischargeLarge": "电流放电大量程校准",
+      "prechargeVoltage": "预充电压校准",
+      "clusterVoltage": "组端电压校准"
+    }
+  },
+  "balanceControl": {
+    "title": "均衡控制",
+    "balanceMode": "均衡模式",
+    "selectBMU": "选择均衡BMU",
+    "cellSelectionMode": "单体选择模式",
+    "select": "选中",
+    "deselect": "取消选中",
+    "balanceTime": "均衡时间",
+    "seconds": "秒",
+    "startBalance": "开启均衡",
+    "stopBalance": "关闭均衡",
+    "remainingTime": "剩余时间",
+    "incompleteParameters": "参数不完整",
+    "balanceSuccess": "均衡成功",
+    "startSuccess": "均衡开启成功",
+    "stopSuccess": "均衡关闭成功",
+    "writeFailed": "写入失败",
+    "setBalanceStopSuccess": "下发均衡关闭成功",
+    "balanceEnabelOption": {
+      "enable": "开启均衡",
+      "disable": "关闭均衡"
+    },
+    "balanceModeOption": {
+      "discharge": "放电",
+      "charge": "充电"
+    },
+    "selectionOptions": {
+      "all": "全部",
+      "odd": "奇数单元",
+      "even": "偶数单元"
+    }
+  },
+  "deviceControl": {
+    "C000": {
+      "label": "接触器执行策略",
+      "options": {
+        "invalid": "无效",
+        "chargeOperation": "充电操作",
+        "dischargeOperation": "放电操作",
+        "disconnectBus": "脱离母线",
+        "selfTest": "接触器自检"
+      }
+    },
+    "C002": {
+      "label": "绝缘电阻检测",
+      "options": {
+        "startTest": "启动检测",
+        "stopTest": "关闭检测"
+      }
+    },
+    "C003": {
+      "label": "系统运行模式（内测DO模式下）",
+      "options": {
+        "testMode": "测试模式",
+        "normalMode": "正常模式"
+      }
+    },
+    "C004": {
+      "label": "掉线检测功能使能",
+      "options": {
+        "enable": "开启",
+        "disable": "关闭"
+      }
+    },
+    "C00A": {
+      "label": "强制消除BCU故障",
+      "options": {
+        "clearAllFaults": "清除所有故障",
+        "clearChargingFault": "清除充电过流严重告警",
+        "clearDischargingFault": "清除放电过流严重告警",
+        "clearInsulationFault": "清除绝缘电阻严重告警",
+        "clearContactorFault": "清除接触器黏连氧化",
+        "clearPCSCommFault": "清除PCS通讯故障"
+      }
+    },
+    "C00B": {
+      "label": "基本参数复位",
+      "C00BLabelBasic": "基本参数复位",
+      "C00BLabelFactory": "出厂参数复位",
+      "options": {
+        "systemParams": "系统基本参数",
+        "cellCalibration": "电芯校准参数",
+        "clusterDiagnosis": "簇诊断参数",
+        "packDiagnosis": "pack诊断参数",
+        "cellDiagnosis": "电芯诊断参数",
+        "saveRealTimeData": "实时保存数据",
+        "soxParams": "sox参数",
+        "sopMap": "sop map",
+        "factoryCalibration": "出厂校准参数",
+        "eventRecordFlag": "事件记录标志",
+        "systemRuntime": "系统运行时间",
+        "configParam": "配置参数"
+      }
+    },
+    "C00D": {
+      "label": "复位事件记录存储器",
+      "options": {
+        "reset": "复位"
+      }
+    },
+    "C00E": {
+      "label": "强制OCV校准",
+      "options": {
+        "start": "启动",
+        "stop": "关闭"
+      }
+    },
+    "C00F": {
+      "label": "权重校准信号",
+      "options": {
+        "start": "启动",
+        "stop": "关闭"
+      }
+    },
+    "C010": {
+      "label": "SOH强制校准信号",
+      "options": {
+        "start": "启动",
+        "stop": "关闭"
+      }
+    },
+    "C011": {
+      "label": "复位上电SOH存储标志位",
+      "options": {
+        "start": "启动",
+        "stop": "关闭"
+      }
+    },
+    "C012": {
+      "label": "复位可配置默认参数次数"
+    },
+    "C013": {
+      "label": "擦除可配置默认参数区",
+      "options": {
+        "start": "启动",
+        "stop": "关闭"
+      }
+    },
+    "paramRead": "读取参数",
+    "controlInfo": "控制信息",
+    "deviceControl": "设备控制",
+    "selectReset": "选择复位项",
+    "selectedItems": "已选{0}项",
+    "selectAction": "选择操作",
+    "inputValue": "请输入数值",
+    "send": "发送",
+    "operation": "操作",
+    "confirmMessage": "确定要发送“{name}”的操作指令吗？",
+    "confirmHeader": "确认发送",
+    "writeInProgress": "以下 {count} 台设备正在写入，请稍后：",
+    "writeComplete": "写入完成：",
+    "writeFail": "写入失败：",
+    "independentCommandSuccess": "接触器指令下发成功",
+    "independentCommandFail": "接触器指令下发失败",
+    "mainPos": "主正接触器",
+    "preCharge": "预充接触器",
+    "mainNeg": "主负接触器",
+    "tripCoil": "主断分励",
+    "fan": "风扇控制",
+    "dcKM": "直流供电",
+    "indepOptions": {
+      "title": "接触器独立执行",
+      "invalid": "无效",
+      "disconnect": "断开",
+      "connect": "闭合",
+      "execute": "执行",
+      "contactor": "接触器",
+      "action": "操作"
+    }
+  },
+  "didoControl": {
+    "test_mode": "测试模式下DO控制",
+    "device_control": "设备控制",
+    "multiSelectplaceholder1": "选择开关量",
+    "operation": "操作",
+    "send": "发送",
+    "columnHeader1": "开关量",
+    "columnHeader2": "反馈值",
+    "selected_items": "已选{0}项",
+    "write_value": "不执行",
+    "success_message": "以下设备写入完成：{device}",
+    "error_message": "以下设备写入失败：",
+    "options": {
+      "C200_CONTACTOR": {
+        "label": "接触器控制",
+        "0": "主正接触器控制",
+        "1": "预充接触器控制",
+        "2": "主负接触器控制",
+        "3": "主断分励脱扣",
+        "4": "风扇控制",
+        "5": "直流供电KM控制"
+      },
+      "C201_HIGH_SIDE": {
+        "label": "高低边控制",
+        "label1": "高边控制",
+        "label2": "低边控制",
+        "high_side_1": "高边1",
+        "high_side_2": "高边2",
+        "high_side_3": "高边3",
+        "high_side_4": "高边4",
+        "high_side_5": "高边5",
+        "high_side_6": "高边6",
+        "high_side_7": "高边7",
+        "high_side_8": "高边8",
+        "low_side_1": "低边1",
+        "low_side_2": "低边2"
+      },
+      "C202": {
+        "label": "其他IO",
+        "0": "DO1地址自适应输出",
+        "1": "DO2继电器输出",
+        "2": "DO3输出"
+      }
+    }
+  },
+  "didoFeadback": {
+    "title": "DIDO反馈",
+    "header1": "DI 参数",
+    "header2": "DI 状态",
+    "header3": "DO 参数",
+    "header4": "DO 状态"
+  },
+  "config": {
+    "writeAll": "写入所有页导入值",
+    "header1": "参数",
+    "header2": "实际值",
+    "header3": "导入值",
+    "header4": "单位",
+    "header5": "备注",
+    "dropdown": {
+      "eventLoggingMode": {
+        "simple": "简约模式",
+        "detailed": "详细模式"
+      },
+      "internalTestMode": {
+        "disable": "关闭内测模式",
+        "vt": "内测模式1（V、T）",
+        "iacp": "内测模式2（IACP）",
+        "do": "内测模式3（DO）"
+      },
+      "balancingMode": {
+        "auto": "自动均衡",
+        "manual": "手动均衡"
+      },
+      "maintenanceMode": {
+        "enabled": "运维模式",
+        "disabled": "非运维模式"
+      },
+      "pcsType": {
+        "none": "无PCS",
+        "star": "星星PCS",
+        "shuangyili": "双一力PCS-01",
+        "kehua": "科华PCS",
+        "none2": "无"
+      },
+      "refrigerationType": {
+        "none": "无制冷设备",
+        "kenuowei": "柯诺威水冷机",
+        "envicool": "英维克",
+        "essent": "埃森特交流空调",
+        "none2": "无"
+      },
+      "dehumidifierType": {
+        "none": "无除湿机设备",
+        "type1": "除湿机-01",
+        "type2": "除湿机-E-J-000113",
+        "none2": "无"
+      },
+      "fireControllerType": {
+        "none": "无消防控制器",
+        "sanvalor": "三沃力源（sanvalor）",
+        "none2": "无"
+      },
+      "canRate": {
+        "50k": "50k",
+        "100k": "100k",
+        "125k": "125k",
+        "250k": "250k",
+        "500k": "500k",
+        "1M": "1M"
+      },
+      "canDataRate": {
+        "invalid": "无效/不支持",
+        "250k": "250k",
+        "500k": "500k",
+        "800k": "800k",
+        "1M": "1M",
+        "2M": "2M",
+        "4M": "4M",
+        "5M": "5M"
+      },
+      "rs485Rate": {
+        "1200": "1200",
+        "2400": "2400",
+        "4800": "4800",
+        "9600": "9600",
+        "19200": "19200",
+        "38400": "38400",
+        "57600": "57600",
+        "115200": "115200"
+      },
+      "currentSensorType": {
+        "lem1": "LEM-CAB500-C/SP5-012",
+        "lem2": "LEM-DHAB-S/118",
+        "jc": "JC-JHAB-S/18",
+        "cg": "CG-FL2C-200A/75mV"
+      },
+      "batteryType": {
+        "lifepo4": "磷酸铁锂电池",
+        "titanate": "钛酸锂电池",
+        "manganese": "锰酸锂电池"
+      },
+      "balancingModeOptions": {
+        "0": "禁止自动均衡",
+        "1": "开路",
+        "2": "静置",
+        "3": "放电",
+        "4": "充电",
+        "5": "开路静置",
+        "6": "开路放电",
+        "7": "开路充电",
+        "8": "静置放电",
+        "9": "静置充电",
+        "10": "放电充电",
+        "11": "开路、静置、放电",
+        "12": "开路、静置、充电",
+        "13": "开路、充电、放电",
+        "14": "静置、充电、放电",
+        "15": "开路、静置、放电、充电"
+      },
+      "balancingThresholdK": {
+        "2mV": "2mV",
+        "15mV": "15mV",
+        "150mV": "150mV",
+        "20mV": "20mV"
+      },
+      "clusterVoltageMode": {
+        "highVoltageMode": "高压模式",
+        "cellVoltageSumMode": "单体电压累加模式"
+      },
+      "powerConnector": {
+        "notExist": "不存在",
+        "exist": "存在"
+      },
+      "bmuTempDataType": {
+        "normalMode": "普通模式",
+        "highPrecisionMode": "高精度模式"
+      }
+    },
+    "confirm": {
+      "confirmTitle": "ip下设确认",
+      "confirmMessage": "确定要更改ip地址吗？更改后BCU会自动复位"
+    },
+    "toast": {
+      "writeSuccessThisPage": "当前页面导入值写入完成",
+      "connectFirst": "设备未连接,请先连接设备",
+      "communicationFirst": "设备未通讯，请先开始通讯",
+      "cancelExport": "已取消导出",
+      "failExport": "导出失败",
+      "failImport": "导入失败",
+      "importInfo": "共导入{length}条",
+      "importFirst": "请先导入参数",
+      "emptyImport": "存在空导入值，请检查",
+      "writeAllPagesSuccess": "所有页面导入写入完成"
+    },
+    "pageSysConfig": {
+      "button": {
+        "buttonSend": "下设参数",
+        "buttonExportParam": "导出参数",
+        "buttonImportParam": "导入参数",
+        "buttonWriteParamThispage": "写入当前页导入值"
+      },
+      "tabs": {
+        "BMUNumConfig": "BMU/AFE数量配置",
+        "SysConfig": "系统及设备类型配置",
+        "CellVTFilterConfig": "单体温度电压滤波配置",
+        "DelayConfig": "延时配置",
+        "EquipTConfig": "设备温度配置",
+        "BaudRateConfig": "波特率配置",
+        "CurrentSensorConfig": "电流传感器配置",
+        "BatteryConfig": "电池参数配置",
+        "BalanceConfig": "均衡参数配置",
+        "FactroyParam": "设备出厂信息"
+      }
+    },
+    "pageAlarm": {
+      "tabs": {
+        "ClusV": "簇端电压告警",
+        "ClusI": "电流告警",
+        "ClusR": "绝缘电阻告警",
+        "ClusT": "过温告警",
+        "BMUV": "BMU电压告警",
+        "BMUT": "BMU电路板温度告警",
+        "PoleT": "动力接插件温度告警",
+        "CellV": "Cell电压告警",
+        "CellT": "Cell温度告警",
+        "CellSOC": "CellSOC告警"
+      }
+    },
+    "pageSOX": {
+      "tabs": {
+        "RealSOX": "实时保存的SOX数据",
+        "CommenSOX": "SOX通用参数",
+        "SOCConfig": "SOC算法配置参数",
+        "SOHConfig": "SOH算法配置参数"
+      }
+    }
+  },
+  "peripherals": {
+    "pcs": {
+      "selectLabel": "选择PCS型号"
+    },
+    "refrigeration": {
+      "selectLabel": "选择制冷设备型号"
+    },
+    "dehum1": {
+      "selectLabel": "选择除湿设备型号",
+      "labels": {
+        "dehum1Label1": "雾化模块状态",
+        "dehum1Label2": "雾化工作状态",
+        "dehum1Label3": "故障回路状态",
+        "dehum1Label4": "控湿回路状态",
+        "dehum1Label5": "控温回路状态",
+        "dehum1Label6": "控温方式",
+        "dehum1Label7": "风机模块回路状态",
+        "dehum1Label8": "除湿模块回路状态",
+        "dehum1Label9": "湿度传感器状态",
+        "dehum1Label10": "外部温度传感器状态",
+        "dehum1Label11": "内部温度传感器状态",
+        "dehum1Label12": "化霜状态",
+        "dehum1Label13": "控湿手动开关",
+        "dehum1Label14": "控温手动开关",
+        "dehum1Label15": "高温告警",
+        "dehum1Label16": "露点温度回路工作状态",
+        "dehum1Label17": "内部温度值(℃)",
+        "dehum1Label18": "环境温度值(℃)",
+        "dehum1Label19": "环境湿度值(%RH)",
+        "dehum1Label20": "内部温度值2(℃)",
+        "dehum1Label21": "露点温度(℃)",
+        "dehum1Label22": "备用3",
+        "dehum1Label23": "备用4",
+        "dehum1Label24": "备用5",
+        "dehum1Label25": "控温开启值(℃)",
+        "dehum1Label26": "控温停止值(℃)",
+        "dehum1Label27": "控湿开启值(%RH)",
+        "dehum1Label28": "控湿停止值(%RH)",
+        "dehum1Label29": "温度报警上限值(℃)",
+        "dehum1Label30": "温度报警下限值(℃)",
+        "dehum1Label31": "露点温度启动值(℃)",
+        "dehum1Label32": "露点温度回差值(℃)"
+      }
+    },
+    "fire": {
+      "selectLabel": "选择消防控制器型号",
+      "baseInfo": "基本信息",
+      "detectorDetails": "探测器详情",
+
+      "title": {
+        "title1": "探测器编号",
+        "title2": "状态",
+        "title3": "报警等级",
+        "title4": "一氧化碳浓度",
+        "title5": "温度数据",
+        "title6": "烟雾数据"
+      }
+    }
+  },
+  "configEnable": {
+    "set": "下设",
+    "delete": "删除",
+    "addRow": "增加行",
+    "batchDelete": "批量删除",
+    "exportParam": "导出配置",
+    "importParam": "导入配置",
+    "confirmDelete": "确定要删除这一行吗？",
+    "confirmBatchDelete": "确定要删除选中的行吗？",
+    "deleteSuccess": "删除成功",
+    "rowDeleted": "行已删除",
+    "batchDeleteSuccess": "批量删除成功",
+    "addSuccess": "添加成功",
+    "rowAdded": "行已添加",
+    "maxRowsReached": "已达到最大行数",
+    "maxRowsMessage": "最多只能添加16行",
+    "addRowDialogTitle": "添加行",
+    "rowCountLabel": "行数",
+    "batchDeleteDialogTitle": "批量删除",
+    "deleteRowCountLabel": "删除行数",
+    "deleteFromEndMessage": "将从最后开始删除指定数量的行",
+    "row": "行",
+    "cancel": "取消",
+    "confirm": "确认",
+    "noChanges": "无更改",
+    "noChangesDetail": "当前行没有可提交的更改",
+    "writeInProgress": "正在写入配置参数",
+    "writeComplete": "配置参数写入完成",
+    "writeFail": "配置参数写入失败",
+    "writeError": "配置参数写入错误",
+    "action": "操作",
+    "importConfirmDialogTitle": "确认导入操作",
+    "importConfirmMessage": "是否要立即下设导入的配置参数？",
+    "importConfirmDataCount": "共导入 {count} 行配置数据",
+    "cannotDelete": "无法删除",
+    "atLeastOneRow": "至少需要保留1行配置",
+    "readConfirmDialogTitle": "确认读取操作",
+    "readConfirmMessage": "此页导入数据还未下设，是否立即下设？",
+    "dontSet": "不下设",
+    "ok": "下设",
+    "exportDialog": {
+      "selectConfigTable": "选择配置表",
+      "selectExportLanguage": "选择导出语言",
+      "selectAll": "全选",
+      "cancelAll": "取消全选",
+      "export": "导出选中配置表",
+      "import": "选择文件",
+      "cancel": "取消"
+    },
+    "di": {
+      "dropdown": {
+        "signalName": {
+          "empty": "空配置",
+          "mainPosFeedback": "主正接触器反馈",
+          "mainNegFeedback": "主负接触器反馈",
+          "prechargeFeedback": "预充接触器反馈",
+          "isolationSwitchFeedback": "隔离开关反馈",
+          "mainBreakerFeedback": "主断路器反馈",
+          "fanFeedback": "风扇反馈",
+          "dcPowerKMFeedback": "直流供电KM反馈",
+          "doorAccessFeedback": "门禁反馈",
+          "spdFeedback": "SPD反馈",
+          "acVoltageFeedback": "交流电压反馈",
+          "smokeFeedback": "烟感反馈",
+          "fireFeedback": "消防反馈",
+          "tempFeedback": "温感反馈",
+          "ventilationFeedback": "排风系统反馈",
+          "auxBreakerFeedback": "辅助断路器反馈",
+          "h2DetectorFeedback": "氢气（H2）探测器反馈",
+          "msdFeedback": "MSD反馈",
+          "emergencyStopFeedback": "急停反馈"
+        },
+        "hardwareChannel": {
+          "empty": "空配置",
+          "di1": "DI1",
+          "di2": "DI2",
+          "di3": "DI3",
+          "di4": "DI4",
+          "di5": "DI5",
+          "di6": "DI6",
+          "di7": "DI7",
+          "di8": "DI8",
+          "di9": "DI9",
+          "di10": "DI10",
+          "di11": "DI11",
+          "bmuDi1": "BMU DI-1",
+          "bmuDi2": "BMU DI-2"
+        },
+        "logicDirection": {
+          "positive": "正逻辑",
+          "negative": "负逻辑"
+        },
+        "controlVersion": {
+          "highLow": "高低电平",
+          "filter": "过滤",
+          "debounce": "消抖",
+          "pwm": "PWM"
+        }
+      },
+      "header": {
+        "sequence": "序号",
+        "signalName": "信号名称",
+        "hardwareChannel": "硬件通道",
+        "logicDirection": "逻辑方向",
+        "controlVersion": "控制版本"
+      }
+    },
+    "do": {
+      "dropdown": {
+        "signalName": {
+          "empty": "空配置",
+          "mainPos": "主正接触器",
+          "mainNeg": "主负接触器",
+          "precharge": "预充接触器",
+          "greenLight": "绿灯（运行灯）",
+          "yellowLight": "黄灯（告警灯）",
+          "redLight": "红灯（故障灯）",
+          "fan": "风扇控制",
+          "mainBreaker": "主断路器分励控制",
+          "dcPowerKM": "直流供电KM控制",
+          "pcsControl": "PCS封波控制",
+          "auxBreaker": "辅助断路器分励控制",
+          "airExhaust": "排风系统"
+        },
+        "hardwareChannel": {
+          "empty": "空配置",
+          "HSDO-1": "HSDO-1",
+          "HSDO-2": "HSDO-2",
+          "HSDO-3": "HSDO-3",
+          "HSDO-4": "HSDO-4",
+          "HSDO-5": "HSDO-5",
+          "HSDO-6": "HSDO-6",
+          "HSDO-7": "HSDO-7",
+          "HSDO-8": "HSDO-8",
+          "LSDO-1": "LSDO-1",
+          "LSDO-2": "LSDO-2",
+          "DO1": "DO1",
+          "DO2": "DO2"
+        },
+        "logicDirection": {
+          "positive": "正逻辑",
+          "negative": "负逻辑"
+        },
+        "controlVersion": {
+          "highLow": "高低电平",
+          "filter": "过滤",
+          "debounce": "消抖",
+          "pwm": "PWM"
+        }
+      },
+      "header": {
+        "sequence": "序号",
+        "signalName": "信号名称",
+        "hardwareChannel": "硬件通道",
+        "logicDirection": "逻辑方向",
+        "controlVersion": "控制版本"
+      }
+    },
+    "ntc": {
+      "dropdown": {
+        "signalName": {
+          "empty": "空配置",
+          "bcuTemp": "BCU环境温度",
+          "b+Temp": "B+温度",
+          "b-Temp": "B-温度",
+          "p+Temp": "P+温度",
+          "p-Temp": "P-温度",
+          "fuse1Temp": "熔断器1温度",
+          "fuse2Temp": "熔断器2温度"
+        },
+        "hardwareChannel": {
+          "empty": "空配置",
+          "rt1": "RT1",
+          "rt2": "RT2",
+          "rt3": "RT3",
+          "rt4": "RT4",
+          "rt5": "RT5"
+        }
+      },
+      "header": {
+        "sequence": "序号",
+        "signalName": "信号名称",
+        "hardwareChannel": "硬件通道"
+      }
+    },
+    "can": {
+      "dropdown": {
+        "hardwareChannel": {
+          "empty": "空配置",
+          "can1": "CAN1",
+          "can2": "CAN2",
+          "can3": "CAN3"
+        },
+        "signalName": {
+          "empty": "空配置",
+          "bmu": "BMU设备",
+          "canHoll": "CAN霍尔设备",
+          "dbc": "BCU-DBC接口"
+        },
+        "baudRate": {
+          "50k": "50k",
+          "100k": "100k",
+          "125k": "125k",
+          "250k": "250k",
+          "500k": "500k",
+          "1M": "1M"
+        },
+        "baudRateCANFD": {
+          "empty": "空配置",
+          "250k": "250k",
+          "500k": "500k",
+          "800k": "800k",
+          "1M": "1M",
+          "2M": "2M",
+          "4M": "4M",
+          "5M": "5M"
+        }
+      },
+      "header": {
+        "sequence": "序号",
+        "hardwareChannel": "硬件通道",
+        "signalName": "信号名称",
+        "baudRate": "波特率/仲裁域波特率",
+        "baudRateCANFD": "数据域波特率（CANFD）",
+        "faultTime": "故障触发时间(s)"
+      }
+    },
+    "485": {
+      "dropdown": {
+        "hardwareChannel": {
+          "empty": "空配置",
+          "4851": "RS485-1",
+          "4852": "RS485-2",
+          "4853": "RS485-3"
+        },
+        "signalName": {
+          "empty": "空配置",
+          "refrigeration": "制冷设备",
+          "pcs": "PCS",
+          "dehumidifier": "除湿设备",
+          "fireController": "消防设备"
+        },
+        "baudRate": {
+          "1200": "1200",
+          "2400": "2400",
+          "4800": "4800",
+          "9600": "9600",
+          "19200": "19200",
+          "38400": "38400",
+          "57600": "57600",
+          "115200": "115200"
+        },
+        "dataBit": {
+          "8": "8",
+          "7": "7"
+        },
+        "stopBit": {
+          "1": "1",
+          "2": "2"
+        },
+        "parity": {
+          "N": "N",
+          "O": "O",
+          "E": "E"
+        }
+      },
+      "header": {
+        "sequence": "序号",
+        "hardwareChannel": "硬件通道",
+        "signalName": "信号名称",
+        "baudRate": "波特率",
+        "dataBit": "数据位",
+        "stopBit": "停止位",
+        "parity": "奇偶校验",
+        "faultTime": "故障触发时间(s)",
+        "communicationId": "通讯ID"
+      }
+    },
+    "light": {
+      "dropdown": {
+        "triggerEvent": {
+          "systemNormal": "系统正常上电",
+          "contactorClose": "接触器闭合",
+          "contactorOpen": "接触器断开",
+          "totalFault": "有总故障",
+          "noTotalFault": "无总故障",
+          "totalAlarm": "总告警",
+          "noTotalAlarm": "无总告警",
+          "noFault": "无故障",
+          "noNoFault": "非无故障",
+          "severeFault": "严重故障",
+          "noSevereFault": "非严重故障",
+          "generalFault": "一般故障",
+          "noGeneralFault": "非一般故障",
+          "slightFault": "轻微故障",
+          "noSlightFault": "非轻微故障"
+        },
+        "lightColor": {
+          "greenLight": "绿灯",
+          "yellowLight": "黄灯",
+          "redLight": "红灯"
+        },
+        "priority": {
+          "0": "0",
+          "1": "1",
+          "2": "2",
+          "3": "3",
+          "4": "4",
+          "5": "5",
+          "6": "6",
+          "7": "7",
+          "8": "8",
+          "9": "9",
+          "10": "10",
+          "11": "11",
+          "12": "12",
+          "13": "13",
+          "14": "14",
+          "15": "15"
+        },
+        "lightMode": {
+          "noControl": "不控制",
+          "cycle": "周期",
+          "alwaysOn": "常亮",
+          "alwaysOff": "常灭"
+        }
+      },
+      "header": {
+        "sequence": "序号",
+        "triggerEvent": "触发事件",
+        "lightColor": "灯类型",
+        "priority": "优先级",
+        "lightMode": "灯模式",
+        "lightingTime": "点亮时间(s)",
+        "extinguishTime": "熄灭时间(s)"
+      }
+    },
+    "difault": {
+      "dropdown": {
+        "signalName": {
+          "empty": "空配置",
+          "mainPosFeedback": "主正接触器反馈",
+          "mainNegFeedback": "主负接触器反馈",
+          "prechargeFeedback": "预充接触器反馈",
+          "isolationSwitchFeedback": "隔离开关反馈",
+          "mainBreakerFeedback": "主断路器反馈",
+          "fanFeedback": "风扇反馈",
+          "dcPowerKMFeedback": "直流供电KM反馈",
+          "doorAccessFeedback": "门禁反馈",
+          "spdFeedback": "SPD反馈",
+          "acVoltageFeedback": "交流电压反馈",
+          "smokeFeedback": "烟感反馈",
+          "fireFeedback": "消防反馈",
+          "tempFeedback": "温感反馈",
+          "ventilationFeedback": "排风系统反馈",
+          "auxBreakerFeedback": "辅助断路器反馈",
+          "h2DetectorFeedback": "氢气（H2）探测器反馈",
+          "msdFeedback": "MSD反馈",
+          "emergencyStopFeedback": "急停反馈"
+        },
+        "faultStatus": {
+          "low": "低电平",
+          "high": "高电平"
+        }
+      },
+      "header": {
+        "sequence": "序号",
+        "signalName": "信号名称",
+        "faultStatus": "故障状态",
+        "faultTime": "故障滤波时间(s)"
+      }
+    },
+    "faultAction": {
+      "dropdown": {
+        "faultEvent": {
+          "empty": "空配置",
+          "cellOVCritical": "单体过压严重总故障",
+          "cellOVGeneral": "单体过压一般总故障",
+          "cellOVMinor": "单体过压轻微总故障",
+
+          "cellUVCritical": "单体欠压严重总故障",
+          "cellUVGeneral": "单体欠压一般总故障",
+          "cellUVMinor": "单体欠压轻微总故障",
+
+          "cellOTChrgCritical": "充电单体过温严重总故障",
+          "cellOTChrgGeneral": "充电单体过温一般总故障",
+          "cellOTChrgMinor": "充电单体过温轻微总故障",
+
+          "cellUTChrgCritical": "充电单体欠温严重总故障",
+          "cellUTChrgGeneral": "充电单体欠温一般总故障",
+          "cellUTChrgMinor": "充电单体欠温轻微总故障",
+
+          "cellOTDischgCritical": "放电单体过温严重总故障",
+          "cellOTDischgGeneral": "放电单体过温一般总故障",
+          "cellOTDischgMinor": "放电单体过温轻微总故障",
+
+          "cellUTDischgCritical": "放电单体欠温严重总故障",
+          "cellUTDischgGeneral": "放电单体欠温一般总故障",
+          "cellUTDischgMinor": "放电单体欠温轻微总故障",
+
+          "cellSOCHighCritical": "单体SOC过高严重总故障",
+          "cellSOCHighGeneral": "单体SOC过高一般总故障",
+          "cellSOCHighMinor": "单体SOC过高轻微总故障",
+
+          "cellSOCLowCritical": "单体SOC过低严重总故障",
+          "cellSOCLowGeneral": "单体SOC过低一般总故障",
+          "cellSOCLowMinor": "单体SOC过低轻微总故障",
+
+          "cellVSuperCritical": "单体电压超级严重故障",
+
+          "bmuOVCritical": "BMU过压严重总故障",
+          "bmuOVGeneral": "BMU过压一般总故障",
+          "bmuOVMinor": "BMU过压轻微总故障",
+
+          "bmuUVCritical": "BMU欠压严重总故障",
+          "bmuUVGeneral": "BMU欠压一般总故障",
+          "bmuUVMinor": "BMU欠压轻微总故障",
+
+          "bmuOTCritical": "BMU过温严重总故障",
+          "bmuOTGeneral": "BMU过温一般总故障",
+          "bmuOTMinor": "BMU过温轻微总故障",
+
+          "bmuUTCritical": "BMU欠温严重总故障",
+          "bmuUTGeneral": "BMU欠温一般总故障",
+          "bmuUTMinor": "BMU欠温轻微总故障",
+
+          "connectOTCritical": "动力接插件过温严重总故障",
+          "connectOTGeneral": "动力接插件过温一般总故障",
+          "connectOTMinor": "动力接插件过温轻微总故障",
+
+          "connectUTCritical": "动力接插件欠温严重总故障",
+          "connectUTGeneral": "动力接插件欠温一般总故障",
+          "connectUTMinor": "动力接插件欠温轻微总故障",
+
+          "cellVDiffHCritical": "单体压差过大严重故障",
+          "cellVDiffHGeneral": "单体压差过大一般故障",
+          "cellVDiffHMinor": "单体压差过大轻微故障",
+
+          "cellTDiffHCritical": "单体温差过大严重故障",
+          "cellTDiffHGeneral": "单体温差过大一般故障",
+          "cellTDiffHMinor": "单体温差过大轻微故障",
+
+          "cellSOCDiffHCritical": "单体SOC差异过大严重故障",
+          "cellSOCDiffHGeneral": "单体SOC差异过大一般故障",
+          "cellSOCDiffHMinor": "单体SOC差异过大轻微故障",
+
+          "bmuVDiffHCritical": "BMU压差过大严重故障",
+          "bmuVDiffHGeneral": "BMU压差过大一般故障",
+          "bmuVDiffHMinor": "BMU压差过大轻微故障",
+
+          "clusterOVCritical": "簇端过压严重故障",
+          "clusterOVGeneral": "簇端过压一般故障",
+          "clusterOVMinor": "簇端过压轻微故障",
+
+          "clusterUVCritical": "簇端欠压严重故障",
+          "clusterUVGeneral": "簇端欠压一般故障",
+          "clusterUVMinor": "簇端欠压轻微故障",
+
+          "R+Critical": "绝缘电阻正对地严重故障",
+          "R+General": "绝缘电阻正对地一般故障",
+          "R+Minor": "绝缘电阻正对地轻微故障",
+
+          "R-Critical": "绝缘电阻负对地严重故障",
+          "R-General": "绝缘电阻负对地一般故障",
+          "R-Minor": "绝缘电阻负对地轻微故障",
+
+          "chrOCCritical": "充电过流严重故障",
+          "chrOCGeneral": "充电过流一般故障",
+          "chrOCMinor": "充电过流轻微故障",
+
+          "dischrgOCCritical": "放电过流严重故障",
+          "dischrgOCGeneral": "放电过流一般故障",
+          "dischrgOCMinor": "放电过流轻微故障",
+
+          "envTOTCritical": "环境温度过温严重故障",
+          "envTOTGeneral": "环境温度过温一般故障",
+          "envTOTMinor": "环境温度过温轻微故障",
+
+          "B+OTCritical": "B+连接器过温严重故障",
+          "B+OTGeneral": "B+连接器过温一般故障",
+          "B+OTMinor": "B+连接器过温轻微故障",
+
+          "B-OTCritical": "B-连接器过温严重故障",
+          "B-OTGeneral": "B-连接器过温一般故障",
+          "B-OTMinor": "B-连接器过温轻微故障",
+
+          "P+OTCritical": "P+连接器过温严重故障",
+          "P+OTGeneral": "P+连接器过温一般故障",
+          "P+OTMinor": "P+连接器过温轻微故障",
+
+          "P-OTCritical": "P-连接器过温严重故障",
+          "P-OTGeneral": "P-连接器过温一般故障",
+          "P-OTMinor": "P-连接器过温轻微故障",
+
+          "fuse1OTCritical": "熔断器1过温严重故障",
+          "fuse1OTGeneral": "熔断器1过温一般故障",
+          "fuse1OTMinor": "熔断器1过温轻微故障",
+
+          "fuse2OTCritical": "熔断器2过温严重故障",
+          "fuse2OTGeneral": "熔断器2过温一般故障",
+          "fuse2OTMinor": "熔断器2过温轻微故障",
+
+          "contactorFeedbackFault": "接触器总故障",
+          "isolationSwitchFeedbackFault": "隔离开关反馈故障",
+          "mainBreakerFeedbackFault": "主断路器反馈故障",
+          "fanFeedbackFault": "风扇反馈故障",
+          "dcPowerKMFeedbackFault": "直流供电KM反馈故障",
+          "doorAccessFeedbackFault": "门禁反馈故障",
+          "spdFeedbackFault": "SPD反馈故障",
+          "acVoltageFeedbackFault": "交流电压反馈故障",
+          "smokeFeedbackFault": "烟感反馈故障",
+          "fireFeedbackFault": "消防反馈故障",
+          "tempFeedbackFault": "温感反馈故障",
+          "ventilationFeedbackFault": "排风系统反馈故障",
+          "auxBreakerFeedbackFault": "辅助断路器反馈故障",
+          "h2DetectorFeedbackFault": "氢气（H2）探测器反馈故障",
+          "msdFeedbackFault": "MSD信号反馈故障",
+          "emergencyStopFeedbackFault": "急停反馈故障",
+          "cabinetFanFeedbackFault": "柜体风机反馈故障",
+
+          "pContactorHSFeedbackFault": "主正高边驱动反馈故障",
+          "nContactorHSFeedbackFault": "主负高边驱动反馈故障",
+          "prechargeContactorHSFeedbackFault": "预充高边驱动反馈故障",
+          "redLightHSFeedbackFault": "红灯高边驱动反馈故障",
+          "yellowLightHSFeedbackFault": "黄灯高边驱动反馈故障",
+          "greenLightHSFeedbackFault": "绿灯高边驱动反馈故障",
+          "fanHSFeedbackFault": "风机高边驱动反馈故障",
+          "mainBreakerHSFeedbackFault": "主断分励高边驱动反馈故障",
+          "dcPowerHSFeedbackFault": "直流供电高边驱动反馈故障",
+          "pcsControlHSFeedbackFault": "PCS封波高边驱动反馈故障",
+          "auxBreakerHSFeedbackFault": "辅助断路器分励高边驱动反馈故障",
+          "airExhaustHSFeedbackFault": "排风系统高边驱动反馈故障",
+          "cabinetFanHSFeedbackFault": "柜体风机高边驱动反馈故障",
+
+          "refrigeratorCommuFault": "制冷设备通讯故障",
+          "pcsCommuFault": "PCS通讯故障",
+          "dehumidifierCommuFault": "除湿器通讯故障",
+          "fireCommuFault": "消防设备通讯故障",
+          "bmuCommuFault": "BMU通讯故障",
+          "canHallCommuFault": "CAN霍尔通讯故障",
+          "bcuCommuFault": "BCU对上通讯故障",
+          "daisyChainDisconnectFault": "菊花链断开故障",
+          "afeCommuFault": "AFE通讯故障",
+
+          "envTSenFault": "环境温度传感器故障",
+          "b+TSenFault": "B+连接器温度传感器故障",
+          "b-TSenFault": "B-连接器温度传感器故障",
+          "p+TSenFault": "P+连接器温度传感器故障",
+          "p-TSenFault": "P-连接器温度传感器故障",
+          "fuse1TSenFault": "熔断器1温度传感器故障",
+          "fuse2TSenFault": "熔断器2温度传感器故障",
+
+          "hallFault": "霍尔故障",
+          "invalidDataFault": "无效数据故障",
+          "framFault": "铁电存储器故障",
+          "EEPROMFault": "EEPROM故障",
+          "FLASHFault": "FLASH故障",
+          "vSensorDisconnect": "电压传感器断开",
+          "tSensorDisconnect": "温度传感器断开",
+          "retainFaultSSummary": "保留故障汇总"
+        },
+        "faultEnableFlag": {
+          "disable": "失能",
+          "enable": "使能"
+        },
+        "cutFetFlag": {
+          "disable": "失能",
+          "enable": "使能"
+        },
+        "reservedFlag": {
+          "disable": "失能",
+          "enable": "使能"
+        },
+        "cutBreakerFlag": {
+          "disable": "失能",
+          "enable": "使能"
+        },
+        "cutDCKMFlag": {
+          "disable": "失能",
+          "enable": "使能"
+        },
+        "forbidChargeFlag": {
+          "disable": "失能",
+          "enable": "使能"
+        },
+        "forbidDischargeFlag": {
+          "disable": "失能",
+          "enable": "使能"
+        }
+      },
+      "header": {
+        "sequence": "No.",
+        "faultEvent": "故障事件",
+        "faultEnableFlag": "故障输出",
+        "cutFetFlag": "断接触器",
+        "cutFetTime": "断接触器延时",
+        "reservedFlag": "保留故障",
+        "cutBreakerFlag": "断断路器",
+        "cutBreakerTime": "断断路器延时",
+        "cutDCKMFlag": "断直流KM",
+        "cutDCKMTime": "断直流KM延时",
+        "forbidChargeFlag": "禁充标志",
+        "chargingPowerCoefficient": "充电功率系数",
+        "forbidDischargeFlag": "禁放标志",
+        "dischargingPowerCoefficient": "放电功率系数",
+        "chargingPowerLatchTime": "充电功率锁存时间",
+        "dischargingPowerLatchTime": "放电功率锁存时间"
+      }
+    }
+  },
+  "error": {
+    "noClient": "BCU未连接,请先连接BCU"
+  }
+}

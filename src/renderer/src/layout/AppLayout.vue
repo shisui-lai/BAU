@@ -1,5 +1,5 @@
 <script setup>
-import { computed, watch, ref, onMounted, provide } from 'vue'
+import { computed, watch, ref, onMounted, provide, onUnmounted } from 'vue'
 import AppTopbar from './AppTopbar.vue'
 import AppFooter from './AppFooter.vue'
 import AppSidebar from './AppSidebar.vue'
@@ -7,11 +7,18 @@ import AppConfig from './AppConfig.vue'
 import MqttConnection from '@/views/MqttConfig/MqttConnection.vue'
 import { useLayout } from '@/layout/composables/layout'
 import { useMqttStore } from '@/stores/communication/mqttStore'
+import { useDataReceptionStore } from '@/stores/communication/dataReceptionStore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useSystemConfig } from '@/composables/core/data-processing/parameter-management/useSystemConfig'
+import { useToast } from 'primevue/usetoast'
 
 const { layoutConfig, layoutState, isSidebarActive } = useLayout()
 const mqttStore = useMqttStore()
+
+// 【数据接收监控】初始化数据接收监控store
+// 功能：监控MQTT数据接收状态，提供5秒超时检测和智能配置读取
+const dataReceptionStore = useDataReceptionStore()
+const toast = useToast()
 
 // 初始化页面类型检测
 const pageTypeDetection = usePageTypeDetection()
@@ -21,6 +28,9 @@ const { systemConfig, isConfigLoaded, requestSystemConfig } = useSystemConfig()
 
 // MQTT连接弹窗控制
 const displayMqttDialog = ref(false)
+
+// 数据接收监控相关状态
+let hasShownTimeoutToast = false
 
 const outsideClickListener = ref(null)
 
@@ -159,30 +169,86 @@ watch(() => mqttStore.status, (newStatus, oldStatus) => {
   if (oldStatus === 'connected' && (newStatus === 'disconnected' || newStatus === 'error')) {
     onMqttDisconnected()
   }
-  
+
   // 如果MQTT连接成功，自动读取系统配置参数
   if (newStatus === 'connected' && oldStatus !== 'connected') {
     console.log('[AppLayout] MQTT连接成功，开始读取系统配置参数')
-    // 延迟一下确保连接完全稳定
+    // 减少延迟，快速读取配置
     setTimeout(() => {
       requestSystemConfig()
-    }, 500)
+    }, 100) // 从500ms减少到100ms
   }
 })
+
+// 【数据接收监控】处理心跳信号
+// 功能：接收主进程发送的心跳信号，更新数据接收状态和数据速率统计
+function handleDataHeartbeat(event, heartbeat) {
+  dataReceptionStore.markDataReceived(
+    heartbeat.messageType,
+    heartbeat.dataSize || 0  // 传递数据大小用于速率计算
+  )
+}
+
+// 监听数据接收状态变化 - 已移除toast提示，只保留状态更新
+watch(
+  () => dataReceptionStore.isReceivingData,
+  (newValue, oldValue) => {
+    // 从正常变为超时
+    if (oldValue === true && newValue === false) {
+      hasShownTimeoutToast = true
+      // 不再显示toast通知，只更新状态
+    }
+    // 从超时恢复为正常
+    else if (oldValue === false && newValue === true) {
+      hasShownTimeoutToast = false
+      // 不再显示toast通知，只更新状态
+    }
+  }
+)
 
 // 组件挂载时检查MQTT连接状态
 onMounted(() => {
   checkMqttConnection()
-  
+
   // 如果MQTT已经连接，立即读取系统配置
   if (mqttStore.isConnected) {
     console.log('[AppLayout] 应用启动时MQTT已连接，立即读取系统配置参数')
     setTimeout(() => {
       requestSystemConfig()
-    }, 800) // 稍作延迟确保监听器就绪
+    }, 200) // 从800ms减少到200ms
   } else {
     console.log('[AppLayout] 应用启动时MQTT未连接，等待连接成功后自动读取配置')
   }
+
+  // 【数据接收监控】初始化数据接收监控
+  // 监听主进程发送的心跳信号，启动5秒超时检测和智能配置读取机制
+  window.electron.ipcRenderer.on('mqtt-data-heartbeat', handleDataHeartbeat)
+  dataReceptionStore.startMonitoring()
+  console.log('[AppLayout] 数据接收监控已启动')
+
+  // 监听页面可见性变化，优化后台性能
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+// 处理页面可见性变化
+function handleVisibilityChange() {
+  const isVisible = !document.hidden
+  
+  // 通知主进程调整MQTT限流策略
+  if (window.electron?.ipcRenderer) {
+    window.electron.ipcRenderer.send('page-visibility-change', isVisible)
+  }
+}
+
+// 清理资源
+onUnmounted(() => {
+  // 【数据接收监控】清理数据接收监控
+  // 移除心跳监听器，停止超时检测
+  window.electron.ipcRenderer.removeAllListeners('mqtt-data-heartbeat')
+  dataReceptionStore.stopMonitoring()
+  console.log('[AppLayout] 数据接收监控已停止')
+
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 
 // 提供依赖注入给子组件使用
@@ -211,7 +277,12 @@ defineExpose({
     </div>
     <div class="layout-main-container">
       <div class="layout-main">
-        <router-view></router-view>
+        <!-- 为参数管理页面启用keep-alive，避免频繁mount/unmount -->
+        <router-view v-slot="{ Component }">
+          <keep-alive include="SOXParam,BaseParam,AlarmThreshold">
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
       </div>
     </div>
     <app-config></app-config>

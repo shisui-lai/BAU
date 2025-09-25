@@ -1,9 +1,10 @@
 // src/renderer/src/composables/useSOXParam.js
-import { 
-  REAL_TIME_SAVE_R, 
-  SOX_CFG_PARAM_R, 
-  SOC_CFG_PARAM_R, 
-  SOH_CFG_PARAM_R 
+import { markRaw } from 'vue'
+import {
+  REAL_TIME_SAVE_R,
+  SOX_CFG_PARAM_R,
+  SOC_CFG_PARAM_R,
+  SOH_CFG_PARAM_R
 } from '../../../../../../main/table.js'
 import {
   serializeParameterData,
@@ -13,24 +14,25 @@ import {
 } from '../remote-control/useRemoteControlCore.js'
 
 // 定义每个Topic对应的参数表
-const TOPIC_CONFIG = {
+// 性能优化：使用markRaw避免Vue深度响应式跟踪
+const TOPIC_CONFIG = markRaw({
   'real_time_save': {
-    paramFields: REAL_TIME_SAVE_R,
+    paramFields: markRaw(REAL_TIME_SAVE_R),
     name: '实时SOX数据'
   },
   'sox_cfg_param': {
-    paramFields: SOX_CFG_PARAM_R,
+    paramFields: markRaw(SOX_CFG_PARAM_R),
     name: 'SOX通用参数'
   },
   'soc_cfg_param': {
-    paramFields: SOC_CFG_PARAM_R,
+    paramFields: markRaw(SOC_CFG_PARAM_R),
     name: 'SOC算法参数'
   },
   'soh_cfg_param': {
-    paramFields: SOH_CFG_PARAM_R,
+    paramFields: markRaw(SOH_CFG_PARAM_R),
     name: 'SOH算法参数'
   }
-}
+})
 
 // 根据参数分类确定所属的Topic
 function getTopicByClassName(className) {
@@ -74,24 +76,29 @@ function calculateClassOffsetInTopic(className, topicType) {
       'u8': 1, 's8': 1, 'u16': 2, 's16': 2,
       'u32': 4, 's32': 4, 'f32': 4
     }
-    
+
     // 处理skip类型
     if (param.type && param.type.startsWith('skip')) {
       const skipBytes = parseInt(param.type.replace('skip', ''))
       totalOffset += skipBytes
       continue
     }
-    
+
+    // 跳过bits字段：它们不占用独立的字节空间
+    if (param.type === 'bits' || param.type === 'bit') {
+      continue
+    }
+
     const fieldSize = typeByteMap[param.type] || 2
     const count = param.count || 1
     const paramByteSize = fieldSize * count
-    
+
     // 如果这个参数属于目标分类
     if (param.class === className) {
       if (classStart === -1) classStart = totalOffset
       classEnd = totalOffset + paramByteSize
     }
-    
+
     totalOffset += paramByteSize
   }
   
@@ -119,12 +126,13 @@ export function useSOXParam() {
   }
 
   // 合并所有参数表（仅用于页面显示），并过滤掉预留字段
-  const ALL_SOX_PARAM_R = [
-    ...filterReservedFields(REAL_TIME_SAVE_R),
-    ...filterReservedFields(SOX_CFG_PARAM_R),
-    ...filterReservedFields(SOC_CFG_PARAM_R),
-    ...filterReservedFields(SOH_CFG_PARAM_R)
-  ]
+  // 性能优化：使用markRaw避免Vue深度响应式跟踪
+  const ALL_SOX_PARAM_R = markRaw([
+    ...filterReservedFields(markRaw(REAL_TIME_SAVE_R)),
+    ...filterReservedFields(markRaw(SOX_CFG_PARAM_R)),
+    ...filterReservedFields(markRaw(SOC_CFG_PARAM_R)),
+    ...filterReservedFields(markRaw(SOH_CFG_PARAM_R))
+  ])
 
   const createDefaultSOXParamData = () => createDefaultParameterData(ALL_SOX_PARAM_R, '[useSOXParam]')
 
@@ -182,6 +190,7 @@ export function useSOXParam() {
     parseSOXParamReadResponse,
     parseSOXParamWriteResponse,
     serializeSOXParamData,
+    serializeParameterData, // 导出通用序列化函数
     getClassInfo,
     getTopicByClassName,
     TOPIC_CONFIG,

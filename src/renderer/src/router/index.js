@@ -1,12 +1,11 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import AppLayout from '@/layout/AppLayout.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
       path: '/',
-      component: AppLayout,
+      component: () => import('@/layout/AppLayout.vue'),
       children: [{
       path: '',  // 正确：表示父路由的默认子路径
       name: 'cellData',
@@ -46,6 +45,11 @@ const router = createRouter({
       path: '/Cluster/SOXParam',  // SOX参数页面路由
       name: 'SOXParam',
       component: () => import('@/views/Cluster/SOXParam.vue')
+    },
+    {
+      path: '/Cluster/IvCalibration',  // 模拟量校准页面路由
+      name: 'IvCalibration',
+      component: () => import('@/views/Cluster/Calibration.vue')
     },
     {
       path: '/FaultOverview',  // 故障总览页面路由
@@ -93,6 +97,35 @@ const router = createRouter({
           path: 'BlockRemoteCommand',
           name: 'BlockRemoteCommand',
           component: () => import('@/views/Block/BlockRemoteCommand.vue')
+        }
+      ]
+    },
+    {
+      path: '/Bau',
+      name: 'Bau',
+      component: () => import('@/layout/AppLayout.vue'),
+      children: [
+        {
+          path: 'upgrade',
+          name: 'BauUpgrade',
+          component: () => import('@/views/Bau/upgrade/bauUpgrade.vue')
+        },
+        {
+          path: 'address-adaptive',
+          name: 'AddressAdaptive',
+          component: () => import('@/views/Bau/address-adaptive/addressAdaptive.vue')
+        }
+      ]
+    },
+    {
+      path: '/Device',
+      name: 'Device',
+      component: () => import('@/layout/AppLayout.vue'),
+      children: [
+        {
+          path: 'BauAddressDetection',
+          name: 'BauAddressDetection',
+          component: () => import('@/views/Device/BauAddressDetection.vue')
         }
       ]
     }

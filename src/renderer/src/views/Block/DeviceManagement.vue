@@ -2,6 +2,7 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
 import { onMounted, onUnmounted, computed, ref, nextTick } from 'vue'
+import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { BLOCK_COMMON_PARAM_R, BLOCK_TIME_CFG_R, BLOCK_PORT_CFG_R } from '../../../../main/table.js'
@@ -15,6 +16,7 @@ import InputNumber from 'primevue/inputnumber'
 import Toast from 'primevue/toast'
 import Card from 'primevue/card'
 import Divider from 'primevue/divider'
+import InputText from 'primevue/inputtext'
 import { getDropdownConfig, isDropdownParameter } from '@/configs/ui/dropdownConfigs'
 
 const toastService = useToast()
@@ -96,7 +98,7 @@ const {
   switchToParameterClass,
   startParameterReading,
     // 单次读取（与簇页自动读取保持一致的触发方式）
-    sendParameterReadRequest,
+  sendParameterReadRequest,
   stopParameterReading,
   sendCurrentClassParameters,
   updateParameterValue,
@@ -112,7 +114,54 @@ const {
   updateDropdownParameterValue,
   enhancedParameterList
 // 读取/下设按“堆”逻辑处理（只有 blockId）；顶部显示与否完全由 usePageTypeDetection 控制
-} = useRemoteControlCore(deviceManagementConfig, toastService, { selectorMode: 'block' });
+} = useRemoteControlCore(deviceManagementConfig, toastService, { selectorMode: 'block' })
+
+// 重试逻辑
+const retryLogic = useRetryLogic(toastService, stopParameterReading)
+
+// 带重试逻辑的读取函数
+function startParameterReadingWithRetry() {
+  retryLogic.startRetry()
+  startParameterReading()
+};
+
+// IPv4格式验证函数
+function validateIPv4(ip) {
+  if (!ip || typeof ip !== 'string') return false
+
+  const ipRegex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
+  if (!ipRegex.test(ip)) return false
+
+  const parts = ip.split('.')
+  return parts.every(part => {
+    const num = parseInt(part, 10)
+    return num >= 0 && num <= 255
+  })
+}
+
+
+
+// 获取IPv4输入框的CSS类
+function getIPv4InputClass(value) {
+  if (!value || value === '0.0.0.0') return 'port-field-input'
+  return validateIPv4(value) ? 'port-field-input' : 'port-field-input ipv4-invalid'
+}
+
+// 端口配置读取按钮点击处理
+function handlePortReadButtonClick() {
+  console.log('[PortCfg] 读取按钮点击')
+  console.log('[PortCfg] isReadingPort:', isReadingPort.value)
+  console.log('[PortCfg] portCurrentSelectedClass:', portCurrentSelectedClass?.value)
+  console.log('[PortCfg] portEnhancedParameterList length:', portEnhancedParameterList?.value?.length)
+
+  if (isReadingPort.value) {
+    console.log('[PortCfg] 执行停止读取')
+    stopPortReading()
+  } else {
+    console.log('[PortCfg] 执行开始读取（带状态管理）')
+    startPortReading()
+  }
+}
 
 // 使用通用遥调核心功能（堆模式）- 设备时间设置
 const {
@@ -130,7 +179,12 @@ const {
   isCurrentlyReading: isReadingPort,
   currentClassParameterList: portCurrentClassParameterList,
   enhancedParameterList: portEnhancedParameterList,
+  allAvailableClasses: portAllAvailableClasses,
+  currentSelectedClass: portCurrentSelectedClass,
+  switchToParameterClass: portSwitchToParameterClass,
+  startParameterReading: startPortReading,
   sendParameterReadRequest: sendPortReadRequest,
+  stopParameterReading: stopPortReading,
   sendCurrentClassParameters: sendPortSetParameters,
   updateParameterValue: updatePortParameterValue,
   getParameterInputValue: getPortParameterInputValue,
@@ -141,11 +195,11 @@ const {
 
 // 端口配置：默认选中第一个分类，避免未选中导致列表为空
 try {
-  if (!allAvailableClasses?.value?.length) {
+  if (!portAllAvailableClasses?.value?.length) {
     console.warn('[PortCfg] 无可用分类')
-  } else if (!currentSelectedClass?.value) {
-    switchToParameterClass(allAvailableClasses.value[0].name)
-    console.log('[PortCfg] 默认选中分类:', allAvailableClasses.value[0].name)
+  } else if (!portCurrentSelectedClass?.value) {
+    portSwitchToParameterClass(portAllAvailableClasses.value[0].name)
+    console.log('[PortCfg] 默认选中分类:', portAllAvailableClasses.value[0].name)
   }
 } catch (_) {}
 
@@ -156,6 +210,38 @@ function getPortParameterDropdownOptions(parameterLabel) {
 
 function isPortParameterDropdown(parameterLabel) {
   return isDropdownParameter('block_port_config', 'block_port_cfg', parameterLabel)
+}
+
+// 带IPv4验证的端口参数下发函数
+function sendPortSetParametersWithValidation() {
+  // 验证所有IPv4字段格式
+  const ipv4Errors = []
+
+  portEnhancedParameterList.value.forEach(param => {
+    if (param.type === 'ipv4') {
+      const model = getPortModel(param)
+      const value = model.value
+
+      // 检查IPv4格式（排除默认值0.0.0.0）
+      if (value && value !== '0.0.0.0' && !validateIPv4(value)) {
+        ipv4Errors.push(`${param.label || param.key}: "${value}"`)
+      }
+    }
+  })
+
+  // 如果有格式错误，显示错误信息并阻止下发
+  if (ipv4Errors.length > 0) {
+    toastService.add({
+      severity: 'error',
+      summary: 'IP地址格式错误',
+      detail: `以下IP地址格式不正确，请修正后再下发：\n${ipv4Errors.join('\n')}`,
+      life: 8000
+    })
+    return
+  }
+
+  // 格式验证通过，执行正常的参数下发
+  sendPortSetParameters()
 }
 
 function getPortDropdownDisplayValue(parameterLabel, currentValue) {
@@ -234,9 +320,22 @@ function getPortModel(param){
       get: () => {
         const list = portEnhancedParameterList?.value || []
         const cur = list.find(p => p.key === key)
-        return (cur?.currentValue ?? 0)
+        // 根据字段类型返回合适的默认值
+        const defaultValue = param.type === 'ipv4' ? '0.0.0.0' : 0
+        return (cur?.currentValue ?? defaultValue)
       },
-      set: (val) => updatePortParameterValue(key, Number(val ?? 0))
+      set: (val) => {
+        // 根据字段类型进行不同的数据处理
+        if (param.type === 'ipv4') {
+          // IP地址字段：保持字符串类型，提供默认值
+          const ipValue = String(val ?? '0.0.0.0')
+          updatePortParameterValue(key, ipValue)
+        } else {
+          // 数值字段：转换为数字，NaN时使用0作为默认值
+          const numValue = Number(val ?? 0)
+          updatePortParameterValue(key, isNaN(numValue) ? 0 : numValue)
+        }
+      }
     }))
   }
   return portModelCache.get(key)
@@ -274,18 +373,24 @@ function syncRightCardHeight() {
  */
 function handleDeviceManagementReadEvent(event, mqttMessage) {
   if (mqttMessage.dataType !== 'BLOCK_COMMON_PARAM_R') return
-  
+
+  // 标记收到响应，停止超时检查
+  retryLogic.markResponse()
   // 【新增】同时转发给useSystemConfig处理，确保堆簇结构能及时更新
   const configData = mqttMessage.data
   if (configData && !configData.error) {
     const config = {
       BlockCount: configData.BlockCount || 0,
       ClusterCount1: configData.ClusterCount1 || 0,
-      ClusterCount2: configData.ClusterCount2 || 0
+      ClusterCount2: configData.ClusterCount2 || 0,
+      ClusterCount3: configData.ClusterCount3 || 0,
+      ClusterCount4: configData.ClusterCount4 || 0,
+      ClusterCount5: configData.ClusterCount5 || 0,
+      ClusterCount6: configData.ClusterCount6 || 0,
+      RealTimeDataRecordPeriod: configData.RealTimeDataRecordPeriod || 1
     }
     handleSystemConfigUpdate(config)
   }
-  
   // 复用与配置参数页一致的解析流程
   const parsed = blockCommonParamHandler.parseBlockCommonParamReadResponse(mqttMessage)
   if (!parsed) return
@@ -392,18 +497,22 @@ onUnmounted(() => {
   const ipc = window.electron?.ipcRenderer
   if (ipc) {
     console.log('[DeviceManagement] 取消监听: BLOCK_COMMON_PARAM_R / BLOCK_COMMON_PARAM_W')
-    ipc.removeListener('BLOCK_COMMON_PARAM_R', handleDeviceManagementReadEvent)
-    ipc.removeListener('BLOCK_COMMON_PARAM_W', handleDeviceManagementWriteEvent)
-    ipc.removeListener('BLOCK_TIME_CFG_R', handleTimeReadEvent)
-    ipc.removeListener('BLOCK_TIME_CFG_W', handleTimeWriteEvent)
-    ipc.removeListener('BLOCK_PORT_CFG_R', handlePortReadEvent)
-    ipc.removeListener('BLOCK_PORT_CFG_W', handlePortWriteEvent)
+    ipc.removeAllListeners('BLOCK_COMMON_PARAM_R', handleDeviceManagementReadEvent)
+    ipc.removeAllListeners('BLOCK_COMMON_PARAM_W', handleDeviceManagementWriteEvent)
+    ipc.removeAllListeners('BLOCK_TIME_CFG_R', handleTimeReadEvent)
+    ipc.removeAllListeners('BLOCK_TIME_CFG_W', handleTimeWriteEvent)
+    ipc.removeAllListeners('BLOCK_PORT_CFG_R', handlePortReadEvent)
+    ipc.removeAllListeners('BLOCK_PORT_CFG_W', handlePortWriteEvent)
   }
   
   // 停止参数读取（如在轮询中）
   if (isCurrentlyReading.value) {
     stopParameterReading()
   }
+
+  // 清理重试逻辑资源
+  retryLogic.cleanup()
+
   // 释放窗口监听
   window.removeEventListener('resize', syncRightCardHeight)
 })
@@ -506,9 +615,14 @@ const pSplitClusterFlag = useParamRef('SplitClusterFlag')
 const pEMSDisconnect    = useParamRef('EMSCommFaultDisconnectEnable')
 const pMaintainMode     = useParamRef('MaintainMode')
 const pInternalTestMode = useParamRef('InternalTestMode')
+const pRealTimeDataRecordPeriod = useParamRef('RealTimeDataRecordPeriod')
 const pBlockCount       = useParamRef('BlockCount')
 const pClusterCount1    = useParamRef('ClusterCount1')
 const pClusterCount2    = useParamRef('ClusterCount2')
+const pClusterCount3    = useParamRef('ClusterCount3')
+const pClusterCount4    = useParamRef('ClusterCount4')
+const pClusterCount5    = useParamRef('ClusterCount5')
+const pClusterCount6    = useParamRef('ClusterCount6')
 
 function findOption(options, value) {
   return (options || []).find(o => o.value === value) || { label: String(value), value }
@@ -546,9 +660,14 @@ const mdlMaintainMode     = useDropdownModel(pMaintainMode, 'MaintainMode')
 const mdlInternalTestMode = useDropdownModel(pInternalTestMode, 'InternalTestMode')
 
 // 数字模型
+const mdlRealTimeDataRecordPeriod = useNumberModel(pRealTimeDataRecordPeriod, 'RealTimeDataRecordPeriod')
 const mdlBlockCount    = useNumberModel(pBlockCount, 'BlockCount')
 const mdlClusterCount1 = useNumberModel(pClusterCount1, 'ClusterCount1')
 const mdlClusterCount2 = useNumberModel(pClusterCount2, 'ClusterCount2')
+const mdlClusterCount3 = useNumberModel(pClusterCount3, 'ClusterCount3')
+const mdlClusterCount4 = useNumberModel(pClusterCount4, 'ClusterCount4')
+const mdlClusterCount5 = useNumberModel(pClusterCount5, 'ClusterCount5')
+const mdlClusterCount6 = useNumberModel(pClusterCount6, 'ClusterCount6')
 
 // 统一获取选项：优先核心生成，其次直接从配置拉取
 function optionsForLabel(label){
@@ -567,89 +686,6 @@ function optionsForLabel(label){
 
 <template>
   <div class="card device-management-container">
-    <!-- 指令下发风格的卡片：运行模式 + 结构信息 + 操作按钮 -->
-    <div class="table-container order-like-card" v-if="false">
-      <h2 class="table-title">堆系统基本配置</h2>
-      <div class="table-content">
-        <div class="form-grid">
-          <div class="form-row">
-            <label>远方就地模式</label>
-            <Dropdown
-              v-model="mdlRemoteLocalMode"
-              :options="optionsForLabel('远方就地模式')"
-              optionLabel="label"
-              optionValue="value"
-              :disabled="isCurrentlyReading"
-              class="w-full"
-            />
-    </div>
-          <div class="form-row">
-            <label>分簇控制标志位</label>
-            <Dropdown
-              v-model="mdlSplitClusterFlag"
-              :options="optionsForLabel('分簇控制标志位')"
-              optionLabel="label"
-              optionValue="value"
-              :disabled="isCurrentlyReading"
-              class="w-full"
-          />
-        </div>
-          <div class="form-row">
-            <label>EMS通讯故障断接触器使能</label>
-            <Dropdown
-              v-model="mdlEMSDisconnect"
-              :options="optionsForLabel('EMS通讯故障断接触器使能')"
-              optionLabel="label"
-              optionValue="value"
-              :disabled="isCurrentlyReading"
-              class="w-full"
-          />
-        </div>
-          <div class="form-row">
-            <label>运维模式</label>
-            <Dropdown
-              v-model="mdlMaintainMode"
-              :options="optionsForLabel('运维模式')"
-              optionLabel="label"
-              optionValue="value"
-              :disabled="isCurrentlyReading"
-              class="w-full"
-            />
-      </div>
-          <div class="form-row">
-            <label>内测模式</label>
-              <Dropdown
-              v-model="mdlInternalTestMode"
-              :options="optionsForLabel('内测模式')"
-                optionLabel="label"
-                optionValue="value"
-                :disabled="isCurrentlyReading"
-              class="w-full"
-              />
-            </div>
-
-          <Divider />
-
-          <div class="form-row">
-            <label>当前堆数</label>
-            <InputNumber v-model="mdlBlockCount" :min="0" :useGrouping="false" :disabled="isCurrentlyReading" class="w-full" />
-          </div>
-          <div class="form-row">
-            <label>第一堆下簇数</label>
-            <InputNumber v-model="mdlClusterCount1" :min="0" :useGrouping="false" :disabled="isCurrentlyReading" class="w-full" />
-          </div>
-          <div class="form-row">
-            <label>第二堆下簇数</label>
-            <InputNumber v-model="mdlClusterCount2" :min="0" :useGrouping="false" :disabled="isCurrentlyReading" class="w-full" />
-          </div>
-
-          <div class="button-row">
-            <Button :label="isCurrentlyReading ? '停止读取' : '开始读取'" :icon="isCurrentlyReading ? 'pi pi-stop' : 'pi pi-play'" :severity="isCurrentlyReading ? 'danger' : 'success'" @click="isCurrentlyReading ? stopParameterReading() : startParameterReading()" size="small" />
-            <Button label="下发参数" icon="pi pi-upload" severity="warning" @click="sendCurrentClassParameters" :disabled="isCurrentlyReading" size="small" />
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- 页面两列布局：左列（基本配置+时间），右列（端口配置） -->
     <div class="two-col" style="align-items: start;">
@@ -714,6 +750,18 @@ function optionsForLabel(label){
                   class="w-full"
                 />
               </div>
+              <div class="form-row">
+                <label>实时数据记录周期</label>
+                <div class="input-cell">
+                  <InputNumber
+                    v-model="mdlRealTimeDataRecordPeriod"
+                    :min="1"
+                    :useGrouping="false"
+                    :disabled="isCurrentlyReading"
+                    suffix=" 秒"
+                  />
+                </div>
+              </div>
 
               <!-- 用伪行占位让 Divider 跨整行，而不破坏 .form-grid 两列对齐 -->
               <div class="form-row full-row">
@@ -733,9 +781,25 @@ function optionsForLabel(label){
                 <label>第二堆下簇数</label>
                 <div class="input-cell"><InputNumber v-model="mdlClusterCount2" :min="0" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
               </div>
+              <div class="form-row">
+                <label>第三堆下簇数</label>
+                <div class="input-cell"><InputNumber v-model="mdlClusterCount3" :min="0" :max="20" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
+              </div>
+              <div class="form-row">
+                <label>第四堆下簇数</label>
+                <div class="input-cell"><InputNumber v-model="mdlClusterCount4" :min="0" :max="20" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
+              </div>
+              <div class="form-row">
+                <label>第五堆下簇数</label>
+                <div class="input-cell"><InputNumber v-model="mdlClusterCount5" :min="0" :max="20" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
+              </div>
+              <div class="form-row">
+                <label>第六堆下簇数</label>
+                <div class="input-cell"><InputNumber v-model="mdlClusterCount6" :min="0" :max="20" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
+              </div>
 
               <div class="button-row">
-                <Button :label="isCurrentlyReading ? '停止读取' : '开始读取'" :icon="isCurrentlyReading ? 'pi pi-stop' : 'pi pi-play'" :severity="isCurrentlyReading ? 'danger' : 'success'" @click="isCurrentlyReading ? stopParameterReading() : startParameterReading()" size="small" />
+                <Button :label="isCurrentlyReading ? '停止读取' : '开始读取'" :icon="isCurrentlyReading ? 'pi pi-stop' : 'pi pi-play'" :severity="isCurrentlyReading ? 'danger' : 'success'" @click="isCurrentlyReading ? stopParameterReading() : startParameterReadingWithRetry()" size="small" />
                 <Button label="下发参数" icon="pi pi-upload" severity="warning" @click="sendCurrentClassParameters" :disabled="isCurrentlyReading" size="small" />
               </div>
             </div>
@@ -819,8 +883,8 @@ function optionsForLabel(label){
           <h2 class="table-title">系统端口配置参数</h2>
           <div class="table-content">
             <div class="button-row left compact">
-              <Button label="读取" icon="pi pi-download" size="small" @click="sendPortReadRequest" />
-              <Button label="设置" icon="pi pi-upload" size="small" severity="warning" @click="sendPortSetParameters" />
+              <Button :label="isReadingPort ? '停止读取' : '开始读取'" :icon="isReadingPort ? 'pi pi-stop' : 'pi pi-play'" :severity="isReadingPort ? 'danger' : 'success'" size="small" @click="handlePortReadButtonClick" />
+              <Button label="设置" icon="pi pi-upload" size="small" severity="warning" @click="sendPortSetParametersWithValidation" :disabled="isReadingPort" />
             </div>
             <div class="port-grid">
               <div
@@ -830,13 +894,13 @@ function optionsForLabel(label){
               >
                 <div class="port-col">
                   <label class="port-field-label">{{ p.label || p.key }}</label>
-                  <!-- IPv4地址字段：使用文本输入框 -->
+                  <!-- IPv4地址字段：使用普通输入框+验证 -->
                   <template v-if="p.type === 'ipv4'">
                     <InputText
-                      class="port-field-input"
-                      :modelValue="getPortModel(p).value"
-                      @update:modelValue="val => (getPortModel(p).value = String(val ?? '0.0.0.0'))"
+                      :class="getIPv4InputClass(getPortModel(p).value)"
+                      v-model="getPortModel(p).value"
                       placeholder="0.0.0.0"
+                      :disabled="isReadingPort"
                     />
                   </template>
                   <!-- 通讯速率字段：使用下拉框 -->
@@ -848,11 +912,18 @@ function optionsForLabel(label){
                       :modelValue="getPortParameterDropdownOptions(p.label)?.find(opt => opt.value === getPortModel(p).value)"
                       @update:modelValue="val => updatePortDropdownParameterValue(p.key, val)"
                       placeholder="请选择"
+                      :disabled="isReadingPort"
                     />
                   </template>
                   <!-- 其他字段：使用数值输入框 -->
                   <template v-else>
-                    <InputNumber class="port-field-input" :useGrouping="false" :modelValue="getPortModel(p).value" @update:modelValue="val => (getPortModel(p).value = Number(val ?? 0))" />
+                    <InputNumber
+                      class="port-field-input"
+                      :useGrouping="false"
+                      :modelValue="getPortModel(p).value"
+                      @update:modelValue="val => (getPortModel(p).value = val)"
+                      :disabled="isReadingPort"
+                    />
                   </template>
                 </div>
               </div>
@@ -871,7 +942,8 @@ function optionsForLabel(label){
 .device-management-container {
   padding: 12px;
   max-height: calc(100vh - 78px);
-  overflow: hidden;
+  overflow-y: auto; /* 允许垂直滚动 */
+  overflow-x: hidden; /* 禁止水平滚动 */
 }
 
 .dm-card { border: 1px solid #e9ecef; }
@@ -998,6 +1070,17 @@ function optionsForLabel(label){
 .port-col { display: flex; flex-direction: column; gap: 6px; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px; background: #fff; }
 .port-field-label { color: #4d5965; font-weight: 500; }
 .port-field-input { width: 100%; }
+
+/* IPv4验证错误样式 */
+.port-field-input.ipv4-invalid {
+  border-color: #e24c4c !important;
+  background-color: #fdf2f2 !important;
+}
+
+.port-field-input.ipv4-invalid:focus {
+  border-color: #e24c4c !important;
+  box-shadow: 0 0 0 0.2rem rgba(226, 76, 76, 0.25) !important;
+}
 
 @media (max-width: 1200px) {
   .two-col { grid-template-columns: 1fr; }

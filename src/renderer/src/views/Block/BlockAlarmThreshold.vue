@@ -2,6 +2,7 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
 import { onMounted, onUnmounted, ref } from 'vue'
+import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useBlockStore } from '@/stores/device/blockStore'
@@ -25,6 +26,8 @@ blockStore.setCurrentPageType('block')
 // 计算分类范围（按 class 聚合，过滤保留）
 function getFieldByteSize(t) {
   if (typeof t === 'string' && t.startsWith('skip')) return Number(t.slice(4))
+  // bits字段不占用独立字节空间
+  if (t === 'bits' || t === 'bit') return 0
   const map = { u8:1,s8:1,u16:2,s16:2,u32:4,s32:4,f32:4, ipv4:4 }
   return map[t] || 2
 }
@@ -81,9 +84,21 @@ const {
   sendParameterReadRequest
 } = useRemoteControlCore(blockAlarmCfg, toastService, { selectorMode: 'block' })
 
+// 重试逻辑
+const retryLogic = useRetryLogic(toastService, stopParameterReading)
+
+// 带重试逻辑的读取函数
+function startParameterReadingWithRetry() {
+  retryLogic.startRetry()
+  startParameterReading()
+}
+
 // 事件处理（子进程事件名 = topic后缀大写）
 function handleReadEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_FAULT_DNS_R') return
+
+  // 标记收到响应，停止超时检查
+  retryLogic.markResponse()
   const parsed = parseParameterReadResponse(mqttMessage, '[useBlockAlarmThreshold]', '堆报警阈值')
   if (!parsed) return
   if (parsed.result?.error) return handleParameterReadError(parsed)
@@ -138,10 +153,13 @@ onMounted(() => {
 onUnmounted(() => {
   const ipc = window.electron?.ipcRenderer
   if (ipc){
-    ipc.removeListener('BLOCK_FAULT_DNS_R', handleReadEvent)
-    ipc.removeListener('BLOCK_FAULT_DNS_W', handleWriteEvent)
+    ipc.removeAllListeners('BLOCK_FAULT_DNS_R', handleReadEvent)
+    ipc.removeAllListeners('BLOCK_FAULT_DNS_W', handleWriteEvent)
   }
   if (isCurrentlyReading.value) stopParameterReading()
+
+  // 清理重试逻辑资源
+  retryLogic.cleanup()
 })
 
 // 备注（预留）
@@ -157,7 +175,7 @@ function getParameterRemarkText(){ return '' }
       <div class="button-group">
         <Button :label="isCurrentlyReading ? '停止读取' : '开始读取'" :severity="isCurrentlyReading ? 'danger' : 'primary'"
                 size="small"
-                @click="isCurrentlyReading ? stopParameterReading() : startParameterReading()" />
+                @click="isCurrentlyReading ? stopParameterReading() : startParameterReadingWithRetry()" />
         <Button label="下发参数" severity="warning" size="small" :disabled="isCurrentlyReading || !currentSelectedClass"
                 @click="sendCurrentClassParameters" />
       </div>
@@ -174,7 +192,7 @@ function getParameterRemarkText(){ return '' }
     </div>
 
     <!-- 参数表格 -->
-    <DataTable :value="currentClassParameterList" class="p-datatable-sm" :scrollable="true" scroll-height="600px" :show-gridlines="true">
+    <DataTable :value="currentClassParameterList" class="p-datatable-sm" :show-gridlines="true">
       <Column header="参数名称" style="width: 260px" :frozen="true">
         <template #body="{ data }">
           <div>

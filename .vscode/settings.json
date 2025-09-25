@@ -70,7 +70,7 @@
   "C_Cpp_Runner.msvcSecureNoWarnings": false,
   
   // === 新增：网络优化设置 ===
-  "http.proxy": "",
+  "http.proxy": "http://127.0.0.1:6667",
   "http.proxyStrictSSL": false,
   "http.systemCertificates": true,
   "http.proxySupport": "override",

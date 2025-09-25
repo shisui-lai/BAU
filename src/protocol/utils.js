@@ -1,7 +1,7 @@
   //\src\protocol\utils.js 
   import {  PACK_SUMMARY,
             IO_STATUS_SCHEMA,
-            HARDWARE_FAULT_SCHEMA,
+            // HARDWARE_FAULT_SCHEMA,//协议修改删除
             FAULT_LEVEL2_SCHEMA,
             FAULT_LEVEL3_SCHEMA,
             getCachedL3Schema,
@@ -13,10 +13,10 @@
 
   } from '../main/packSchemaFactory'//动态表解析
   import { SYS_BASE_PARAM_R, ERROR_CODES,CLUSTER_DNS_PARAM_R,PACK_DNS_PARAM_R,CELL_DNS_PARAM_R,
-           REAL_TIME_SAVE_R, SOX_CFG_PARAM_R, SOC_CFG_PARAM_R, SOH_CFG_PARAM_R, BLOCK_SUMMARY, 
+           REAL_TIME_SAVE_R, SOX_CFG_PARAM_R, SOC_CFG_PARAM_R, SOH_CFG_PARAM_R, BLOCK_SUMMARY,
            BLOCK_VERSION, BLOCK_SYS_ABSTRACT, BLOCK_IO_STATUS, BLOCK_ANALOG_FAULT_LEVEL, BLOCK_ANALOG_FAULT_GRADE,
            BLOCK_COMMON_PARAM_R, BLOCK_TIME_CFG_R, BLOCK_PORT_CFG_R, BLOCK_DNS_PARAM_R,
-           BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R } from '../main/table'
+           BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_COMM_LOST, FACTORY_CALIB_PARAM_R } from '../main/table'
   export const toBuf = hex => Buffer.from(hex.replace(/\s+/g, ''), 'hex')
   export const dv    = buf => new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
 
@@ -32,6 +32,10 @@
       const rawValue = v.getUint16(o, true);
       const hexResult = rawValue.toString(16).toUpperCase().padStart(4, '0');
       return hexResult;
+    },
+    hex16:(v,o)=>{
+      const rawValue = v.getUint16(o, true);
+      return rawValue.toString(16).toUpperCase();
     }
   }
 
@@ -42,11 +46,14 @@
     let   off   = start
     const cache = {}                  // 存已读取寄存器，供 bit / bits 字段复用
 
-    // 🔥🔥🔥 DEBUG: 显眼的调试日志 - 开始解析
-    // console.log(`🔥🔥🔥 [PARSE_DEBUG] 开始解析表格，起始偏移: ${start}, 总字段数: ${table.length} 🔥🔥🔥`)
 
-    // 🔥🔥🔥 DEBUG: 字段计数器
     let fieldCount = 0
+
+    // 🔥🔥🔥 DEBUG: 字段解析详细打印 - 用于排查解析问题时启用
+    // const enableFieldDebug = true
+    // if (enableFieldDebug) {
+    //   console.log(`🔥🔥🔥 [parseByTable] === 字段解析详情 === 起始偏移:${start} 缓冲区长度:${view.byteLength} 字段数:${table.length}`)
+    // }
 
 
     /* 取出 n 位 (len=1 ➜ 单 bit) ----------------------------------------- */
@@ -73,9 +80,13 @@
         continue
       }
 
-      // 打印字段解析信息
-      // console.log(`[PARSE_DEBUG] 解析字段: ${key} (${type}), 偏移: ${off}, 缓冲区长度: ${view.byteLength}`);
-      
+      // 🔥🔥🔥 DEBUG: 字段解析详细打印 - 用于排查解析问题时启用
+      // if (enableFieldDebug) {
+      //   const remainingBytes = view.byteLength - off
+      //   const rawDataHex = remainingBytes > 0 ? Array.from(new Uint8Array(view.buffer, view.byteOffset + off, Math.min(8, remainingBytes))).map(b => b.toString(16).padStart(2, '0')).join(' ') : 'EOF'
+      //   console.log(`🔥 字段${fieldCount.toString().padStart(3)}: ${key.padEnd(20)} 类型:${type.padEnd(8)} 偏移:${off.toString().padStart(3)} 剩余:${remainingBytes.toString().padStart(3)} 原数据:[${rawDataHex}]`)
+      // }
+
       const arrMatch = /^u8\[(\d+)]$/.exec(type)
         if(arrMatch){
           const len = Number(arrMatch[1])
@@ -88,7 +99,7 @@
         }
 
       /* ---------- 位字段(bit) 解析（单 bit -> Boolean） ---------------- */
-      if (type === 'bit'){                                             // ← 新增兼容
+      if (type === 'bit'){                                            
         const parentVal = cache[fld.bitsOf]          // 取所属寄存器原始值
         if (parentVal === undefined){
           throw new Error(`bit 字段 ${key} 所依赖的寄存器 ${fld.bitsOf} 尚未解析`)
@@ -98,7 +109,7 @@
       }
 
       /* ---------- 位段(bits) 解析（多 bit -> 数值 / map） -------------- */
-      if (type === 'bits'){                                            // ← 新增类型
+      if (type === 'bits'){                                            
         const parentVal = cache[fld.bitsOf]
         if (parentVal === undefined){
           throw new Error(`bits 字段 ${key} 所依赖的寄存器 ${fld.bitsOf} 尚未解析`)
@@ -147,20 +158,37 @@
           throw new Error(`Unknown type "${type}" for key "${key}"`)
         }
 
+         // 边界检查
+         const typeSize = ({ u8:1, s8:1, u16:2, s16:2, u32:4, s32:4, hex:2, hex16:2 })[type] || 2;
+         if (off + typeSize > view.byteLength) {
+           throw new RangeError(`Offset ${off} is outside the bounds of the DataView (length ${view.byteLength}) for field ${key} (${type})`);
+         }
+
          const rawVal = fn(view, off);
-         
-         // hex类型不需要进行scale处理，直接使用字符串值
-         if (type === 'hex') {
+
+         // hex和hex16类型不需要进行scale处理，直接使用字符串值
+         if (type === 'hex' || type === 'hex16') {
            base[key] = rawVal;
          } else {
            base[key] = rawVal / (fld.scale ?? 1);
          }
          cache[key] = rawVal;
 
-          off += ({ u8:1, s8:1, u16:2, s16:2, u32:4, s32:4, hex:2 })[type];
+         // 🔥🔥🔥 DEBUG: 解析结果打印 - 用于排查解析问题时启用
+        //  if (enableFieldDebug) {
+        //    const finalValue = type === 'hex' ? rawVal : (rawVal / (fld.scale ?? 1))
+        //    console.log(`🔥 结果${fieldCount.toString().padStart(3)}: ${key.padEnd(20)} 原值:${rawVal.toString().padStart(8)} 最终值:${finalValue.toString().padStart(8)} 比例:${(fld.scale ?? 1)}`)
+        //  }
+
+          off += ({ u8:1, s8:1, u16:2, s16:2, u32:4, s32:4, hex:2, hex16:2 })[type];
         
 
     }
+
+    // 🔥🔥🔥 DEBUG: 解析完成总结 - 用于排查解析问题时启用
+    // if (enableFieldDebug) {
+    //   console.log(`🔥🔥🔥 [parseByTable] === 解析完成 === 总字段:${fieldCount} 起始偏移:${start} 结束偏移:${off} 消耗字节:${off-start}`)
+    // }
 
     return { baseConfig: base, nextOffset: off }
   }
@@ -172,6 +200,13 @@
     const base  = {}
     let   off   = start
     const cache = {}                  // 存已读取寄存器，供 bit / bits 字段复用
+
+    // 🔥🔥🔥 DEBUG: 字段解析详细打印 - 用于排查解析问题时启用
+    // const enableFieldDebug = true
+    // if (enableFieldDebug) {
+    //   console.log(`🔥🔥🔥 [parseByTableWithSkip] === 字段解析详情 === 起始偏移:${start} 缓冲区长度:${view.byteLength} 字段数:${table.length}`)
+    // }
+    let fieldCount = 0
 
     /* 取出 n 位 (len=1 ➜ 单 bit) ----------------------------------------- */
     const getBits = (val, from, len = 1) =>
@@ -185,9 +220,18 @@
       const key   = fld.key
       const type  = fld.type
       const scale = fld.scale !== undefined ? fld.scale : 1
+      fieldCount++
 
       // 关键修改：对于valid=false的字段，推进偏移但不存储结果
       const shouldStore = fld.valid !== false && fld.hide !== true;
+
+      // 🔥🔥🔥 DEBUG: 字段解析详细打印 - 用于排查解析问题时启用
+      // if (enableFieldDebug) {
+      //   const remainingBytes = view.byteLength - off
+      //   const rawDataHex = remainingBytes > 0 ? Array.from(new Uint8Array(view.buffer, view.byteOffset + off, Math.min(8, remainingBytes))).map(b => b.toString(16).padStart(2, '0')).join(' ') : 'EOF'
+      //   const storeFlag = shouldStore ? '存储' : '跳过'
+      //   console.log(`🔥 字段${fieldCount.toString().padStart(3)}: ${key.padEnd(20)} 类型:${type.padEnd(8)} 偏移:${off.toString().padStart(3)} 剩余:${remainingBytes.toString().padStart(3)} ${storeFlag} 原数据:[${rawDataHex}]`)
+      // }
 
       /* ---------- 位字段(bit) 解析（单 bit -> Boolean） ---------------- */
       if (type === 'bit'){
@@ -222,6 +266,17 @@
       if (type.startsWith('skip')) {
         const n = parseInt(type.replace('skip', '')) || 0
         off += n
+        continue
+      }
+
+      /* ---------- 固定长 ASCII 字符串 --------------------------------- */
+      if (type.startsWith('str')){
+        const len = Number(type.slice(3))  // str14 → 长度14
+        const bytes = new Uint8Array(view.buffer, view.byteOffset + off, len)
+        off += len
+        if (shouldStore) {
+          base[key] = ascii.decode(bytes).replace(/[^\x20-\x7E]/g, '')
+        }
         continue
       }
 
@@ -266,17 +321,30 @@
           base[key] = rawValue / scale
         }
 
+        // 🔥🔥🔥 DEBUG: 解析结果打印 - 用于排查解析问题时启用
+        // if (enableFieldDebug) {
+        //   const finalValue = shouldStore ? (rawValue / scale) : '跳过'
+        //   const storeFlag = shouldStore ? '存储' : '跳过'
+        //   console.log(`🔥 结果${fieldCount.toString().padStart(3)}: ${key.padEnd(20)} 原值:${rawValue.toString().padStart(8)} 最终值:${finalValue.toString().padStart(8)} 比例:${scale} ${storeFlag}`)
+        // }
+
       } catch (error) {
         console.error(`解析字段 ${key} 时出错:`, error)
         throw error
       }
     }
 
+    // 🔥🔥🔥 DEBUG: 解析完成总结 - 用于排查解析问题时启用
+    // if (enableFieldDebug) {
+    //   console.log(`🔥🔥🔥 [parseByTableWithSkip] === 解析完成 === 总字段:${fieldCount} 起始偏移:${start} 结束偏移:${off} 消耗字节:${off-start}`)
+    // }
+
     return { baseConfig: base, nextOffset: off }
   }
 
   export function groupByClass(schema, flat) {
     const sections = {}
+
     for (const field of schema) {
       if (!field.label || (typeof field.type === 'string' && field.type.startsWith('skip'))) {
         continue
@@ -286,7 +354,9 @@
 
       const rawValue = flat[field.key]
 
-      if (rawValue === undefined || rawValue === null) continue
+      if (rawValue === undefined || rawValue === null) {
+        continue
+      }
 
       const value = field.map && field.map[rawValue] !== undefined
         ? field.map[rawValue]
@@ -552,7 +622,7 @@ export function locateCell (label, cfg = {}) {
 
     // ② 如果没有cell序号，说明是BMU级别故障，AFE和cell应该为null
     if (cellInBmu === 0) {
-      return { bmu, afe: null, cellInBmu: null };
+      return { bmu, afe: null, cellInBmu: null, globalCell: null };
     }
 
     // ③ 由 cellInBmu → 推算 AFE
@@ -564,7 +634,12 @@ export function locateCell (label, cfg = {}) {
       if (cellInBmu <= sum + span) { afe = i + 1; break; }
       sum += span;
     }
-    return { bmu, afe, cellInBmu };
+
+    // ④ 计算全局电芯序号
+    const cellsPerBmu = cellsPerAfe.reduce((total, count) => total + count, 0);
+    const globalCell = cellsPerBmu > 0 ? (bmu - 1) * cellsPerBmu + cellInBmu : null;
+
+    return { bmu, afe, cellInBmu, globalCell };
 }
 
 // 解析掉线信息 
@@ -833,7 +908,7 @@ export function parseQueryResponse(payload, commandTopic = 'unknown') {
       // 2字节 - 成功应答，包含状态数据
       const statusValue = buf.readUInt16LE(0); // 小端序读取u16
 
-      console.log(`[查询应答] 状态数据: 0x${statusValue.toString(16).toUpperCase().padStart(4, '0')} (${statusValue})`);
+      // console.log(`[查询应答] 状态数据: 0x${statusValue.toString(16).toUpperCase().padStart(4, '0')} (${statusValue})`);
 
       return {
         error: false,
@@ -1205,7 +1280,7 @@ export function parseRealTimeSaveRAW(payload) {
               : Buffer.from(String(payload).replace(/\s+/g,''), 'hex');
 
   // console.log(buf)
-  console.log(`[parseRealTimeSaveRAW] 收到数据长度: ${buf.length} 字节`)
+  // console.log(`[parseRealTimeSaveRAW] 收到数据长度: ${buf.length} 字节`)
 
   // 检查响应状态
   if (buf.length < 2) {
@@ -1455,11 +1530,11 @@ export function parseBlockAnalogFaultLevelRAW(payload) {
               : Buffer.from(String(payload).replace(/\s+/g,''), 'hex');
 
   if (buf.length === 0) return null;
-  
+
   // 堆模拟量故障三级汇总有数据长度前缀，前2字节为数据长度
   const dataLen = buf.readUInt16LE(0);
   const paramsBuf = buf.slice(2);
-  
+
   if (paramsBuf.length !== dataLen) {
     console.warn(`block_analog_fault_level length mismatch: expected ${dataLen}, got ${paramsBuf.length}`);
   }
@@ -1472,7 +1547,15 @@ export function parseBlockAnalogFaultLevelRAW(payload) {
 
   // 调用通用解析，按BLOCK_ANALOG_FAULT_LEVEL定义将buffer解析为对象
   const { baseConfig } = parseByTable(view, BLOCK_ANALOG_FAULT_LEVEL);
-  return { error: false, data: baseConfig };
+
+  // 🚀 修复：转换为 parseFault 期望的数组格式
+  const data = groupByClass(BLOCK_ANALOG_FAULT_LEVEL, baseConfig);
+
+  return {
+    error: false,
+    baseConfig: { DataLength: dataLen },
+    data: data  // 现在返回数组格式 [{ class, element }]
+  };
 }
 
 // 解析堆模拟量故障等级原始数据
@@ -1482,11 +1565,11 @@ export function parseBlockAnalogFaultGradeRAW(payload) {
               : Buffer.from(String(payload).replace(/\s+/g,''), 'hex');
 
   if (buf.length === 0) return null;
-  
+
   // 堆模拟量故障等级有数据长度前缀，前2字节为数据长度
   const dataLen = buf.readUInt16LE(0);
   const paramsBuf = buf.slice(2);
-  
+
   if (paramsBuf.length !== dataLen) {
     console.warn(`block_analog_fault_grade length mismatch: expected ${dataLen}, got ${paramsBuf.length}`);
   }
@@ -1500,7 +1583,15 @@ export function parseBlockAnalogFaultGradeRAW(payload) {
 
   // 调用通用解析，按BLOCK_ANALOG_FAULT_GRADE定义将buffer解析为对象
   const { baseConfig } = parseByTable(view, BLOCK_ANALOG_FAULT_GRADE);
-  return { error: false, data: baseConfig };
+
+  // 🚀 修复：转换为 parseFault 期望的数组格式
+  const data = groupByClass(BLOCK_ANALOG_FAULT_GRADE, baseConfig);
+
+  return {
+    error: false,
+    baseConfig: { DataLength: dataLen },
+    data: data  // 现在返回数组格式 [{ class, element }]
+  };
 }
 
 // 解析簇模拟量故障等级原始数据
@@ -1510,73 +1601,78 @@ export function parseCluAnalogFaultGradeRAW(payload) {
               : Buffer.from(String(payload).replace(/\s+/g,''), 'hex');
 
   if (buf.length === 0) return null;
-  
+
   // 1. 读取数据长度（前2字节）
   const dataLen = buf.readUInt16LE(0);
   const paramsBuf = buf.slice(2);
-  
+
   if (paramsBuf.length !== dataLen) {
     console.warn(`clu_analog_fault_grade length mismatch: expected ${dataLen}, got ${paramsBuf.length}`);
   }
-  
+
   // 2. 读取簇数量（第3字节）
   const clusterCount = paramsBuf.readUInt8(0);
   const dataBuf = paramsBuf.slice(1);
-  
+
   // console.log(`[DEBUG] CLU_ANALOG_FAULT_GRADE 解析信息:`);
   // console.log(`  - 总数据长度: ${buf.length} 字节`);
   // console.log(`  - 数据长度字段: ${dataLen} 字节`);
   // console.log(`  - 簇数量: ${clusterCount}`);
   // console.log(`  - 实际数据长度: ${dataBuf.length} 字节`);
-  
+
   // 3. 验证数据长度是否合理
   const expectedDataLength = clusterCount * 8; // 每个簇4个u16字段 = 8字节
   if (dataBuf.length < expectedDataLength) {
     console.error(`[ERROR] 数据长度不足: 需要 ${expectedDataLength} 字节，实际只有 ${dataBuf.length} 字节`);
-  
+    const recalculatedClusterCount = Math.floor(dataBuf.length / 8);
 
-    
     if (recalculatedClusterCount > 0) {
       // 使用重新计算的簇数量
       const schema = CLU_ANALOG_FAULT_GRADE_SCHEMA(recalculatedClusterCount);
       const view = new DataView(dataBuf.buffer, dataBuf.byteOffset, dataBuf.byteLength);
       const { baseConfig } = parseByTable(view, schema);
-      
-      return { 
-        error: false, 
-        data: baseConfig,
-        baseConfig: { 
-          dataLength: dataLen, 
-          clusterCount: recalculatedClusterCount 
-        }
+
+      // 🚀 修复：转换为 parseFault 期望的数组格式
+      const data = groupByClass(schema, baseConfig);
+
+      return {
+        error: false,
+        baseConfig: {
+          dataLength: dataLen,
+          clusterCount: recalculatedClusterCount
+        },
+        data: data  // 现在返回数组格式 [{ class, element }]
       };
     } else {
       console.error(`[ERROR] 重新计算的簇数量 ${recalculatedClusterCount} 不合理，返回空数据`);
-      return { 
-        error: true, 
-        data: {},
-        baseConfig: { 
-          dataLength: dataLen, 
-          clusterCount: 0 
-        }
+      return {
+        error: true,
+        baseConfig: {
+          dataLength: dataLen,
+          clusterCount: 0
+        },
+        data: []  // 返回空数组而不是空对象
       };
     }
   }
-  
+
   // 4. 动态生成schema
   const schema = CLU_ANALOG_FAULT_GRADE_SCHEMA(clusterCount);
-  
+
   // 5. 解析数据
   const view = new DataView(dataBuf.buffer, dataBuf.byteOffset, dataBuf.byteLength);
   const { baseConfig } = parseByTable(view, schema);
-  
-  return { 
-    error: false, 
-    data: baseConfig,
-    baseConfig: { 
-      dataLength: dataLen, 
-      clusterCount: clusterCount 
-    }
+
+  // 🚀 修复：转换为 parseFault 期望的数组格式
+  const data = groupByClass(schema, baseConfig);
+
+  return {
+    error: false,
+    baseConfig: {
+      dataLength: dataLen,
+      clusterCount: clusterCount
+    },
+    data: data  // 现在返回数组格式 [{ class, element }]
   };
 }
 
@@ -1587,12 +1683,12 @@ export function parseCluAnalogFaultGradeRAW(payload) {
  * 解析 block_batt_param_r 原始数据（系统簇端电池配置参数）
  */
 export function parseBlockBattParamRAW(payload) {
-  console.log('[parseBlockBattParamRAW] 开始解析，原始payload:', payload)
+  // console.log('[parseBlockBattParamRAW] 开始解析，原始payload:', payload)
   const buf = Buffer.isBuffer(payload)
               ? payload
               : Buffer.from(String(payload).replace(/\s+/g,''), 'hex');
 
-  console.log('[parseBlockBattParamRAW] Buffer长度:', buf.length, 'hex:', buf.toString('hex'))
+  // console.log('[parseBlockBattParamRAW] Buffer长度:', buf.length, 'hex:', buf.toString('hex'))
   
   if (buf.length === 0) return null;
   
@@ -1613,15 +1709,15 @@ export function parseBlockBattParamRAW(payload) {
   // 成功响应: 前2字节为数据长度 (字节数)，后续为参数数据
   const dataLen = buf.readUInt16LE(0);
   const paramsBuf = buf.slice(2);
-  console.log('[parseBlockBattParamRAW] 数据长度:', dataLen, '实际参数长度:', paramsBuf.length)
+  // console.log('[parseBlockBattParamRAW] 数据长度:', dataLen, '实际参数长度:', paramsBuf.length)
   if (paramsBuf.length !== dataLen) {
     console.warn(`[parseBlockBattParamRAW] length mismatch: expected ${dataLen}, got ${paramsBuf.length}`);
   }
 
   const view = new DataView(paramsBuf.buffer, paramsBuf.byteOffset, paramsBuf.byteLength);
-  console.log('[parseBlockBattParamRAW] 开始按表解析...')
+  // console.log('[parseBlockBattParamRAW] 开始按表解析...')
   const { baseConfig } = parseByTable(view, BLOCK_BATT_PARAM_R);
-  console.log('[parseBlockBattParamRAW] 解析结果:', baseConfig)
+  // console.log('[parseBlockBattParamRAW] 解析结果:', baseConfig)
 
   return { error: false, data: baseConfig };
 }
@@ -1697,4 +1793,295 @@ export function parseBlockOperateCfgRAW(payload) {
 
   return { error: false, data: baseConfig };
 }
+
+// ========== 地址自适应查询结果解析函数 ==========
+
+/**
+ * 解析BCU地址自适应查询结果
+ * @param {string} hex - 十六进制字符串
+ * @returns {Object} 解析结果
+ */
+export function processBcuAdaptiveQueryResult(hex) {
+  const buf = Buffer.from(hex.replace(/\s+/g, ''), 'hex');
+
+  if (buf.length === 0) return null;
+
+  // 失败响应: 1字节错误码
+  if (buf.length === 1) {
+    const errorCode = buf.readUInt8(0);
+    console.log(`[BCU地址自适应查询] 收到错误码: 0x${errorCode.toString(16).toUpperCase()}`);
+    return {
+      error: true,
+      data: {
+        success: false,
+        code: errorCode,
+        message: ERROR_CODES[errorCode] || '未知错误'
+      }
+    };
+  }
+
+  // 成功响应: 直接8字节4寄存器数据（无长度前缀）
+  if (buf.length === 8) {
+    // 解析4个u16寄存器（小端序）
+    const register1 = buf.readUInt16LE(0);
+    const register2 = buf.readUInt16LE(2);
+    const register3 = buf.readUInt16LE(4);
+    const register4 = buf.readUInt16LE(6);
+
+    console.log(`[BCU地址自适应查询] 解析成功: 寄存器[0x${register1.toString(16)}, 0x${register2.toString(16)}, 0x${register3.toString(16)}, 0x${register4.toString(16)}]`);
+
+    return {
+      error: false,
+      data: {
+        success: true,
+        register1,
+        register2,
+        register3,
+        register4
+      }
+    };
+  }
+
+  // 其他长度认为是异常
+  console.warn(`[BCU地址自适应查询] 意外的响应长度: ${buf.length}字节，期望1字节(错误)或8字节(成功)`);
+  return {
+    error: true,
+    data: {
+      success: false,
+      code: 255,
+      message: `响应长度异常: ${buf.length}字节，期望1字节或8字节`
+    }
+  };
+}
+
+/**
+ * 解析BMU地址自适应查询结果
+ * @param {string} hex - 十六进制字符串
+ * @returns {Object} 解析结果
+ */
+export function processBmuAdaptiveQueryResult(hex) {
+  const buf = Buffer.from(hex.replace(/\s+/g, ''), 'hex');
+
+  if (buf.length === 0) return null;
+
+  // 失败响应: 1字节错误码
+  if (buf.length === 1) {
+    const errorCode = buf.readUInt8(0);
+    console.log(`[BMU地址自适应查询] 收到错误码: 0x${errorCode.toString(16).toUpperCase()}`);
+    return {
+      error: true,
+      data: {
+        success: false,
+        code: errorCode,
+        message: ERROR_CODES[errorCode] || '未知错误'
+      }
+    };
+  }
+
+  // 成功响应: 10字节BMU自适应地址结果 (5个u16寄存器)
+  // 寄存器1: 当前簇号 (u16, 1-20)
+  // 寄存器2: BCU执行标识-状态 (u16, 0x00/0xC1/0xC2/0xC3)
+  // 寄存器3: BCU执行标识-内容1 (u16, 失败时有效)
+  // 寄存器4: BCU执行标识-内容2 (u16, 失败时有效，BMU地址)
+  // 寄存器5: BCU执行标识-内容3 (u16, 失败时有效)
+  if (buf.length === 10) {
+    const currentCluster = buf.readUInt16LE(0); // 寄存器1: 簇号
+    const status = buf.readUInt16LE(2); // 寄存器2: 状态
+    const content1 = buf.readUInt16LE(4); // 寄存器3: 内容1
+    const content2 = buf.readUInt16LE(6); // 寄存器4: BMU地址
+    const content3 = buf.readUInt16LE(8); // 寄存器5: 内容3
+
+    console.log(`[BMU地址自适应查询] 解析成功: 簇${currentCluster}, 状态0x${status.toString(16)}, 内容[0x${content1.toString(16)}, 0x${content2.toString(16)}, 0x${content3.toString(16)}]`);
+
+    return {
+      error: false,
+      data: {
+        success: true,
+        currentCluster,
+        register1: status, // 兼容现有解析逻辑，将状态映射到register1
+        register2: content1,
+        register3: content2, // BMU地址
+        register4: content3
+      }
+    };
+  }
+
+  // 支持广播模式的多簇结果 (10*N字节，N为簇数量)
+  // 每个簇结果: 5个u16寄存器 (10字节)
+  if (buf.length > 10 && buf.length % 10 === 0) {
+    const clusterCount = buf.length / 10;
+    console.log(`[BMU地址自适应查询] 检测到多簇结果: ${clusterCount}个簇，共${buf.length}字节`);
+
+    // 解析所有簇的结果
+    const allResults = [];
+    for (let i = 0; i < clusterCount; i++) {
+      const offset = i * 10;
+      const currentCluster = buf.readUInt16LE(offset);     // 寄存器1: 簇号
+      const status = buf.readUInt16LE(offset + 2);         // 寄存器2: 状态
+      const content1 = buf.readUInt16LE(offset + 4);       // 寄存器3: 内容1
+      const content2 = buf.readUInt16LE(offset + 6);       // 寄存器4: BMU地址
+      const content3 = buf.readUInt16LE(offset + 8);       // 寄存器5: 内容3
+
+      allResults.push({
+        currentCluster,
+        status,
+        content1,
+        content2,
+        content3
+      });
+
+      console.log(`[BMU地址自适应查询] 簇${currentCluster}: 状态0x${status.toString(16)}, 内容[0x${content1.toString(16)}, 0x${content2.toString(16)}, 0x${content3.toString(16)}]`);
+    }
+
+    // 返回第一个簇的结果作为主要结果，但包含所有簇的信息
+    const firstResult = allResults[0];
+    return {
+      error: false,
+      data: {
+        success: true,
+        currentCluster: firstResult.currentCluster,
+        register1: firstResult.status,
+        register2: firstResult.content1,
+        register3: firstResult.content2,
+        register4: firstResult.content3,
+        totalClusters: clusterCount,
+        allResults: allResults // 包含所有簇的结果
+      }
+    };
+  }
+
+  // 其他长度认为是异常
+  console.warn(`[BMU地址自适应查询] 意外的响应长度: ${buf.length}字节，期望1字节(错误)或10字节(单簇)或10*N字节(多簇)`);
+  return {
+    error: true,
+    data: {
+      success: false,
+      code: 255,
+      message: `响应长度异常: ${buf.length}字节，期望1字节、10字节或10*N字节`
+    }
+  };
+}
+
+// ========== 单体数据解析函数（从mqtt.js迁移） ==========
+
+/**
+ * 通用单体数据解析函数
+ * @param {string} hex - 十六进制字符串
+ * @param {number} resolution - 分辨率（如0.001表示1mV）
+ * @param {string} tag - 数据类型标签（如'volt', 'soc', 'soh'）
+ * @param {boolean} isSigned - 是否为有符号数（温度为true，其他为false）
+ * @returns {Object} 解析结果 { baseConfig, data }
+ */
+function processCellDataRAW(hex, resolution, tag = 'cell', isSigned = false) {
+  const buf = toBuf(hex);
+  const view = dv(buf);
+
+  // 解析表头
+  const { baseConfig, nextOffset } = parseByTable(view, CELL_HEADER);
+
+  // 提取 & 删除 AFE-Cell/Temp 原始键
+  const afeCellCounts = [], afeTempCounts = [];
+  for (let i = 1; i <= 16; i++) {
+    afeCellCounts.push(baseConfig[`afeCell${i}`]);
+    afeTempCounts.push(baseConfig[`afeTemp${i}`]);
+    delete baseConfig[`afeCell${i}`];
+    delete baseConfig[`afeTemp${i}`];
+  }
+  Object.assign(baseConfig, { afeCellCounts, afeTempCounts });
+
+  // 解析数据值
+  const totalCount = tag === 'temp' ? baseConfig.totalTemp : baseConfig.totalCell;
+  const remaining = view.byteLength - nextOffset;
+  const maxCount = Math.floor(remaining / 2);
+  const count = Math.min(totalCount, maxCount);
+
+  const valueArr = [];
+  for (let i = 0; i < count; i++) {
+    const raw = isSigned
+      ? pick.s16(view, nextOffset + i * 2)
+      : pick.u16(view, nextOffset + i * 2);
+    valueArr.push((raw * resolution).toFixed(resolution < 0.01 ? 3 : 1) * 1);
+  }
+
+  // 组装成 BMU-AFE-Cell 树
+  const data = [];
+  let idx = 0;
+  const countsArray = tag === 'temp' ? afeTempCounts : afeCellCounts;
+
+  for (let b = 1; b <= baseConfig.bmuTotal; b++) {
+    for (let a = 1; a <= baseConfig.afePerBmu; a++) {
+      const elementNum = countsArray[a - 1] || 0;
+      if (!elementNum) continue;
+
+      data.push({
+        bmuId: b,
+        afeId: a,
+        class: tag.toUpperCase(),
+        element: Array.from({ length: elementNum }, (_, i) => ({
+          label: `#${i + 1}`,
+          value: valueArr[idx + i] ?? '-'
+        }))
+      });
+      idx += elementNum;
+    }
+  }
+
+  return { baseConfig, data };
+}
+
+/**
+ * 单体电压解析函数
+ * @param {string} hex - 十六进制字符串
+ * @returns {Object} 解析结果
+ */
+export function processCellVoltageRAW(hex) {
+  return processCellDataRAW(hex, 0.001, 'volt', false);
+}
+
+/**
+ * 单体温度解析函数
+ * @param {string} hex - 十六进制字符串
+ * @returns {Object} 解析结果
+ */
+export function processCellTemperatureRAW(hex) {
+  return processCellDataRAW(hex, 0.1, 'temp', true);
+}
+
+/**
+ * 单体SOC解析函数
+ * @param {string} hex - 十六进制字符串
+ * @returns {Object} 解析结果
+ */
+export function processCellSocRAW(hex) {
+  return processCellDataRAW(hex, 0.1, 'soc', false);
+}
+
+/**
+ * 单体SOH解析函数
+ * @param {string} hex - 十六进制字符串
+ * @returns {Object} 解析结果
+ */
+export function processCellSohRAW(hex) {
+  return processCellDataRAW(hex, 0.1, 'soh', false);
+}
+
+/**
+ * 出厂校正参数解析函数
+ * @param {string} hex - 十六进制字符串
+ * @returns {Object} 解析结果
+ */
+export function parseFactoryCalibrationRAW(hex) {
+  const buf = toBuf(hex);
+  const view = dv(buf);
+
+  // 跳过前2字节的数据长度字段
+  const dataOffset = 2;
+
+  // 使用标准的 parseByTable 方法解析
+  const { baseConfig } = parseByTable(view, FACTORY_CALIB_PARAM_R, dataOffset);
+
+  // 返回标准格式
+  return { error: false, data: baseConfig };
+}
+
 

@@ -238,7 +238,7 @@ export const useBlockStore = defineStore('block', () => {
       return
     }
     currentPageType.value = pageType
-    console.log('[blockStore] setCurrentPageType:', pageType)
+    // console.log('[blockStore] setCurrentPageType:', pageType)
   }
 
   // ================== 工具方法 ==================

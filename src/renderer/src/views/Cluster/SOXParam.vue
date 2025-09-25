@@ -1,6 +1,8 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, onActivated, onDeactivated } from 'vue'
+import { scheduleAutoRead, cancelAutoRead } from '@/composables/utils/useAutoReadScheduler'
+import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { useSOXParam } from '@/composables/core/data-processing/parameter-management/useSOXParam'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
@@ -21,30 +23,77 @@ addPageTypeMapping('/Cluster/SOXParam', 'cluster')
 
 // 根据分类名称确定数据类型
 function getDataTypeFromClassName(className) {
+  // 实时SOX数据的三个分类都属于real_time_save这个topic
+  if (['实时SOC', '实时SOH', '实时SOE'].includes(className)) {
+    return 'real_time_save'
+  }
   const classInfo = soxParamHandler.getClassInfo(className)
   return classInfo.dataType
 }
 
-// 移除手动定义的配置，改用动态计算
-// 自动生成所有分类（过滤掉保留类）
-const parameterClasses = Array.from(new Set(soxParamHandler.ALL_SOX_PARAM_R.map(x => x.class)))
+// 计算实时SOX数据三个分类的偏移和长度
+function calculateRealTimeSOXClassInfo() {
+  const realTimeFields = soxParamHandler.ALL_SOX_PARAM_R.filter(field =>
+    ['实时SOC', '实时SOH', '实时SOE'].includes(field.class)
+  )
+
+  const classes = ['实时SOC', '实时SOH', '实时SOE']
+  const classInfos = []
+
+  let currentOffset = 0
+
+  for (const className of classes) {
+    const classFields = realTimeFields.filter(field => field.class === className)
+    let classLength = 0
+
+    for (const field of classFields) {
+      const typeByteMap = {
+        'u8': 1, 's8': 1, 'u16': 2, 's16': 2,
+        'u32': 4, 's32': 4, 'f32': 4
+      }
+      const fieldSize = typeByteMap[field.type] || 2
+      const count = field.count || 1
+      classLength += fieldSize * count
+    }
+
+    classInfos.push({
+      name: className,
+      byteOffset: currentOffset,
+      byteLength: classLength
+    })
+
+    currentOffset += classLength
+  }
+
+  return classInfos
+}
+
+// 生成所有分类配置
+const realTimeSOXClasses = calculateRealTimeSOXClassInfo()
+
+// 获取其他topic的分类
+const otherClasses = Array.from(new Set(soxParamHandler.ALL_SOX_PARAM_R.map(x => x.class)))
   .filter(className => {
     const classLower = (className || '').toLowerCase()
-    return !classLower.includes('保留') &&
+    return !['实时SOC', '实时SOH', '实时SOE'].includes(className) &&
+           !classLower.includes('保留') &&
            !classLower.includes('预留') &&
            !classLower.includes('跳过') &&
            !classLower.includes('skip')
   })
   .map(name => {
-    // 使用新的getClassInfo方法获取分类信息
     const classInfo = soxParamHandler.getClassInfo(name)
-    console.log(`[SOXParam] 分类"${name}" 信息:`, classInfo)
     return {
       name,
       byteOffset: classInfo.byteOffset,
       byteLength: classInfo.byteLength
     }
   })
+
+// 合并所有分类
+const parameterClasses = [...realTimeSOXClasses, ...otherClasses]
+
+// console.log('[SOXParam] 分类配置:', parameterClasses)
 
 // 页面配置对象 - 使用动态dataType替换
 const soxParamConfig = {
@@ -57,17 +106,34 @@ const soxParamConfig = {
     parameterSerializer: (parameterDataFrame, startByteOffset, registerCount, className) => {
       // 优先使用传入的className，否则使用当前选中的分类
       const targetClassName = className || currentSelectedClass.value?.name
-      console.log(`[SOXParam] 序列化参数: className=${targetClassName}`)
-      
+      // console.log(`[SOXParam] 序列化参数: className=${targetClassName}`)
+
       if (!targetClassName) {
-        console.error('[SOXParam] 序列化失败: 缺少分类名称')
+        // console.error('[SOXParam] 序列化失败: 缺少分类名称')
         return null
       }
-      
+
+      // 对于实时SOX数据的三个分类，使用特殊的序列化逻辑
+      if (['实时SOC', '实时SOH', '实时SOE'].includes(targetClassName)) {
+        // 使用通用序列化函数，传入real_time_save的参数表
+        const realTimeFields = soxParamHandler.ALL_SOX_PARAM_R.filter(field =>
+          ['实时SOC', '实时SOH', '实时SOE'].includes(field.class)
+        )
+        return soxParamHandler.serializeParameterData(
+          parameterDataFrame,
+          realTimeFields,
+          startByteOffset,
+          registerCount,
+          '[SOXParam]',
+          `实时SOX数据-${targetClassName}`
+        )
+      }
+
+      // 其他分类使用原有逻辑
       return soxParamHandler.serializeSOXParamData(
-        parameterDataFrame, 
+        parameterDataFrame,
         targetClassName,
-        startByteOffset, 
+        startByteOffset,
         registerCount
       )
     },
@@ -103,8 +169,25 @@ const {
   handleParameterReadError
 } = useRemoteControlCore(soxParamConfig, toastService)
 
+// 重试逻辑
+const retryLogic = useRetryLogic(toastService, stopParameterReading)
+
+// 定时器引用，用于清理
+let autoReadTimer = null
+
+// 性能优化：虚拟滚动替代分批渲染（已移除分批渲染逻辑）
+
+// 带重试逻辑的多topic读取函数
+function startMultiTopicReadingWithRetry() {
+  retryLogic.startRetry()
+  startMultiTopicReading(allReadTopics)
+}
+
 // MQTT事件处理 - 实时SOX数据
 function handleRealTimeSaveReadEvent(event, mqttMessage) {
+  // 标记收到响应，停止超时检查（任意topic响应即可）
+  retryLogic.markResponse()
+
   const parsedReadData = soxParamHandler.parseSOXParamReadResponse(mqttMessage)
   if (!parsedReadData) return
   if (parsedReadData.result?.error) {
@@ -216,8 +299,6 @@ function handleSOHCfgParamWriteEvent(event, mqttMessage) {
 }
 
 onMounted(() => {
-  console.log('[SOXParam] 页面挂载，开始监听SOX参数事件')
-
   // 先清理可能存在的旧监听器（防止快速切换导致的残留）
   window.electron.ipcRenderer.removeAllListeners('REAL_TIME_SAVE_R')
   window.electron.ipcRenderer.removeAllListeners('SOX_CFG_PARAM_R')
@@ -227,7 +308,6 @@ onMounted(() => {
   window.electron.ipcRenderer.removeAllListeners('SOX_CFG_PARAM_W')
   window.electron.ipcRenderer.removeAllListeners('SOC_CFG_PARAM_W')
   window.electron.ipcRenderer.removeAllListeners('SOH_CFG_PARAM_W')
-  console.log('[SOXParam] 预清理完成，开始注册新监听器')
 
   window.electron.ipcRenderer.on('REAL_TIME_SAVE_R', handleRealTimeSaveReadEvent)
   window.electron.ipcRenderer.on('SOX_CFG_PARAM_R', handleSOXCfgParamReadEvent)
@@ -237,18 +317,25 @@ onMounted(() => {
   window.electron.ipcRenderer.on('SOX_CFG_PARAM_W', handleSOXCfgParamWriteEvent)
   window.electron.ipcRenderer.on('SOC_CFG_PARAM_W', handleSOCCfgParamWriteEvent)
   window.electron.ipcRenderer.on('SOH_CFG_PARAM_W', handleSOHCfgParamWriteEvent)
-  console.log('[SOXParam] SOX监听器注册完成')
 
-  // ========== 自动读取功能 ==========
-  // 等待监听器完全注册后，自动读取一次所有topic的数据
-  setTimeout(() => {
-    console.log('[SOXParam] 开始自动读取SOX参数数据')
-    autoReadMultiTopicOnce(allReadTopics)
-  }, 600) // 延迟800ms确保监听器完全就绪
+  // 使用全局调度器避免多页面并发读取
+  scheduleAutoRead(allReadTopics, 600, 'SOXParam')
+})
+
+// keep-alive 激活时的处理
+onActivated(() => {
+  scheduleAutoRead(allReadTopics, 600, 'SOXParam')
+})
+
+// keep-alive 失活时的处理
+onDeactivated(() => {
+  cancelAutoRead('SOXParam')
+  stopParameterReading()
 })
 
 onUnmounted(() => {
-  console.log('[SOXParam] 页面卸载，停止读取并清理资源')
+  // 取消统一调度器的待处理请求
+  cancelAutoRead('SOXParam')
 
   // 首先停止读取操作
   stopParameterReading()
@@ -263,14 +350,18 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('SOC_CFG_PARAM_W')
   window.electron.ipcRenderer.removeAllListeners('SOH_CFG_PARAM_W')
 
-  console.log('[SOXParam] 页面卸载完成')
+  // 清理重试逻辑资源
+  retryLogic.cleanup()
 })
+
 
 // 获取参数备注说明
 function getParameterRemarkText(parameterKey) {
   // 这里可以添加SOX参数的备注说明
   return '' // 暂时返回空字符串
 }
+
+
 </script>
 
 <template>
@@ -289,7 +380,7 @@ function getParameterRemarkText(parameterKey) {
               if (isCurrentlyReading) {
                 stopParameterReading()
               } else {
-                startMultiTopicReading(allReadTopics)
+                startMultiTopicReadingWithRetry()
               }
             }"
             :severity="isCurrentlyReading ? 'danger' : 'primary'"
@@ -306,10 +397,10 @@ function getParameterRemarkText(parameterKey) {
       </div>
     </div>
 
-    <!-- 参数分类切换标签 -->
+    <!-- 参数分类切换按钮 -->
     <div class="class-tabs mb-4">
-      <Button 
-        v-for="parameterClass in allAvailableClasses" 
+      <Button
+        v-for="parameterClass in allAvailableClasses"
         :key="parameterClass.name"
         :label="parameterClass.name"
         @click="switchToParameterClass(parameterClass.name)"
@@ -320,13 +411,13 @@ function getParameterRemarkText(parameterKey) {
       />
     </div>
 
-    <!-- 当前分类的参数数据表格 -->
-    <DataTable 
+    <!-- 当前分类的参数数据表格 - 直接渲染 -->
+    <DataTable
       :value="currentClassParameterList"
       class="p-datatable-sm"
-      :scrollable="true"
-      scroll-height="600px"
       :show-gridlines="true"
+      scrollable
+      tableStyle="min-width: 50rem"
     >
       <!-- 参数名称列 -->
       <Column header="参数名称" style="width: 250px" :frozen="true">
@@ -337,7 +428,7 @@ function getParameterRemarkText(parameterKey) {
           </div>
         </template>
       </Column>
-      
+
       <!-- 参数值编辑列 -->
       <Column header="参数值" style="width: 150px">
         <template #body="slotProps">
@@ -353,7 +444,7 @@ function getParameterRemarkText(parameterKey) {
           />
         </template>
       </Column>
-      
+
       <!-- 参数单位列 -->
       <Column header="单位" style="width: 80px">
         <template #body="slotProps">
@@ -362,7 +453,7 @@ function getParameterRemarkText(parameterKey) {
           </div>
         </template>
       </Column>
-      
+
       <!-- 参数备注列 -->
       <Column header="备注说明" style="width: 300px">
         <template #body="slotProps">
@@ -400,6 +491,11 @@ function getParameterRemarkText(parameterKey) {
 }
 
 .class-tab-button {
-  min-width: 100px;
+  min-width: 120px;
+  transition: all 0.2s ease;
+}
+
+.class-tab-button:hover {
+  transform: translateY(-1px);
 }
 </style>

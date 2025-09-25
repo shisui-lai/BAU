@@ -19,10 +19,18 @@
                 :key="command.id"
                 class="command-item"
               >
-                <div class="command-label">{{ command.name }}</div>
-                <div class="command-control">
+                <div class="command-label">
+                  {{ command.name }}
+                  <Tag
+                    v-if="command.mode"
+                    :value="getModeLabel(command.mode)"
+                    :severity="getModeSeverity(command.mode)"
+                    class="mode-tag"
+                  />
+                </div>
+                <div class="flex align-items-center gap-2 flex-1">
                   <!-- 下拉选择类型 -->
-                  <div v-if="command.uiType === 'dropdown'" class="dropdown-control">
+                  <div v-if="command.uiType === 'dropdown'" class="flex align-items-center gap-2">
                     <Dropdown
                       v-model="selectedValues[command.id]"
                       :options="command.options"
@@ -33,7 +41,21 @@
                       :disabled="executingCommands.has(command.id)"
                     />
                   </div>
-                  
+
+                  <!-- 输入框类型 -->
+                  <div v-else-if="command.uiType === 'input'" class="flex align-items-center gap-2">
+                    <InputNumber
+                      v-model="selectedValues[command.id]"
+                      :placeholder="command.inputConfig?.placeholder || '请输入值'"
+                      :min="command.inputConfig?.min"
+                      :max="command.inputConfig?.max"
+                      :step="command.inputConfig?.step"
+                      :suffix="command.inputConfig?.unit"
+                      class="w-full"
+                      :disabled="executingCommands.has(command.id)"
+                    />
+                  </div>
+
                   <!-- 复选框组类型 - 直接展示 -->
                   <div v-else-if="command.uiType === 'checkbox_group'" class="checkbox-group-control">
                     <div class="checkbox-group-container">
@@ -56,12 +78,12 @@
                     </div>
                   </div>
                 </div>  
-                <div class="command-action">
+                <div class="flex justify-content-end">
                   <Button
                     label="发送"
                     icon="pi pi-send"
                     class="p-button-sm p-button-success"
-                    @click="command.uiType === 'checkbox_group' ? handleCheckboxBitFieldControl(command.id, command) : handleCommandExecution(command.id, selectedValues[command.id])"
+                    @click="handleCommandClick(command)"
                     :disabled="!canSendCommand(command) || executingCommands.has(command.id)"
                     :loading="executingCommands.has(command.id)"
                   />
@@ -136,6 +158,7 @@ import { usePageTypeDetection } from '@/composables/utils/page-detection/usePage
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import { parseBAUResponseCode, parseContactorExecutionResult } from '@/configs/commands/block/blockRemoteCommandConfig'
 import { ERROR_CODES } from '../../../../main/table.js'
+import Tag from 'primevue/tag'
 
 // Toast 组件
 const toast = useToast()
@@ -184,6 +207,89 @@ const {
 // ========== 方法 ==========
 
 /**
+ * 获取模式标签文本
+ * @param {string} mode - 模式类型 ('remote' | 'local')
+ * @returns {string} 标签文本
+ */
+function getModeLabel(mode) {
+  return mode === 'remote' ? '远方模式下设' : '就地模式下设'
+}
+
+/**
+ * 获取模式标签样式
+ * @param {string} mode - 模式类型 ('remote' | 'local')
+ * @returns {string} PrimeVue Tag 组件的 severity 属性值
+ */
+function getModeSeverity(mode) {
+  return 'info' // 统一使用蓝色标签
+}
+
+/**
+ * 统一处理命令点击事件
+ * @param {Object} command - 命令对象
+ */
+function handleCommandClick(command) {
+  if (command.uiType === 'checkbox_group') {
+    handleCheckboxBitFieldControl(command.id, command)
+  } else if (command.uiType === 'input') {
+    handleInputCommand(command)
+  } else {
+    handleCommandExecution(command.id, selectedValues[command.id])
+  }
+}
+
+/**
+ * 处理输入框类型的命令
+ * @param {Object} command - 命令对象
+ */
+function handleInputCommand(command) {
+  const inputValue = selectedValues[command.id]
+
+  // 验证输入值
+  if (inputValue == null || inputValue === '') {
+    toast.add({
+      severity: 'warn',
+      summary: '输入值无效',
+      detail: `请输入有效的${command.name}值`,
+      life: 3000
+    })
+    return
+  }
+
+  // 验证范围
+  const config = command.inputConfig
+  if (config) {
+    if (config.min != null && inputValue < config.min) {
+      toast.add({
+        severity: 'warn',
+        summary: '输入值超出范围',
+        detail: `${command.name}值不能小于${config.min}`,
+        life: 3000
+      })
+      return
+    }
+    if (config.max != null && inputValue > config.max) {
+      toast.add({
+        severity: 'warn',
+        summary: '输入值超出范围',
+        detail: `${command.name}值不能大于${config.max}`,
+        life: 3000
+      })
+      return
+    }
+  }
+
+  // 处理scale转换
+  let finalValue = inputValue
+  if (config && config.scale) {
+    finalValue = Math.round(inputValue * config.scale)
+  }
+
+  // 执行命令
+  handleCommandExecution(command.id, finalValue)
+}
+
+/**
  * 检查是否可以发送命令
  * @param {Object} command - 命令对象
  * @returns {boolean} 是否可以发送
@@ -192,6 +298,10 @@ function canSendCommand(command) {
   if (command.uiType === 'dropdown') {
     const selectedValue = selectedValues[command.id]
     return selectedValue != null && selectedValue !== ''
+  }
+  if (command.uiType === 'input') {
+    const inputValue = selectedValues[command.id]
+    return inputValue != null && inputValue !== ''
   }
   if (command.uiType === 'checkbox_group') {
     // 检查是否有选中的复选框
@@ -307,6 +417,10 @@ function handleRemoteCommandResponseWithToast(msg) {
     'force_clear_save_fault': '强制消除保留故障',
     'reset_block_param': '控制参数复位',
     'period_ins_detect_en': '周期性绝缘检测',
+    'contactor_selftest_en': '接触器自检检测',
+    'reset_bau': '重启BAU指令',
+    'manual_ctrl_sd_record': '手动控制SD卡记录',
+    'set_block_soc': '下设堆SOC',
     'get_batt_stack_ctrl_switch_result': '查询执行结果'
   }
 
@@ -376,14 +490,21 @@ onMounted(() => {
   window.electron.ipcRenderer.removeAllListeners?.('FORCE_CLEAR_SAVE_FAULT')
   window.electron.ipcRenderer.removeAllListeners?.('RESET_BLOCK_PARAM')
   window.electron.ipcRenderer.removeAllListeners?.('PERIOD_INS_DETECT_EN')
+  window.electron.ipcRenderer.removeAllListeners?.('CONTACTOR_SELFTEST_EN')
+  window.electron.ipcRenderer.removeAllListeners?.('RESET_BAU')
+  window.electron.ipcRenderer.removeAllListeners?.('MANUAL_CTRL_SD_RECORD')
+  window.electron.ipcRenderer.removeAllListeners?.('SET_BLOCK_SOC')
   window.electron.ipcRenderer.removeAllListeners?.('GET_BATT_STACK_CTRL_SWITCH_RESULT')
-  
+
   // 监听堆模式遥控命令应答
   window.electron.ipcRenderer.on('BATT_STACK_CTRL_SWITCH', onRemoteCommandResponse)
   window.electron.ipcRenderer.on('FORCE_CLEAR_SAVE_FAULT', onRemoteCommandResponse)
   window.electron.ipcRenderer.on('RESET_BLOCK_PARAM', onRemoteCommandResponse)
   window.electron.ipcRenderer.on('PERIOD_INS_DETECT_EN', onRemoteCommandResponse)
-  
+  window.electron.ipcRenderer.on('CONTACTOR_SELFTEST_EN', onRemoteCommandResponse)
+  window.electron.ipcRenderer.on('RESET_BAU', onRemoteCommandResponse)
+  window.electron.ipcRenderer.on('MANUAL_CTRL_SD_RECORD', onRemoteCommandResponse)
+  window.electron.ipcRenderer.on('SET_BLOCK_SOC', onRemoteCommandResponse)
   // 监听堆模式反馈查询应答
   window.electron.ipcRenderer.on('GET_BATT_STACK_CTRL_SWITCH_RESULT', onRemoteCommandResponse)
   
@@ -398,7 +519,7 @@ function initializeDropdownDefaults() {
       // 如果还没有选中值，则默认选中第一个选项
       if (selectedValues[command.id] === undefined) {
         selectedValues[command.id] = command.options[0].value
-        console.log(`[BlockRemoteCommand] 初始化下拉框默认值: ${command.name} = ${command.options[0].label}`)
+        // console.log(`[BlockRemoteCommand] 初始化下拉框默认值: ${command.name} = ${command.options[0].label}`)
       }
     }
   })
@@ -412,11 +533,15 @@ onUnmounted(() => {
   stopFeedbackPolling()
   
   // 移除堆模式遥控命令应答监听
-  window.electron.ipcRenderer.removeListener('BATT_STACK_CTRL_SWITCH', onRemoteCommandResponse)
-  window.electron.ipcRenderer.removeListener('FORCE_CLEAR_SAVE_FAULT', onRemoteCommandResponse)
-  window.electron.ipcRenderer.removeListener('RESET_BLOCK_PARAM', onRemoteCommandResponse)
-  window.electron.ipcRenderer.removeListener('PERIOD_INS_DETECT_EN', onRemoteCommandResponse)
-  window.electron.ipcRenderer.removeListener('GET_BATT_STACK_CTRL_SWITCH_RESULT', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('BATT_STACK_CTRL_SWITCH', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('FORCE_CLEAR_SAVE_FAULT', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('RESET_BLOCK_PARAM', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('PERIOD_INS_DETECT_EN', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('CONTACTOR_SELFTEST_EN', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('RESET_BAU', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('MANUAL_CTRL_SD_RECORD', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('SET_BLOCK_SOC', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('GET_BATT_STACK_CTRL_SWITCH_RESULT', onRemoteCommandResponse)
 })
 </script>
 
@@ -527,47 +652,29 @@ onUnmounted(() => {
   font-weight: 600;
   font-size: 0.95rem;
   line-height: 1.4;
-}
-
-.command-control {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
+  flex-wrap: wrap;
 }
 
-.command-action {
-  display: flex;
-  justify-content: flex-end;
+/* 模式标签样式 */
+.mode-tag {
+  font-size: 0.75rem !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
+
+
+
+
   
   /* 复选框组样式 */
-  .checkbox-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-  }
-  
-  .checkbox-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: #4d5965;
-  }
-  
-  .checkbox-item .p-checkbox {
-    width: 16px;
-    height: 16px;
-  }
 
 /* 控件样式 */
-.dropdown-control {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 
 .checkbox-group-control {
   width: 100%;
@@ -650,23 +757,6 @@ onUnmounted(() => {
 }
 
 /* 控制组件样式 */
-.control-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.control-wrapper .p-dropdown {
-  flex: 1;
-  min-width: 120px;
-}
-
-.execute-btn {
-  flex-shrink: 0;
-  padding: 6px 12px;
-  font-size: 0.85rem;
-}
 
 /* 执行状态样式 */
 .executing {
@@ -685,13 +775,13 @@ onUnmounted(() => {
 .confirm-content {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 20px 0;
+  gap: 12px; /* 图标和文字之间的间距 */
 }
 
 .confirm-icon {
   font-size: 24px;
   color: #f39c12;
+  flex-shrink: 0; /* 防止图标被压缩 */
 }
 
 /* 响应式设计 - 优化版本 */
@@ -700,18 +790,14 @@ onUnmounted(() => {
     max-width: 100%;
     padding: 0 8px;
   }
-  
+
   .command-item,
   .result-item {
     grid-template-columns: 1fr;
     gap: 12px;
     padding: 16px;
   }
-  
-  .command-action {
-    justify-content: center;
-  }
-  
+
   .section-divider {
     margin: 16px 0;
   }

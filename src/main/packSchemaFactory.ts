@@ -356,10 +356,36 @@ export function PACK_SUMMARY (bmuTotal: number): PackField[] {
     )
   }
 
+    /* 32 × BMU SOC（固定32个，前n个有效） ---------------------------- */
+  // 协议修改新增：BMU SOC字段，uint16_t类型，范围0-1000，精度0.1%
+  for (let i = 1; i <= 32; i++) {
+    const valid = i <= n;
+    schema.push({
+      class : 'BMU SOC',
+      key   : `Bmu${i}SOC`,
+      label : `BMU${i} SOC(%)`,
+      type  : 'u16',
+      scale : 10,   // 0.1%
+      valid : valid,
+    })
+  }
+
+  /* 32 × BMU产品编码（固定32个，前n个有效，每个BMU占7个寄存器） -------- */
+  // 协议修改新增：BMU产品编码字段，每个BMU占7个寄存器（14字节），字符串类型
+  for (let i = 1; i <= 32; i++) {
+    const valid = i <= n;
+    // 每个BMU的产品编码占7个寄存器（14字节），作为一个整体字符串
+    schema.push({
+      class : 'BMU产品编码',
+      key   : `Bmu${i}ProductCode`,
+      label : `BMU${i} 产品编码`,
+      type  : 'str14',
+      valid : valid,
+    })
+  }
+
   return schema
 }
-
-
 
 
 
@@ -377,6 +403,7 @@ export function PACK_SUMMARY (bmuTotal: number): PackField[] {
 //     ...Array.from({ length: 10 }, (_, i) => ({
 //       class : '系统DI输入状态',
 //       key   : `DI${i + 1}_FB`,
+
 //       label : `DI${i + 1} 反馈`,
 //       type  : 'bit', bitsOf: 'SysDIState', bit: i
 //     })),
@@ -501,114 +528,117 @@ export function IO_STATUS_SCHEMA(bmuTotal: number): PackField[] {
   return schema;
 }
 
+
+//协议修改删除
 /* -------- 动态 硬件故障 schema ---------- */
-export function HARDWARE_FAULT_SCHEMA (bmuTotal: number): PackField[] {
-  const n = Math.min(Math.max(bmuTotal, 1), 32)          // 限 1‥32
-  const s: PackField[] = []
+// export function HARDWARE_FAULT_SCHEMA (bmuTotal: number): PackField[] {
+//   const n = Math.min(Math.max(bmuTotal, 1), 32)          // 限 1‥32
+//   const s: PackField[] = []
 
-  /* 1-1 高边驱动反馈故障 ------------------------------------ */
-  s.push(
-    { class:'高边驱动反馈故障', key:'DOFBFault', label:'高边驱动反馈寄存器', type:'u16', hide:false },
-    ...Array.from({ length:8 }, (_, i) => ({
-      class :'高边驱动反馈故障',
-      key   : `DO${i+1}_FB_Fault`,
-      label : `DO${i+1} 高边驱动反馈故障`,
-      type  : 'bit', bitsOf:'DOFBFault', bit:i
-    }))
-  )
-  /* ─────────────────── 1-2 接触器故障 ─────────────────────── */
-  s.push(
-    { class:'接触器故障', key:'ContactorFault', label:'接触器故障', type:'u16', hide:false },
-    { class:'接触器故障', key:'Pos_Contactor_FBFault',           label:'主正接触器反馈故障', type:'bit', bitsOf:'ContactorFault', bit:0 },
-    { class:'接触器故障', key:'Neg_Contactor_FBFault',           label:'主负接触器反馈故障', type:'bit', bitsOf:'ContactorFault', bit:1 },
-    { class:'接触器故障', key:'PreChg_Contactor_FBFault',        label:'预充接触器反馈故障', type:'bit', bitsOf:'ContactorFault', bit:2 },
-    { class:'接触器故障', key:'Circuit_Breaker_FBFault',         label:'断路器反馈故障',     type:'bit', bitsOf:'ContactorFault', bit:3 },
-    { class:'接触器故障', key:'DIDO_Detect_Fault',               label:'BMU DO/DI 检测故障', type:'bit', bitsOf:'ContactorFault', bit:4 },
-    { class:'接触器故障', key:'Pos_Contactor_Fault',             label:'主正接触器故障',     type:'bit', bitsOf:'ContactorFault', bit:5 },
-    { class:'接触器故障', key:'Neg_Contactor_Fault',             label:'主负接触器故障',     type:'bit', bitsOf:'ContactorFault', bit:6 },
-    { class:'接触器故障', key:'PreChg_Contactor_Fault',          label:'预充接触器故障',     type:'bit', bitsOf:'ContactorFault', bit:7 },
-    { class:'接触器故障', key:'Pos_Contactor_Oxid_Fault',        label:'主正接触器氧化',     type:'bit', bitsOf:'ContactorFault', bit:8 },
-    { class:'接触器故障', key:'Pos_Contactor_adhesion_Fault',    label:'主正接触器黏连',     type:'bit', bitsOf:'ContactorFault', bit:9 },
-    { class:'接触器故障', key:'Neg_Contactor_Oxid_Fault',        label:'主负接触器氧化',     type:'bit', bitsOf:'ContactorFault', bit:10 },
-    { class:'接触器故障', key:'Neg_Contactor_adhesion_Fault',    label:'主负接触器黏连',     type:'bit', bitsOf:'ContactorFault', bit:11 },
-    { class:'接触器故障', key:'PreChg_Contactor_Oxid_Fault',     label:'预充接触器氧化',     type:'bit', bitsOf:'ContactorFault', bit:12 },
-    { class:'接触器故障', key:'PreChg_Contactor_adhesion_Fault', label:'预充接触器黏连',     type:'bit', bitsOf:'ContactorFault', bit:13 },
-    { class:'接触器故障', key:'Contactor_total_Fault',           label:'接触器总故障位',     type:'bit', bitsOf:'ContactorFault', bit:14 },
-  )
+//   /* 1-1 高边驱动反馈故障 ------------------------------------ */
+//   s.push(
+//     { class:'高边驱动反馈故障', key:'DOFBFault', label:'高边驱动反馈寄存器', type:'u16', hide:false },
+//     ...Array.from({ length:8 }, (_, i) => ({
+//       class :'高边驱动反馈故障',
+//       key   : `DO${i+1}_FB_Fault`,
+//       label : `DO${i+1} 高边驱动反馈故障`,
+//       type  : 'bit', bitsOf:'DOFBFault', bit:i
+//     }))
+//   )
+//   /* ─────────────────── 1-2 接触器故障 ─────────────────────── */
+//   s.push(
+//     { class:'接触器故障', key:'ContactorFault', label:'接触器故障', type:'u16', hide:false },
+//     { class:'接触器故障', key:'Pos_Contactor_FBFault',           label:'主正接触器反馈故障', type:'bit', bitsOf:'ContactorFault', bit:0 },
+//     { class:'接触器故障', key:'Neg_Contactor_FBFault',           label:'主负接触器反馈故障', type:'bit', bitsOf:'ContactorFault', bit:1 },
+//     { class:'接触器故障', key:'PreChg_Contactor_FBFault',        label:'预充接触器反馈故障', type:'bit', bitsOf:'ContactorFault', bit:2 },
+//     { class:'接触器故障', key:'Circuit_Breaker_FBFault',         label:'断路器反馈故障',     type:'bit', bitsOf:'ContactorFault', bit:3 },
+//     { class:'接触器故障', key:'DIDO_Detect_Fault',               label:'BMU DO/DI 检测故障', type:'bit', bitsOf:'ContactorFault', bit:4 },
+//     { class:'接触器故障', key:'Pos_Contactor_Fault',             label:'主正接触器故障',     type:'bit', bitsOf:'ContactorFault', bit:5 },
+//     { class:'接触器故障', key:'Neg_Contactor_Fault',             label:'主负接触器故障',     type:'bit', bitsOf:'ContactorFault', bit:6 },
+//     { class:'接触器故障', key:'PreChg_Contactor_Fault',          label:'预充接触器故障',     type:'bit', bitsOf:'ContactorFault', bit:7 },
+//     { class:'接触器故障', key:'Pos_Contactor_Oxid_Fault',        label:'主正接触器氧化',     type:'bit', bitsOf:'ContactorFault', bit:8 },
+//     { class:'接触器故障', key:'Pos_Contactor_adhesion_Fault',    label:'主正接触器黏连',     type:'bit', bitsOf:'ContactorFault', bit:9 },
+//     { class:'接触器故障', key:'Neg_Contactor_Oxid_Fault',        label:'主负接触器氧化',     type:'bit', bitsOf:'ContactorFault', bit:10 },
+//     { class:'接触器故障', key:'Neg_Contactor_adhesion_Fault',    label:'主负接触器黏连',     type:'bit', bitsOf:'ContactorFault', bit:11 },
+//     { class:'接触器故障', key:'PreChg_Contactor_Oxid_Fault',     label:'预充接触器氧化',     type:'bit', bitsOf:'ContactorFault', bit:12 },
+//     { class:'接触器故障', key:'PreChg_Contactor_adhesion_Fault', label:'预充接触器黏连',     type:'bit', bitsOf:'ContactorFault', bit:13 },
+//     { class:'接触器故障', key:'Contactor_total_Fault',           label:'接触器总故障位',     type:'bit', bitsOf:'ContactorFault', bit:14 },
+//   )
 
-  /* ─────────────────── 1-3 反馈信号故障 ───────────────────── */
-  s.push(
-    { class:'反馈信号故障', key:'FBSignalFault',label:'反馈信号故障', type:'u16', hide:false },
-    { class:'反馈信号故障', key:'MB_ShuntTrip_HS_FBFault',     label:'主断分励脱扣 HS 反馈故障', type:'bit', bitsOf:'FBSignalFault', bit:0 },
-    { class:'反馈信号故障', key:'DC_KM_HS_FBFault',            label:'直流供电 KM HS 反馈故障',  type:'bit', bitsOf:'FBSignalFault', bit:1 },
-    { class:'反馈信号故障', key:'Access_FBFault',              label:'门禁反馈故障',             type:'bit', bitsOf:'FBSignalFault', bit:2 },
-    { class:'反馈信号故障', key:'Emergency_Stop_FBFault',      label:'急停反馈故障',             type:'bit', bitsOf:'FBSignalFault', bit:3 },
-    { class:'反馈信号故障', key:'SPD_FBFault',                 label:'SPD 反馈故障',             type:'bit', bitsOf:'FBSignalFault', bit:4 },
-    { class:'反馈信号故障', key:'AC_Vol_FBFault',              label:'交流电压反馈故障',         type:'bit', bitsOf:'FBSignalFault', bit:5 },
-    { class:'反馈信号故障', key:'Smoke_FBFault',               label:'烟感反馈故障',             type:'bit', bitsOf:'FBSignalFault', bit:6 },
-    { class:'反馈信号故障', key:'Fire_Release_Signal_FBFault', label:'消防释放信号故障',         type:'bit', bitsOf:'FBSignalFault', bit:7 },
-    { class:'反馈信号故障', key:'MSD_Fault',                   label:'MSD 信号故障',            type:'bit', bitsOf:'FBSignalFault', bit:8 },
-    { class:'反馈信号故障', key:'Hall_Fault',                  label:'霍尔故障',                type:'bit', bitsOf:'FBSignalFault', bit:9 },
-  )
+//   /* ─────────────────── 1-3 反馈信号故障 ───────────────────── */
+//   s.push(
+//     { class:'反馈信号故障', key:'FBSignalFault',label:'反馈信号故障', type:'u16', hide:false },
+//     { class:'反馈信号故障', key:'MB_ShuntTrip_HS_FBFault',     label:'主断分励脱扣 HS 反馈故障', type:'bit', bitsOf:'FBSignalFault', bit:0 },
+//     { class:'反馈信号故障', key:'DC_KM_HS_FBFault',            label:'直流供电 KM HS 反馈故障',  type:'bit', bitsOf:'FBSignalFault', bit:1 },
+//     { class:'反馈信号故障', key:'Access_FBFault',              label:'门禁反馈故障',             type:'bit', bitsOf:'FBSignalFault', bit:2 },
+//     { class:'反馈信号故障', key:'Emergency_Stop_FBFault',      label:'急停反馈故障',             type:'bit', bitsOf:'FBSignalFault', bit:3 },
+//     { class:'反馈信号故障', key:'SPD_FBFault',                 label:'SPD 反馈故障',             type:'bit', bitsOf:'FBSignalFault', bit:4 },
+//     { class:'反馈信号故障', key:'AC_Vol_FBFault',              label:'交流电压反馈故障',         type:'bit', bitsOf:'FBSignalFault', bit:5 },
+//     { class:'反馈信号故障', key:'Smoke_FBFault',               label:'烟感反馈故障',             type:'bit', bitsOf:'FBSignalFault', bit:6 },
+//     { class:'反馈信号故障', key:'Fire_Release_Signal_FBFault', label:'消防释放信号故障',         type:'bit', bitsOf:'FBSignalFault', bit:7 },
+//     { class:'反馈信号故障', key:'MSD_Fault',                   label:'MSD 信号故障',            type:'bit', bitsOf:'FBSignalFault', bit:8 },
+//     { class:'反馈信号故障', key:'Hall_Fault',                  label:'霍尔故障',                type:'bit', bitsOf:'FBSignalFault', bit:9 },
+//   )
 
-  /* ─────────────────── 1-4 通讯/采集失联故障 ──────────────── */
-  s.push(
-    { class:'通讯/采集失联故障', key:'ContactMissFault', label:'通讯/采集失联故障', type:'u16', hide:false },
-    { class:'通讯/采集失联故障', key:'INVALID_DATA_FaultPos',  label:'无效数据故障',           type:'bit', bitsOf:'ContactMissFault', bit:0 },
-    { class:'通讯/采集失联故障', key:'Cold_COM_Fault',         label:'制冷设备通讯异常',       type:'bit', bitsOf:'ContactMissFault', bit:1 },
-    { class:'通讯/采集失联故障', key:'PCS_COM_Fault',          label:'PCS 通讯故障',           type:'bit', bitsOf:'ContactMissFault', bit:2 },
-    { class:'通讯/采集失联故障', key:'DAISY_Disconnect_Fault', label:'菊花链断连',             type:'bit', bitsOf:'ContactMissFault', bit:3 },
-    { class:'通讯/采集失联故障', key:'FRAM_FAIL_Fault',        label:'铁电存储器故障',         type:'bit', bitsOf:'ContactMissFault', bit:4 },
-    { class:'通讯/采集失联故障', key:'FLASH_FAIL_Fault',       label:'EEPROM/FLASH 故障',      type:'bit', bitsOf:'ContactMissFault', bit:5 },
-    { class:'通讯/采集失联故障', key:'BCU_TEMP1_FAULT',        label:'BCU 温感1故障',          type:'bit', bitsOf:'ContactMissFault', bit:6 },
-    { class:'通讯/采集失联故障', key:'BCU_TEMP2_FAULT',        label:'BCU 温感2故障',          type:'bit', bitsOf:'ContactMissFault', bit:7 },
-    { class:'通讯/采集失联故障', key:'BCU_TEMP3_FAULT',        label:'BCU 温感3故障',          type:'bit', bitsOf:'ContactMissFault', bit:8 },
-    { class:'通讯/采集失联故障', key:'BCU_TEMP4_FAULT',        label:'BCU 温感4故障',          type:'bit', bitsOf:'ContactMissFault', bit:9 },
-    { class:'通讯/采集失联故障', key:'BCU_TEMP5_FAULT',        label:'BCU 温感5故障',          type:'bit', bitsOf:'ContactMissFault', bit:10 },
-    { class:'通讯/采集失联故障', key:'BMU_PareConfig_ERR',     label:'BMU 参数配置错误',       type:'bit', bitsOf:'ContactMissFault', bit:11 },
-    { class:'通讯/采集失联故障', key:'BCU_PareConfig_ERR',     label:'BCU 参数配置错误',       type:'bit', bitsOf:'ContactMissFault', bit:12 },
-    { class:'通讯/采集失联故障', key:'DEHUM_COM_FAULT',        label:'除湿机通讯故障',         type:'bit', bitsOf:'ContactMissFault', bit:13 },
-  )
+//   /* ─────────────────── 1-4 通讯/采集失联故障 ──────────────── */
+//   s.push(
+//     { class:'通讯/采集失联故障', key:'ContactMissFault', label:'通讯/采集失联故障', type:'u16', hide:false },
+//     { class:'通讯/采集失联故障', key:'INVALID_DATA_FaultPos',  label:'无效数据故障',           type:'bit', bitsOf:'ContactMissFault', bit:0 },
+//     { class:'通讯/采集失联故障', key:'Cold_COM_Fault',         label:'制冷设备通讯异常',       type:'bit', bitsOf:'ContactMissFault', bit:1 },
+//     { class:'通讯/采集失联故障', key:'PCS_COM_Fault',          label:'PCS 通讯故障',           type:'bit', bitsOf:'ContactMissFault', bit:2 },
+//     { class:'通讯/采集失联故障', key:'DAISY_Disconnect_Fault', label:'菊花链断连',             type:'bit', bitsOf:'ContactMissFault', bit:3 },
+//     { class:'通讯/采集失联故障', key:'FRAM_FAIL_Fault',        label:'铁电存储器故障',         type:'bit', bitsOf:'ContactMissFault', bit:4 },
+//     { class:'通讯/采集失联故障', key:'EEPROM_FAIL_Fault',       label:'EEPROM故障',      type:'bit', bitsOf:'ContactMissFault', bit:5 },
+//     { class:'通讯/采集失联故障', key:'FLASH_FAIL_Fault',       label:'FLASH故障',      type:'bit', bitsOf:'ContactMissFault', bit:6 },
+//     { class:'通讯/采集失联故障', key:'BCU_TEMP1_FAULT',        label:'BCU 温感1故障',          type:'bit', bitsOf:'ContactMissFault', bit:7 },
+//     { class:'通讯/采集失联故障', key:'BCU_TEMP2_FAULT',        label:'BCU 温感2故障',          type:'bit', bitsOf:'ContactMissFault', bit:8 },
+//     { class:'通讯/采集失联故障', key:'BCU_TEMP3_FAULT',        label:'BCU 温感3故障',          type:'bit', bitsOf:'ContactMissFault', bit:9 },
+//     { class:'通讯/采集失联故障', key:'BCU_TEMP4_FAULT',        label:'BCU 温感4故障',          type:'bit', bitsOf:'ContactMissFault', bit:10 },
+//     { class:'通讯/采集失联故障', key:'BCU_TEMP5_FAULT',        label:'BCU 温感5故障',          type:'bit', bitsOf:'ContactMissFault', bit:11 },
+//     { class:'通讯/采集失联故障', key:'BMU_PareConfig_ERR',     label:'BMU 参数配置错误',       type:'bit', bitsOf:'ContactMissFault', bit:12 },
+//     { class:'通讯/采集失联故障', key:'BCU_PareConfig_ERR',     label:'BCU 参数配置错误',       type:'bit', bitsOf:'ContactMissFault', bit:13 },
+//     { class:'通讯/采集失联故障', key:'DEHUM_COM_FAULT',        label:'除湿机通讯故障',         type:'bit', bitsOf:'ContactMissFault', bit:14 },
+//   )
 
-  /* 1-5 BMU 参数配置错误（动态） --------------------------- */
-  s.push({ class:'BMU参数配置错误', key:'ParaConfigWrong1', label:'BMU参数配置错误', type:'u16', hide:false })
-  if (n > 16) {
-    s.push({ class:'BMU参数配置错误', key:'ParaConfigWrong2', label:'BMU参数配置错误', type:'u16', hide:false })
-  }
+//   /* 1-5 BMU 参数配置错误（动态） --------------------------- */
+//   s.push({ class:'BMU参数配置错误', key:'ParaConfigWrong1', label:'BMU参数配置错误', type:'u16', hide:false })
+//   if (n > 16) {
+//     s.push({ class:'BMU参数配置错误', key:'ParaConfigWrong2', label:'BMU参数配置错误', type:'u16', hide:false })
+//   }
 
-  for (let i = 1; i <= 32; i++) {
-    const valid = i <= n;
-    s.push({
-      class :'BMU参数配置错误',
-      key   : `BMU${i}_ParaErr`,
-      label : `BMU${i} 参数配置错误`,
-      type  : 'bit',
-      bitsOf: i <= 16 ? 'ParaConfigWrong1' : 'ParaConfigWrong2',
-      bit   : (i - 1) % 16,
-      valid,
-      hide    : !valid
-    })
-  }
+//   for (let i = 1; i <= 32; i++) {
+//     const valid = i <= n;
+//     s.push({
+//       class :'BMU参数配置错误',
+//       key   : `BMU${i}_ParaErr`,
+//       label : `BMU${i} 参数配置错误`,
+//       type  : 'bit',
+//       bitsOf: i <= 16 ? 'ParaConfigWrong1' : 'ParaConfigWrong2',
+//       bit   : (i - 1) % 16,
+//       valid,
+//       hide    : !valid
+//     })
+//   }
 
-  /* ─────────────────── 1-6 硬件其它状态 ──────────────────── */
-  s.push(
-    { class:'硬件其它状态', key:'HardwareOther', label:'硬件其它状态' ,type:'u16', hide:false },
-    { class:'硬件其它状态', key:'CAN1_COM_State',     label:'CAN1 通讯异常',      type:'bit', bitsOf:'HardwareOther', bit:0 },
-    { class:'硬件其它状态', key:'CAN2_COM_State',     label:'CAN2 通讯异常',      type:'bit', bitsOf:'HardwareOther', bit:1 },
-    { class:'硬件其它状态', key:'CAN3_COM_State',     label:'CAN3 通讯异常',      type:'bit', bitsOf:'HardwareOther', bit:2 },
-    { class:'硬件其它状态', key:'RS485_1_COM_State',  label:'RS485-1 通讯异常',   type:'bit', bitsOf:'HardwareOther', bit:4 },
-    { class:'硬件其它状态', key:'RS485_2_COM_State',  label:'RS485-2 通讯异常',   type:'bit', bitsOf:'HardwareOther', bit:5 },
-    { class:'硬件其它状态', key:'RS485_3_COM_State',  label:'RS485-3 通讯异常',   type:'bit', bitsOf:'HardwareOther', bit:6 },
-    { class:'硬件其它状态', key:'ETH1_COM_State',     label:'Ethernet1 通讯异常', type:'bit', bitsOf:'HardwareOther', bit:9 },
-    { class:'硬件其它状态', key:'POS_Contactor_State', label:'主正接触器闭合状态', type:'bit', bitsOf:'HardwareOther', bit:11 },
-    { class:'硬件其它状态', key:'Neg_Contactor_State', label:'主负接触器闭合状态', type:'bit', bitsOf:'HardwareOther', bit:12 },
-  )
+//   /* ─────────────────── 1-6 硬件其它状态 ──────────────────── */
+//   s.push(
+//     { class:'硬件其它状态', key:'HardwareOther', label:'硬件其它状态' ,type:'u16', hide:false },
+//     { class:'硬件其它状态', key:'CAN1_COM_State',     label:'CAN1 通讯异常',      type:'bit', bitsOf:'HardwareOther', bit:0 },
+//     { class:'硬件其它状态', key:'CAN2_COM_State',     label:'CAN2 通讯异常',      type:'bit', bitsOf:'HardwareOther', bit:1 },
+//     { class:'硬件其它状态', key:'CAN3_COM_State',     label:'CAN3 通讯异常',      type:'bit', bitsOf:'HardwareOther', bit:2 },
+//     { class:'硬件其它状态', key:'RS485_1_COM_State',  label:'RS485-1 通讯异常',   type:'bit', bitsOf:'HardwareOther', bit:4 },
+//     { class:'硬件其它状态', key:'RS485_2_COM_State',  label:'RS485-2 通讯异常',   type:'bit', bitsOf:'HardwareOther', bit:5 },
+//     { class:'硬件其它状态', key:'RS485_3_COM_State',  label:'RS485-3 通讯异常',   type:'bit', bitsOf:'HardwareOther', bit:6 },
+//     { class:'硬件其它状态', key:'ETH1_COM_State',     label:'Ethernet1 通讯异常', type:'bit', bitsOf:'HardwareOther', bit:9 },
+//     { class:'硬件其它状态', key:'POS_Contactor_State', label:'主正接触器闭合状态', type:'bit', bitsOf:'HardwareOther', bit:11 },
+//     { class:'硬件其它状态', key:'Neg_Contactor_State', label:'主负接触器闭合状态', type:'bit', bitsOf:'HardwareOther', bit:12 },
+//   )
 
-  /* ─────────────────── 最后保留字节 ─────────────────────── */
-  s.push({ key:'_skip1', type:'skip2', class:'保留', label:'' })
+//   /* ─────────────────── 最后保留字节 ─────────────────────── */
+//   s.push({ key:'_skip1', type:'skip2', class:'保留', label:'' })
 
-  return s
-}
+//   return s
+// }
 
 /* -------- 动态 故障等级 2 schema ---------- */
 // export function FAULT_LEVEL2_SCHEMA (bmuTotal = 32): PackField[] {
@@ -944,14 +974,14 @@ const TEMP_KINDS = new Set<FaultKey>([
 ])
 
 
-export const CELL_OV_L3_SCHEMA       = (hdr)=>getCachedL3Schema('cell_ov' , hdr)
-export const CELL_UV_L3_SCHEMA       = (hdr)=>getCachedL3Schema('cell_uv' , hdr)
-export const CHG_OT_L3_SCHEMA        = (hdr)=>getCachedL3Schema('chg_ot'  , hdr)
-export const CHG_UT_L3_SCHEMA        = (hdr)=>getCachedL3Schema('chg_ut'  , hdr)
-export const DSG_OT_L3_SCHEMA        = (hdr)=>getCachedL3Schema('dsg_ot'  , hdr)
-export const DSG_UT_L3_SCHEMA        = (hdr)=>getCachedL3Schema('dsg_ut'  , hdr)
-export const SOC_OVER_L3_SCHEMA      = (hdr)=>getCachedL3Schema('soc_over', hdr)
-export const SOC_UNDER_L3_SCHEMA     = (hdr)=>getCachedL3Schema('soc_under',hdr)
+export const CELL_OV_L3_SCHEMA       = (hdr: Header) => getCachedL3Schema('cell_ov' , hdr)
+export const CELL_UV_L3_SCHEMA       = (hdr: Header) => getCachedL3Schema('cell_uv' , hdr)
+export const CHG_OT_L3_SCHEMA        = (hdr: Header) => getCachedL3Schema('chg_ot'  , hdr)
+export const CHG_UT_L3_SCHEMA        = (hdr: Header) => getCachedL3Schema('chg_ut'  , hdr)
+export const DSG_OT_L3_SCHEMA        = (hdr: Header) => getCachedL3Schema('dsg_ot'  , hdr)
+export const DSG_UT_L3_SCHEMA        = (hdr: Header) => getCachedL3Schema('dsg_ut'  , hdr)
+export const SOC_OVER_L3_SCHEMA      = (hdr: Header) => getCachedL3Schema('soc_over', hdr)
+export const SOC_UNDER_L3_SCHEMA     = (hdr: Header) => getCachedL3Schema('soc_under', hdr)
 
 // export function FAULT_LEVEL3_SCHEMA(
 //   kind: FaultKey,
@@ -1155,158 +1185,6 @@ export function FAULT_LEVEL3_SCHEMA (
 
 
 
-
-/* =======================================================================
-   Broken-Wire (掉线信息) ―― 动态 schema
-   -----------------------------------------------------------------------
-   header 由 CELL_HEADER 解析得到，字段含义：
-     - header.bmuTotal        : 1-32
-     - header.afePerBmu       : 1-16
-     - header.afeCellCounts[] : AFE1…16 每个 AFE 支持的电芯数
-   ======================================================================= */
-
-// const ON_OFF_MAP = { 0: '失联', 1: '正常' } as const;
-
-// export function BROKENWIRE_SCHEMA(header: {
-//   bmuTotal: number;
-//   afePerBmu: number;
-//   afeCellCounts: number[];   // ⩽ 16 个元素
-// }): PackField[] {
-
-//   /* ---------------- 基本统计 ---------------- */
-//   const nBMU  = Math.max(1, Math.min(header.bmuTotal, 32));
-//   const cellsPerBmu = header.afeCellCounts.slice(0, header.afePerBmu)
-//                                            .reduce((s, v) => s + v, 0);
-//   const afePerBmu   = Math.max(1, Math.min(header.afePerBmu, 16));
-
-//   const schema: PackField[] = [];
-
-//   /* ---------- 1. BMU 失联状态（两寄存器，Bit-Map） ---------- */
-//   (['BmuOffline1', 'BmuOffline2'] as const).forEach((regKey, grp) => {
-//     schema.push({ class: 'BMU失联状态', key: regKey, type: 'u16', hide: false });
-//     for (let i = 0; i < 16; i++) {
-//       const bmuIdx = grp * 16 + i + 1;
-//       schema.push({
-//         class : 'BMU失联状态',
-//         key   : `BMU${bmuIdx}_Offline`,
-//         label : `BMU${bmuIdx} 失联`,
-//         type  : 'bit',
-//         bitsOf: regKey,
-//         bit   : i,
-//         valid : bmuIdx <= nBMU,
-//         hide  : bmuIdx > nBMU,
-//         map   : ON_OFF_MAP
-//       });
-//     }
-//   });
-
-//   /* ---------- 2. 插件温度掉线（插件1 & 插件2，各两寄存器） ---------- */
-//   const makePlugBlock = (plugIdx: 1 | 2, baseKey: string, cls: string) => {
-//     (['_L', '_H'] as const).forEach((suffix, grp) => {
-//       const regKey = `${baseKey}${suffix}`;
-//       schema.push({ class: cls, key: regKey, type: 'u16', hide: false });
-
-//       for (let i = 0; i < 16; i++) {
-//         const bmuIdx = grp * 16 + i + 1;
-//         schema.push({
-//           class : cls,
-//           key   : `BMU${bmuIdx}_Plug${plugIdx}Offline`,
-//           label : `BMU${bmuIdx} 插件${plugIdx}温度掉线`,
-//           type  : 'bit',
-//           bitsOf: regKey,
-//           bit   : i,
-//           valid : bmuIdx <= nBMU,
-//           hide  : bmuIdx > nBMU,
-//           map   : ON_OFF_MAP
-//         });
-//       }
-//     });
-//   };
-//   makePlugBlock(1, 'Plug1Offline', '插件1温度掉线');
-//   makePlugBlock(2, 'Plug2Offline', '插件2温度掉线');
-
-//   /* ---------- 3. 预留 2 字节 ---------- */
-//   schema.push({ key: '_skip_resv', type: 'skip2', class: '保留', label: '' });
-
-//   /* ---------- 4. 一级掉线标志（电压 / 温度，各两寄存器） ---------- */
-//   const makeLv1Block = (prefix: string, cls: string) => {
-//     (['_1', '_2'] as const).forEach((suffix, grp) => {
-//       const regKey = `${prefix}${suffix}`;
-//       schema.push({ class: cls, key: regKey, type: 'u16', hide: false });
-
-//       for (let i = 0; i < 16; i++) {
-//         const bmuIdx = grp * 16 + i + 1;
-//         schema.push({
-//           class : cls,
-//           key   : `BMU${bmuIdx}_${prefix}`,
-//           label : `BMU${bmuIdx} ${cls}`,
-//           type  : 'bit',
-//           bitsOf: regKey,
-//           bit   : i,
-//           valid : bmuIdx <= nBMU,
-//           hide  : bmuIdx > nBMU,
-//           map   : { 0: '掉线', 1: '正常' }
-//         });
-//       }
-//     });
-//   };
-//   makeLv1Block('VoltLv1', '电压一级掉线');
-//   makeLv1Block('TempLv1', '温度一级掉线');
-
-//   /* ---------- 5. 二级掉线（电压 / 温度，各 256 寄存器） ---------- */
-//   const makeLv2Block = (prefix: string, cls: string) => {
-//     for (let bmu = 1; bmu <= 32; bmu++) {
-//       for (let r = 0; r < 8; r++) {
-//         const regKey = `${prefix}_BMU${bmu}_R${r + 1}`;
-//         schema.push({ class: cls, key: regKey, type: 'u16', hide: false });
-
-//         for (let bit = 0; bit < 16; bit++) {
-//           const cellIdx = r * 16 + bit;              // 0-127
-//           const valid   = (bmu <= nBMU) && (cellIdx < cellsPerBmu);
-
-//           schema.push({
-//             class : cls,
-//             key   : `BMU${bmu}_Cell${cellIdx + 1}_${prefix}`,
-//             label : `BMU${bmu} Cell${cellIdx + 1} ${cls}`,
-//             type  : 'bit',
-//             bitsOf: regKey,
-//             bit,
-//             valid,
-//             hide  : !valid,
-//             map   : { 0: '掉线', 1: '正常' }
-//           });
-//         }
-//       }
-//     }
-//   };
-//   makeLv2Block('VoltLv2', '电压二级掉线');
-//   makeLv2Block('TempLv2', '温度二级掉线');
-
-//   /* ---------- 6. BMU-AFE 通讯失联（固定 32 寄存器） ---------- */
-//   for (let bmu = 1; bmu <= 32; bmu++) {
-//     const regKey = `BMU${bmu}_AfeLost`;
-//     schema.push({ class: 'AFE失联', key: regKey, type: 'u16', hide: false });
-
-//     for (let afe = 0; afe < 16; afe++) {
-//       const valid = (bmu <= nBMU) && (afe < afePerBmu);
-//       schema.push({
-//         class : 'AFE失联',
-//         key   : `BMU${bmu}_AFE${afe + 1}_Lost`,
-//         label : `BMU${bmu} AFE${afe + 1} 失联`,
-//         type  : 'bit',
-//         bitsOf: regKey,
-//         bit   : afe,
-//         valid,
-//         hide  : !valid,
-//         map   : ON_OFF_MAP
-//       });
-//     }
-//   }
-
-//   return schema;
-// }
-
-
 /* ---------- 常量 ---------- */
 const ON_OFF_MAP = { 0: '失联', 1: '正常' } as const;
 
@@ -1317,49 +1195,44 @@ export interface BrokenWireHeader {
   afeTempCounts: number[];  // 可选：每 AFE 温度探头数
 }
 
-/**
- * 生成掉线 / 失联故障表
- */
-// export function BROKENWIRE_SCHEMA(header: BrokenWireHeader): PackField[] {
 
-//   /* ---------- ① 基本统计 ---------- */
-//   const nBMU        = Math.max(1, Math.min(header.bmuTotal, 32));
-//   const cellsPerBmu = header.afeCellCounts
-//                              .slice(0, header.afePerBmu)
-//                              .reduce((sum, v) => sum + v, 0);        // 单体总数
-//   const tempsPerBmu = (header.afeTempCounts ?? header.afeCellCounts)
-//                              .slice(0, header.afePerBmu)
-//                              .reduce((sum, v) => sum + v, 0);        // 温度总数
-//   const afePerBmu   = Math.max(1, Math.min(header.afePerBmu, 16));
+// 协议修改删除，之前按bmu解析，比如每个bmu47节电池，第三个寄存器最后一个bit不解析，第二个bmu从下个寄存器开始
+/*
+export function BROKENWIRE_SCHEMA_OLD(header: BrokenWireHeader): PackField[] {
+  const nBMU = Math.max(1, Math.min(header.bmuTotal, 32));
+  const afePerBmu = Math.max(1, Math.min(header.afePerBmu, 16));
+  const REG_1BIT_BY_BMU = Math.ceil(nBMU / 16);         // 1 寄存器 ⇔ 16 BMU (每 bit 1 BMU)
 
-//   /* ---------- ② 动态寄存器个数 ---------- */
-//   const REG_1BIT_BY_BMU = Math.ceil(nBMU / 16);         // 1 寄存器 ⇔ 16 BMU (每 bit 1 BMU)
-//   const REG_VOLT_LV2    = Math.ceil(cellsPerBmu / 16);  // 1 寄存器 ⇔ 16 Cell (bit)
-//   const REG_TEMP_LV2    = Math.ceil(tempsPerBmu / 16);  // 1 寄存器 ⇔ 16 Temp
+  const cellCounts = header.afeCellCounts;  // 扁平数组，如 [12,12,12,12,0…]
+  const tempCounts = header.afeTempCounts;
 
-//   const schema: PackField[] = [];
+  const cellsPerBmu = cellCounts.slice(0, afePerBmu).reduce((s, v) => s + v, 0); // 48
+  const tempsPerBmu = tempCounts.slice(0, afePerBmu).reduce((s, v) => s + v, 0);
 
-//   /* ---------- ③ BMU 失联状态 ---------- */
-//   Array.from({ length: REG_1BIT_BY_BMU }, (_, grp) => `BmuOffline${grp + 1}`)
-//     .forEach((regKey, grp) => {
-//       schema.push({ class: 'BMU失联状态', key: regKey, type: 'u16', hide: false });
-//       for (let i = 0; i < 16; i++) {
-//         const bmuIdx = grp * 16 + i + 1;
-//         schema.push({
-//           class : 'BMU失联状态',
-//           key   : `BMU${bmuIdx}_Offline`,
-//           label : `BMU${bmuIdx} 失联`,
-//           type  : 'bit',
-//           bitsOf: regKey,
-//           bit   : i,
-//           valid : bmuIdx <= nBMU,
-//           hide  : bmuIdx > nBMU,
-//           map   : ON_OFF_MAP
-//         });
-//       }
-//     });
 
-//   /* ---------- ④ 插件温度掉线 (插件1 / 2) ---------- */
+  const schema: PackField[] = [];
+
+  // 公共：1-bit BMU 失联 & 插件 & 一级掉线
+    Array.from({ length: REG_1BIT_BY_BMU }, (_, grp) => `BmuOffline${grp + 1}`)
+    .forEach((regKey, grp) => {
+      schema.push({ class: 'BMU失联状态', key: regKey, type: 'u16', hide: false });
+      for (let i = 0; i < 16; i++) {
+        const bmuIdx = grp * 16 + i + 1;
+        schema.push({
+          class : 'BMU失联状态',
+          key   : `BMU${bmuIdx}_Offline`,
+          label : `BMU${bmuIdx} 失联`,
+          type  : 'bit',
+          bitsOf: regKey,
+          bit   : i,
+          valid : bmuIdx <= nBMU,
+          hide  : bmuIdx > nBMU,
+          map   : ON_OFF_MAP
+        });
+      }
+    });
+
+  /* ---------- ④ 插件温度掉线 (插件1 / 2) ---------- */
 //   const makePlugBlock = (plugIdx: 1 | 2, cls: string) => {
 //     Array.from({ length: REG_1BIT_BY_BMU }, (_, grp) => `Plug${plugIdx}Offline${grp + 1}`)
 //       .forEach((regKey, grp) => {
@@ -1383,8 +1256,8 @@ export interface BrokenWireHeader {
 //   makePlugBlock(1, '插件1温度掉线');
 //   makePlugBlock(2, '插件2温度掉线');
 
-//   /* ---------- ⑤ 预留 2 字节 ---------- */
-//   schema.push({ key: '_skip_resv', type: 'skip2', class: '保留', label: '' });
+//   /* ---------- ⑤ 预留 2  ---------- */
+//   schema.push({ key: '_skip_resv', type: 'skip4', class: '保留', label: '' });
 
 //   /* ---------- ⑥ 一级掉线标志 (电压 / 温度) ---------- */
 //   const makeLv1Block = (prefix: string, cls: string) => {
@@ -1402,7 +1275,7 @@ export interface BrokenWireHeader {
 //             bit   : i,
 //             valid : bmuIdx <= nBMU,
 //             hide  : bmuIdx > nBMU,
-//             map   : { 0: '掉线', 1: '正常' }
+//             map   : { 0: '正常', 1: '掉线' }
 //           });
 //         }
 //       });
@@ -1410,40 +1283,50 @@ export interface BrokenWireHeader {
 //   makeLv1Block('VoltLv1', '电压一级掉线');
 //   makeLv1Block('TempLv1', '温度一级掉线');
 
-//   /* ---------- ⑦ 二级掉线 (电压 / 温度) ---------- */
-//   const makeLv2Block = (
-//     prefix : 'VoltLv2' | 'TempLv2',
-//     cls    : string,
-//     regsPB : number,
-//     maxIdx : number
+
+//   // console.log(`flatCellCounts length= ${cellCounts.length}`, cellCounts);
+//   // console.log(`flatTempCounts length= ${tempCounts.length}`, tempCounts);
+//   // 二级掉线（按每个 BMU 计算 regs 数）
+//  const makeLv2Block = (
+//     prefix: 'VoltLv2' | 'TempLv2',
+//     cls: string,
+//     counts: number[],
+//     unit: 'Cell' | 'Temp'
 //   ) => {
 //     for (let bmu = 1; bmu <= nBMU; bmu++) {
-//       for (let r = 0; r < regsPB; r++) {
+//     const total /* 每 BMU */ =
+//     prefix === 'VoltLv2' ? cellsPerBmu
+//                        : tempsPerBmu;
+//       // console.log(`${prefix} 全BMU total =`, total);
+//       const regs = Math.ceil(total / 16);
+//       for (let r = 0; r < regs; r++) {
 //         const regKey = `${prefix}_BMU${bmu}_R${r + 1}`;
 //         schema.push({ class: cls, key: regKey, type: 'u16', hide: false });
-
 //         for (let bit = 0; bit < 16; bit++) {
-//           const idxInBmu = r * 16 + bit;
-//           const valid    = idxInBmu < maxIdx;        // 剩余位留空
+//           const idx = r * 16 + bit;
+//           const valid = idx < total;
 //           schema.push({
-//             class : cls,
-//             key   : `BMU${bmu}_${prefix === 'VoltLv2' ? 'Cell' : 'Temp'}${idxInBmu + 1}_${prefix}`,
-//             label : `BMU${bmu} ${prefix === 'VoltLv2' ? 'Cell' : 'Temp'}${idxInBmu + 1} ${cls}`,
-//             type  : 'bit',
+//             class: cls,
+//             key: `BMU${bmu}_${unit}${idx + 1}_${prefix}`,
+//             label: `BMU${bmu} ${unit}${idx + 1} ${cls}`,
+//             type: 'bit',
 //             bitsOf: regKey,
 //             bit,
 //             valid,
-//             hide  : !valid,
-//             map   : { 0: '掉线', 1: '正常' }
+//             hide: !valid,
+//             map: { 0: '正常', 1: '掉线' }
 //           });
 //         }
 //       }
 //     }
 //   };
-//   makeLv2Block('VoltLv2', '电压二级掉线', REG_VOLT_LV2, cellsPerBmu);
-//   makeLv2Block('TempLv2', '温度二级掉线', REG_TEMP_LV2, tempsPerBmu);
 
-//   /* ---------- ⑧ BMU-AFE 通讯失联 (协议固定 32 寄存器) ---------- */
+//   makeLv2Block('VoltLv2', '电压二级掉线', cellCounts, 'Cell');
+//   makeLv2Block('TempLv2', '温度二级掉线', tempCounts, 'Temp');
+
+
+
+//     /* ---------- ⑧ BMU-AFE 通讯失联 (协议固定 32 寄存器) ---------- */
 //   for (let bmu = 1; bmu <= nBMU; bmu++) {
 //     const regKey = `BMU${bmu}_AfeLost`;
 //     schema.push({ class: 'AFE失联', key: regKey, type: 'u16', hide: false });
@@ -1462,12 +1345,14 @@ export interface BrokenWireHeader {
 //       });
 //     }
 //   }
-
+//   // console.log(schema.filter(f => f.class==='电压二级掉线'));
 //   return schema;
 // }
 
 
+
 export function BROKENWIRE_SCHEMA(header: BrokenWireHeader): PackField[] {
+// 协议修改新增新版本的BROKENWIRE_SCHEMA - 连续排列实现
   const nBMU = Math.max(1, Math.min(header.bmuTotal, 32));
   const afePerBmu = Math.max(1, Math.min(header.afePerBmu, 16));
   const REG_1BIT_BY_BMU = Math.ceil(nBMU / 16);         // 1 寄存器 ⇔ 16 BMU (每 bit 1 BMU)
@@ -1477,12 +1362,15 @@ export function BROKENWIRE_SCHEMA(header: BrokenWireHeader): PackField[] {
 
   const cellsPerBmu = cellCounts.slice(0, afePerBmu).reduce((s, v) => s + v, 0); // 48
   const tempsPerBmu = tempCounts.slice(0, afePerBmu).reduce((s, v) => s + v, 0);
-  
+
+  // 计算总的电池数和温度探头数（所有BMU的总和）
+  const totalCells = nBMU * cellsPerBmu;
+  const totalTemps = nBMU * tempsPerBmu;
 
   const schema: PackField[] = [];
-  
-  // 公共：1-bit BMU 失联 & 插件 & 一级掉线 —— 与之前一致...
-    Array.from({ length: REG_1BIT_BY_BMU }, (_, grp) => `BmuOffline${grp + 1}`)
+
+  /* ---------- ① BMU失联状态 (动态分配寄存器) ---------- */
+  Array.from({ length: REG_1BIT_BY_BMU }, (_, grp) => `BmuOffline${grp + 1}`)
     .forEach((regKey, grp) => {
       schema.push({ class: 'BMU失联状态', key: regKey, type: 'u16', hide: false });
       for (let i = 0; i < 16; i++) {
@@ -1501,7 +1389,7 @@ export function BROKENWIRE_SCHEMA(header: BrokenWireHeader): PackField[] {
       }
     });
 
-  /* ---------- ④ 插件温度掉线 (插件1 / 2) ---------- */
+  /* ---------- ② 插件温度掉线 (插件1 / 2) ---------- */
   const makePlugBlock = (plugIdx: 1 | 2, cls: string) => {
     Array.from({ length: REG_1BIT_BY_BMU }, (_, grp) => `Plug${plugIdx}Offline${grp + 1}`)
       .forEach((regKey, grp) => {
@@ -1525,10 +1413,10 @@ export function BROKENWIRE_SCHEMA(header: BrokenWireHeader): PackField[] {
   makePlugBlock(1, '插件1温度掉线');
   makePlugBlock(2, '插件2温度掉线');
 
-  /* ---------- ⑤ 预留 2  ---------- */
+  /* ---------- ③ 预留 4字节 ---------- */
   schema.push({ key: '_skip_resv', type: 'skip4', class: '保留', label: '' });
 
-  /* ---------- ⑥ 一级掉线标志 (电压 / 温度) ---------- */
+  /* ---------- ④ 一级掉线标志 (电压 / 温度) ---------- */
   const makeLv1Block = (prefix: string, cls: string) => {
     Array.from({ length: REG_1BIT_BY_BMU }, (_, grp) => `${prefix}${grp + 1}`)
       .forEach((regKey, grp) => {
@@ -1544,7 +1432,7 @@ export function BROKENWIRE_SCHEMA(header: BrokenWireHeader): PackField[] {
             bit   : i,
             valid : bmuIdx <= nBMU,
             hide  : bmuIdx > nBMU,
-            map   : { 0: '掉线', 1: '正常' }
+            map   : { 0: '正常', 1: '掉线' }
           });
         }
       });
@@ -1552,50 +1440,92 @@ export function BROKENWIRE_SCHEMA(header: BrokenWireHeader): PackField[] {
   makeLv1Block('VoltLv1', '电压一级掉线');
   makeLv1Block('TempLv1', '温度一级掉线');
 
+  /* ---------- ⑤ 二级掉线 (连续排列逻辑) ---------- */
+  // 电压二级掉线 - 所有电池连续排列
+  const voltLv2Regs = Math.ceil(totalCells / 16);
+  for (let r = 0; r < voltLv2Regs; r++) {
+    const regKey = `VoltLv2_R${r + 1}`;
+    schema.push({ class: '电压二级掉线', key: regKey, type: 'u16', hide: false });
 
-  // console.log(`flatCellCounts length= ${cellCounts.length}`, cellCounts);
-  // console.log(`flatTempCounts length= ${tempCounts.length}`, tempCounts);
-  // 二级掉线（按每个 BMU 计算 regs 数）
- const makeLv2Block = (
-    prefix: 'VoltLv2' | 'TempLv2',
-    cls: string,
-    counts: number[],
-    unit: 'Cell' | 'Temp'
-  ) => {
-    for (let bmu = 1; bmu <= nBMU; bmu++) {
-    const total /* 每 BMU */ =
-    prefix === 'VoltLv2' ? cellsPerBmu   // 48
-                       : tempsPerBmu; 
-      // console.log(`${prefix} 全BMU total =`, total);
-      const regs = Math.ceil(total / 16);
-      for (let r = 0; r < regs; r++) {
-        const regKey = `${prefix}_BMU${bmu}_R${r + 1}`;
-        schema.push({ class: cls, key: regKey, type: 'u16', hide: false });
-        for (let bit = 0; bit < 16; bit++) {
-          const idx = r * 16 + bit;
-          const valid = idx < total;
-          schema.push({
-            class: cls,
-            key: `BMU${bmu}_${unit}${idx + 1}_${prefix}`,
-            label: `BMU${bmu} ${unit}${idx + 1} ${cls}`,
-            type: 'bit',
-            bitsOf: regKey,
-            bit,
-            valid,
-            hide: !valid,
-            map: { 0: '掉线', 1: '正常' }
-          });
-        }
+    for (let bit = 0; bit < 16; bit++) {
+      const globalCellIdx = r * 16 + bit + 1; // 全局电池编号 (1-based)
+      const valid = globalCellIdx <= totalCells;
+
+      if (valid) {
+        // 计算这个全局电池编号对应的BMU和局部电池编号
+        const bmuIdx = Math.ceil(globalCellIdx / cellsPerBmu);
+        const localCellIdx = ((globalCellIdx - 1) % cellsPerBmu) + 1;
+
+        schema.push({
+          class: '电压二级掉线',
+          key: `BMU${bmuIdx}_Cell${localCellIdx}_VoltLv2`,
+          label: `BMU${bmuIdx} Cell${localCellIdx} 电压二级掉线`,
+          type: 'bit',
+          bitsOf: regKey,
+          bit,
+          valid: true,
+          hide: false,
+          map: { 0: '正常', 1: '掉线' }
+        });
+      } else {
+        schema.push({
+          class: '电压二级掉线',
+          key: `Reserved_Cell${globalCellIdx}_VoltLv2`,
+          label: `预留 Cell${globalCellIdx}`,
+          type: 'bit',
+          bitsOf: regKey,
+          bit,
+          valid: false,
+          hide: true,
+          map: { 0: '正常', 1: '掉线' }
+        });
       }
     }
-  };
+  }
 
-  makeLv2Block('VoltLv2', '电压二级掉线', cellCounts, 'Cell');
-  makeLv2Block('TempLv2', '温度二级掉线', tempCounts, 'Temp');
+  // 温度二级掉线 - 所有温度探头连续排列
+  const tempLv2Regs = Math.ceil(totalTemps / 16);
+  for (let r = 0; r < tempLv2Regs; r++) {
+    const regKey = `TempLv2_R${r + 1}`;
+    schema.push({ class: '温度二级掉线', key: regKey, type: 'u16', hide: false });
 
+    for (let bit = 0; bit < 16; bit++) {
+      const globalTempIdx = r * 16 + bit + 1; // 全局温度探头编号 (1-based)
+      const valid = globalTempIdx <= totalTemps;
 
+      if (valid) {
+        // 计算这个全局温度探头编号对应的BMU和局部温度探头编号
+        const bmuIdx = Math.ceil(globalTempIdx / tempsPerBmu);
+        const localTempIdx = ((globalTempIdx - 1) % tempsPerBmu) + 1;
 
-    /* ---------- ⑧ BMU-AFE 通讯失联 (协议固定 32 寄存器) ---------- */
+        schema.push({
+          class: '温度二级掉线',
+          key: `BMU${bmuIdx}_Temp${localTempIdx}_TempLv2`,
+          label: `BMU${bmuIdx} Temp${localTempIdx} 温度二级掉线`,
+          type: 'bit',
+          bitsOf: regKey,
+          bit,
+          valid: true,
+          hide: false,
+          map: { 0: '正常', 1: '掉线' }
+        });
+      } else {
+        schema.push({
+          class: '温度二级掉线',
+          key: `Reserved_Temp${globalTempIdx}_TempLv2`,
+          label: `预留 Temp${globalTempIdx}`,
+          type: 'bit',
+          bitsOf: regKey,
+          bit,
+          valid: false,
+          hide: true,
+          map: { 0: '正常', 1: '掉线' }
+        });
+      }
+    }
+  }
+
+  /* ---------- ⑥ BMU-AFE 通讯失联 (协议固定 32 寄存器) ---------- */
   for (let bmu = 1; bmu <= nBMU; bmu++) {
     const regKey = `BMU${bmu}_AfeLost`;
     schema.push({ class: 'AFE失联', key: regKey, type: 'u16', hide: false });
@@ -1614,7 +1544,7 @@ export function BROKENWIRE_SCHEMA(header: BrokenWireHeader): PackField[] {
       });
     }
   }
-  // console.log(schema.filter(f => f.class==='电压二级掉线'));
+
   return schema;
 }
 
@@ -1943,8 +1873,8 @@ export function CLU_ANALOG_FAULT_GRADE_SCHEMA(clusterCount: number): PackField[]
       { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellChargeUndertempFaultGrade`, label: '单体电池充电欠温故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 2, len: 2 },
       { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellDischargeOvertempFaultGrade`, label: '单体电池放电过温故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 4, len: 2 },
       { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellDischargeUndertempFaultGrade`, label: '单体电池放电欠温故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 6, len: 2 },
-      { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellSocTooHighFaultGrade`, label: '单体soc过高故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 8, len: 2 },
-      { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellSocTooLowFaultGrade`, label: '单体soc过低故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 10, len: 2 },
+      { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellSocTooHighFaultGrade`, label: '单体SOC过高故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 8, len: 2 },
+      { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellSocTooLowFaultGrade`, label: '单体SOC过低故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 10, len: 2 },
       { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}AnalogFaultGrade4Reserved`, label: '预留', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 12, len: 4 }
     );
     

@@ -17,6 +17,7 @@ export const blockRemoteCommandConfig = {
     needConfirm: true,
     confirmMessage: '确定要执行电池堆控制开关操作吗？',
     description: '控制电池堆接触器的吸合和脱离操作',
+    mode: 'remote', // 新增：远方模式标识
     options: [
       { label: '设置充电吸合操作', value: 1 },
       { label: '设置放电吸合操作', value: 2 },
@@ -56,6 +57,7 @@ export const blockRemoteCommandConfig = {
     needConfirm: true,
     confirmMessage: '确定要复位选中的控制参数吗？',
     description: '复位各种系统配置参数（位字段控制）',
+    mode: 'local', // 新增：就地模式标识
     bitFields: [
       { label: '复位系统基本配置参数', bit: 0, value: 1 },
       { label: '复位系统簇端电池配置参数', bit: 1, value: 2 },
@@ -84,7 +86,80 @@ export const blockRemoteCommandConfig = {
     ]
   },
 
-  // 5. 查询接触器执行策略结果（堆级反馈查询命令）
+    // 5. 下设接触器自检检测指令
+  contactor_selftest_en: {
+    id: 'contactor_selftest_en',
+    name: '下设接触器自检指令',
+    topic: 'bms/host/s2d/b{block}/contactor_selftest_en',
+    responseTopic: 'bms/bau/d2s/b{block}/contactor_selftest_en',
+    dataType: 'u16', // 控制字2字节
+    uiType: 'dropdown',
+    needConfirm: true,
+    confirmMessage: '确定要执行接触器自检操作吗？',
+    description: '控制接触器自检启用和禁用',
+    options: [
+      { label: '开启接触器自检', value: 1 },
+      { label: '关闭接触器自检', value: 0 }
+    ]
+  },
+
+  // 6. 下设重启BAU指令
+  reset_bau: {
+    id: 'reset_bau',
+    name: '下设重启BAU指令',
+    topic: 'bms/host/s2d/b{block}/reset_bau',
+    responseTopic: 'bms/bau/d2s/b{block}/reset_bau',
+    dataType: 'u16', // 控制字2字节
+    uiType: 'dropdown',
+    needConfirm: true,
+    confirmMessage: '确定要执行重启BAU操作吗？',
+    description: '重启BAU设备，仅限就地模式下有效',
+    options: [
+      { label: '重启BAU', value: 0x5BB5 },
+      { label: '不执行', value: 0x0000 }
+    ]
+  },
+
+  // 7. 下设手动控制SD卡记录
+  manual_ctrl_sd_record: {
+    id: 'manual_ctrl_sd_record',
+    name: '下设手动控制SD卡记录',
+    topic: 'bms/host/s2d/b{block}/manual_ctrl_sd_record',
+    responseTopic: 'bms/bau/d2s/b{block}/manual_ctrl_sd_record',
+    dataType: 'u16', // 控制字2字节
+    uiType: 'dropdown',
+    needConfirm: true,
+    confirmMessage: '确定要执行SD卡记录控制操作吗？',
+    description: '手动控制SD卡记录的启停',
+    options: [
+      { label: '手动停止SD卡记录', value: 1 },
+      { label: '手动重新开始SD卡记录', value: 2 }
+    ]
+  },
+
+  // 8. 下设堆SOC
+  set_block_soc: {
+    id: 'set_block_soc',
+    name: '下设堆SOC',
+    topic: 'bms/host/s2d/b{block}/set_block_soc',
+    responseTopic: 'bms/bau/d2s/b{block}/set_block_soc',
+    dataType: 'u16', // 控制字2字节
+    uiType: 'input',
+    needConfirm: true,
+    confirmMessage: '确定要设置堆SOC值吗？',
+    description: '设置堆SOC值，精度0.1%',
+    inputConfig: {
+      type: 'number',
+      min: 0,
+      max: 100,
+      step: 0.1,
+      scale: 10, // 0.1%精度，需要乘以10
+      unit: '%',
+      placeholder: '请输入SOC值 (0-100%)'
+    }
+  },
+
+  // 6. 查询接触器执行策略结果（堆级反馈查询命令）
   get_batt_stack_ctrl_switch_result: {
     id: 'get_batt_stack_ctrl_switch_result',
     name: '查询接触器执行策略结果',

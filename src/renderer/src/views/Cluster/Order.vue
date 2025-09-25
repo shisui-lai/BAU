@@ -148,6 +148,10 @@ function handleRemoteCommandResponse(msg) {
     handleFeedbackQueryResponse('get_insulation_detect_result', data)
     return
   }
+  if (commandType === 'get_sys_run_mode') {
+    handleFeedbackQueryResponse('get_sys_run_mode', data)
+    return
+  }
 
   // 处理其他遥控命令应答
   handleRemoteCommandResponseWithToast(commandType, data, blockId, clusterId)
@@ -488,7 +492,9 @@ onMounted(() => {
     'INSULATION_DETECT_CTRL',
     'SYS_MODE_CTRL',
     'BROKENWIRE_DETECT_EN',
+    'CONTACTOR_CTRL_TEST',
     'HSD_LSD_CTRL_TEST',
+    'IO_CTRL_TEST',
     'FORCE_CLEAR_BCU_FAULT',
     'RESET_RECORD_FLASH',
     'FORCE_OCV_CALIB',
@@ -497,7 +503,8 @@ onMounted(() => {
     'RESTORE_CTRL_PARAM',
     // 反馈查询应答事件
     'GET_CONTACTOR_CTRL_RESULT',
-    'GET_INSULATION_DETECT_RESULT'
+    'GET_INSULATION_DETECT_RESULT',
+    'GET_SYS_RUN_MODE'
   ]
 
   // 预清理所有遥控命令事件监听器
@@ -537,7 +544,7 @@ onUnmounted(() => {
   stopFeedbackPolling()
   // 停止遥控命令服务
   stopRemoteCommandListeners()
-  window.electron.ipcRenderer.removeListener('IO_STATUS', onIOSummary)
+  window.electron.ipcRenderer.removeAllListeners('IO_STATUS', onIOSummary)
   console.log('[Order] 组件卸载，移除IO_STATUS监听')
 
   // 移除遥控命令应答监听
@@ -556,20 +563,17 @@ onUnmounted(() => {
     'RESTORE_CTRL_PARAM',
     // 添加缺失的反馈查询应答事件
     'GET_CONTACTOR_CTRL_RESULT',
-    'GET_INSULATION_DETECT_RESULT'
+    'GET_INSULATION_DETECT_RESULT',
+    'GET_SYS_RUN_MODE'
   ]
 
+  // 使用removeAllListeners彻底清理每个事件的所有监听器
   remoteCommandEvents.forEach(eventName => {
-    window.electron.ipcRenderer.removeListener(eventName, onRemoteCommandResponse)
-    console.log(`[Order] 移除遥控命令应答监听: ${eventName}`)
+    window.electron.ipcRenderer.removeAllListeners(eventName)
+    console.log(`[Order] 彻底清理事件监听器: ${eventName}`)
   })
 
-  // 停止遥控命令服务
-  stopRemoteCommandListeners()
-
-  // 停止反馈状态定时查询
-  stopFeedbackPolling()
-  console.log('[Order] 反馈状态定时查询已停止')
+  console.log('[Order] 组件卸载完成，所有资源已清理')
 })
 </script>
 
@@ -646,7 +650,16 @@ onUnmounted(() => {
                       v-else-if="data.type === 'checkbox_group'"
                       label="发送"
                       class="command-send-btn"
-                      :disabled="executingCommands.has(data.id) || !selectedValues[data.id] || selectedValues[data.id].length === 0"
+                      :disabled="
+                        executingCommands.has(data.id) ||
+                        (
+                          // 空选择时的禁用逻辑：
+                          // - 对于参数复位类命令（restore_basic_param, restore_factory_param），空选择无效，禁用按钮
+                          // - 对于控制类命令（高低边控制、IO控制等），空选择表示'断开所有'，允许发送
+                          (!selectedValues[data.id]?.length) &&
+                          ['restore_basic_param', 'restore_factory_param'].includes(data.id)
+                        )
+                      "
                       :loading="executingCommands.has(data.id)"
                       @click="handleCheckboxGroupCommandWithToast(data.id, selectedValues[data.id])"
                       size="small"
@@ -709,7 +722,16 @@ onUnmounted(() => {
                     <Button
                       label="发送"
                       class="command-send-btn"
-                      :disabled="executingCommands.has(data.id) || !selectedValues[data.id] || selectedValues[data.id].length === 0"
+                      :disabled="
+                        executingCommands.has(data.id) ||
+                        (
+                          // 空选择时的禁用逻辑：
+                          // - 对于参数复位类命令（restore_basic_param, restore_factory_param），空选择无效，禁用按钮
+                          // - 对于控制类命令（高低边控制、IO控制等），空选择表示'断开所有'，允许发送
+                          (!selectedValues[data.id]?.length) &&
+                          ['restore_basic_param', 'restore_factory_param'].includes(data.id)
+                        )
+                      "
                       :loading="executingCommands.has(data.id)"
                       @click="handleCheckboxGroupCommandWithToast(data.id, selectedValues[data.id])"
                       size="small"
@@ -734,6 +756,11 @@ onUnmounted(() => {
                 <div class="feedback-control-row">
                   <span class="control-label">绝缘电阻检测执行结果</span>
                   <span class="feedback-value">{{ feedbackStatus.insulation_detect_result }}</span>
+                </div>
+
+                <div class="feedback-control-row">
+                  <span class="control-label">系统运行模式</span>
+                  <span class="feedback-value">{{ feedbackStatus.sys_run_mode }}</span>
                 </div>
               </div>
             </div>
@@ -761,7 +788,7 @@ onUnmounted(() => {
                 </Column>
 
                 <!-- 操作列 -->
-                <Column header="操作" style="min-width:300px">
+                <Column header="操作" style="min-width:200px">
                   <template #body="{ data }">
                     <div class="operation-wrapper">
                       <Dropdown
@@ -931,7 +958,6 @@ onUnmounted(() => {
 .order-page {
   padding: 0;
   min-height: 100vh;
-  background-color: #f8fafc;
 }
 
 .main-content {
@@ -944,7 +970,7 @@ onUnmounted(() => {
 
 .top-row {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.5rem;
 }
 

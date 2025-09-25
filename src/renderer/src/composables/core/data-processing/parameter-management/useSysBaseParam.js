@@ -1,5 +1,6 @@
 // 系统基本配置参数专用处理逻辑
 // 包含：数据解析、序列化、错误处理等系统基本参数特有的功能
+import { markRaw } from 'vue'
 import { SYS_BASE_PARAM_R } from '../../../../../../main/table.js'
 import { 
   serializeParameterData,
@@ -17,7 +18,8 @@ export function useSysBaseParam() {
    */
   const createDefaultSystemBaseParamData = () => {
     // 调用通用默认数据创建函数
-    return createDefaultParameterData(SYS_BASE_PARAM_R, '[useSysBaseParam]')
+    // 性能优化：使用markRaw避免Vue深度响应式跟踪
+    return createDefaultParameterData(markRaw(SYS_BASE_PARAM_R), '[useSysBaseParam]')
   }
   
   // ================== MQTT消息解析功能 ==================

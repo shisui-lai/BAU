@@ -281,7 +281,7 @@ const generateSysAbstractPlaceholders = () => {
     'BMU电路板温度概要',
     '单体SOC概要',
     '单体SOH概要',
-    '极柱温度概要',
+    '动力接插件温度概要',
     '簇SOC概要',
     '簇电压概要',
     '簇电流概要'
@@ -322,10 +322,10 @@ const generateSysAbstractPlaceholders = () => {
         '单体SOH最小值', '单体SOH最小值簇编号', '单体SOH最小值电池编号',
         '单体SOH平均值', '单体SOH极差值'
       ],
-      '极柱温度概要': [
-        '极柱温度最大值', '极柱温度最大值簇编号', '极柱温度最大值电池编号',
-        '极柱温度最小值', '极柱温度最小值簇编号', '极柱温度最小值电池编号',
-        '极柱温度平均值', '极柱温度极差值'
+      '动力接插件温度概要': [
+        '动力接插件温度最大值', '动力接插件温度最大值簇编号', '动力接插件温度最大值电池编号',
+        '动力接插件温度最小值', '动力接插件温度最小值簇编号', '动力接插件温度最小值电池编号',
+        '动力接插件温度平均值', '动力接插件温度极差值'
       ],
       '簇SOC概要': [
         '簇SOC最大值', '簇SOC最大值簇编号',
@@ -419,7 +419,7 @@ const updateBlockSummaryData = () => {
     }
     
     blockSummaryData.value = tableData
-    console.log(`[BlockInfo] 更新堆${selectedBlock.value}汇总数据，共${tableData.length}行记录`)
+    // console.log(`[BlockInfo] 更新堆${selectedBlock.value}汇总数据，共${tableData.length}行记录`)
   } catch (error) {
     console.error('[BlockInfo] 更新堆汇总数据失败:', error)
     // 出错时也显示占位符
@@ -443,7 +443,7 @@ const updateBlockSysAbstractData = () => {
       'BMU电路板温度概要',
       '单体SOC概要',
       '单体SOH概要',
-      '极柱温度概要',
+      '动力接插件温度概要',
       '簇SOC概要',
       '簇电压概要',
       '簇电流概要'
@@ -462,7 +462,7 @@ const updateBlockSysAbstractData = () => {
     }
     
     blockSysAbstractData.value = allData
-    console.log(`[BlockInfo] 更新堆${selectedBlock.value}系统概要数据，共${allData.length}行记录`)
+    // console.log(`[BlockInfo] 更新堆${selectedBlock.value}系统概要数据，共${allData.length}行记录`)
   } catch (error) {
     console.error('[BlockInfo] 更新堆系统概要数据失败:', error)
     // 出错时也显示占位符
@@ -479,10 +479,10 @@ const handleBlockChange = () => {
 // 监听MQTT消息 - 堆汇总信息
 const handleBlockSummaryMessage = (event, data) => {
   try {
-    console.log('[BlockInfo] 收到堆汇总信息MQTT消息:', data)
+    // console.log('[BlockInfo] 收到堆汇总信息MQTT消息:', data)
     
     if (data.dataType === 'BLOCK_SUMMARY') {
-      console.log('[BlockInfo] 处理堆汇总信息:', data)
+      // console.log('[BlockInfo] 处理堆汇总信息:', data)
       
       parseBlockSummary(data)
       
@@ -531,7 +531,7 @@ onMounted(() => {
 
 // 组件卸载
 onUnmounted(() => {
-  console.log('[BlockInfo] 组件卸载')
+  // console.log('[BlockInfo] 组件卸载')
   
   // 移除MQTT监听
   window.electron.ipcRenderer.removeAllListeners('BLOCK_SUMMARY')

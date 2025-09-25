@@ -1,4 +1,5 @@
 // src/renderer/src/composables/useAlarmThreshold.js
+import { markRaw } from 'vue'
 import { result } from 'lodash-es'
 import { CLUSTER_DNS_PARAM_R, PACK_DNS_PARAM_R, CELL_DNS_PARAM_R } from '../../../../../../main/table.js'
 import {
@@ -9,20 +10,21 @@ import {
 } from '../remote-control/useRemoteControlCore.js'
 
 // 定义每个Topic对应的参数表
-const TOPIC_CONFIG = {
+// 性能优化：使用markRaw避免Vue深度响应式跟踪
+const TOPIC_CONFIG = markRaw({
   'cluster_dns_param': {
-    paramFields: CLUSTER_DNS_PARAM_R,
+    paramFields: markRaw(CLUSTER_DNS_PARAM_R),
     name: '簇端报警参数'
   },
   'pack_dns_param': {
-    paramFields: PACK_DNS_PARAM_R,
+    paramFields: markRaw(PACK_DNS_PARAM_R),
     name: '包端报警参数'
   },
   'cell_dns_param': {
-    paramFields: CELL_DNS_PARAM_R,
+    paramFields: markRaw(CELL_DNS_PARAM_R),
     name: '单体报警参数'
   }
-}
+})
 
 // 根据参数分类确定所属的Topic
 function getTopicByClassName(className) {
@@ -62,24 +64,29 @@ function calculateClassOffsetInTopic(className, topicType) {
       'u8': 1, 's8': 1, 'u16': 2, 's16': 2,
       'u32': 4, 's32': 4, 'f32': 4
     }
-    
+
     // 处理skip类型
     if (param.type && param.type.startsWith('skip')) {
       const skipBytes = parseInt(param.type.replace('skip', ''))
       totalOffset += skipBytes
       continue
     }
-    
+
+    // 跳过bits字段：它们不占用独立的字节空间
+    if (param.type === 'bits' || param.type === 'bit') {
+      continue
+    }
+
     const fieldSize = typeByteMap[param.type] || 2
     const count = param.count || 1
     const paramByteSize = fieldSize * count
-    
+
     // 如果这个参数属于目标分类
     if (param.class === className) {
       if (classStart === -1) classStart = totalOffset
       classEnd = totalOffset + paramByteSize
     }
-    
+
     totalOffset += paramByteSize
   }
   
@@ -91,11 +98,12 @@ function calculateClassOffsetInTopic(className, topicType) {
 
 export function useAlarmThreshold() {
   // 合并所有参数表（仅用于页面显示）
-  const ALL_ALARM_PARAM_R = [
-    ...CLUSTER_DNS_PARAM_R,
-    ...PACK_DNS_PARAM_R,
-    ...CELL_DNS_PARAM_R
-  ]
+  // 性能优化：使用markRaw避免Vue深度响应式跟踪
+  const ALL_ALARM_PARAM_R = markRaw([
+    ...markRaw(CLUSTER_DNS_PARAM_R),
+    ...markRaw(PACK_DNS_PARAM_R),
+    ...markRaw(CELL_DNS_PARAM_R)
+  ])
 
   const createDefaultAlarmThresholdData = () => createDefaultParameterData(ALL_ALARM_PARAM_R, '[useAlarmThreshold]')
 

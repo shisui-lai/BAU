@@ -528,45 +528,844 @@
   // ];
   // /* ────────────────────────────────────────────────
 
+//协议修改删除
+// export const TOTAL_FAULT = [
+//   /* === ① 总故障位 (Word-1) ======================================= */
+//   { class: '总故障', key: 'TotalFault', type: 'u16', scale: 1, hide: false },
+//   { class: '总故障', key: 'Conventional_Serious_Fault', label: '常规严重故障位', type: 'bit',  bitsOf: 'TotalFault', bit: 0 },
+//   { class: '总故障', key: 'Hardware_Total_Fault',       label: '硬件故障总故障位', type: 'bit',  bitsOf: 'TotalFault', bit: 1 },
+//   { class: '总故障', key: 'Deferred_Total_Fault',       label: '保留故障总故障位', type: 'bit',  bitsOf: 'TotalFault', bit: 2 },
+
+//   /* === ② 保留故障位 (Word-2) ===================================== */
+//   { class: '保留故障', key: 'DeferredFault', type: 'u16', scale: 1, hide: false },
+//   { class: '保留故障', key: 'Charge_OC_Alarm',      label: '充电过流严重告警',   type: 'bit',  bitsOf: 'DeferredFault', bit: 0 },
+//   { class: '保留故障', key: 'Discharge_OC_Alarm',   label: '放电过流严重告警',   type: 'bit',  bitsOf: 'DeferredFault', bit: 1 },
+//   { class: '保留故障', key: 'Insulation_Alarm',     label: '绝缘电阻严重告警',   type: 'bit',  bitsOf: 'DeferredFault', bit: 2 },
+//   { class: '保留故障', key: 'Contactor_Weld_Alarm', label: '接触器黏连/氧化告警', type: 'bit',  bitsOf: 'DeferredFault', bit: 3 },
+//   { class: '保留故障', key: 'PCS_Com_Fault',        label: 'PCS 通讯故障',      type: 'bit',  bitsOf: 'DeferredFault', bit: 4 },
+
+//   /* === ③ 单体总故障 (Word-3，2 bit 等级映射) ====================== */
+//   { class: '单体总故障', key: 'CellFault', type: 'u16', scale: 1, hide: false },
+
+//   { class: '单体总故障', key: 'CellOv_Level',     label: '单体电压过压',     type: 'bits', bitsOf: 'CellFault', bit: 0,  len: 2, map: ALARM_MAP },
+//   { class: '单体总故障', key: 'CellUv_Level',     label: '单体电压欠压',     type: 'bits', bitsOf: 'CellFault', bit: 2,  len: 2, map: ALARM_MAP },
+//   { class: '单体总故障', key: 'CellOTc_Level',    label: '充电单体过温',     type: 'bits', bitsOf: 'CellFault', bit: 4,  len: 2, map: ALARM_MAP },
+//   { class: '单体总故障', key: 'CellUTc_Level',    label: '充电单体欠温',     type: 'bits', bitsOf: 'CellFault', bit: 6,  len: 2, map: ALARM_MAP },
+//   { class: '单体总故障', key: 'CellOTd_Level',    label: '放电单体过温',     type: 'bits', bitsOf: 'CellFault', bit: 8,  len: 2, map: ALARM_MAP },
+//   { class: '单体总故障', key: 'CellUTd_Level',    label: '放电单体欠温',     type: 'bits', bitsOf: 'CellFault', bit: 10, len: 2, map: ALARM_MAP },
+//   { class: '单体总故障', key: 'CellSocHigh_Level',label: '单体 SOC 过高',    type: 'bits', bitsOf: 'CellFault', bit: 12, len: 2, map: ALARM_MAP },
+//   { class: '单体总故障', key: 'CellSocLow_Level', label: '单体 SOC 过低',    type: 'bits', bitsOf: 'CellFault', bit: 14, len: 2, map: ALARM_MAP },
+
+//   /* === ④ pack 总故障 (Word-4，2 bit 等级映射) ===================== */
+//   { class: 'pack总故障', key: 'PackFault', type: 'u16', scale: 1, hide: false },
+
+//   { class: 'pack总故障', key: 'PackOv_Level',     label: 'pack过压',         type: 'bits', bitsOf: 'PackFault', bit: 0,  len: 2, map: ALARM_MAP },
+//   { class: 'pack总故障', key: 'PackUv_Level',     label: 'pack欠压',         type: 'bits', bitsOf: 'PackFault', bit: 2,  len: 2, map: ALARM_MAP },
+//   { class: 'pack总故障', key: 'PackOT_Level',     label: 'pack过温',             type: 'bits', bitsOf: 'PackFault', bit: 4,  len: 2, map: ALARM_MAP },
+//   { class: 'pack总故障', key: 'PackUT_Level',     label: 'pack欠温',             type: 'bits', bitsOf: 'PackFault', bit: 6,  len: 2, map: ALARM_MAP },
+//   { class: 'pack总故障', key: 'Plug1OT_Level',    label: '1 号动力接插件过温',    type: 'bits', bitsOf: 'PackFault', bit: 8,  len: 2, map: ALARM_MAP },
+//   { class: 'pack总故障', key: 'Plug2OT_Level',    label: '2 号动力接插件过温',    type: 'bits', bitsOf: 'PackFault', bit: 10, len: 2, map: ALARM_MAP },
+
+
+// ]
+
+//协议修改新增
 export const TOTAL_FAULT = [
-  /* === ① 总故障位 (Word-1) ======================================= */
-  { class: '总故障', key: 'TotalFault', type: 'u16', scale: 1, hide: false },
-  { class: '总故障', key: 'Conventional_Serious_Fault', label: '常规严重故障位', type: 'bit',  bitsOf: 'TotalFault', bit: 0 },
-  { class: '总故障', key: 'Hardware_Total_Fault',       label: '硬件故障总故障位', type: 'bit',  bitsOf: 'TotalFault', bit: 1 },
-  { class: '总故障', key: 'Deferred_Total_Fault',       label: '保留故障总故障位', type: 'bit',  bitsOf: 'TotalFault', bit: 2 },
+  /* === ① 接触器详细故障 (Word-1) ======================================= */
+  { class: '接触器详细故障', key: 'ContactorDetailFault', type: 'u16', scale: 1, hide: false },
+  { class: '接触器详细故障', key: 'MainPosContactorFeedbackFault', label: '主正接触器反馈故障', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 0 },
+  { class: '接触器详细故障', key: 'MainPosContactorHighSideFeedbackFault', label: '主正接触器高边反馈故障', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 1 },
+  { class: '接触器详细故障', key: 'MainPosContactorOxidation', label: '主正接触器氧化', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 2 },
+  { class: '接触器详细故障', key: 'MainPosContactorAdhesion', label: '主正接触器黏连', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 3 },
+  { class: '接触器详细故障', key: 'MainPosContactorFaultSummary', label: '主正接触器故障汇总', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 4 },
+  { class: '接触器详细故障', key: 'MainNegContactorFeedbackFault', label: '主负接触器反馈故障', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 5 },
+  { class: '接触器详细故障', key: 'MainNegContactorHighSideFeedbackFault', label: '主负接触器高边反馈故障', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 6 },
+  { class: '接触器详细故障', key: 'MainNegContactorOxidation', label: '主负接触器氧化', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 7 },
+  { class: '接触器详细故障', key: 'MainNegContactorAdhesion', label: '主负接触器黏连', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 8 },
+  { class: '接触器详细故障', key: 'MainNegContactorFaultSummary', label: '主负接触器故障汇总', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 9 },
+  { class: '接触器详细故障', key: 'PrechargeContactorFeedbackFault', label: '预充接触器反馈故障', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 10 },
+  { class: '接触器详细故障', key: 'PrechargeContactorHighSideFeedbackFault', label: '预充接触器高边反馈故障', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 11 },
+  { class: '接触器详细故障', key: 'PrechargeContactorOxidation', label: '预充接触器氧化', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 12 },
+  { class: '接触器详细故障', key: 'PrechargeContactorAdhesion', label: '预充接触器黏连', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 13 },
+  { class: '接触器详细故障', key: 'PrechargeContactorFaultSummary', label: '预充接触器故障汇总', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 14 },
+  { class: '接触器详细故障', key: 'ContactorDetailReserved', label: '预留', type: 'bit', bitsOf: 'ContactorDetailFault', bit: 15 },
 
-  /* === ② 保留故障位 (Word-2) ===================================== */
-  { class: '保留故障', key: 'DeferredFault', type: 'u16', scale: 1, hide: false },
-  { class: '保留故障', key: 'Charge_OC_Alarm',      label: '充电过流严重告警',   type: 'bit',  bitsOf: 'DeferredFault', bit: 0 },
-  { class: '保留故障', key: 'Discharge_OC_Alarm',   label: '放电过流严重告警',   type: 'bit',  bitsOf: 'DeferredFault', bit: 1 },
-  { class: '保留故障', key: 'Insulation_Alarm',     label: '绝缘电阻严重告警',   type: 'bit',  bitsOf: 'DeferredFault', bit: 2 },
-  { class: '保留故障', key: 'Contactor_Weld_Alarm', label: '接触器黏连/氧化告警', type: 'bit',  bitsOf: 'DeferredFault', bit: 3 },
-  { class: '保留故障', key: 'PCS_Com_Fault',        label: 'PCS 通讯故障',      type: 'bit',  bitsOf: 'DeferredFault', bit: 4 },
+  /* === ② 无效值标志-1 (Word-2) ===================================== */
+  { class: '无效值标志-1', key: 'InvalidFlag1', type: 'u16', scale: 1, hide: false },
+  { class: '无效值标志-1', key: 'CellVoltageInvalid', label: '单体电压无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 0 },
+  { class: '无效值标志-1', key: 'CellTemperatureInvalid', label: '单体温度无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 1 },
+  { class: '无效值标志-1', key: 'CellSOCInvalid', label: '单体SOC无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 2 },
+  { class: '无效值标志-1', key: 'PackVoltageInvalid', label: '包电压无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 3 },
+  { class: '无效值标志-1', key: 'BMUBoardTemperatureInvalid', label: 'BMU板载温度无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 4 },
+  { class: '无效值标志-1', key: 'PowerConnector1TemperatureInvalid', label: '动力接插件1温度无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 5 },
+  { class: '无效值标志-1', key: 'PowerConnector2TemperatureInvalid', label: '动力接插件2温度无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 6 },
+  { class: '无效值标志-1', key: 'ClusterTemperature1Invalid', label: '簇温度1无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 7 },
+  { class: '无效值标志-1', key: 'ClusterTemperature2Invalid', label: '簇温度2无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 8 },
+  { class: '无效值标志-1', key: 'ClusterTemperature3Invalid', label: '簇温度3无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 9 },
+  { class: '无效值标志-1', key: 'ClusterTemperature4Invalid', label: '簇温度4无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 10 },
+  { class: '无效值标志-1', key: 'ClusterTemperature5Invalid', label: '簇温度5无效', type: 'bit', bitsOf: 'InvalidFlag1', bit: 11 },
+  { class: '无效值标志-1', key: 'InvalidFlag1Reserved1', label: '预留', type: 'bit', bitsOf: 'InvalidFlag1', bit: 12 },
+  { class: '无效值标志-1', key: 'InvalidFlag1Reserved2', label: '预留', type: 'bit', bitsOf: 'InvalidFlag1', bit: 13 },
+  { class: '无效值标志-1', key: 'InvalidFlag1Reserved3', label: '预留', type: 'bit', bitsOf: 'InvalidFlag1', bit: 14 },
+  { class: '无效值标志-1', key: 'InvalidFlag1Reserved4', label: '预留', type: 'bit', bitsOf: 'InvalidFlag1', bit: 15 },
 
-  /* === ③ 单体总故障 (Word-3，2 bit 等级映射) ====================== */
-  { class: '单体总故障', key: 'CellFault', type: 'u16', scale: 1, hide: false },
+  /* === ③ 无效值标志-2 (Word-3) ===================================== */
+  { class: '无效值标志-2', key: 'InvalidFlag2', type: 'u16', scale: 1, hide: false },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved1', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 0 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved2', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 1 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved3', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 2 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved4', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 3 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved5', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 4 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved6', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 5 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved7', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 6 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved8', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 7 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved9', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 8 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved10', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 9 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved11', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 10 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved12', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 11 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved13', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 12 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved14', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 13 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved15', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 14 },
+  { class: '无效值标志-2', key: 'InvalidFlag2Reserved16', label: '预留', type: 'bit', bitsOf: 'InvalidFlag2', bit: 15 },
 
-  { class: '单体总故障', key: 'CellOv_Level',     label: '单体电压过压',     type: 'bits', bitsOf: 'CellFault', bit: 0,  len: 2, map: ALARM_MAP },
-  { class: '单体总故障', key: 'CellUv_Level',     label: '单体电压欠压',     type: 'bits', bitsOf: 'CellFault', bit: 2,  len: 2, map: ALARM_MAP },
-  { class: '单体总故障', key: 'CellOTc_Level',    label: '充电单体过温',     type: 'bits', bitsOf: 'CellFault', bit: 4,  len: 2, map: ALARM_MAP },
-  { class: '单体总故障', key: 'CellUTc_Level',    label: '充电单体欠温',     type: 'bits', bitsOf: 'CellFault', bit: 6,  len: 2, map: ALARM_MAP },
-  { class: '单体总故障', key: 'CellOTd_Level',    label: '放电单体过温',     type: 'bits', bitsOf: 'CellFault', bit: 8,  len: 2, map: ALARM_MAP },
-  { class: '单体总故障', key: 'CellUTd_Level',    label: '放电单体欠温',     type: 'bits', bitsOf: 'CellFault', bit: 10, len: 2, map: ALARM_MAP },
-  { class: '单体总故障', key: 'CellSocHigh_Level',label: '单体 SOC 过高',    type: 'bits', bitsOf: 'CellFault', bit: 12, len: 2, map: ALARM_MAP },
-  { class: '单体总故障', key: 'CellSocLow_Level', label: '单体 SOC 过低',    type: 'bits', bitsOf: 'CellFault', bit: 14, len: 2, map: ALARM_MAP },
+  /* === ④ 预留 (Word-4 到 Word-8，5个寄存器) ====================== */
+  { class: '预留', key: 'Reserved1', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'Reserved2', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'Reserved3', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'Reserved4', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'Reserved5', type: 'u16', scale: 1, hide: false },
 
-  /* === ④ pack 总故障 (Word-4，2 bit 等级映射) ===================== */
-  { class: 'pack总故障', key: 'PackFault', type: 'u16', scale: 1, hide: false },
+  /* === ⑤ 单体总故障 (Word-9，2 bit 等级映射) ====================== */
+  { class: '单体总故障', key: 'CellTotalFault', type: 'u16', scale: 1, hide: false },
+  { class: '单体总故障', key: 'CellOverVoltageLevel', label: '单体电压过压', type: 'bits', bitsOf: 'CellTotalFault', bit: 0, len: 2, map: ALARM_MAP },
+  { class: '单体总故障', key: 'CellUnderVoltageLevel', label: '单体电压欠压', type: 'bits', bitsOf: 'CellTotalFault', bit: 2, len: 2, map: ALARM_MAP },
+  { class: '单体总故障', key: 'CellChargeOverTempLevel', label: '单体充电过温', type: 'bits', bitsOf: 'CellTotalFault', bit: 4, len: 2, map: ALARM_MAP },
+  { class: '单体总故障', key: 'CellChargeUnderTempLevel', label: '单体充电欠温', type: 'bits', bitsOf: 'CellTotalFault', bit: 6, len: 2, map: ALARM_MAP },
+  { class: '单体总故障', key: 'CellDischargeOverTempLevel', label: '单体放电过温', type: 'bits', bitsOf: 'CellTotalFault', bit: 8, len: 2, map: ALARM_MAP },
+  { class: '单体总故障', key: 'CellDischargeUnderTempLevel', label: '单体放电欠温', type: 'bits', bitsOf: 'CellTotalFault', bit: 10, len: 2, map: ALARM_MAP },
+  { class: '单体总故障', key: 'CellSOCHighLevel', label: '单体SOC过高', type: 'bits', bitsOf: 'CellTotalFault', bit: 12, len: 2, map: ALARM_MAP },
+  { class: '单体总故障', key: 'CellSOCLowLevel', label: '单体SOC过低', type: 'bits', bitsOf: 'CellTotalFault', bit: 14, len: 2, map: ALARM_MAP },
 
-  { class: 'pack总故障', key: 'PackOv_Level',     label: 'pack过压',         type: 'bits', bitsOf: 'PackFault', bit: 0,  len: 2, map: ALARM_MAP },
-  { class: 'pack总故障', key: 'PackUv_Level',     label: 'pack欠压',         type: 'bits', bitsOf: 'PackFault', bit: 2,  len: 2, map: ALARM_MAP },
-  { class: 'pack总故障', key: 'PackOT_Level',     label: 'pack过温',             type: 'bits', bitsOf: 'PackFault', bit: 4,  len: 2, map: ALARM_MAP },
-  { class: 'pack总故障', key: 'PackUT_Level',     label: 'pack欠温',             type: 'bits', bitsOf: 'PackFault', bit: 6,  len: 2, map: ALARM_MAP },
-  { class: 'pack总故障', key: 'Plug1OT_Level',    label: '1 号动力接插件过温',    type: 'bits', bitsOf: 'PackFault', bit: 8,  len: 2, map: ALARM_MAP },
-  { class: 'pack总故障', key: 'Plug2OT_Level',    label: '2 号动力接插件过温',    type: 'bits', bitsOf: 'PackFault', bit: 10, len: 2, map: ALARM_MAP },
+  /* === ⑥ pack总故障 (Word-10，2 bit 等级映射) ===================== */
+  { class: 'pack总故障', key: 'PackTotalFault', type: 'u16', scale: 1, hide: false },
+  { class: 'pack总故障', key: 'PackOverVoltageLevel', label: 'pack电压过高', type: 'bits', bitsOf: 'PackTotalFault', bit: 0, len: 2, map: ALARM_MAP },
+  { class: 'pack总故障', key: 'PackUnderVoltageLevel', label: 'pack电压过低', type: 'bits', bitsOf: 'PackTotalFault', bit: 2, len: 2, map: ALARM_MAP },
+  { class: 'pack总故障', key: 'PackOverTempLevel', label: 'pack温度过温', type: 'bits', bitsOf: 'PackTotalFault', bit: 4, len: 2, map: ALARM_MAP },
+  { class: 'pack总故障', key: 'PackUnderTempLevel', label: 'pack温度欠温', type: 'bits', bitsOf: 'PackTotalFault', bit: 6, len: 2, map: ALARM_MAP },
+  { class: 'pack总故障', key: 'PowerConnector1OverTempLevel', label: '1号动力接插件过温', type: 'bits', bitsOf: 'PackTotalFault', bit: 8, len: 2, map: ALARM_MAP },
+  { class: 'pack总故障', key: 'PowerConnector2OverTempLevel', label: '2号动力接插件过温', type: 'bits', bitsOf: 'PackTotalFault', bit: 10, len: 2, map: ALARM_MAP },
+  { class: 'pack总故障', key: 'PackTotalFaultReserved1', label: '预留', type: 'bits', bitsOf: 'PackTotalFault', bit: 12, len: 2, map: ALARM_MAP },
+  { class: 'pack总故障', key: 'PackTotalFaultReserved2', label: '预留', type: 'bits', bitsOf: 'PackTotalFault', bit: 14, len: 2, map: ALARM_MAP },
+
+  /* === ⑦ 簇总故障1 (Word-11，2 bit 等级映射) ===================== */
+  { class: '簇总故障1', key: 'ClusterTotalFault1', type: 'u16', scale: 1, hide: false },
+  { class: '簇总故障1', key: 'CellVoltageDiffLevel', label: '单体电池压差过大故障等级', type: 'bits', bitsOf: 'ClusterTotalFault1', bit: 0, len: 2, map: ALARM_MAP },
+  { class: '簇总故障1', key: 'CellTempDiffLevel', label: '单体电池温差过大故障等级', type: 'bits', bitsOf: 'ClusterTotalFault1', bit: 2, len: 2, map: ALARM_MAP },
+  { class: '簇总故障1', key: 'SOCDiffLevel', label: 'SOC差异过大故障等级', type: 'bits', bitsOf: 'ClusterTotalFault1', bit: 4, len: 2, map: ALARM_MAP },
+  { class: '簇总故障1', key: 'BMUVoltageDiffLevel', label: 'BMU压差故障等级', type: 'bits', bitsOf: 'ClusterTotalFault1', bit: 6, len: 2, map: ALARM_MAP },
+  { class: '簇总故障1', key: 'ClusterOverVoltageLevel', label: '簇端过压故障等级', type: 'bits', bitsOf: 'ClusterTotalFault1', bit: 8, len: 2, map: ALARM_MAP },
+  { class: '簇总故障1', key: 'ClusterUnderVoltageLevel', label: '簇端欠压故障等级', type: 'bits', bitsOf: 'ClusterTotalFault1', bit: 10, len: 2, map: ALARM_MAP },
+  { class: '簇总故障1', key: 'InsulationPosToGroundLevel', label: '绝缘电阻正对地故障等级', type: 'bits', bitsOf: 'ClusterTotalFault1', bit: 12, len: 2, map: ALARM_MAP },
+  { class: '簇总故障1', key: 'InsulationNegToGroundLevel', label: '绝缘电阻负对地故障等级', type: 'bits', bitsOf: 'ClusterTotalFault1', bit: 14, len: 2, map: ALARM_MAP },
+
+  /* === ⑧ 簇总故障2 (Word-12，2 bit 等级映射) ===================== */
+  { class: '簇总故障2', key: 'ClusterTotalFault2', type: 'u16', scale: 1, hide: false },
+  { class: '簇总故障2', key: 'ChargeOverCurrentLevel', label: '充电过流故障等级', type: 'bits', bitsOf: 'ClusterTotalFault2', bit: 0, len: 2, map: ALARM_MAP },
+  { class: '簇总故障2', key: 'DischargeOverCurrentLevel', label: '放电过流故障等级', type: 'bits', bitsOf: 'ClusterTotalFault2', bit: 2, len: 2, map: ALARM_MAP },
+  { class: '簇总故障2', key: 'RT1OverTempLevel', label: 'RT1过温故障等级', type: 'bits', bitsOf: 'ClusterTotalFault2', bit: 4, len: 2, map: ALARM_MAP },
+  { class: '簇总故障2', key: 'RT2OverTempLevel', label: 'RT2过温故障等级', type: 'bits', bitsOf: 'ClusterTotalFault2', bit: 6, len: 2, map: ALARM_MAP },
+  { class: '簇总故障2', key: 'RT3OverTempLevel', label: 'RT3过温故障等级', type: 'bits', bitsOf: 'ClusterTotalFault2', bit: 8, len: 2, map: ALARM_MAP },
+  { class: '簇总故障2', key: 'RT4OverTempLevel', label: 'RT4过温故障等级', type: 'bits', bitsOf: 'ClusterTotalFault2', bit: 10, len: 2, map: ALARM_MAP },
+  { class: '簇总故障2', key: 'RT5OverTempLevel', label: 'RT5过温故障等级', type: 'bits', bitsOf: 'ClusterTotalFault2', bit: 12, len: 2, map: ALARM_MAP },
+  { class: '簇总故障2', key: 'ClusterTotalFault2Reserved', label: '预留', type: 'bits', bitsOf: 'ClusterTotalFault2', bit: 14, len: 2, map: ALARM_MAP },
+
+  /* === ⑨ 预留 (Word-13 到 Word-16，4个寄存器) ==================== */
+  { class: '预留', key: 'Reserved6', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'Reserved7', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'Reserved8', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'Reserved9', type: 'u16', scale: 1, hide: false }
+]
+
+//协议修改新增 - DI/DO/温度状态
+export const DI_DO_TEMP_STATUS = [
+  /* === ① DI信号状态-1 (Word-1) ======================================= */
+  { class: 'DI信号状态-1', key: 'DISignalStatus1', type: 'u16', scale: 1, hide: false },
+  { class: 'DI信号状态-1', key: 'MainPosContactorFeedback', label: '主正接触器反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 0 },
+  { class: 'DI信号状态-1', key: 'MainNegContactorFeedback', label: '主负接触器反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 1 },
+  { class: 'DI信号状态-1', key: 'PrechargeContactorFeedback', label: '预充接触器反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 2 },
+  { class: 'DI信号状态-1', key: 'IsolationSwitchFeedback', label: '隔离开关反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 3 },
+  { class: 'DI信号状态-1', key: 'CircuitBreakerFeedback', label: '断路器反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 4 },
+  { class: 'DI信号状态-1', key: 'FanFeedback', label: '风扇反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 5 },
+  { class: 'DI信号状态-1', key: 'DCPowerKMFeedback', label: '直流供电KM反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 6 },
+  { class: 'DI信号状态-1', key: 'AccessControlFeedback', label: '门禁反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 7 },
+  { class: 'DI信号状态-1', key: 'SPDFeedback', label: 'SPD反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 8 },
+  { class: 'DI信号状态-1', key: 'ACVoltageFeedback', label: '交流电压反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 9 },
+  { class: 'DI信号状态-1', key: 'SmokeSensorFeedback', label: '烟感反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 10 },
+  { class: 'DI信号状态-1', key: 'FireFeedback', label: '消防反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 11 },
+  { class: 'DI信号状态-1', key: 'TempSensorFeedback', label: '温感反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 12 },
+  { class: 'DI信号状态-1', key: 'ExhaustSystemFeedback', label: '排风系统反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 13 },
+  { class: 'DI信号状态-1', key: 'AuxCircuitBreakerFeedback', label: '辅助断路器反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 14 },
+  { class: 'DI信号状态-1', key: 'HydrogenDetectorFeedback', label: '氢气探测器反馈', type: 'bit', bitsOf: 'DISignalStatus1', bit: 15 },
+
+  /* === ② DI信号状态-2 (Word-2) ===================================== */
+  { class: 'DI信号状态-2', key: 'DISignalStatus2', type: 'u16', scale: 1, hide: false },
+  { class: 'DI信号状态-2', key: 'MSDFeedback', label: 'MSD反馈', type: 'bit', bitsOf: 'DISignalStatus2', bit: 0 },
+  { class: 'DI信号状态-2', key: 'EmergencyStopFeedback', label: '急停反馈', type: 'bit', bitsOf: 'DISignalStatus2', bit: 1 },
+  { class: 'DI信号状态-2', key: 'CabinetFanFeedback', label: '柜体风机反馈', type: 'bit', bitsOf: 'DISignalStatus2', bit: 2 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved1', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 3 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved2', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 4 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved3', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 5 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved4', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 6 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved5', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 7 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved6', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 8 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved7', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 9 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved8', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 10 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved9', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 11 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved10', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 12 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved11', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 13 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved12', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 14 },
+  { class: 'DI信号状态-2', key: 'DIStatus2Reserved13', label: '预留', type: 'bit', bitsOf: 'DISignalStatus2', bit: 15 },
+
+  /* === ③ DI信号状态-3 (Word-3) ===================================== */
+  { class: 'DI信号状态-3', key: 'DISignalStatus3', type: 'u16', scale: 1, hide: false },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved1', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 0 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved2', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 1 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved3', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 2 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved4', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 3 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved5', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 4 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved6', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 5 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved7', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 6 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved8', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 7 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved9', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 8 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved10', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 9 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved11', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 10 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved12', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 11 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved13', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 12 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved14', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 13 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved15', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 14 },
+  { class: 'DI信号状态-3', key: 'DIStatus3Reserved16', label: '预留', type: 'bit', bitsOf: 'DISignalStatus3', bit: 15 },
+
+  /* === ④ DI信号状态-4 (Word-4) ===================================== */
+  { class: 'DI信号状态-4', key: 'DISignalStatus4', type: 'u16', scale: 1, hide: false },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved1', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 0 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved2', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 1 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved3', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 2 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved4', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 3 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved5', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 4 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved6', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 5 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved7', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 6 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved8', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 7 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved9', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 8 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved10', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 9 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved11', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 10 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved12', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 11 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved13', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 12 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved14', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 13 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved15', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 14 },
+  { class: 'DI信号状态-4', key: 'DIStatus4Reserved16', label: '预留', type: 'bit', bitsOf: 'DISignalStatus4', bit: 15 },
+
+  /* === ⑤ DO驱动反馈状态-1 (Word-5) ================================= */
+  { class: 'DO驱动反馈状态-1', key: 'DODriveFeedbackStatus1', type: 'u16', scale: 1, hide: false },
+  { class: 'DO驱动反馈状态-1', key: 'MainPosContactorHighSideDriveFeedback', label: '主正接触器高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 0 },
+  { class: 'DO驱动反馈状态-1', key: 'MainNegContactorHighSideDriveFeedback', label: '主负接触器高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 1 },
+  { class: 'DO驱动反馈状态-1', key: 'PrechargeContactorHighSideDriveFeedback', label: '预充接触器高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 2 },
+  { class: 'DO驱动反馈状态-1', key: 'GreenLightHighSideDriveFeedback', label: '绿灯高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 3 },
+  { class: 'DO驱动反馈状态-1', key: 'YellowLightHighSideDriveFeedback', label: '黄灯高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 4 },
+  { class: 'DO驱动反馈状态-1', key: 'RedLightHighSideDriveFeedback', label: '红灯高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 5 },
+  { class: 'DO驱动反馈状态-1', key: 'FanHighSideDriveFeedback', label: '风扇高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 6 },
+  { class: 'DO驱动反馈状态-1', key: 'MainBreakerShuntTripHighSideDriveFeedback', label: '主断分励脱扣高边驱动反馈故障', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 7 },
+  { class: 'DO驱动反馈状态-1', key: 'DCPowerKMHighSideDriveFeedback', label: '直流供电KM高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 8 },
+  { class: 'DO驱动反馈状态-1', key: 'PCSWaveBlockHighSideDriveFeedback', label: 'pcs封波高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 9 },
+  { class: 'DO驱动反馈状态-1', key: 'AuxBreakerHighSideDriveFeedback', label: '辅助断路器高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 10 },
+  { class: 'DO驱动反馈状态-1', key: 'ExhaustSystemHighSideDriveFeedback', label: '排风系统高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 11 },
+  { class: 'DO驱动反馈状态-1', key: 'CabinetFanHighSideDriveFeedback', label: '柜体风机高边驱动反馈', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 12 },
+  { class: 'DO驱动反馈状态-1', key: 'DODriveFeedback1Reserved1', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 13 },
+  { class: 'DO驱动反馈状态-1', key: 'DODriveFeedback1Reserved2', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 14 },
+  { class: 'DO驱动反馈状态-1', key: 'DODriveFeedback1Reserved3', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus1', bit: 15 },
+
+  /* === ⑥ DO驱动反馈状态-2 (Word-6) ================================= */
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedbackStatus2', type: 'u16', scale: 1, hide: false },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved1', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 0 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved2', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 1 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved3', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 2 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved4', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 3 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved5', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 4 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved6', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 5 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved7', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 6 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved8', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 7 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved9', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 8 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved10', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 9 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved11', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 10 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved12', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 11 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved13', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 12 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved14', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 13 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved15', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 14 },
+  { class: 'DO驱动反馈状态-2', key: 'DODriveFeedback2Reserved16', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus2', bit: 15 },
+
+  /* === ⑦ DO驱动反馈状态-3 (Word-7) ================================= */
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedbackStatus3', type: 'u16', scale: 1, hide: false },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved1', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 0 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved2', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 1 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved3', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 2 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved4', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 3 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved5', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 4 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved6', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 5 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved7', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 6 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved8', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 7 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved9', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 8 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved10', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 9 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved11', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 10 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved12', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 11 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved13', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 12 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved14', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 13 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved15', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 14 },
+  { class: 'DO驱动反馈状态-3', key: 'DODriveFeedback3Reserved16', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus3', bit: 15 },
+
+  /* === ⑧ DO驱动反馈状态-4 (Word-8) ================================= */
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedbackStatus4', type: 'u16', scale: 1, hide: false },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved1', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 0 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved2', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 1 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved3', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 2 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved4', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 3 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved5', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 4 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved6', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 5 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved7', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 6 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved8', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 7 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved9', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 8 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved10', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 9 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved11', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 10 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved12', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 11 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved13', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 12 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved14', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 13 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved15', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 14 },
+  { class: 'DO驱动反馈状态-4', key: 'DODriveFeedback4Reserved16', label: '预留', type: 'bit', bitsOf: 'DODriveFeedbackStatus4', bit: 15 },
+
+  /* === ⑨ DO控制状态-1 (Word-9) ===================================== */
+  { class: 'DO控制状态-1', key: 'DOControlStatus1', type: 'u16', scale: 1, hide: false },
+  { class: 'DO控制状态-1', key: 'MainPosContactorControl', label: '主正接触器控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 0 },
+  { class: 'DO控制状态-1', key: 'MainNegContactorControl', label: '主负接触器控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 1 },
+  { class: 'DO控制状态-1', key: 'PrechargeContactorControl', label: '预充接触器控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 2 },
+  { class: 'DO控制状态-1', key: 'GreenLightControl', label: '绿灯控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 3 },
+  { class: 'DO控制状态-1', key: 'YellowLightControl', label: '黄灯控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 4 },
+  { class: 'DO控制状态-1', key: 'RedLightControl', label: '红灯控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 5 },
+  { class: 'DO控制状态-1', key: 'FanControl', label: '风扇控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 6 },
+  { class: 'DO控制状态-1', key: 'MainBreakerShuntTripControl', label: '主断分励脱扣控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 7 },
+  { class: 'DO控制状态-1', key: 'DCPowerKMControl', label: '直流供电KM控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 8 },
+  { class: 'DO控制状态-1', key: 'PCSWaveBlockControl', label: 'pcs封波控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 9 },
+  { class: 'DO控制状态-1', key: 'AuxBreakerControl', label: '辅助断路器控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 10 },
+  { class: 'DO控制状态-1', key: 'ExhaustSystemControl', label: '排风系统控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 11 },
+  { class: 'DO控制状态-1', key: 'CabinetFanControl', label: '柜体风机控制', type: 'bit', bitsOf: 'DOControlStatus1', bit: 12 },
+  { class: 'DO控制状态-1', key: 'DOControl1Reserved1', label: '预留', type: 'bit', bitsOf: 'DOControlStatus1', bit: 13 },
+  { class: 'DO控制状态-1', key: 'DOControl1Reserved2', label: '预留', type: 'bit', bitsOf: 'DOControlStatus1', bit: 14 },
+  { class: 'DO控制状态-1', key: 'DOControl1Reserved3', label: '预留', type: 'bit', bitsOf: 'DOControlStatus1', bit: 15 },
+
+  /* === ⑩ DO控制状态-2 (Word-10) ==================================== */
+  { class: 'DO控制状态-2', key: 'DOControlStatus2', type: 'u16', scale: 1, hide: false },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved1', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 0 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved2', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 1 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved3', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 2 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved4', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 3 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved5', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 4 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved6', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 5 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved7', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 6 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved8', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 7 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved9', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 8 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved10', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 9 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved11', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 10 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved12', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 11 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved13', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 12 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved14', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 13 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved15', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 14 },
+  { class: 'DO控制状态-2', key: 'DOControl2Reserved16', label: '预留', type: 'bit', bitsOf: 'DOControlStatus2', bit: 15 },
+
+  /* === ⑪ DO控制状态-3 (Word-11) ==================================== */
+  { class: 'DO控制状态-3', key: 'DOControlStatus3', type: 'u16', scale: 1, hide: false },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved1', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 0 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved2', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 1 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved3', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 2 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved4', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 3 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved5', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 4 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved6', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 5 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved7', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 6 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved8', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 7 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved9', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 8 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved10', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 9 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved11', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 10 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved12', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 11 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved13', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 12 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved14', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 13 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved15', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 14 },
+  { class: 'DO控制状态-3', key: 'DOControl3Reserved16', label: '预留', type: 'bit', bitsOf: 'DOControlStatus3', bit: 15 },
+
+  /* === ⑫ DO控制状态-4 (Word-12) ==================================== */
+  { class: 'DO控制状态-4', key: 'DOControlStatus4', type: 'u16', scale: 1, hide: false },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved1', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 0 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved2', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 1 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved3', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 2 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved4', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 3 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved5', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 4 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved6', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 5 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved7', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 6 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved8', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 7 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved9', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 8 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved10', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 9 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved11', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 10 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved12', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 11 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved13', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 12 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved14', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 13 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved15', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 14 },
+  { class: 'DO控制状态-4', key: 'DOControl4Reserved16', label: '预留', type: 'bit', bitsOf: 'DOControlStatus4', bit: 15 },
+
+  /* === ⑬ RT1温度信息 (Word-13-14) ================================== */
+  { class: 'RT1温度信息', key: 'RT1TempName', label: 'RT1温度信号名称', type: 'u16', scale: 1, hide: false },
+  { class: 'RT1温度信息', key: 'RT1TempData', label: 'RT1温度数据', type: 's16', scale: 10, unit: '℃', hide: false },
+
+  /* === ⑭ RT2温度信息 (Word-15-16) ================================== */
+  { class: 'RT2温度信息', key: 'RT2TempName', label: 'RT2温度信号名称', type: 'u16', scale: 1, hide: false },
+  { class: 'RT2温度信息', key: 'RT2TempData', label: 'RT2温度数据', type: 's16', scale: 10, unit: '℃', hide: false },
+
+  /* === ⑮ RT3温度信息 (Word-17-18) ================================== */
+  { class: 'RT3温度信息', key: 'RT3TempName', label: 'RT3温度信号名称', type: 'u16', scale: 1, hide: false },
+  { class: 'RT3温度信息', key: 'RT3TempData', label: 'RT3温度数据', type: 's16', scale: 10, unit: '℃', hide: false },
+
+  /* === ⑯ RT4温度信息 (Word-19-20) ================================== */
+  { class: 'RT4温度信息', key: 'RT4TempName', label: 'RT4温度信号名称', type: 'u16', scale: 1, hide: false },
+  { class: 'RT4温度信息', key: 'RT4TempData', label: 'RT4温度数据', type: 's16', scale: 10, unit: '℃', hide: false },
+
+  /* === ⑰ RT5温度信息 (Word-21-22) ================================== */
+  { class: 'RT5温度信息', key: 'RT5TempName', label: 'RT5温度信号名称', type: 'u16', scale: 1, hide: false },
+  { class: 'RT5温度信息', key: 'RT5TempData', label: 'RT5温度数据', type: 's16', scale: 10, unit: '℃', hide: false },
+
+  /* === ⑱ 预留 (Word-23 到 Word-32，10个寄存器) ==================== */
+  { class: '预留', key: 'DIDoTempReserved1', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved2', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved3', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved4', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved5', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved6', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved7', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved8', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved9', type: 'u16', scale: 1, hide: false },
+  { class: '预留', key: 'DIDoTempReserved10', type: 'u16', scale: 1, hide: false }
+]
+
+//协议修改新增 - 输出的故障map (320个bit分配到20个寄存器)
+export const OUT_FAULT_MAP = [
+  /* === Register1 (编号1-16) ========================== */
+  { class: 'Register1', key: 'FaultMap1', type: 'u16', scale: 1, hide: false },
+  { class: 'Register1', key: 'CellOverVoltageSevere', label: '单体过压严重总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 0 },
+  { class: 'Register1', key: 'CellOverVoltageModerate', label: '单体过压一般总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 1 },
+  { class: 'Register1', key: 'CellOverVoltageMild', label: '单体过压轻微总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 2 },
+  { class: 'Register1', key: 'CellUnderVoltageSevere', label: '单体欠压严重总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 3 },
+  { class: 'Register1', key: 'CellUnderVoltageModerate', label: '单体欠压一般总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 4 },
+  { class: 'Register1', key: 'CellUnderVoltageMild', label: '单体欠压轻微总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 5 },
+  { class: 'Register1', key: 'ChargeOverTempSevere', label: '充电单体温度过高严重总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 6 },
+  { class: 'Register1', key: 'ChargeOverTempModerate', label: '充电单体温度过高一般总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 7 },
+  { class: 'Register1', key: 'ChargeOverTempMild', label: '充电单体温度过高轻微总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 8 },
+  { class: 'Register1', key: 'ChargeUnderTempSevere', label: '充电单体温度过低严重总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 9 },
+  { class: 'Register1', key: 'ChargeUnderTempModerate', label: '充电单体温度过低一般总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 10 },
+  { class: 'Register1', key: 'ChargeUnderTempMild', label: '充电单体温度过低轻微总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 11 },
+  { class: 'Register1', key: 'DischargeOverTempSevere', label: '放电单体温度过高严重总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 12 },
+  { class: 'Register1', key: 'DischargeOverTempModerate', label: '放电单体温度过高一般总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 13 },
+  { class: 'Register1', key: 'DischargeOverTempMild', label: '放电单体温度过高轻微总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 14 },
+  { class: 'Register1', key: 'DischargeUnderTempSevere', label: '放电单体温度过低严重总故障', type: 'bit', bitsOf: 'FaultMap1', bit: 15 },
+
+  /* === Register2 (编号17-32) ========================== */
+  { class: 'Register2', key: 'FaultMap2', type: 'u16', scale: 1, hide: false },
+  { class: 'Register2', key: 'DischargeUnderTempModerate', label: '放电单体温度过低一般总故障', type: 'bit', bitsOf: 'FaultMap2', bit: 0 },
+  { class: 'Register2', key: 'DischargeUnderTempMild', label: '放电单体温度过低轻微总故障', type: 'bit', bitsOf: 'FaultMap2', bit: 1 },
+  { class: 'Register2', key: 'CellSOCHighSevere', label: '单体SOC过高严重总故障', type: 'bit', bitsOf: 'FaultMap2', bit: 2 },
+  { class: 'Register2', key: 'CellSOCHighModerate', label: '单体SOC过高一般总故障', type: 'bit', bitsOf: 'FaultMap2', bit: 3 },
+  { class: 'Register2', key: 'CellSOCHighMild', label: '单体SOC过高轻微总故障', type: 'bit', bitsOf: 'FaultMap2', bit: 4 },
+  { class: 'Register2', key: 'CellSOCLowSevere', label: '单体SOC过低严重总故障', type: 'bit', bitsOf: 'FaultMap2', bit: 5 },
+  { class: 'Register2', key: 'CellSOCLowModerate', label: '单体SOC过低一般总故障', type: 'bit', bitsOf: 'FaultMap2', bit: 6 },
+  { class: 'Register2', key: 'CellSOCLowMild', label: '单体SOC过低轻微总故障', type: 'bit', bitsOf: 'FaultMap2', bit: 7 },
+  { class: 'Register2', key: 'CellVoltageSuper', label: '单体电压超级故障', type: 'bit', bitsOf: 'FaultMap2', bit: 8 },
+  // 预留位26-32
+  { class: 'Register2', key: 'Reserved26', label: '预留', type: 'bit', bitsOf: 'FaultMap2', bit: 9 },
+  { class: 'Register2', key: 'Reserved27', label: '预留', type: 'bit', bitsOf: 'FaultMap2', bit: 10 },
+  { class: 'Register2', key: 'Reserved28', label: '预留', type: 'bit', bitsOf: 'FaultMap2', bit: 11 },
+  { class: 'Register2', key: 'Reserved29', label: '预留', type: 'bit', bitsOf: 'FaultMap2', bit: 12 },
+  { class: 'Register2', key: 'Reserved30', label: '预留', type: 'bit', bitsOf: 'FaultMap2', bit: 13 },
+  { class: 'Register2', key: 'Reserved31', label: '预留', type: 'bit', bitsOf: 'FaultMap2', bit: 14 },
+  { class: 'Register2', key: 'Reserved32', label: '预留', type: 'bit', bitsOf: 'FaultMap2', bit: 15 },
+
+  /* === Register3 (编号33-48) ========================== */
+  { class: 'Register3', key: 'FaultMap3', type: 'u16', scale: 1, hide: false },
+  { class: 'Register3', key: 'Reserved33', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 0 },
+  { class: 'Register3', key: 'Reserved34', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 1 },
+  { class: 'Register3', key: 'Reserved35', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 2 },
+  { class: 'Register3', key: 'Reserved36', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 3 },
+  { class: 'Register3', key: 'Reserved37', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 4 },
+  { class: 'Register3', key: 'Reserved38', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 5 },
+  { class: 'Register3', key: 'Reserved39', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 6 },
+  { class: 'Register3', key: 'Reserved40', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 7 },
+  { class: 'Register3', key: 'Reserved41', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 8 },
+  { class: 'Register3', key: 'Reserved42', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 9 },
+  { class: 'Register3', key: 'Reserved43', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 10 },
+  { class: 'Register3', key: 'Reserved44', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 11 },
+  { class: 'Register3', key: 'Reserved45', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 12 },
+  { class: 'Register3', key: 'Reserved46', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 13 },
+  { class: 'Register3', key: 'Reserved47', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 14 },
+  { class: 'Register3', key: 'Reserved48', label: '预留', type: 'bit', bitsOf: 'FaultMap3', bit: 15 },
+
+  /* === Register4 (编号49-64) ========================== */
+  { class: 'Register4', key: 'FaultMap4', type: 'u16', scale: 1, hide: false },
+  { class: 'Register4', key: 'Reserved49', label: '预留', type: 'bit', bitsOf: 'FaultMap4', bit: 0 },
+  { class: 'Register4', key: 'Reserved50', label: '预留', type: 'bit', bitsOf: 'FaultMap4', bit: 1 },
+  { class: 'Register4', key: 'BMUOverVoltageSevere', label: 'BMU过压严重总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 2 },
+  { class: 'Register4', key: 'BMUOverVoltageModerate', label: 'BMU过压一般总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 3 },
+  { class: 'Register4', key: 'BMUOverVoltageMild', label: 'BMU过压轻微总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 4 },
+  { class: 'Register4', key: 'BMUUnderVoltageSevere', label: 'BMU欠压严重总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 5 },
+  { class: 'Register4', key: 'BMUUnderVoltageModerate', label: 'BMU欠压一般总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 6 },
+  { class: 'Register4', key: 'BMUUnderVoltageMild', label: 'BMU欠压轻微总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 7 },
+  { class: 'Register4', key: 'BMUOverTempSevere', label: 'BMU温度过高严重总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 8 },
+  { class: 'Register4', key: 'BMUOverTempModerate', label: 'BMU温度过高一般总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 9 },
+  { class: 'Register4', key: 'BMUOverTempMild', label: 'BMU温度过高轻微总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 10 },
+  { class: 'Register4', key: 'BMUUnderTempSevere', label: 'BMU温度过低严重总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 11 },
+  { class: 'Register4', key: 'BMUUnderTempModerate', label: 'BMU温度过低一般总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 12 },
+  { class: 'Register4', key: 'BMUUnderTempMild', label: 'BMU温度过低轻微总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 13 },
+  { class: 'Register4', key: 'PowerConnectorOverTempSevere', label: '动力接插件1温度过高严重总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 14 },
+  { class: 'Register4', key: 'PowerConnectorOverTempModerate', label: '动力接插件1温度过高一般总故障', type: 'bit', bitsOf: 'FaultMap4', bit: 15 },
+
+  /* === Register5 (编号65-80) ========================== */
+  { class: 'Register5', key: 'FaultMap5', type: 'u16', scale: 1, hide: false },
+  { class: 'Register5', key: 'PowerConnectorOverTempMild', label: '动力接插件1温度过高轻微总故障', type: 'bit', bitsOf: 'FaultMap5', bit: 0 },
+  { class: 'Register5', key: 'PowerConnectorUnderTempSevere', label: '动力接插件2温度过高严重总故障', type: 'bit', bitsOf: 'FaultMap5', bit: 1 },
+  { class: 'Register5', key: 'PowerConnectorUnderTempModerate', label: '动力接插件2温度过高一般总故障', type: 'bit', bitsOf: 'FaultMap5', bit: 2 },
+  { class: 'Register5', key: 'PowerConnectorUnderTempMild', label: '动力接插件2温度过高轻微总故障', type: 'bit', bitsOf: 'FaultMap5', bit: 3 },
+  { class: 'Register5', key: 'Reserved69', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 4 },
+  { class: 'Register5', key: 'Reserved70', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 5 },
+  { class: 'Register5', key: 'Reserved71', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 6 },
+  { class: 'Register5', key: 'Reserved72', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 7 },
+  { class: 'Register5', key: 'Reserved73', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 8 },
+  { class: 'Register5', key: 'Reserved74', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 9 },
+  { class: 'Register5', key: 'Reserved75', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 10 },
+  { class: 'Register5', key: 'Reserved76', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 11 },
+  { class: 'Register5', key: 'Reserved77', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 12 },
+  { class: 'Register5', key: 'Reserved78', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 13 },
+  { class: 'Register5', key: 'Reserved79', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 14 },
+  { class: 'Register5', key: 'Reserved80', label: '预留', type: 'bit', bitsOf: 'FaultMap5', bit: 15 },
+
+  /* === Register6 (编号81-96) ========================== */
+  { class: 'Register6', key: 'FaultMap6', type: 'u16', scale: 1, hide: false },
+  { class: 'Register6', key: 'Reserved81', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 0 },
+  { class: 'Register6', key: 'Reserved82', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 1 },
+  { class: 'Register6', key: 'Reserved83', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 2 },
+  { class: 'Register6', key: 'Reserved84', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 3 },
+  { class: 'Register6', key: 'Reserved85', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 4 },
+  { class: 'Register6', key: 'Reserved86', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 5 },
+  { class: 'Register6', key: 'Reserved87', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 6 },
+  { class: 'Register6', key: 'Reserved88', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 7 },
+  { class: 'Register6', key: 'Reserved89', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 8 },
+  { class: 'Register6', key: 'Reserved90', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 9 },
+  { class: 'Register6', key: 'Reserved91', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 10 },
+  { class: 'Register6', key: 'Reserved92', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 11 },
+  { class: 'Register6', key: 'Reserved93', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 12 },
+  { class: 'Register6', key: 'Reserved94', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 13 },
+  { class: 'Register6', key: 'Reserved95', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 14 },
+  { class: 'Register6', key: 'Reserved96', label: '预留', type: 'bit', bitsOf: 'FaultMap6', bit: 15 },
+
+  /* === Register7 (编号97-112) ========================== */
+  { class: 'Register7', key: 'FaultMap7', type: 'u16', scale: 1, hide: false },
+  { class: 'Register7', key: 'Reserved97', label: '预留', type: 'bit', bitsOf: 'FaultMap7', bit: 0 },
+  { class: 'Register7', key: 'Reserved98', label: '预留', type: 'bit', bitsOf: 'FaultMap7', bit: 1 },
+  { class: 'Register7', key: 'Reserved99', label: '预留', type: 'bit', bitsOf: 'FaultMap7', bit: 2 },
+  { class: 'Register7', key: 'Reserved100', label: '预留', type: 'bit', bitsOf: 'FaultMap7', bit: 3 },
+  { class: 'Register7', key: 'CellVoltageDiffSevere', label: '单体压差过大严重故障', type: 'bit', bitsOf: 'FaultMap7', bit: 4 },
+  { class: 'Register7', key: 'CellVoltageDiffModerate', label: '单体压差过大一般故障', type: 'bit', bitsOf: 'FaultMap7', bit: 5 },
+  { class: 'Register7', key: 'CellVoltageDiffMild', label: '单体压差过大轻微故障', type: 'bit', bitsOf: 'FaultMap7', bit: 6 },
+  { class: 'Register7', key: 'CellTempDiffSevere', label: '单体温差过大严重故障', type: 'bit', bitsOf: 'FaultMap7', bit: 7 },
+  { class: 'Register7', key: 'CellTempDiffModerate', label: '单体温差过大一般故障', type: 'bit', bitsOf: 'FaultMap7', bit: 8 },
+  { class: 'Register7', key: 'CellTempDiffMild', label: '单体温差过大轻微故障', type: 'bit', bitsOf: 'FaultMap7', bit: 9 },
+  { class: 'Register7', key: 'CellSOCDiffSevere', label: '单体SOC差异过大严重故障', type: 'bit', bitsOf: 'FaultMap7', bit: 10 },
+  { class: 'Register7', key: 'CellSOCDiffModerate', label: '单体SOC差异大一般故障', type: 'bit', bitsOf: 'FaultMap7', bit: 11 },
+  { class: 'Register7', key: 'CellSOCDiffMild', label: '单体SOC差异大轻微故障', type: 'bit', bitsOf: 'FaultMap7', bit: 12 },
+  { class: 'Register7', key: 'BMUVoltageDiffSevere', label: 'BMU压差过大严重故障', type: 'bit', bitsOf: 'FaultMap7', bit: 13 },
+  { class: 'Register7', key: 'BMUVoltageDiffModerate', label: 'BMU压差过大一般故障', type: 'bit', bitsOf: 'FaultMap7', bit: 14 },
+  { class: 'Register7', key: 'BMUVoltageDiffMild', label: 'BMU压差过大轻微故障', type: 'bit', bitsOf: 'FaultMap7', bit: 15 },
+
+  /* === Register8 (编号113-128) ========================== */
+  { class: 'Register8', key: 'FaultMap8', type: 'u16', scale: 1, hide: false },
+  { class: 'Register8', key: 'Reserved113', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 0 },
+  { class: 'Register8', key: 'Reserved114', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 1 },
+  { class: 'Register8', key: 'Reserved115', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 2 },
+  { class: 'Register8', key: 'Reserved116', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 3 },
+  { class: 'Register8', key: 'Reserved117', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 4 },
+  { class: 'Register8', key: 'Reserved118', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 5 },
+  { class: 'Register8', key: 'Reserved119', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 6 },
+  { class: 'Register8', key: 'Reserved120', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 7 },
+  { class: 'Register8', key: 'Reserved121', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 8 },
+  { class: 'Register8', key: 'Reserved122', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 9 },
+  { class: 'Register8', key: 'Reserved123', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 10 },
+  { class: 'Register8', key: 'Reserved124', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 11 },
+  { class: 'Register8', key: 'Reserved125', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 12 },
+  { class: 'Register8', key: 'Reserved126', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 13 },
+  { class: 'Register8', key: 'Reserved127', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 14 },
+  { class: 'Register8', key: 'Reserved128', label: '预留', type: 'bit', bitsOf: 'FaultMap8', bit: 15 },
+
+  /* === Register9 (编号129-144) ========================== */
+  { class: 'Register9', key: 'FaultMap9', type: 'u16', scale: 1, hide: false },
+  { class: 'Register9', key: 'Reserved129', label: '预留', type: 'bit', bitsOf: 'FaultMap9', bit: 0 },
+  { class: 'Register9', key: 'Reserved130', label: '预留', type: 'bit', bitsOf: 'FaultMap9', bit: 1 },
+  { class: 'Register9', key: 'ClusterOverVoltageSevere', label: '簇端过压严重故障', type: 'bit', bitsOf: 'FaultMap9', bit: 2 },
+  { class: 'Register9', key: 'ClusterOverVoltageModerate', label: '簇端过压一般故障', type: 'bit', bitsOf: 'FaultMap9', bit: 3 },
+  { class: 'Register9', key: 'ClusterOverVoltageMild', label: '簇端过压轻微故障', type: 'bit', bitsOf: 'FaultMap9', bit: 4 },
+  { class: 'Register9', key: 'ClusterUnderVoltageSevere', label: '簇端欠压严重故障', type: 'bit', bitsOf: 'FaultMap9', bit: 5 },
+  { class: 'Register9', key: 'ClusterUnderVoltageModerate', label: '簇端欠压一般故障', type: 'bit', bitsOf: 'FaultMap9', bit: 6 },
+  { class: 'Register9', key: 'ClusterUnderVoltageMild', label: '簇端欠压轻微故障', type: 'bit', bitsOf: 'FaultMap9', bit: 7 },
+  { class: 'Register9', key: 'InsulationPosToGroundSevere', label: '绝缘电阻正对地严重故障', type: 'bit', bitsOf: 'FaultMap9', bit: 8 },
+  { class: 'Register9', key: 'InsulationPosToGroundModerate', label: '绝缘电阻正对地一般故障', type: 'bit', bitsOf: 'FaultMap9', bit: 9 },
+  { class: 'Register9', key: 'InsulationPosToGroundMild', label: '绝缘电阻正对地轻微故障', type: 'bit', bitsOf: 'FaultMap9', bit: 10 },
+  { class: 'Register9', key: 'InsulationNegToGroundSevere', label: '绝缘电阻负对地严重故障', type: 'bit', bitsOf: 'FaultMap9', bit: 11 },
+  { class: 'Register9', key: 'InsulationNegToGroundModerate', label: '绝缘电阻负对地一般故障', type: 'bit', bitsOf: 'FaultMap9', bit: 12 },
+  { class: 'Register9', key: 'InsulationNegToGroundMild', label: '绝缘电阻负对地轻微故障', type: 'bit', bitsOf: 'FaultMap9', bit: 13 },
+  { class: 'Register9', key: 'ChargeOverCurrentSevere', label: '充电过流严重故障', type: 'bit', bitsOf: 'FaultMap9', bit: 14 },
+  { class: 'Register9', key: 'ChargeOverCurrentModerate', label: '充电过流一般故障', type: 'bit', bitsOf: 'FaultMap9', bit: 15 },
+
+  /* === Register10 (编号145-160) ========================== */
+  { class: 'Register10', key: 'FaultMap10', type: 'u16', scale: 1, hide: false },
+  { class: 'Register10', key: 'ChargeOverCurrentMild', label: '充电过流轻微故障', type: 'bit', bitsOf: 'FaultMap10', bit: 0 },
+  { class: 'Register10', key: 'DischargeOverCurrentSevere', label: '放电过流严重故障', type: 'bit', bitsOf: 'FaultMap10', bit: 1 },
+  { class: 'Register10', key: 'DischargeOverCurrentModerate', label: '放电过流一般故障', type: 'bit', bitsOf: 'FaultMap10', bit: 2 },
+  { class: 'Register10', key: 'DischargeOverCurrentMild', label: '放电过流轻微故障', type: 'bit', bitsOf: 'FaultMap10', bit: 3 },
+  { class: 'Register10', key: 'EnvTempOverSevere', label: '环境温度过温严重故障', type: 'bit', bitsOf: 'FaultMap10', bit: 4 },
+  { class: 'Register10', key: 'EnvTempOverModerate', label: '环境温度过温一般故障', type: 'bit', bitsOf: 'FaultMap10', bit: 5 },
+  { class: 'Register10', key: 'EnvTempOverMild', label: '环境温度过温轻微故障', type: 'bit', bitsOf: 'FaultMap10', bit: 6 },
+  { class: 'Register10', key: 'BPlusConnectorTempSevere', label: 'B+连接器温度过温严重故障', type: 'bit', bitsOf: 'FaultMap10', bit: 7 },
+  { class: 'Register10', key: 'BPlusConnectorTempModerate', label: 'B+连接器温度过温一般故障', type: 'bit', bitsOf: 'FaultMap10', bit: 8 },
+  { class: 'Register10', key: 'BPlusConnectorTempMild', label: 'B+连接器温度过温轻微故障', type: 'bit', bitsOf: 'FaultMap10', bit: 9 },
+  { class: 'Register10', key: 'BMinusConnectorTempSevere', label: 'B-连接器温度过温严重故障', type: 'bit', bitsOf: 'FaultMap10', bit: 10 },
+  { class: 'Register10', key: 'BMinusConnectorTempModerate', label: 'B-连接器温度过温一般故障', type: 'bit', bitsOf: 'FaultMap10', bit: 11 },
+  { class: 'Register10', key: 'BMinusConnectorTempMild', label: 'B-连接器温度过温轻微故障', type: 'bit', bitsOf: 'FaultMap10', bit: 12 },
+  { class: 'Register10', key: 'PPlusConnectorTempSevere', label: 'P+连接器温度过温严重故障', type: 'bit', bitsOf: 'FaultMap10', bit: 13 },
+  { class: 'Register10', key: 'PPlusConnectorTempModerate', label: 'P+连接器温度过温一般故障', type: 'bit', bitsOf: 'FaultMap10', bit: 14 },
+  { class: 'Register10', key: 'PPlusConnectorTempMild', label: 'P+连接器温度过温轻微故障', type: 'bit', bitsOf: 'FaultMap10', bit: 15 },
+
+  /* === Register11 (编号161-176) ========================== */
+  { class: 'Register11', key: 'FaultMap11', type: 'u16', scale: 1, hide: false },
+  { class: 'Register11', key: 'PMinusConnectorTempSevere', label: 'P-连接器温度过温严重故障', type: 'bit', bitsOf: 'FaultMap11', bit: 0 },
+  { class: 'Register11', key: 'PMinusConnectorTempModerate', label: 'P-连接器温度过温一般故障', type: 'bit', bitsOf: 'FaultMap11', bit: 1 },
+  { class: 'Register11', key: 'PMinusConnectorTempMild', label: 'P-连接器温度过温轻微故障', type: 'bit', bitsOf: 'FaultMap11', bit: 2 },
+  { class: 'Register11', key: 'Fuse1TempSevere', label: '熔断器1温度过温严重故障', type: 'bit', bitsOf: 'FaultMap11', bit: 3 },
+  { class: 'Register11', key: 'Fuse1TempModerate', label: '熔断器1温度过温一般故障', type: 'bit', bitsOf: 'FaultMap11', bit: 4 },
+  { class: 'Register11', key: 'Fuse1TempMild', label: '熔断器1温度过温轻微故障', type: 'bit', bitsOf: 'FaultMap11', bit: 5 },
+  { class: 'Register11', key: 'Fuse2TempSevere', label: '熔断器2温度过温严重故障', type: 'bit', bitsOf: 'FaultMap11', bit: 6 },
+  { class: 'Register11', key: 'Fuse2TempModerate', label: '熔断器2温度过温一般故障', type: 'bit', bitsOf: 'FaultMap11', bit: 7 },
+  { class: 'Register11', key: 'Fuse2TempMild', label: '熔断器2温度过温轻微故障', type: 'bit', bitsOf: 'FaultMap11', bit: 8 },
+  // bit 9-15: 预留 (编号170-176)
+  { class: 'Register11', key: 'Reserved170', label: '预留', type: 'bit', bitsOf: 'FaultMap11', bit: 9 },
+  { class: 'Register11', key: 'Reserved171', label: '预留', type: 'bit', bitsOf: 'FaultMap11', bit: 10 },
+  { class: 'Register11', key: 'Reserved172', label: '预留', type: 'bit', bitsOf: 'FaultMap11', bit: 11 },
+  { class: 'Register11', key: 'Reserved173', label: '预留', type: 'bit', bitsOf: 'FaultMap11', bit: 12 },
+  { class: 'Register11', key: 'Reserved174', label: '预留', type: 'bit', bitsOf: 'FaultMap11', bit: 13 },
+  { class: 'Register11', key: 'Reserved175', label: '预留', type: 'bit', bitsOf: 'FaultMap11', bit: 14 },
+  { class: 'Register11', key: 'Reserved176', label: '预留', type: 'bit', bitsOf: 'FaultMap11', bit: 15 },
+
+  /* === Register12 (编号177-192) ========================== */
+  { class: 'Register12', key: 'FaultMap12', type: 'u16', scale: 1, hide: false },
+  { class: 'Register12', key: 'Reserved177', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 0 },
+  { class: 'Register12', key: 'Reserved178', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 1 },
+  { class: 'Register12', key: 'Reserved179', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 2 },
+  { class: 'Register12', key: 'Reserved180', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 3 },
+  { class: 'Register12', key: 'Reserved181', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 4 },
+  { class: 'Register12', key: 'Reserved182', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 5 },
+  { class: 'Register12', key: 'Reserved183', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 6 },
+  { class: 'Register12', key: 'Reserved184', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 7 },
+  { class: 'Register12', key: 'Reserved185', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 8 },
+  { class: 'Register12', key: 'Reserved186', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 9 },
+  { class: 'Register12', key: 'Reserved187', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 10 },
+  { class: 'Register12', key: 'Reserved188', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 11 },
+  { class: 'Register12', key: 'Reserved189', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 12 },
+  { class: 'Register12', key: 'Reserved190', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 13 },
+  { class: 'Register12', key: 'Reserved191', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 14 },
+  { class: 'Register12', key: 'Reserved192', label: '预留', type: 'bit', bitsOf: 'FaultMap12', bit: 15 },
+
+  /* === Register13 (编号193-208) ========================== */
+  { class: 'Register13', key: 'FaultMap13', type: 'u16', scale: 1, hide: false },
+  // 预留位193-200
+  { class: 'Register13', key: 'Reserved193', label: '预留', type: 'bit', bitsOf: 'FaultMap13', bit: 0 },
+  { class: 'Register13', key: 'Reserved194', label: '预留', type: 'bit', bitsOf: 'FaultMap13', bit: 1 },
+  { class: 'Register13', key: 'Reserved195', label: '预留', type: 'bit', bitsOf: 'FaultMap13', bit: 2 },
+  { class: 'Register13', key: 'Reserved196', label: '预留', type: 'bit', bitsOf: 'FaultMap13', bit: 3 },
+  { class: 'Register13', key: 'Reserved197', label: '预留', type: 'bit', bitsOf: 'FaultMap13', bit: 4 },
+  { class: 'Register13', key: 'Reserved198', label: '预留', type: 'bit', bitsOf: 'FaultMap13', bit: 5 },
+  { class: 'Register13', key: 'Reserved199', label: '预留', type: 'bit', bitsOf: 'FaultMap13', bit: 6 },
+  { class: 'Register13', key: 'Reserved200', label: '预留', type: 'bit', bitsOf: 'FaultMap13', bit: 7 },
+  { class: 'Register13', key: 'ContactorTotalFault', label: '接触器总故障', type: 'bit', bitsOf: 'FaultMap13', bit: 8 },
+  { class: 'Register13', key: 'IsolationSwitchFeedbackFault', label: '隔离开关反馈故障', type: 'bit', bitsOf: 'FaultMap13', bit: 9 },
+  { class: 'Register13', key: 'MainBreakerFeedbackFault', label: '主断路器反馈故障', type: 'bit', bitsOf: 'FaultMap13', bit: 10 },
+  { class: 'Register13', key: 'FanControlFeedbackFault', label: '风扇控制反馈故障', type: 'bit', bitsOf: 'FaultMap13', bit: 11 },
+  { class: 'Register13', key: 'DCPowerKMFeedbackFault', label: '直流供电KM反馈故障', type: 'bit', bitsOf: 'FaultMap13', bit: 12 },
+  { class: 'Register13', key: 'AccessControlFeedbackFault', label: '门禁反馈故障', type: 'bit', bitsOf: 'FaultMap13', bit: 13 },
+  { class: 'Register13', key: 'SPDFeedbackFault', label: 'SPD反馈故障', type: 'bit', bitsOf: 'FaultMap13', bit: 14 },
+  { class: 'Register13', key: 'ACVoltageFeedbackFault', label: '交流电压反馈故障', type: 'bit', bitsOf: 'FaultMap13', bit: 15 },
+
+  /* === Register14 (编号209-224) ========================== */
+  { class: 'Register14', key: 'FaultMap14', type: 'u16', scale: 1, hide: false },
+  { class: 'Register14', key: 'SmokeSensorFeedbackFault', label: '烟感反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 0 },
+  { class: 'Register14', key: 'FireFeedbackFault', label: '消防反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 1 },
+  { class: 'Register14', key: 'TempSensorFeedbackFault', label: '温感反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 2 },
+  { class: 'Register14', key: 'ExhaustSystemFeedbackFault', label: '排风系统反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 3 },
+  { class: 'Register14', key: 'AuxBreakerFeedbackFault', label: '辅助断路器反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 4 },
+  { class: 'Register14', key: 'HydrogenDetectorFeedbackFault', label: '氢气（H2）探测器反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 5 },
+  { class: 'Register14', key: 'MSDSignalFeedbackFault', label: 'MSD信号反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 6 },
+  { class: 'Register14', key: 'EmergencyStopFeedbackFault', label: '急停反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 7 },
+  { class: 'Register14', key: 'CabinetFanFeedbackFault', label: '柜体风机反馈故障', type: 'bit', bitsOf: 'FaultMap14', bit: 8 },
+  // 预留位218-224
+  { class: 'Register14', key: 'Reserved218', label: '预留', type: 'bit', bitsOf: 'FaultMap14', bit: 9 },
+  { class: 'Register14', key: 'Reserved219', label: '预留', type: 'bit', bitsOf: 'FaultMap14', bit: 10 },
+  { class: 'Register14', key: 'Reserved220', label: '预留', type: 'bit', bitsOf: 'FaultMap14', bit: 11 },
+  { class: 'Register14', key: 'Reserved221', label: '预留', type: 'bit', bitsOf: 'FaultMap14', bit: 12 },
+  { class: 'Register14', key: 'Reserved222', label: '预留', type: 'bit', bitsOf: 'FaultMap14', bit: 13 },
+  { class: 'Register14', key: 'Reserved223', label: '预留', type: 'bit', bitsOf: 'FaultMap14', bit: 14 },
+  { class: 'Register14', key: 'Reserved224', label: '预留', type: 'bit', bitsOf: 'FaultMap14', bit: 15 },
+
+  /* === Register15 (编号225-240) ========================== */
+  { class: 'Register15', key: 'FaultMap15', type: 'u16', scale: 1, hide: false },
+  // 预留位225-230  
+  { class: 'Register15', key: 'Reserved225', label: '预留', type: 'bit', bitsOf: 'FaultMap15', bit: 0 },
+  { class: 'Register15', key: 'Reserved226', label: '预留', type: 'bit', bitsOf: 'FaultMap15', bit: 1 },
+  { class: 'Register15', key: 'Reserved227', label: '预留', type: 'bit', bitsOf: 'FaultMap15', bit: 2 },
+  { class: 'Register15', key: 'Reserved228', label: '预留', type: 'bit', bitsOf: 'FaultMap15', bit: 3 },
+  { class: 'Register15', key: 'Reserved229', label: '预留', type: 'bit', bitsOf: 'FaultMap15', bit: 4 },
+  { class: 'Register15', key: 'Reserved230', label: '预留', type: 'bit', bitsOf: 'FaultMap15', bit: 5 },
+  // 高边驱动故障231-240
+  { class: 'Register15', key: 'MainPosHighSideDriveFault', label: '主正高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 6 },
+  { class: 'Register15', key: 'MainNegHighSideDriveFault', label: '主负高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 7 },
+  { class: 'Register15', key: 'PrechargeHighSideDriveFault', label: '预充高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 8 },
+  { class: 'Register15', key: 'RedLightHighSideDriveFault', label: '红灯高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 9 },
+  { class: 'Register15', key: 'YellowLightHighSideDriveFault', label: '黄灯高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 10 },
+  { class: 'Register15', key: 'GreenLightHighSideDriveFault', label: '绿灯高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 11 },
+  { class: 'Register15', key: 'FanHighSideDriveFault', label: '风机高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 12 },
+  { class: 'Register15', key: 'MainBreakerShuntTripHighSideFault', label: '主断分励高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 13 },
+  { class: 'Register15', key: 'DCPowerHighSideDriveFault', label: '直流供电高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 14 },
+  { class: 'Register15', key: 'PCSWaveBlockHighSideFault', label: 'PCS封波高边驱动反馈故障', type: 'bit', bitsOf: 'FaultMap15', bit: 15 },
+  /* === Register16 (编号241-256) ========================== */
+  { class: 'Register16', key: 'FaultMap16', type: 'u16', scale: 1, hide: false },
+  { class: 'Register16', key: 'AuxBreakerShuntTripHighSideFault', label: '辅助断路器分励高边反馈故障', type: 'bit', bitsOf: 'FaultMap16', bit: 0 },
+  { class: 'Register16', key: 'ExhaustSystemHighSideFault', label: '排风系统高边反馈故障', type: 'bit', bitsOf: 'FaultMap16', bit: 1 },
+  { class: 'Register16', key: 'CabinetFanHighSideFault', label: '柜体风机高边反馈故障', type: 'bit', bitsOf: 'FaultMap16', bit: 2 },
+  // 预留位244-256
+  { class: 'Register16', key: 'Reserved244', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 3 },
+  { class: 'Register16', key: 'Reserved245', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 4 },
+  { class: 'Register16', key: 'Reserved246', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 5 },
+  { class: 'Register16', key: 'Reserved247', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 6 },
+  { class: 'Register16', key: 'Reserved248', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 7 },
+  { class: 'Register16', key: 'Reserved249', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 8 },
+  { class: 'Register16', key: 'Reserved250', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 9 },
+  { class: 'Register16', key: 'Reserved251', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 10 },
+  { class: 'Register16', key: 'Reserved252', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 11 },
+  { class: 'Register16', key: 'Reserved253', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 12 },
+  { class: 'Register16', key: 'Reserved254', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 13 },
+  { class: 'Register16', key: 'Reserved255', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 14 },
+  { class: 'Register16', key: 'Reserved256', label: '预留', type: 'bit', bitsOf: 'FaultMap16', bit: 15 },
+
+  
+  /* === Register17 (编号257-272) ========================== */
+  { class: 'Register17', key: 'FaultMap17', type: 'u16', scale: 1, hide: false },
+  // 通讯类故障 257-265
+  { class: 'Register17', key: 'RefrigerationCommFault', label: '制冷设备通讯故障', type: 'bit', bitsOf: 'FaultMap17', bit: 0 }, // 257
+  { class: 'Register17', key: 'PCSCommFault', label: 'PCS设备通讯故障', type: 'bit', bitsOf: 'FaultMap17', bit: 1 },         // 258
+  { class: 'Register17', key: 'DehumidifierCommFault', label: '除湿机通讯故障', type: 'bit', bitsOf: 'FaultMap17', bit: 2 }, // 259
+  { class: 'Register17', key: 'FireEquipmentCommFault', label: '消防设备通讯故障', type: 'bit', bitsOf: 'FaultMap17', bit: 3 },// 260
+  { class: 'Register17', key: 'BMUCommFault', label: 'BMU通讯故障', type: 'bit', bitsOf: 'FaultMap17', bit: 4 },             // 261
+  { class: 'Register17', key: 'CANHallCommFault', label: 'CAN霍尔通讯故障', type: 'bit', bitsOf: 'FaultMap17', bit: 5 },     // 262
+  { class: 'Register17', key: 'BCUUpstreamCommFault', label: 'BCU对上通讯故障', type: 'bit', bitsOf: 'FaultMap17', bit: 6 }, // 263
+  { class: 'Register17', key: 'DaisyChainDisconnectFault', label: '菊花链断连故障', type: 'bit', bitsOf: 'FaultMap17', bit: 7 },// 264
+  { class: 'Register17', key: 'AFECommFault', label: 'AFE通讯故障', type: 'bit', bitsOf: 'FaultMap17', bit: 8 },               // 265
+
+  // 预留 266-270 -> Register17 bit9..13
+  { class: 'Register17', key: 'Reserved266', label: '预留', type: 'bit', bitsOf: 'FaultMap17', bit: 9 },  // 266
+  { class: 'Register17', key: 'Reserved267', label: '预留', type: 'bit', bitsOf: 'FaultMap17', bit: 10 }, // 267
+  { class: 'Register17', key: 'Reserved268', label: '预留', type: 'bit', bitsOf: 'FaultMap17', bit: 11 }, // 268
+  { class: 'Register17', key: 'Reserved269', label: '预留', type: 'bit', bitsOf: 'FaultMap17', bit: 12 }, // 269
+  { class: 'Register17', key: 'Reserved270', label: '预留', type: 'bit', bitsOf: 'FaultMap17', bit: 13 }, // 270
+
+  // 温度传感器 271-272 -> Register17 bit14..15
+  { class: 'Register17', key: 'EnvTempSensorFault', label: '环境温度传感器故障', type: 'bit', bitsOf: 'FaultMap17', bit: 14 },        // 271
+  { class: 'Register17', key: 'BPosConnectorTempSensorFault', label: 'B+连接器温度传感器故障', type: 'bit', bitsOf: 'FaultMap17', bit: 15 }, // 272
+
+  /* === Register18 (编号273-288) ========================== */
+  { class: 'Register18', key: 'FaultMap18', type: 'u16', scale: 1, hide: false },
+  // 温度传感器 273-277 -> Register18 bit0..4
+  { class: 'Register18', key: 'BNegConnectorTempSensorFault', label: 'B-连接器温度传感器故障', type: 'bit', bitsOf: 'FaultMap18', bit: 0 }, // 273
+  { class: 'Register18', key: 'PPosConnectorTempSensorFault', label: 'P+连接器温度传感器故障', type: 'bit', bitsOf: 'FaultMap18', bit: 1 }, // 274
+  { class: 'Register18', key: 'PNegConnectorTempSensorFault', label: 'P-连接器温度传感器故障', type: 'bit', bitsOf: 'FaultMap18', bit: 2 }, // 275
+  { class: 'Register18', key: 'Fuse1TempSensorFault', label: '熔断器1温度传感器故障', type: 'bit', bitsOf: 'FaultMap18', bit: 3 },              // 276
+  { class: 'Register18', key: 'Fuse2TempSensorFault', label: '熔断器2温度传感器故障', type: 'bit', bitsOf: 'FaultMap18', bit: 4 },              // 277
+
+  // 预留 278-288 -> Register18 bit5..15 (共 11 bit)
+  { class: 'Register18', key: 'Reserved278', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 5 },  // 278
+  { class: 'Register18', key: 'Reserved279', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 6 },  // 279
+  { class: 'Register18', key: 'Reserved280', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 7 },  // 280
+  { class: 'Register18', key: 'Reserved281', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 8 },  // 281
+  { class: 'Register18', key: 'Reserved282', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 9 },  // 282
+  { class: 'Register18', key: 'Reserved283', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 10 }, // 283
+  { class: 'Register18', key: 'Reserved284', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 11 }, // 284
+  { class: 'Register18', key: 'Reserved285', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 12 }, // 285
+  { class: 'Register18', key: 'Reserved286', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 13 }, // 286
+  { class: 'Register18', key: 'Reserved287', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 14 }, // 287
+  { class: 'Register18', key: 'Reserved288', label: '预留', type: 'bit', bitsOf: 'FaultMap18', bit: 15 }, // 288
+
+  /* === Register19 (编号289-304) ========================== */
+  { class: 'Register19', key: 'FaultMap19', type: 'u16', scale: 1, hide: false },
+  // 预留位 289-290 -> Register19 bit0..1
+  { class: 'Register19', key: 'Reserved289', label: '预留', type: 'bit', bitsOf: 'FaultMap19', bit: 0 }, // 289
+  { class: 'Register19', key: 'Reserved290', label: '预留', type: 'bit', bitsOf: 'FaultMap19', bit: 1 }, // 290
+
+  // 其他故障 291-298 -> Register19 bit2..9
+  { class: 'Register19', key: 'HallFault', label: '霍尔故障', type: 'bit', bitsOf: 'FaultMap19', bit: 2 },             // 291
+  { class: 'Register19', key: 'InvalidDataExists', label: '存在无效数据', type: 'bit', bitsOf: 'FaultMap19', bit: 3 },  // 292
+  { class: 'Register19', key: 'FeRAMFault', label: '铁电存储器故障', type: 'bit', bitsOf: 'FaultMap19', bit: 4 },       // 293
+  { class: 'Register19', key: 'EEPROMFault', label: 'EEPROM故障', type: 'bit', bitsOf: 'FaultMap19', bit: 5 },          // 294
+  { class: 'Register19', key: 'FLASHFault', label: 'FLASH故障', type: 'bit', bitsOf: 'FaultMap19', bit: 6 },            // 295
+  { class: 'Register19', key: 'VoltageAcquisitionOffline', label: '电压采集掉线', type: 'bit', bitsOf: 'FaultMap19', bit: 7 }, // 296
+  { class: 'Register19', key: 'TempAcquisitionOffline', label: '温度采集掉线', type: 'bit', bitsOf: 'FaultMap19', bit: 8 },    // 297
+  { class: 'Register19', key: 'ReservedFaultSummary', label: '保留故障汇总点', type: 'bit', bitsOf: 'FaultMap19', bit: 9 },   // 298
+
+  // 预留位 299-304 -> Register19 bit10..15
+  { class: 'Register19', key: 'Reserved299', label: '预留', type: 'bit', bitsOf: 'FaultMap19', bit: 10 }, // 299
+  { class: 'Register19', key: 'Reserved300', label: '预留', type: 'bit', bitsOf: 'FaultMap19', bit: 11 }, // 300
+  { class: 'Register19', key: 'Reserved301', label: '预留', type: 'bit', bitsOf: 'FaultMap19', bit: 12 }, // 301
+  { class: 'Register19', key: 'Reserved302', label: '预留', type: 'bit', bitsOf: 'FaultMap19', bit: 13 }, // 302
+  { class: 'Register19', key: 'Reserved303', label: '预留', type: 'bit', bitsOf: 'FaultMap19', bit: 14 }, // 303
+  { class: 'Register19', key: 'Reserved304', label: '预留', type: 'bit', bitsOf: 'FaultMap19', bit: 15 }, // 304
+
+  /* === Register20 (编号305-320) ========================== */
+  { class: 'Register20', key: 'FaultMap20', type: 'u16', scale: 1, hide: false },
+  // 305-320 全部预留 -> Register20 bit0..15
+  { class: 'Register20', key: 'Reserved305', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 0 },  // 305
+  { class: 'Register20', key: 'Reserved306', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 1 },  // 306
+  { class: 'Register20', key: 'Reserved307', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 2 },  // 307
+  { class: 'Register20', key: 'Reserved308', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 3 },  // 308
+  { class: 'Register20', key: 'Reserved309', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 4 },  // 309
+  { class: 'Register20', key: 'Reserved310', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 5 },  // 310
+  { class: 'Register20', key: 'Reserved311', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 6 },  // 311
+  { class: 'Register20', key: 'Reserved312', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 7 },  // 312
+  { class: 'Register20', key: 'Reserved313', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 8 },  // 313
+  { class: 'Register20', key: 'Reserved314', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 9 },  // 314
+  { class: 'Register20', key: 'Reserved315', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 10 }, // 315
+  { class: 'Register20', key: 'Reserved316', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 11 }, // 316
+  { class: 'Register20', key: 'Reserved317', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 12 }, // 317
+  { class: 'Register20', key: 'Reserved318', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 13 }, // 318
+  { class: 'Register20', key: 'Reserved319', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 14 }, // 319
+  { class: 'Register20', key: 'Reserved320', label: '预留', type: 'bit', bitsOf: 'FaultMap20', bit: 15 }  // 320
 
 
 ]
+
+//协议修改新增 - 保留故障map（与输出故障map结构相同）
+export const SAVED_FAULT_MAP = [
+  /* === 保留故障map结构与OUT_FAULT_MAP完全相同，只在label后追加“（保留）”以区分 =============== */
+  ...OUT_FAULT_MAP.map(item => ({
+    ...item,
+    key: item.key.replace('OutFaultMap', 'SavedFaultMap').replace('OutFault', 'SavedFault'),
+    label: item.label ? `${item.label}（保留）` : item.label
+  }))
+]
+
+
 
   //一级故障点表
   export const FAULT_LEVEL1 = [
@@ -857,9 +1656,13 @@ export const TOTAL_FAULT = [
     { class:'类型选择', key:'CoolDeviceType',   label:'制冷设备类型',       type:'u16' },
     { class:'类型选择', key:'DehumidifyType',   label:'除湿机设备类型',     type:'u16' },
     { class:'类型选择', key:'FireCtrlType',     label:'消防控制器类型',     type:'u16' },
-
-    /* ⑥ 预留 6 B -------------------------------------------------------- */
-    { key:'_skip2', type:'skip6' },
+    { class:'类型选择', key:'SpecialFuncEnable', label:'特殊功能使能位配置', type:'u16' },
+    { class:'类型选择', key:'ClusterVoltMode',   label:'簇压模式',           type:'bits', bitsOf:'SpecialFuncEnable', bit:0, len:3, map:{0:'高压采集模式', 1:'单体电压累加模式'} },
+    { class:'类型选择', key:'BmuPoleTemp', label:'动力接插件温度',       type:'bits', bitsOf:'SpecialFuncEnable', bit:3, len:1, map:{0:'不存在', 1:'存在'} },
+    { class:'类型选择', key:'BMUTempDataType',   label:'BMU温度数据类型',    type:'bits', bitsOf:'SpecialFuncEnable', bit:4, len:1, map:{0:'普通模式', 1:'高精度模式'} },
+    { class:'类型选择', key:'forbidEnableCluster', label:'禁止使能簇',       type:'u16', },
+    /* ⑥ 预留 -------------------------------------------------------- */
+    { key:'_skip1', type:'skip2' },
 
     /* ⑦ 单体电压/温度滤波与接触器参数 ------------------------------------ */
     { class:'基础设置', key:'cellVoltFilterDiff', label:'单体电压滤波差值',      type:'u16', scale:1000, unit:'V' },
@@ -913,12 +1716,13 @@ export const TOTAL_FAULT = [
     { class:'电池信息', key:'batteryModel',       label:'电池型号',           type:'u16' },
     { class:'电池信息', key:'batteryVendor',      label:'电池厂家',           type:'u16' },
     { class:'簇额定参数', key:'ratedCapacity',      label:'电池额定容量',   type:'u16', unit:'Ah' },
-    { class:'簇额定参数', key:'clusterCalibEnergy', label:'簇校正电量',    type:'u32', scale:1000, unit:'kWh' },
-    { class:'簇额定参数', key:'clusterRatedEnergy', label:'簇额定电量',    type:'u32', scale:1000, unit:'kWh' },
-    { class:'簇额定参数', key:'clusterRatedPower',  label:'簇额定功率',     type:'u32', scale:1000, unit:'kW' },
+    { class:'簇额定参数', key:'clusterCalibEnergy', label:'簇校正电量',    type:'u32', scale:100, unit:'kWh' },
+    { class:'簇额定参数', key:'clusterRatedEnergy', label:'簇额定电量',    type:'u32', scale:100, unit:'kWh' },
+    { class:'簇额定参数', key:'clusterRatedPower',  label:'簇额定功率',     type:'u32', scale:100, unit:'kW' },
+    { class:'簇额定参数', key:'clusterRatedVoltage',  label:'簇额定电压',     type:'u16', scale:10, unit:'V' },
 
-    /* ⑯ 预留 8 B -------------------------------------------------------- */
-    { key:'_skip7', type:'skip8' },
+    /* ⑯ 预留 6 B -------------------------------------------------------- */
+    { key:'_skip7', type:'skip6' },
 
     /* ⑰ 均衡时间 / 阈值 -------------------------------------------------- */
     { class:'均衡参数', key:'balanceStartTime',    label:'均衡开启时间',          type:'u16', unit:'s' },
@@ -1261,69 +2065,275 @@ export const PACK_DNS_PARAM_R = [
 ];
 
 
-  // 单体报警参数表
+  // 单体报警参数表 - 完整的181个字段定义
   export const CELL_DNS_PARAM_R = [
-    // ———— 单体电压 ————
-    { class: '单体电压', key: 'cellVoltOverMinorVal',           label: '单体电压过压轻微报警值',            type: 's16', scale: 1, unit: 'mV' },
-    { class: '单体电压', key: 'cellVoltOverMinorFilterMs',      label: '单体电压过压轻微报警滤波时间',       type: 'u16', unit: 'ms' },
-    { class: '单体电压', key: 'cellVoltOverMinorRecovVal',      label: '单体电压过压轻微报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
-    { class: '单体电压', key: 'cellVoltOverMinorRecovFilterMs', label: '单体电压过压轻微报警恢复滤波时间',  type: 'u16', unit: 'ms' },
-  
-    { class: '单体电压', key: 'cellVoltOverGeneralVal',         label: '单体电压过压一般报警值',             type: 's16', scale: 1, unit: 'mV' },
-    { class: '单体电压', key: 'cellVoltOverGeneralFilterMs',    label: '单体电压过压一般报警滤波时间',       type: 'u16', unit: 'ms' },
-    { class: '单体电压', key: 'cellVoltOverGeneralRecovVal',    label: '单体电压过压一般报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
-    { class: '单体电压', key: 'cellVoltOverGeneralRecovFilterMs', label: '单体电压过压一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
-  
-    // 电压其他项（按同样规则添加unit并清理label）...
-  
-    // ———— 单体温度 ————
-    { class: '单体温度', key: 'cellChargeOverMinorVal',           label: '充电单体温度上限轻微报警值',         type: 's16', scale: 10, unit: '℃' },
-    { class: '单体温度', key: 'cellChargeOverMinorFilterMs',      label: '充电单体温度上限轻微报警滤波时间',  type: 'u16', unit: 'ms' },
-    { class: '单体温度', key: 'cellChargeOverMinorRecovVal',      label: '充电单体温度上限轻微报警恢复值',     type: 's16', scale: 10, unit: '℃' },
-    { class: '单体温度', key: 'cellChargeOverMinorRecovFilterMs', label: '充电单体温度上限轻微报警恢复滤波时间', type: 'u16', unit: 'ms' },
-  
-    { class: '单体温度', key: 'cellDischargeOverMinorVal',           label: '放电单体温度上限轻微报警值',        type: 's16', scale: 10, unit: '℃' },
-    { class: '单体温度', key: 'cellDischargeOverMinorFilterMs',      label: '放电单体温度上限轻微报警滤波时间',  type: 'u16', unit: 'ms' },
-    { class: '单体温度', key: 'cellDischargeOverMinorRecovVal',      label: '放电单体温度上限轻微报警恢复值',     type: 's16', scale: 10, unit: '℃' },
-    { class: '单体温度', key: 'cellDischargeOverMinorRecovFilterMs', label: '放电单体温度上限轻微报警恢复滤波时间', type: 'u16', unit: 'ms' },
-  
-    // 温度其他项（按同样规则添加unit并清理label）...
-  
-    // ———— 单体SOC ————
-    { class: '单体SOC', key: 'cellSocOverMinorVal',           label: '单体SOC过高轻微报警值',                  type: 's16', scale: 10, unit: '%' },
-    { class: '单体SOC', key: 'cellSocOverMinorFilterMs',      label: '单体SOC过高轻微报警滤波时间',           type: 'u16', unit: 'ms' },
-    { class: '单体SOC', key: 'cellSocOverMinorRecovVal',      label: '单体SOC过高轻微报警恢复值',             type: 's16', scale: 10, unit: '%' },
-    { class: '单体SOC', key: 'cellSocOverMinorRecovFilterMs', label: '单体SOC过高轻微报警恢复滤波时间',      type: 'u16', unit: 'ms' },
-  
-    // SOC其他项（按同样规则添加unit并清理label）...
-  
-    // ———— 单体SOH ————
-    { class: '单体SOH', key: 'cellSohUnderSevereVal',         label: '单体SOH过低严重报警值',                  type: 's16', scale: 10, unit: '%' },
-    { class: '单体SOH', key: 'cellSohUnderSevereFilterMs',    label: '单体SOH过低严重报警滤波时间',           type: 'u16', unit: 'ms' },
-    { class: '单体SOH', key: 'cellSohUnderSevereRecovVal',    label: '单体SOH过低严重报警恢复值',             type: 's16', scale: 10, unit: '%' },
-    { class: '单体SOH', key: 'cellSohUnderSevereRecovFilterMs',label: '单体SOH过低严重报警恢复滤波时间',     type: 'u16', unit: 'ms' },
-  
+    // ———— 单体电压上限 ————
+    { class: '单体电压', key: 'cellVoltOverMinorVal',           label: '单体电压上限-轻微报警值',            type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltOverMinorFilterMs',      label: '单体电压上限-轻微报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltOverMinorRecovVal',      label: '单体电压上限-轻微报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltOverMinorRecovFilterMs', label: '单体电压上限-轻微报警恢复滤波时间',  type: 'u16', unit: 'ms' },
+
+    { class: '单体电压', key: 'cellVoltOverGeneralVal',         label: '单体电压上限-一般报警值',             type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltOverGeneralFilterMs',    label: '单体电压上限-一般报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltOverGeneralRecovVal',    label: '单体电压上限-一般报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltOverGeneralRecovFilterMs', label: '单体电压上限-一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体电压', key: 'cellVoltOverSevereVal',          label: '单体电压上限-严重报警值',             type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltOverSevereFilterMs',     label: '单体电压上限-严重报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltOverSevereRecovVal',     label: '单体电压上限-严重报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltOverSevereRecovFilterMs', label: '单体电压上限-严重报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    // ———— 单体电压下限 ————
+    { class: '单体电压', key: 'cellVoltUnderMinorVal',           label: '单体电压下限-轻微报警值',            type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltUnderMinorFilterMs',      label: '单体电压下限-轻微报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltUnderMinorRecovVal',      label: '单体电压下限-轻微报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltUnderMinorRecovFilterMs', label: '单体电压下限-轻微报警恢复滤波时间',  type: 'u16', unit: 'ms' },
+
+    { class: '单体电压', key: 'cellVoltUnderGeneralVal',         label: '单体电压下限-一般报警值',             type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltUnderGeneralFilterMs',    label: '单体电压下限-一般报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltUnderGeneralRecovVal',    label: '单体电压下限-一般报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltUnderGeneralRecovFilterMs', label: '单体电压下限-一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体电压', key: 'cellVoltUnderSevereVal',          label: '单体电压下限-严重报警值',             type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltUnderSevereFilterMs',     label: '单体电压下限-严重报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltUnderSevereRecovVal',     label: '单体电压下限-严重报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltUnderSevereRecovFilterMs', label: '单体电压下限-严重报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    // ———— 单体电压压差 ————
+    { class: '单体电压', key: 'cellVoltDiffMinorVal',           label: '单体电压压差-轻微报警值',            type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltDiffMinorFilterMs',      label: '单体电压压差-轻微报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltDiffMinorRecovVal',      label: '单体电压压差-轻微报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltDiffMinorRecovFilterMs', label: '单体电压压差-轻微报警恢复滤波时间',  type: 'u16', unit: 'ms' },
+
+    { class: '单体电压', key: 'cellVoltDiffGeneralVal',         label: '单体电压压差-一般报警值',             type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltDiffGeneralFilterMs',    label: '单体电压压差-一般报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltDiffGeneralRecovVal',    label: '单体电压压差-一般报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltDiffGeneralRecovFilterMs', label: '单体电压压差-一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体电压', key: 'cellVoltDiffSevereVal',          label: '单体电压压差-严重报警值',             type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltDiffSevereFilterMs',     label: '单体电压压差-严重报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体电压', key: 'cellVoltDiffSevereRecovVal',     label: '单体电压压差-严重报警恢复值',        type: 's16', scale: 1, unit: 'mV' },
+    { class: '单体电压', key: 'cellVoltDiffSevereRecovFilterMs', label: '单体电压压差-严重报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    // ———— 充电单体温度上限 ————
+    { class: '单体温度', key: 'cellChargeOverMinorVal',           label: '充电单体温度上限-轻微报警值',         type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeOverMinorFilterMs',      label: '充电单体温度上限-轻微报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellChargeOverMinorRecovVal',      label: '充电单体温度上限-轻微报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeOverMinorRecovFilterMs', label: '充电单体温度上限-轻微报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellChargeOverGeneralVal',         label: '充电单体温度上限-一般报警值',         type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeOverGeneralFilterMs',    label: '充电单体温度上限-一般报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellChargeOverGeneralRecovVal',    label: '充电单体温度上限-一般报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeOverGeneralRecovFilterMs', label: '充电单体温度上限-一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellChargeOverSevereVal',          label: '充电单体温度上限-严重报警值',         type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeOverSevereFilterMs',     label: '充电单体温度上限-严重报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellChargeOverSevereRecovVal',     label: '充电单体温度上限-严重报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeOverSevereRecovFilterMs', label: '充电单体温度上限-严重报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    // ———— 充电单体温度下限 ————
+    { class: '单体温度', key: 'cellChargeUnderMinorVal',           label: '充电单体温度下限-轻微报警值',         type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeUnderMinorFilterMs',      label: '充电单体温度下限-轻微报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellChargeUnderMinorRecovVal',      label: '充电单体温度下限-轻微报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeUnderMinorRecovFilterMs', label: '充电单体温度下限-轻微报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellChargeUnderGeneralVal',         label: '充电单体温度下限-一般报警值',         type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeUnderGeneralFilterMs',    label: '充电单体温度下限-一般报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellChargeUnderGeneralRecovVal',    label: '充电单体温度下限-一般报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeUnderGeneralRecovFilterMs', label: '充电单体温度下限-一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellChargeUnderSevereVal',          label: '充电单体温度下限-严重报警值',         type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeUnderSevereFilterMs',     label: '充电单体温度下限-严重报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellChargeUnderSevereRecovVal',     label: '充电单体温度下限-严重报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellChargeUnderSevereRecovFilterMs', label: '充电单体温度下限-严重报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    // ———— 放电单体温度上限 ————
+    { class: '单体温度', key: 'cellDischargeOverMinorVal',           label: '放电单体温度上限-轻微报警值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeOverMinorFilterMs',      label: '放电单体温度上限-轻微报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellDischargeOverMinorRecovVal',      label: '放电单体温度上限-轻微报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeOverMinorRecovFilterMs', label: '放电单体温度上限-轻微报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellDischargeOverGeneralVal',         label: '放电单体温度上限-一般报警值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeOverGeneralFilterMs',    label: '放电单体温度上限-一般报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellDischargeOverGeneralRecovVal',    label: '放电单体温度上限-一般报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeOverGeneralRecovFilterMs', label: '放电单体温度上限-一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellDischargeOverSevereVal',          label: '放电单体温度上限-严重报警值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeOverSevereFilterMs',     label: '放电单体温度上限-严重报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellDischargeOverSevereRecovVal',     label: '放电单体温度上限-严重报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeOverSevereRecovFilterMs', label: '放电单体温度上限-严重报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    // ———— 放电单体温度下限 ————
+    { class: '单体温度', key: 'cellDischargeUnderMinorVal',           label: '放电单体温度下限-轻微报警值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeUnderMinorFilterMs',      label: '放电单体温度下限-轻微报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellDischargeUnderMinorRecovVal',      label: '放电单体温度下限-轻微报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeUnderMinorRecovFilterMs', label: '放电单体温度下限-轻微报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellDischargeUnderGeneralVal',         label: '放电单体温度下限-一般报警值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeUnderGeneralFilterMs',    label: '放电单体温度下限-一般报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellDischargeUnderGeneralRecovVal',    label: '放电单体温度下限-一般报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeUnderGeneralRecovFilterMs', label: '放电单体温度下限-一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellDischargeUnderSevereVal',          label: '放电单体温度下限-严重报警值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeUnderSevereFilterMs',     label: '放电单体温度下限-严重报警滤波时间',  type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellDischargeUnderSevereRecovVal',     label: '放电单体温度下限-严重报警恢复值',     type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellDischargeUnderSevereRecovFilterMs', label: '放电单体温度下限-严重报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    // ———— 单体温度温差 ————
+    { class: '单体温度', key: 'cellTempDiffMinorVal',           label: '单体温度温差-轻微报警值',            type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellTempDiffMinorFilterMs',      label: '单体温度温差-轻微报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellTempDiffMinorRecovVal',      label: '单体温度温差-轻微报警恢复值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellTempDiffMinorRecovFilterMs', label: '单体温度温差-轻微报警恢复滤波时间',  type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellTempDiffGeneralVal',         label: '单体温度温差-一般报警值',             type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellTempDiffGeneralFilterMs',    label: '单体温度温差-一般报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellTempDiffGeneralRecovVal',    label: '单体温度温差-一般报警恢复值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellTempDiffGeneralRecovFilterMs', label: '单体温度温差-一般报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    { class: '单体温度', key: 'cellTempDiffSevereVal',          label: '单体温度温差-严重报警值',             type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellTempDiffSevereFilterMs',     label: '单体温度温差-严重报警滤波时间',       type: 'u16', unit: 'ms' },
+    { class: '单体温度', key: 'cellTempDiffSevereRecovVal',     label: '单体温度温差-严重报警恢复值',        type: 's16', scale: 10, unit: '℃' },
+    { class: '单体温度', key: 'cellTempDiffSevereRecovFilterMs', label: '单体温度温差-严重报警恢复滤波时间', type: 'u16', unit: 'ms' },
+
+    // ———— 单体SOC上限 ————
+    { class: '单体SOC', key: 'cellSocOverMinorVal',           label: '单体soc上限-轻微报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocOverMinorFilterMs',      label: '单体soc上限-轻微报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocOverMinorRecovVal',      label: '单体soc上限-轻微报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocOverMinorRecovFilterMs', label: '单体soc上限-轻微报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    { class: '单体SOC', key: 'cellSocOverGeneralVal',         label: '单体soc上限-一般报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocOverGeneralFilterMs',    label: '单体soc上限-一般报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocOverGeneralRecovVal',    label: '单体soc上限-一般报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocOverGeneralRecovFilterMs', label: '单体soc上限-一般报警恢复滤波时间',     type: 'u16', unit: 'ms' },
+
+    { class: '单体SOC', key: 'cellSocOverSevereVal',          label: '单体soc上限-严重报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocOverSevereFilterMs',     label: '单体soc上限-严重报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocOverSevereRecovVal',     label: '单体soc上限-严重报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocOverSevereRecovFilterMs', label: '单体soc上限-严重报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    // ———— 单体SOC下限 ————
+    { class: '单体SOC', key: 'cellSocUnderMinorVal',           label: '单体soc下限-轻微报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocUnderMinorFilterMs',      label: '单体soc下限-轻微报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocUnderMinorRecovVal',      label: '单体soc下限-轻微报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocUnderMinorRecovFilterMs', label: '单体soc下限-轻微报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    { class: '单体SOC', key: 'cellSocUnderGeneralVal',         label: '单体soc下限-一般报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocUnderGeneralFilterMs',    label: '单体soc下限-一般报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocUnderGeneralRecovVal',    label: '单体soc下限-一般报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocUnderGeneralRecovFilterMs', label: '单体soc下限-一般报警恢复滤波时间',     type: 'u16', unit: 'ms' },
+
+    { class: '单体SOC', key: 'cellSocUnderSevereVal',          label: '单体soc下限-严重报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocUnderSevereFilterMs',     label: '单体soc下限-严重报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocUnderSevereRecovVal',     label: '单体soc下限-严重报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocUnderSevereRecovFilterMs', label: '单体soc下限-严重报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    // ———— 单体SOC差异 ————
+    { class: '单体SOC', key: 'cellSocDiffMinorVal',           label: '单体soc差异-轻微报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocDiffMinorFilterMs',      label: '单体soc差异-轻微报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocDiffMinorRecovVal',      label: '单体soc差异-轻微报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocDiffMinorRecovFilterMs', label: '单体soc差异-轻微报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    { class: '单体SOC', key: 'cellSocDiffGeneralVal',         label: '单体soc差异-一般报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocDiffGeneralFilterMs',    label: '单体soc差异-一般报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocDiffGeneralRecovVal',    label: '单体soc差异-一般报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocDiffGeneralRecovFilterMs', label: '单体soc差异-一般报警恢复滤波时间',     type: 'u16', unit: 'ms' },
+
+    { class: '单体SOC', key: 'cellSocDiffSevereVal',          label: '单体soc差异-严重报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocDiffSevereFilterMs',     label: '单体soc差异-严重报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOC', key: 'cellSocDiffSevereRecovVal',     label: '单体soc差异-严重报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOC', key: 'cellSocDiffSevereRecovFilterMs', label: '单体soc差异-严重报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    // ———— 单体SOH上限 ————
+    { class: '单体SOH', key: 'cellSohOverMinorVal',           label: '单体soh上限-轻微报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohOverMinorFilterMs',      label: '单体soh上限-轻微报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohOverMinorRecovVal',      label: '单体soh上限-轻微报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohOverMinorRecovFilterMs', label: '单体soh上限-轻微报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    { class: '单体SOH', key: 'cellSohOverGeneralVal',         label: '单体soh上限-一般报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohOverGeneralFilterMs',    label: '单体soh上限-一般报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohOverGeneralRecovVal',    label: '单体soh上限-一般报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohOverGeneralRecovFilterMs', label: '单体soh上限-一般报警恢复滤波时间',     type: 'u16', unit: 'ms' },
+
+    { class: '单体SOH', key: 'cellSohOverSevereVal',          label: '单体soh上限-严重报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohOverSevereFilterMs',     label: '单体soh上限-严重报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohOverSevereRecovVal',     label: '单体soh上限-严重报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohOverSevereRecovFilterMs', label: '单体soh上限-严重报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    // ———— 单体SOH下限 ————
+    { class: '单体SOH', key: 'cellSohUnderMinorVal',           label: '单体soh下限-轻微报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohUnderMinorFilterMs',      label: '单体soh下限-轻微报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohUnderMinorRecovVal',      label: '单体soh下限-轻微报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohUnderMinorRecovFilterMs', label: '单体soh下限-轻微报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    { class: '单体SOH', key: 'cellSohUnderGeneralVal',         label: '单体soh下限-一般报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohUnderGeneralFilterMs',    label: '单体soh下限-一般报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohUnderGeneralRecovVal',    label: '单体soh下限-一般报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohUnderGeneralRecovFilterMs', label: '单体soh下限-一般报警恢复滤波时间',     type: 'u16', unit: 'ms' },
+
+    { class: '单体SOH', key: 'cellSohUnderSevereVal',          label: '单体soh下限-严重报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohUnderSevereFilterMs',     label: '单体soh下限-严重报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohUnderSevereRecovVal',     label: '单体soh下限-严重报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohUnderSevereRecovFilterMs', label: '单体soh下限-严重报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    // ———— 单体SOH差异 ————
+    { class: '单体SOH', key: 'cellSohDiffMinorVal',           label: '单体soh差异-轻微报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohDiffMinorFilterMs',      label: '单体soh差异-轻微报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohDiffMinorRecovVal',      label: '单体soh差异-轻微报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohDiffMinorRecovFilterMs', label: '单体soh差异-轻微报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
+    { class: '单体SOH', key: 'cellSohDiffGeneralVal',         label: '单体soh差异-一般报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohDiffGeneralFilterMs',    label: '单体soh差异-一般报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohDiffGeneralRecovVal',    label: '单体soh差异-一般报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohDiffGeneralRecovFilterMs', label: '单体soh差异-一般报警恢复滤波时间',     type: 'u16', unit: 'ms' },
+
+    { class: '单体SOH', key: 'cellSohDiffSevereVal',          label: '单体soh差异-严重报警值',                  type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohDiffSevereFilterMs',     label: '单体soh差异-严重报警滤波时间',           type: 'u16', unit: 'ms' },
+    { class: '单体SOH', key: 'cellSohDiffSevereRecovVal',     label: '单体soh差异-严重报警恢复值',             type: 's16', scale: 10, unit: '%' },
+    { class: '单体SOH', key: 'cellSohDiffSevereRecovFilterMs', label: '单体soh差异-严重报警恢复滤波时间',      type: 'u16', unit: 'ms' },
+
     // ———— 预留空间 ————
-    { class: '保留', key: '_skip_pack_alarm', type: 'skip20' }
+    { class: '保留', key: '_skip_reserved', type: 'skip24' },  // 12个预留字段，每个2字节 = 24字节
+
+    // ———— CRC16 ————
+    // { class: 'CRC', key: 'crc16', label: 'CRC16', type: 'u16' }
   ];
-
-
 
 //SOX 参数表定义
 // 实时保存数据表
+//协议修改新增
 export const REAL_TIME_SAVE_R = [
-  // ———— SOC 相关数据 ————
-  { class: '实时SOX数据', key: 'clusterDisplaySoc', label: '簇端显示SOC', type: 'u16', scale: 10, unit: '%' },
-  { class: '实时SOX数据', key: 'cellMaxSoc', label: '单体最大SOC', type: 'u16', scale: 10, unit: '%' },
-  { class: '实时SOX数据', key: 'cellMinSoc', label: '单体最小SOC', type: 'u16', scale: 10, unit: '%' },
-  { class: '实时SOX数据', key: '_reserve1', label: '预留1', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve2', label: '预留2', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve3', label: '预留3', type: 'u16' },
+  // ———— 第一个class：实时SOC数据 ————
+  { class: '实时SOC', key: 'clusterDisplaySoc', label: '簇端显示SOC', type: 'u16', scale: 10, unit: '%' },
 
-  { class: '实时SOX数据', key: 'prevOnlineSoh', label: '前一次在线SOH', type: 'u16', scale: 10, unit: '%' },
+  // ———— BMU最大SOC*32 ————
+  ...Array.from({ length: 32 }, (_, i) => ({
+    class: '实时SOC',
+    key: `bmuMaxSoc${i + 1}`,
+    label: `BMU${i + 1}最大SOC`,
+    type: 'u16',
+    scale: 10,
+    unit: '%'
+  })),
+
+  // ———— BMU最小SOC*32 ————
+  ...Array.from({ length: 32 }, (_, i) => ({
+    class: '实时SOC',
+    key: `bmuMinSoc${i + 1}`,
+    label: `BMU${i + 1}最小SOC`,
+    type: 'u16',
+    scale: 10,
+    unit: '%'
+  })),
+
+  { class: '实时SOC', key: '_reserve1', label: '预留1', type: 'u16' },
+  { class: '实时SOC', key: '_reserve2', label: '预留2', type: 'u16' },
+  { class: '实时SOC', key: '_reserve3', label: '预留3', type: 'u16' },
+
+  // ———— 第二个class：实时SOH数据 ————
+  { class: '实时SOH', key: 'prevOnlineSoh', label: '前一次在线SOH', type: 'u16', scale: 10, unit: '%' },
 
   ...Array.from({ length: 10 }, (_, i) => ({
-    class: '实时SOX数据',
+    class: '实时SOH',
     key: `historySoh${i + 1}`,
     label: `保存的历史SOH值${i + 1}`,
     type: 'u16',
@@ -1333,7 +2343,7 @@ export const REAL_TIME_SAVE_R = [
 
   // 保存的历史工况权重值
   ...Array.from({ length: 10 }, (_, i) => ({
-    class: '实时SOX数据',
+    class: '实时SOH',
     key: `historyConditionWeight${i + 1}`,
     label: `保存的历史工况权重值${i + 1}`,
     type: 'u16',
@@ -1341,42 +2351,45 @@ export const REAL_TIME_SAVE_R = [
     unit: '%'
   })),
   ...Array.from({ length: 10 }, (_, i) => ({
-    class: '实时SOX数据',
+    class: '实时SOH',
     key: `historyInterval${i + 1}`,
     label: `保存的历史时间间隔${i + 1}`,
     type: 'u16'
   })),
 
-  { class: '实时SOX数据', key: 'prevTriggerTime', label: '前一次触发时间', type: 'u16' },
-  { class: '实时SOX数据', key: 'cycleCount', label: '循环次数', type: 'u32' },
+  { class: '实时SOH', key: 'prevTriggerTime', label: '前一次触发时间', type: 'u16' },
+  { class: '实时SOH', key: 'cycleCount', label: '循环次数', type: 'u32' },
 
-  { class: '实时SOX数据', key: 'sohCalcChargeAccTime1', label: 'SOH计算-充电累积时', type: 'f32', scale: 10, unit: 'Ah' },
-  { class: '实时SOX数据', key: 'sohCalcDischargeAccTime1', label: 'SOH计算-放电累积时', type: 'f32', scale: 10, unit: 'Ah' },
-  { class: '实时SOX数据', key: 'sohPowerOnInitFlag', label: 'SOH上电初始化标志位', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve4', label: '预留4', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve5', label: '预留5', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve6', label: '预留6', type: 'u16' },
+  { class: '实时SOH', key: 'sohCalcChargeAccTime1', label: 'SOH计算-充电累积安时', type: 's32', scale: 10, unit: 'Ah' },
+  { class: '实时SOH', key: 'sohCalcDischargeAccTime1', label: 'SOH计算-放电累积安时', type: 's32', scale: 10, unit: 'Ah' },
+  { class: '实时SOH', key: 'sohPowerOnInitFlag', label: 'soh上电初始化标志位', type: 'u16' },
+  { class: '实时SOH', key: 'sohCurrentUpdateCapacity', label: '存储的SOH当前更新容量', type: 'u16', scale: 10, unit: 'Ah' },
+  { class: '实时SOH', key: '_reserve4', label: '预留4', type: 'u16' },
+  { class: '实时SOH', key: '_reserve5', label: '预留5', type: 'u16' },
+  { class: '实时SOH', key: '_reserve6', label: '预留6', type: 'u16' },
 
-  { class: '实时SOX数据', key: 'clusterSoe', label: '簇端SOE', type: 'u16', scale: 10, unit: '%' },
-  { class: '实时SOX数据', key: 'chargeEfficiency', label: '充电效率', type: 'u16', scale: 100, unit: '%' },
+  // ———— 第三个class：实时SOE数据 ————
+  { class: '实时SOE', key: 'clusterSoe', label: '簇端SOE', type: 'u16', scale: 10, unit: '%' },
+  { class: '实时SOE', key: 'chargeEfficiency', label: '充电效率', type: 'u16', scale: 100, unit: '%' },
+  // { class: '实时SOE', key: 'chargeEfficiency', label: '充电效率', type: 'u16', scale: 100},
 
 
-  { class: '实时SOX数据', key: 'availableEnergy', label: '可用电量', type: 'u16', scale: 100, unit: 'kW' },
-  { class: '实时SOX数据', key: 'totalChargeEnergy', label: '累计充电电量', type: 'u32', scale: 1, unit: 'kWh' },
-  { class: '实时SOX数据', key: 'totalDischargeEnergy', label: '累计放电电量', type: 'u32', scale: 1, unit: 'kWh' },
-  { class: '实时SOX数据', key: 'totalChargeCapacity', label: '累计充电容量', type: 'u32', scale: 1, unit: 'Ah' },
-  { class: '实时SOX数据', key: 'totalDischargeCapacity', label: '累计放电容量', type: 'u32', scale: 1, unit: 'Ah' },
-  { class: '实时SOX数据', key: '_reserve7', label: '预留7', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve8', label: '预留8', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve9', label: '预留9', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve10', label: '预留10', type: 'u16' },
+  { class: '实时SOE', key: 'availableEnergy', label: '可用电量', type: 'u16', scale: 100, unit: 'kW' },
+  { class: '实时SOE', key: 'totalChargeEnergy', label: '累计充电电量', type: 'u32', scale: 1, unit: 'kWh' },
+  { class: '实时SOE', key: 'totalDischargeEnergy', label: '累计放电电量', type: 'u32', scale: 1, unit: 'kWh' },
+  { class: '实时SOE', key: 'totalChargeCapacity', label: '累计充电容量', type: 'u32', scale: 1, unit: 'Ah' },
+  { class: '实时SOE', key: 'totalDischargeCapacity', label: '累计放电容量', type: 'u32', scale: 1, unit: 'Ah' },
+  { class: '实时SOE', key: '_reserve7', label: '预留7', type: 'u16' },
+  { class: '实时SOE', key: '_reserve8', label: '预留8', type: 'u16' },
+  { class: '实时SOE', key: '_reserve9', label: '预留9', type: 'u16' },
+  { class: '实时SOE', key: '_reserve10', label: '预留10', type: 'u16' },
 
-  { class: '实时SOX数据', key: 'faultProtectCount', label: '故障保护次数', type: 'u16' },
-  { class: '实时SOX数据', key: 'voltageOverLimitCount', label: '电压过限次数', type: 'u16' },
-  { class: '实时SOX数据', key: 'tempOverLimitCount', label: '温度过限次数', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve11', label: '预留11', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve12', label: '预留12', type: 'u16' },
-  { class: '实时SOX数据', key: '_reserve13', label: '预留13', type: 'u16' }
+  { class: '实时SOE', key: 'faultProtectCount', label: '故障保护次数', type: 'u16' },
+  { class: '实时SOE', key: 'voltageOverLimitCount', label: '电压过限次数', type: 'u16' },
+  { class: '实时SOE', key: 'tempOverLimitCount', label: '温度过限次数', type: 'u16' },
+  { class: '实时SOE', key: '_reserve11', label: '预留11', type: 'u16' },
+  { class: '实时SOE', key: '_reserve12', label: '预留12', type: 'u16' },
+  { class: '实时SOE', key: '_reserve13', label: '预留13', type: 'u16' }
 ];
 
 // SOX算法配置参数-通用参数表
@@ -1397,6 +2410,7 @@ export const SOX_CFG_PARAM_R = [
 ];
 
 // SOC算法配置参数表
+//协议修改新增
 export const SOC_CFG_PARAM_R = [
   { class: 'SOC算法参数', key: 'rackSocUpperLimit', label: 'RackSOC_SOC取值范围上限值', type: 'u16', scale: 10, unit: '%' },
   { class: 'SOC算法参数', key: 'rackSocLowerLimit', label: 'RackSOC_SOC取值范围下限值', type: 'u16', scale: 10, unit: '%' },
@@ -1425,73 +2439,106 @@ export const SOC_CFG_PARAM_R = [
   })),
   { class: 'SOC算法参数', key: 'displaySocRackSocDiffRange', label: '显示SOC与RackSOC差值范围', type: 'u16', scale: 10, unit: '%' },
   { class: 'SOC算法参数', key: 'displaySocFollowRealSocTime', label: '显示SOC追随真实SOC时间', type: 'u16', scale: 10, unit: 's' },
-  
-  ...Array.from({ length: 21 }, (_, i) => ({
-    class: 'SOC算法参数',
-    key: `chargeOcvTable${i + 1}`,
-    label: `充电OCV表(电压输入)${i + 1}`,
-    type: 'u16',
-    scale: 1,
-    unit: 'mV'
-  })),
 
-  ...Array.from({ length: 21 }, (_, i) => ({
-    class: 'SOC算法参数',
-    key: `dischargeOcvTable${i + 1}`,
-    label: `放电OCV表(电压输入)${i + 1}`,
-    type: 'u16',
-    scale: 1,
-    unit: 'mV'
-  })),
+  //协议修改新增
+  { class: 'SOC算法参数', key: 'clusterUnderVoltageThreshold', label: '簇欠压阈值', type: 'u16', scale: 10, unit: 'V' },
+  { class: 'SOC算法参数', key: 'clusterOverVoltageThreshold', label: '簇过压阈值', type: 'u16', scale: 10, unit: 'V' },
+  { class: 'SOC算法参数', key: 'sohCycleCountDelivery', label: 'SOH循环次数下发', type: 'u16' },
 
-  ...Array.from({ length: 6 }, (_, i) => ({
-    class: 'SOC算法参数',
-    key: `chargeCorrectVoltageKnee97${i + 1}`,
-    label: `充电修正电压拐点表(97%)${i + 1}`,
-    type: 'u16',
-    scale: 1,
-    unit: 'mV'
-  })),
-  
-  ...Array.from({ length: 6 }, (_, i) => ({
-    class: 'SOC算法参数',
-    key: `chargeCorrectStep97${i + 1}`,
-    label: `充电修正步长表${i + 1}`,
-    type: 'u16',
-    scale: 1,
-    unit: 'mV'
-  })),
-  
-  ...Array.from({ length: 6 }, (_, i) => ({
-    class: 'SOC算法参数',
-    key: `dischargeCorrectCurrentRange${i + 1}`,
-    label: `放电修正电流区间${i + 1}`,
-    type: 's16',
-    scale: 10,
-    unit: 'A'
-  })),
+  //协议修改：充电OCV表从21个改为18个，对应充电soc百分点：15%、20%、25%、30%、35%、40%、45%、50%、55%、60%、65%、70%、75%、80%、85%、90%、95%、100%
+  ...Array.from({ length: 18 }, (_, i) => {
+    const socPoints = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
+    return {
+      class: 'SOC算法参数',
+      key: `chargeOcvTable${i + 1}`,
+      label: `充电OCV表(电压输入)${i + 1} - ${socPoints[i]}%`,
+      type: 'u16',
+      scale: 1,
+      unit: 'mV'
+    };
+  }),
+
+  //放电OCV表保持21个，对应放电soc百分点：0%、5%、10%、15%、20%、25%、30%、35%、40%、45%、50%、55%、60%、65%、70%、75%、80%、85%、90%、95%、100%
+  ...Array.from({ length: 21 }, (_, i) => {
+    const socPoints = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100];
+    return {
+      class: 'SOC算法参数',
+      key: `dischargeOcvTable${i + 1}`,
+      label: `放电OCV表(电压输入)${i + 1} - ${socPoints[i]}%`,
+      type: 'u16',
+      scale: 1,
+      unit: 'mV'
+    };
+  }),
+
+  //充电修正电压拐点表（97%）*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
+  ...Array.from({ length: 6 }, (_, i) => {
+    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    return {
+      class: 'SOC算法参数',
+      key: `chargeCorrectVoltageKnee97${i + 1}`,
+      label: `充电修正电压拐点表(97%)${i + 1} - ${rates[i]}`,
+      type: 'u16',
+      scale: 1,
+      unit: 'mV'
+    };
+  }),
+
+  //充电修正步长表*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
+  ...Array.from({ length: 6 }, (_, i) => {
+    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    return {
+      class: 'SOC算法参数',
+      key: `chargeCorrectStep97${i + 1}`,
+      label: `充电修正步长表${i + 1} - ${rates[i]}`,
+      type: 'u16',
+      scale: 1,
+      unit: 'mV'
+    };
+  }),
+
+  //充电修正电流区间点*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
+  ...Array.from({ length: 6 }, (_, i) => {
+    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    return {
+      class: 'SOC算法参数',
+      key: `chargeCorrectCurrentRange${i + 1}`,
+      label: `充电修正电流区间点${i + 1} - ${rates[i]}`,
+      type: 's16',
+      scale: 10,
+      unit: 'A'
+    };
+  }),
 
   
   { class: 'SOC算法参数', key: 'catchUpTime97', label: '97%点追赶时间', type: 's16', scale: 10, unit: 's' },
 
   
-  ...Array.from({ length: 6 }, (_, i) => ({
-    class: 'SOC算法参数',
-    key: `chargeCorrectVoltageKnee99${i + 1}`,
-    label: `充电修正电压拐电表(99%)${i + 1}`,
-    type: 'u16',
-    scale: 1,
-    unit: 'mV'
-  })),
+  //充电修正电压拐点表（99%）*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
+  ...Array.from({ length: 6 }, (_, i) => {
+    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    return {
+      class: 'SOC算法参数',
+      key: `chargeCorrectVoltageKnee99${i + 1}`,
+      label: `充电修正电压拐点表(99%)${i + 1} - ${rates[i]}`,
+      type: 'u16',
+      scale: 1,
+      unit: 'mV'
+    };
+  }),
 
-  ...Array.from({ length: 6 }, (_, i) => ({
-    class: 'SOC算法参数',
-    key: `chargeCorrectStep${i + 1}`,
-    label: `充电修正步长表${i + 1}`,
-    type: 'u16',
-    scale: 1,
-    unit: 'mV'
-  })),
+  //充电修正步长表*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
+  ...Array.from({ length: 6 }, (_, i) => {
+    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    return {
+      class: 'SOC算法参数',
+      key: `chargeCorrectStep99${i + 1}`,
+      label: `充电修正步长表${i + 1} - ${rates[i]}`,
+      type: 'u16',
+      scale: 1,
+      unit: 'mV'
+    };
+  }),
 
 
   { class: 'SOC算法参数', key: 'chargeCatchUpTime99',         label: '99%点追赶时间',               type: 'u16', scale: 10,   unit: 's' },
@@ -1540,6 +2587,65 @@ export const SOH_CFG_PARAM_R = [
   { class: 'SOH算法参数', key: '_reserve2', label: '预留2', type: 'u16' },
   { class: 'SOH算法参数', key: '_reserve3', label: '预留3', type: 'u16' },
   { class: 'SOH算法参数', key: '_reserve4', label: '预留4', type: 'u16' }
+];
+
+// 出厂校正参数表 - 47个字段 (预期: 94字节 + 2字节DataLength = 96字节)
+//协议修改新增
+export const FACTORY_CALIB_PARAM_R = [
+  // ———— 电流电压校准参数 (0-23字节) - Calibration.vue负责 ————
+  { class: '电流电压校准参数', key: 'currentChargeSmallRangeK', label: '电流充电小量程校准K值', type: 's16', scale: 1000, defaultValue: 1000 },
+  { class: '电流电压校准参数', key: 'currentChargeSmallRangeB', label: '电流充电小量程校准B值', type: 's16', scale: 10, defaultValue: 0 },
+  { class: '电流电压校准参数', key: 'currentDischargeSmallRangeK', label: '电流放电小量程校准K值', type: 's16', scale: 1000, defaultValue: 1000 },
+  { class: '电流电压校准参数', key: 'currentDischargeSmallRangeB', label: '电流放电小量程校准B值', type: 's16', scale: 10, defaultValue: 0 },
+  { class: '电流电压校准参数', key: 'currentChargeLargeRangeK', label: '电流充电大量程校准K值', type: 's16', scale: 1000, defaultValue: 1000 },
+  { class: '电流电压校准参数', key: 'currentChargeLargeRangeB', label: '电流充电大量程校准B值', type: 's16', scale: 10, defaultValue: 0 },
+  { class: '电流电压校准参数', key: 'currentDischargeLargeRangeK', label: '电流放电大量程校准K值', type: 's16', scale: 1000, defaultValue: 1000 },
+  { class: '电流电压校准参数', key: 'currentDischargeLargeRangeB', label: '电流放电大量程校准B值', type: 's16', scale: 10, defaultValue: 0 },
+  { class: '电流电压校准参数', key: 'preChargeVoltageK', label: '预充电压校准K值', type: 's16', scale: 1000, defaultValue: 1000 },
+  { class: '电流电压校准参数', key: 'preChargeVoltageB', label: '预充电压校准B值', type: 's16', scale: 10, defaultValue: 0 },
+  { class: '电流电压校准参数', key: 'clusterVoltageK', label: '组端电压校准K值', type: 's16', scale: 1000, defaultValue: 1000 },
+  { class: '电流电压校准参数', key: 'clusterVoltageB', label: '组端电压校准B值', type: 's16', scale: 10, defaultValue: 0 },
+
+  // ———— 预留字段 (24-37字节) - Calibration.vue负责 ————
+  { class: '电流电压校准参数', key: '_reserve1', label: '预留1', type: 'u16' },
+  { class: '电流电压校准参数', key: '_reserve2', label: '预留2', type: 'u16' },
+  { class: '电流电压校准参数', key: '_reserve3', label: '预留3', type: 'u16' },
+  { class: '电流电压校准参数', key: '_reserve4', label: '预留4', type: 'u16' },
+  { class: '电流电压校准参数', key: '_reserve5', label: '预留5', type: 'u16' },
+  { class: '电流电压校准参数', key: '_reserve6', label: '预留6', type: 'u16' },
+  { class: '电流电压校准参数', key: '_reserve7', label: '预留7', type: 'u16' },
+
+  // ———— 设备出厂信息 (38-93字节) - BaseParam.vue负责 ————
+  { class: '设备出厂信息', key: 'productionCode1', label: '生产编码1', type: 'u16' },
+  { class: '设备出厂信息', key: 'productionCode2', label: '生产编码2', type: 'u16' },
+  { class: '设备出厂信息', key: 'productionCode3', label: '生产编码3', type: 'u16' },
+  { class: '设备出厂信息', key: 'productionCode4', label: '生产编码4', type: 'u16' },
+  { class: '设备出厂信息', key: 'localId', label: '本机ID', type: 'hex16'},
+
+  // ———— 网络配置 ————
+  { class: '设备出厂信息', key: 'localIp', label: '本机IP', type: 'ipv4' },
+  { class: '设备出厂信息', key: 'subnetMask', label: '子网掩码', type: 'ipv4' },
+  { class: '设备出厂信息', key: 'defaultGateway', label: '默认网关', type: 'ipv4' },
+  { class: '设备出厂信息', key: 'primaryDns', label: '首选DNS', type: 'ipv4' },
+  { class: '设备出厂信息', key: 'alternateDns', label: '备用DNS', type: 'ipv4' },
+  { class: '设备出厂信息', key: 'port', label: '端口', type: 'u16'},
+
+  // ———— MAC地址 ————
+  { class: '设备出厂信息', key: 'macAddr1', label: 'MAC地址1', type: 'u16'},
+  { class: '设备出厂信息', key: 'macAddr2', label: 'MAC地址2', type: 'u16'},
+  { class: '设备出厂信息', key: 'macAddr3', label: 'MAC地址3', type: 'u16'},
+
+  // ———— 预留字段 ————
+  { class: '设备出厂信息', key: '_reserve8', label: '预留8', type: 'u16', hide: true },
+  { class: '设备出厂信息', key: '_reserve9', label: '预留9', type: 'u16', hide: true },
+  { class: '设备出厂信息', key: '_reserve10', label: '预留10', type: 'u16', hide: true },
+  { class: '设备出厂信息', key: '_reserve11', label: '预留11', type: 'u16', hide: true },
+  { class: '设备出厂信息', key: '_reserve12', label: '预留12', type: 'u16', hide: true },
+  { class: '设备出厂信息', key: '_reserve13', label: '预留13', type: 'u16', hide: true },
+  { class: '设备出厂信息', key: '_reserve14', label: '预留14', type: 'u16', hide: true },
+  { class: '设备出厂信息', key: '_reserve15', label: '预留15', type: 'u16', hide: true },
+  { class: '设备出厂信息', key: '_reserve16', label: '预留16', type: 'u16', hide: true },
+
 ];
 
 // 堆汇总信息表 - 74个字段
@@ -1619,6 +2725,7 @@ export const BLOCK_SUMMARY = [
   { class: '状态信息', key: 'batterySystemCycleCount', label: '电池系统循环次数', type: 'u16', scale: 1 },
   { class: '状态信息', key: 'systemHeartbeat', label: '系统心跳', type: 'u16', scale: 1 }
 ];
+
 
 // 堆版本信息表 - 12个字段
 export const BLOCK_VERSION = [
@@ -1701,14 +2808,14 @@ export const BLOCK_SYS_ABSTRACT = [
   { class: '单体SOH概要', key: 'cellSOHRange', label: '单体SOH极差值', type: 'u16', scale: 10, unit: '%' },
   { key:'_skip6', type:'skip4' },
   // 极柱温度概要信息
-  { class: '极柱温度概要', key: 'poleTempMax', label: '极柱温度最大值', type: 's16', scale: 10, unit: '℃', remarks: '默认无效值为大于0x7FFE' },
-  { class: '极柱温度概要', key: 'poleTempMaxClusterId', label: '极柱温度最大值簇编号', type: 's16', scale: 1 },
-  { class: '极柱温度概要', key: 'poleTempMaxBatteryId', label: '极柱温度最大值电池编号', type: 's16', scale: 1 },
-  { class: '极柱温度概要', key: 'poleTempMin', label: '极柱温度最小值', type: 's16', scale: 10, unit: '℃', remarks: '默认无效值为大于0x7FFE' },
-  { class: '极柱温度概要', key: 'poleTempMinClusterId', label: '极柱温度最小值簇编号', type: 's16', scale: 1 },
-  { class: '极柱温度概要', key: 'poleTempMinBatteryId', label: '极柱温度最小值电池编号', type: 's16', scale: 1 },
-  { class: '极柱温度概要', key: 'poleTempAverage', label: '极柱温度平均值', type: 's16', scale: 10, unit: '℃' },
-  { class: '极柱温度概要', key: 'poleTempRange', label: '极柱温度极差值', type: 's16', scale: 10, unit: '℃' },
+  { class: '动力接插件温度概要', key: 'poleTempMax', label: '动力接插件温度最大值', type: 's16', scale: 10, unit: '℃', remarks: '默认无效值为大于0x7FFE' },
+  { class: '动力接插件温度概要', key: 'poleTempMaxClusterId', label: '动力接插件温度最大值簇编号', type: 's16', scale: 1 },
+  { class: '动力接插件温度概要', key: 'poleTempMaxBatteryId', label: '动力接插件温度最大值电池编号', type: 's16', scale: 1 },
+  { class: '动力接插件温度概要', key: 'poleTempMin', label: '动力接插件温度最小值', type: 's16', scale: 10, unit: '℃', remarks: '默认无效值为大于0x7FFE' },
+  { class: '动力接插件温度概要', key: 'poleTempMinClusterId', label: '动力接插件温度最小值簇编号', type: 's16', scale: 1 },
+  { class: '动力接插件温度概要', key: 'poleTempMinBatteryId', label: '动力接插件温度最小值电池编号', type: 's16', scale: 1 },
+  { class: '动力接插件温度概要', key: 'poleTempAverage', label: '动力接插件温度平均值', type: 's16', scale: 10, unit: '℃' },
+  { class: '动力接插件温度概要', key: 'poleTempRange', label: '动力接插件温度极差值', type: 's16', scale: 10, unit: '℃' },
   { key:'_skip7', type:'skip4' },
   // 簇SOC概要信息
   { class: '簇SOC概要', key: 'clusterSOCMax', label: '簇SOC最大值', type: 'u16', scale: 10, unit: '%', remarks: '默认无效值为0x7FFF' },
@@ -2165,8 +3272,8 @@ export const BLOCK_ANALOG_FAULT_GRADE = [
   { class: '堆模拟量故障等级4', key: 'CellChargeUndertempFaultGrade', label: '单体电池充电欠温故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade4', bit: 2, len: 2 },
   { class: '堆模拟量故障等级4', key: 'CellDischargeOvertempFaultGrade', label: '单体电池放电过温故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade4', bit: 4, len: 2 },
   { class: '堆模拟量故障等级4', key: 'CellDischargeUndertempFaultGrade', label: '单体电池放电欠温故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade4', bit: 6, len: 2 },
-  { class: '堆模拟量故障等级4', key: 'CellSocTooHighFaultGrade', label: '单体soc过高故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade4', bit: 8, len: 2 },
-  { class: '堆模拟量故障等级4', key: 'CellSocTooLowFaultGrade', label: '单体soc过低故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade4', bit: 10, len: 2 },
+  { class: '堆模拟量故障等级4', key: 'CellSocTooHighFaultGrade', label: '单体SOC过高故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade4', bit: 8, len: 2 },
+  { class: '堆模拟量故障等级4', key: 'CellSocTooLowFaultGrade', label: '单体SOC过低故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade4', bit: 10, len: 2 },
   { class: '堆模拟量故障等级4', key: 'BlockAnalogFaultGrade4Reserved', label: '预留', type: 'bits', bitsOf: 'BlockAnalogFaultGrade4', bit: 12, len: 4 },
 
   // 故障等级5 (2字节) - 2个故障类型，每个2位，其余预留
@@ -2174,6 +3281,47 @@ export const BLOCK_ANALOG_FAULT_GRADE = [
   { class: '堆模拟量故障等级5', key: 'ClusterInterVoltageDiffFaultGrade', label: '簇间压差过大故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade5', bit: 0, len: 2 },
   { class: '堆模拟量故障等级5', key: 'ClusterInterCurrentDiffFaultGrade', label: '簇间电流差异过大故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade5', bit: 2, len: 2 },
   { class: '堆模拟量故障等级5', key: 'BlockAnalogFaultGrade5Reserved', label: '预留', type: 'bits', bitsOf: 'BlockAnalogFaultGrade5', bit: 4, len: 12 },
+];
+
+// 簇通讯失联信息表 - 对应 bms/bau/d2s/bM/block_comm_lost
+export const BLOCK_COMM_LOST = [
+  // 寄存器1：BCU失联状态-1 (BCU1-16)
+  { class: '簇通讯失联', key: 'bcuStatus1', type: 'u16', scale: 1, hide: false },
+  { class: '簇通讯失联', key: 'BCU1CommLost', label: 'BCU1通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 0 },
+  { class: '簇通讯失联', key: 'BCU2CommLost', label: 'BCU2通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 1 },
+  { class: '簇通讯失联', key: 'BCU3CommLost', label: 'BCU3通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 2 },
+  { class: '簇通讯失联', key: 'BCU4CommLost', label: 'BCU4通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 3 },
+  { class: '簇通讯失联', key: 'BCU5CommLost', label: 'BCU5通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 4 },
+  { class: '簇通讯失联', key: 'BCU6CommLost', label: 'BCU6通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 5 },
+  { class: '簇通讯失联', key: 'BCU7CommLost', label: 'BCU7通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 6 },
+  { class: '簇通讯失联', key: 'BCU8CommLost', label: 'BCU8通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 7 },
+  { class: '簇通讯失联', key: 'BCU9CommLost', label: 'BCU9通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 8 },
+  { class: '簇通讯失联', key: 'BCU10CommLost', label: 'BCU10通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 9 },
+  { class: '簇通讯失联', key: 'BCU11CommLost', label: 'BCU11通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 10 },
+  { class: '簇通讯失联', key: 'BCU12CommLost', label: 'BCU12通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 11 },
+  { class: '簇通讯失联', key: 'BCU13CommLost', label: 'BCU13通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 12 },
+  { class: '簇通讯失联', key: 'BCU14CommLost', label: 'BCU14通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 13 },
+  { class: '簇通讯失联', key: 'BCU15CommLost', label: 'BCU15通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 14 },
+  { class: '簇通讯失联', key: 'BCU16CommLost', label: 'BCU16通讯失联', type: 'bit', bitsOf: 'bcuStatus1', bit: 15 },
+
+  // 寄存器2：BCU失联状态-2 (BCU17-20)
+  { class: '簇通讯失联', key: 'bcuStatus2', type: 'u16', scale: 1, hide: false },
+  { class: '簇通讯失联', key: 'BCU17CommLost', label: 'BCU17通讯失联', type: 'bit', bitsOf: 'bcuStatus2', bit: 0 },
+  { class: '簇通讯失联', key: 'BCU18CommLost', label: 'BCU18通讯失联', type: 'bit', bitsOf: 'bcuStatus2', bit: 1 },
+  { class: '簇通讯失联', key: 'BCU19CommLost', label: 'BCU19通讯失联', type: 'bit', bitsOf: 'bcuStatus2', bit: 2 },
+  { class: '簇通讯失联', key: 'BCU20CommLost', label: 'BCU20通讯失联', type: 'bit', bitsOf: 'bcuStatus2', bit: 3 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved4', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 4 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved5', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 5 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved6', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 6 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved7', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 7 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved8', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 8 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved9', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 9 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved10', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 10 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved11', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 11 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved12', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 12 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved13', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 13 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved14', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 14 },
+  { class: '簇通讯失联', key: 'bcuStatus2Reserved15', label: '预留', type: 'bit', bitsOf: 'bcuStatus2', bit: 15 }
 ];
 
   // 堆系统基本配置参数
@@ -2185,16 +3333,20 @@ export const BLOCK_ANALOG_FAULT_GRADE = [
     { class: '系统基本配置', key: 'EMSCommFaultDisconnectEnable', label: 'EMS通讯故障断接触器使能',     type: 'u16', scale: 1 },
     { class: '系统基本配置', key: 'MaintainMode',                 label: '运维模式',                   type: 'u16', scale: 1 },
     { class: '系统基本配置', key: 'InternalTestMode',             label: '内测模式',                   type: 'u16', scale: 1 },
-    // 这里的 10×u16 预留在载荷中确实占位，因此必须用 skip20 表达真实占位，避免前端解析错位
-    { class: '系统基本配置', key: 'Reserved1',  label: '预留1', type: 'skip20'  },
-
+    { class: '系统基本配置', key: 'RealTimeDataRecordPeriod',     label: '实时数据记录周期',           type: 'u16', scale: 1, unit: '秒' },
+    // 9个预留字段 (9×2字节 = 18字节)
+    { class: '系统基本配置', key: 'Reserved1',  label: '预留1', type: 'skip18'  },
 
     // ② 结构配置
     { class: '系统基本配置', key: 'BlockCount',                   label: '当前堆数',                   type: 'u16', scale: 1, unit: '个' },
     { class: '系统基本配置', key: 'ClusterCount1',                label: '第一堆下簇数',               type: 'u16', scale: 1, unit: '个' },
     { class: '系统基本配置', key: 'ClusterCount2',                label: '第二堆下簇数',               type: 'u16', scale: 1, unit: '个' },
-    // 同理，后续 10×u16 预留也用 skip2 表达占位
-    { class: '系统基本配置', key: 'Reserved2', label: '预留2', type: 'skip20' },
+    { class: '系统基本配置', key: 'ClusterCount3',                label: '第三堆下簇数',               type: 'u16', scale: 1, unit: '个' },
+    { class: '系统基本配置', key: 'ClusterCount4',                label: '第四堆下簇数',               type: 'u16', scale: 1, unit: '个' },
+    { class: '系统基本配置', key: 'ClusterCount5',                label: '第五堆下簇数',               type: 'u16', scale: 1, unit: '个' },
+    { class: '系统基本配置', key: 'ClusterCount6',                label: '第六堆下簇数',               type: 'u16', scale: 1, unit: '个' },
+    // 6个预留字段 (6×2字节 = 12字节)
+    { class: '系统基本配置', key: 'Reserved2', label: '预留2', type: 'skip12' },
 
   ];
 
@@ -2354,7 +3506,7 @@ export const BLOCK_BATT_PARAM_R = [
 ];
 
 
-//系统通讯设备配置参数表 (18个参数)
+//系统通讯设备配置参数表 (19个参数)
 //topic: block_comm_dev_cfg_r/w
 export const BLOCK_COMM_DEV_CFG_R = [
   /* 系统通讯设备配置参数 ---------------------------------------- */
@@ -2364,15 +3516,15 @@ export const BLOCK_COMM_DEV_CFG_R = [
   { class: '系统通讯设备配置参数', key: 'CoolingDeviceCount', label: '制冷设备数量', type: 'u16', scale: 1 },
   { class: '系统通讯设备配置参数', key: 'DehumidifierType', label: '除湿空调类型', type: 'u16', scale: 1, remarks: '0：无除湿空调\n1：三河同飞' },
   { class: '系统通讯设备配置参数', key: 'DehumidifierCount', label: '除湿空调数量', type: 'u16', scale: 1 },
-  { class: '系统通讯设备配置参数', key: 'IoControllerType', label: 'I/O控制板类型', type: 'u16', scale: 1, remarks: '0：无I/O控制板\n1：英美讯' },
+  { class: '系统通讯设备配置参数', key: 'IoControllerType', label: 'I/O控制板类型', type: 'u16', scale: 1, remarks: '0：无I/O控制板\n1：艾莫讯' },
   { class: '系统通讯设备配置参数', key: 'IoControllerCount', label: 'I/O控制板数量', type: 'u16', scale: 1 },
   { class: '系统通讯设备配置参数', key: 'IoControllerBoardIP', label: 'I/O控制板IP基地址', type: 'ipv4', scale: 1 },
-  // { class: '系统通讯设备配置参数', key: 'Reserved1_1', label: '预留', type: 'u16', scale: 1 },
-  { class: '保留', key: '_skip', type: 'skip16' }
+  { class: '系统通讯设备配置参数', key: 'IoControllerNetworkCard', label: 'I/O控制板网卡选择', type: 'u16', scale: 1, remarks: '0：网卡1\n1：网卡2' },
+  { class: '保留', key: '_skip', type: 'skip14' }
 ];
 
 
-//系统操作配置参数表 (20个参数)
+//系统操作配置参数表 (24个参数)
 //topic: block_operate_cfg_r/w
 export const BLOCK_OPERATE_CFG_R = [
   /* 系统操作配置参数 ------------------------------------------------ */
@@ -2381,10 +3533,77 @@ export const BLOCK_OPERATE_CFG_R = [
   { class: '系统操作配置参数', key: 'EnableClusterConfig2', label: '使能簇配置2', type: 'u16', scale: 1, clusterRange: [11, 20], remarks: 'Bit0~9配置第11~20簇(0x3FF为第11~20簇全部使能)（就地+全部簇开路下才可设置）' },
   { class: '系统操作配置参数', key: 'IsStackVoltageZeroWhenAllOpen', label: '全部开路时堆电压是否为0', type: 'u16', scale: 1, remarks: '0：不开启\n1：开启' },
   { class: '系统操作配置参数', key: 'DoesStackSOCFollowAvgSOCWhenIdle', label: '静置时堆SOC是否追随平均SOC', type: 'u16', scale: 1, remarks: '0：不开启\n1：开启' },
-  { class: '系统操作配置参数', key: 'AvgSOCFollowThreshold', label: '平均SOC追随阈值', type: 'u16', scale: 1 },
-  { class: '系统操作配置参数', key: 'StackSOCChangeDiff', label: '堆SOC变化差值', type: 'u16', scale: 1 },
+  { class: '系统操作配置参数', key: 'AvgSOCFollowThreshold', label: '平均SOC追随阈值', type: 'u16', scale: 10, unit: '%' },
+  { class: '系统操作配置参数', key: 'StackSOCChangeDiff', label: '堆SOC变化差值', type: 'u16', scale: 10, unit: '%' },
   { class: '系统操作配置参数', key: 'BCPControlExists', label: '是否存在BCP控制', type: 'u16', scale: 1, remarks: '0：不存在\n1：存在' },
-  { class: '保留', key: '_skip', type: 'skip24' }
+  { class: '系统操作配置参数', key: 'StackSOCCatchUpSlope', label: '堆SOC追赶斜率', type: 'u16', scale: 1, unit: 'ms', remarks: '堆SOC追0.1%时间' },
+  { class: '系统操作配置参数', key: 'ClusterSOCSyncSwitch', label: '簇间SOC同步开关', type: 'u16', scale: 1, remarks: '0：不使能\n1：使能' },
+  { class: '系统操作配置参数', key: 'ChargeSOCSyncPoint', label: '充电SOC同步点', type: 'u16', scale: 10, unit: '%' },
+  { class: '系统操作配置参数', key: 'DischargeSOCSyncPoint', label: '放电SOC同步点', type: 'u16', scale: 10, unit: '%' },
+  { class: '保留', key: '_skip', type: 'skip16' }
 ];
 
-  
+
+
+// 升级参数字段定义表 - 73个寄存器 (146字节)
+export const UPGRADE_PARAM_FIELDS = [
+  // 寄存器0: 升级指令 (2字节)
+  { class: '升级参数', key: 'upgradeType', label: '升级指令', type: 'u16', scale: 1 },
+
+  // 寄存器1-2: FTP服务器IP (4字节)
+  { class: '升级参数', key: 'ftpServerIP', label: 'FTP服务器IP', type: 'ipv4', scale: 1 },
+
+  // 寄存器3: FTP服务器端口 (2字节)
+  { class: '升级参数', key: 'ftpPort', label: 'FTP服务器端口', type: 'u16', scale: 1 },
+
+  // 寄存器4-19: FTP服务器账号 (32字节)
+  { class: '升级参数', key: 'ftpUser', label: 'FTP服务器账号', type: 'str32', scale: 1 },
+
+  // 寄存器20-35: FTP服务器密码 (32字节)
+  { class: '升级参数', key: 'ftpPassword', label: 'FTP服务器密码', type: 'str32', scale: 1 },
+
+  // 寄存器36-67: 升级文件名称 (64字节)
+  { class: '升级参数', key: 'upgradeFile', label: '升级文件名称', type: 'str64', scale: 1 },
+
+  // 寄存器68: BCU升级选择状态1 (2字节)
+  { class: '升级参数', key: 'bcuSelection1', label: 'BCU升级选择状态1', type: 'u16', scale: 1 },
+
+  // 寄存器69: BCU升级选择状态2 (2字节)
+  { class: '升级参数', key: 'bcuSelection2', label: 'BCU升级选择状态2', type: 'u16', scale: 1 },
+
+  // 寄存器70: BMU升级类型 (2字节)
+  { class: '升级参数', key: 'bmuStyle', label: 'BMU升级类型', type: 'u16', scale: 1 },
+
+  // 寄存器71: BMU升级起始地址 (2字节)
+  { class: '升级参数', key: 'bmuStartAddress', label: 'BMU升级起始地址', type: 'u16', scale: 1 },
+
+  // 寄存器72: BMU升级设备数量 (2字节)
+  { class: '升级参数', key: 'bmuDeviceCount', label: 'BMU升级设备数量', type: 'u16', scale: 1 }
+];
+
+// BCU地址自适应参数字段定义表 - 3个寄存器 (6字节)
+export const BCU_ADAPTIVE_ADDR_PARAM_FIELDS = [
+  // 寄存器0: 启动标识 (2字节)
+  { class: 'BCU地址自适应', key: 'startFlag', label: '启动标识', type: 'u16', scale: 1 },
+
+  // 寄存器1: BCU起始地址 (2字节)
+  { class: 'BCU地址自适应', key: 'bcuStartAddr', label: 'BCU起始地址', type: 'u16', scale: 1 },
+
+  // 寄存器2: 总分配地址数 (2字节)
+  { class: 'BCU地址自适应', key: 'totalAddrCount', label: '总分配地址数', type: 'u16', scale: 1 }
+];
+
+// BMU地址自适应参数字段定义表 - 4个寄存器 (8字节)
+export const BMU_ADAPTIVE_ADDR_PARAM_FIELDS = [
+  // 寄存器0: 簇序号 (2字节)
+  { class: 'BMU地址自适应', key: 'clusterNumber', label: '簇序号', type: 'u16', scale: 1 },
+
+  // 寄存器1: 启动标识 (2字节)
+  { class: 'BMU地址自适应', key: 'startFlag', label: '启动标识', type: 'u16', scale: 1 },
+
+  // 寄存器2: BMU起始地址 (2字节)
+  { class: 'BMU地址自适应', key: 'bmuStartAddr', label: 'BMU起始地址', type: 'u16', scale: 1 },
+
+  // 寄存器3: 总分配地址数 (2字节)
+  { class: 'BMU地址自适应', key: 'totalAddrCount', label: '总分配地址数', type: 'u16', scale: 1 }
+];

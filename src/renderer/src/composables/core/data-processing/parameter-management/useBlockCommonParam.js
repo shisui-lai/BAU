@@ -32,6 +32,11 @@ function computeParameterClassesByTable(fieldTable) {
       continue
     }
 
+    // 跳过bits字段：它们不占用独立的字节空间，值合并到父字段中
+    if (field.type === 'bits' || field.type === 'bit') {
+      continue
+    }
+
     const size = typeByteMap[field.type] || 2
     const count = field.count || 1
     const bytes = size * count

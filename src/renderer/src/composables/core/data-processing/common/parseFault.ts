@@ -616,12 +616,18 @@ export function parseFault (msg: any) {
         const existingRecord = map.get(label)
 
         if (existingRecord) {
-          // 故障已存在，只更新必要字段，保持原始时间
+          // 故障已存在，检查等级是否变化
+          const oldLevel = existingRecord.levelTag
+          const newLevel = level.tag as FaultLevelTag
+          const isLevelChanged = oldLevel !== newLevel
+
           map.set(label, {
             ...existingRecord,
-            // 保持原始时间：time 和 ts 不更新
+            // 2-bit字段：等级变化时更新时间，否则保持原时间
+            time: isLevelChanged ? tsStr : existingRecord.time,
+            ts: isLevelChanged ? now : existingRecord.ts,
             levelTxt: level.txt,  // 更新等级文本（可能变化）
-            levelTag: level.tag as FaultLevelTag,  // 更新等级标签（可能变化）
+            levelTag: newLevel,   // 更新等级标签（可能变化）
             // 其他字段保持不变
           })
         } else {

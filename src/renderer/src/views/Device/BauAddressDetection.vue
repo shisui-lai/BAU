@@ -223,7 +223,7 @@ function applyMqttConfig() {
 
 <template>
   <div class="card">
-    <Toast />
+    <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
 
     <!-- 页面两列布局：左列（查询和结果），右列（配置操作） -->
     <div class="two-col">

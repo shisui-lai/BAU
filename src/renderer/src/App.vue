@@ -18,7 +18,7 @@
 
 <template>
   <router-view />
-  <Toast />
+  <!-- Toast组件已移至AppLayout.vue，避免双Toast问题 -->
   <ConfirmDialog />
 </template>
 

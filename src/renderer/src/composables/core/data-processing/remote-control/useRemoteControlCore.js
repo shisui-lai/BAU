@@ -924,12 +924,39 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
    * 作用：用户在输入框中修改参数值时调用，更新editableDataMap中的数据
    * @param {string} parameterKey - 参数的唯一标识键，如 "coolingStartTemp"
    * @param {*} newParameterValue - 参数的新值，如 280（对应28.0℃，已经经过scale处理）
+   * @param {Object} options - 更新选项，支持 { immediate: true } 强制同步更新
    */
-  function updateParameterValue(parameterKey, newParameterValue) {
+  function updateParameterValue(parameterKey, newParameterValue, options = {}) {
     const dataSourceName = remoteControlConfig.dataSource.name // 获取数据源名称
     const ids = getSelectedAddress()
     const currentKey = ids ? deviceKeyBuilder(ids) : (selectorMode === 'cluster' ? '1-1' : '1')
     const clusterDataKey = `${dataSourceName}_${currentKey}`
+
+    //  关键场景使用同步更新，避免时序问题
+    const needsImmediateUpdate = options.immediate ||
+      dataSourceName === 'BLOCK_TIME_CFG' ||           // 设备时间设置
+      dataSourceName === 'BLOCK_PORT_CFG' ||           // 端口配置（IP地址等）
+      dataSourceName === 'BLOCK_COMMON_PARAM'          // 堆系统基本配置
+
+    if (needsImmediateUpdate) {
+      // 确保数据结构存在
+      if (!editableDataMap.value[clusterDataKey]) {
+        editableDataMap.value[clusterDataKey] = {}
+      }
+
+      // 同步更新，立即生效
+      editableDataMap.value = {
+        ...editableDataMap.value,
+        [clusterDataKey]: {
+          ...editableDataMap.value[clusterDataKey],
+          [parameterKey]: newParameterValue
+        }
+      }
+
+      return
+    }
+
+    // 其他场景继续使用异步批量更新（保持性能优化）
 
     // 将更新添加到待处理队列
     const updateKey = `${clusterDataKey}:${parameterKey}`
@@ -1246,15 +1273,10 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
           }, 0)
         startByteOffset = 0
         registerCount = Math.ceil(totalTableByteLength / 2)
-        console.log(`整表下发模式: 起始偏移=${startByteOffset}, 寄存器数=${registerCount}, 总字节=${totalTableByteLength}`)
       } else {
         registerCount = Math.ceil(classConfiguration.byteLength / 2)
         startByteOffset = classConfiguration.byteOffset
-        console.log(`分类下发模式: 起始偏移=${startByteOffset}, 寄存器数=${registerCount}, 字节长度=${classConfiguration.byteLength}`)
       }
-
-      console.log(`\n=== 调用序列化函数 ===`)
-      console.log(`参数: startByteOffset=${startByteOffset}, registerCount=${registerCount}, className=${classConfiguration.name}`)
 
       const serializedHexData = remoteControlConfig.dataSource.parameterSerializer(
         parameterDataFrame,
@@ -1283,13 +1305,6 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
 
       const finalPayload = offsetHexString + lengthHexString + serializedHexData
 
-      console.log(`\n=== MQTT Payload构建 ===`)
-      console.log(`偏移量: ${startByteOffset} → ${offsetHexString}`)
-      console.log(`长度: ${registerCount * 2}字节 → ${lengthHexString}`)
-      console.log(`序列化数据: ${serializedHexData}`)
-      console.log(`最终Payload: ${finalPayload}`)
-      console.log(`Payload长度: ${finalPayload.length}个字符 (${finalPayload.length/2}字节)`)
-      console.log(`=== Payload构建完成 ===\n`)
       
   
       // 第4步：批量发送MQTT消息到所有选中的簇

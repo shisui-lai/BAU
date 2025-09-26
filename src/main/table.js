@@ -2667,7 +2667,7 @@ export const BLOCK_SUMMARY = [
   { class: '堆基本信息', key: 'maxAllowableChargeCurrent', label: '堆最大允许充电电流', type: 'u16', scale: 1, unit: 'A' },
   { class: '堆基本信息', key: 'maxAllowableDischargeCurrent', label: '堆最大允许放电电流', type: 'u16', scale: 1, unit: 'A' },
   { class: '堆基本信息', key: 'maxAllowableChargeVoltage', label: '堆最大允许充电电压', type: 'u16', scale: 10, unit: 'V' },
-  { class: '堆基本信息', key: 'maxAllowableDischargeVoltage', label: '堆最大允许放电电压', type: 'u16', scale: 10, unit: 'V' },
+  { class: '堆基本信息', key: 'maxAllowableDischargeVoltage', label: '堆最小允许放电电压', type: 'u16', scale: 10, unit: 'V' },
   { class: '堆基本信息', key: 'maxTripLimitChargeCurrent', label: '堆最大跳闸限制充电电流', type: 'u16', scale: 10, unit: 'A' },
   { class: '堆基本信息', key: 'maxTripLimitDischargeCurrent', label: '堆最大跳闸限制放电电流', type: 'u16', scale: 10, unit: 'A' },
   { class: '堆基本信息', key: 'maxTripLimitChargeVoltage', label: '堆最大跳闸限制充电电压', type: 'u16', scale: 10, unit: 'V' },

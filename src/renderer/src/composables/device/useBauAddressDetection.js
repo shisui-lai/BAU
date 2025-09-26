@@ -57,6 +57,9 @@ export function useBauAddressDetection() {
     RESET_DEVICE: 0xAFFF
   }
 
+  // 全局查询互斥标志位
+  const isAnyQueryActive = ref(false)
+
 
   // ==================== 设备查询函数 ====================
 
@@ -139,53 +142,65 @@ export function useBauAddressDetection() {
    * 统一的BAU设备查询函数
    *
    * 查询流程说明：
-   * 1. 设置查询状态，显示加载指示器
-   * 2. 注册IPC监听器，等待主进程响应
-   * 3. 调用主进程UDP通信函数
-   * 4. 处理响应结果，更新UI状态
-   * 5. 清理监听器，避免内存泄漏
+   * 1. 检查是否有其他查询在进行，如果有则阻止执行
+   * 2. 设置查询状态，显示加载指示器
+   * 3. 注册IPC监听器，等待主进程响应
+   * 4. 调用主进程UDP通信函数
+   * 5. 处理响应结果，更新UI状态
+   * 6. 清理监听器，避免内存泄漏
    *
    * @param {number} functionCode - 功能码(QUERY_IP1/QUERY_IP2/QUERY_MQTT)
    * @param {string} deviceType - 设备类型名称，用于用户提示
    * @param {Ref} queryState - 对应的查询状态对象
    */
   async function performQuery(functionCode, deviceType, queryState) {
-    // 第1步：设置查询状态
-    queryState.value.isQuerying = true    // 显示加载指示器
-    queryState.value.result = null        // 清空之前的结果
-    queryState.value.hasSearched = true   // 标记已执行过查询
+    // 第1步：检查是否有其他查询在进行
+    if (isAnyQueryActive.value) {
+      showWarning('请等待当前查询完成')
+      return
+    }
 
-    // 第2步：注册IPC监听器，监听主进程的UDP响应结果
-    // 使用监听器模式是因为UDP通信是异步的，需要等待设备响应
-    const listenerId = window.electronAPI.ipc.registerListener('bau-operation-result', (event, result) => {
-      // 第4步：处理主进程返回的UDP通信结果
-      queryState.value.isQuerying = false  // 隐藏加载指示器
+    try {
+      // 第2步：设置全局查询标志位和查询状态
+      isAnyQueryActive.value = true         // 设置全局互斥标志位
+      queryState.value.isQuerying = true    // 显示加载指示器
+      queryState.value.result = null        // 清空之前的结果
+      queryState.value.hasSearched = true   // 标记已执行过查询
 
-      if (result.success && result.devices && result.devices.length > 0) {
-        // 查询成功：解析设备响应数据
-        const device = result.devices[0]
-        const deviceData = device.parsedData || {}
+      // 第3步：注册IPC监听器，监听主进程的UDP响应结果
+      // 使用监听器模式是因为UDP通信是异步的，需要等待设备响应
+      const listenerId = window.electronAPI.ipc.registerListener('bau-operation-result', (event, result) => {
+        try {
+          // 第5步：处理主进程返回的UDP通信结果
+          queryState.value.isQuerying = false  // 隐藏加载指示器
 
-        if (deviceData && deviceData.success === true) {
-          // 数据解析成功：更新查询结果状态
-          queryState.value.result = {
-            deviceType: deviceType,
-            data: deviceData,
-            functionCode: functionCode
+          if (result.success && result.devices && result.devices.length > 0) {
+            // 查询成功：解析设备响应数据
+            const device = result.devices[0]
+            const deviceData = device.parsedData || {}
+
+            if (deviceData && deviceData.success === true) {
+              // 数据解析成功：更新查询结果状态
+              queryState.value.result = {
+                deviceType: deviceType,
+                data: deviceData,
+                functionCode: functionCode
+              }
+              showSuccess(`${deviceType}设备查询成功`)
+            } else {
+              // 数据解析失败：显示错误信息
+              showError(deviceData?.error || `${deviceType}设备响应错误`)
+            }
+          } else {
+            // 查询失败：未找到设备或通信失败
+            showWarning(`未找到${deviceType}设备，请检查设备是否开机并连接到网络`)
           }
-          showSuccess(`${deviceType}设备查询成功`)
-        } else {
-          // 数据解析失败：显示错误信息
-          showError(deviceData?.error || `${deviceType}设备响应错误`)
+        } finally {
+          // 第6步：确保清理工作总是执行
+          isAnyQueryActive.value = false  // 重置全局互斥标志位
+          window.electronAPI.ipc.unregisterListener(listenerId)  // 清理监听器
         }
-      } else {
-        // 查询失败：未找到设备或通信失败
-        showWarning(`未找到${deviceType}设备，请检查设备是否开机并连接到网络`)
-      }
-
-      // 第5步：清理监听器，避免内存泄漏
-      window.electronAPI.ipc.unregisterListener(listenerId)
-    })
+      })
 
     try {
       // 第3步：调用主进程UDP通信函数
@@ -205,8 +220,17 @@ export function useBauAddressDetection() {
       // 异常处理：IPC调用失败或网络错误
       console.error(`${deviceType}设备查询失败:`, error)
       showError(`${deviceType}设备查询失败，请检查网络连接`)
+
+      // 发生异常时的清理工作
       queryState.value.isQuerying = false
+      isAnyQueryActive.value = false  // 重置全局互斥标志位
       window.electronAPI.ipc.unregisterListener(listenerId)
+    }
+    } catch (outerError) {
+      // 外层异常处理：确保标志位总是被重置
+      console.error(`${deviceType}查询外层异常:`, outerError)
+      isAnyQueryActive.value = false
+      queryState.value.isQuerying = false
     }
   }
 
@@ -540,6 +564,9 @@ export function useBauAddressDetection() {
     isLoadingInterfaces,
     loadNetworkInterfaces,
     selectNetworkInterface,
+
+    // 查询互斥相关
+    isAnyQueryActive,
 
     // Toast消息函数
     showSuccess,

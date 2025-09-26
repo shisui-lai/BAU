@@ -59,6 +59,11 @@ const containerClass = computed(() => {
 const bindOutsideClickListener = () => {
   if (!outsideClickListener.value) {
     outsideClickListener.value = (event) => {
+      // 检查点击目标是否是Toast关闭按钮，如果是则不处理
+      if (event.target?.closest?.('.p-toast-close-button')) {
+        return
+      }
+
       if (isOutsideClicked(event)) {
         layoutState.overlayMenuActive.value = false
         layoutState.staticMenuMobileActive.value = false

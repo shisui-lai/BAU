@@ -275,7 +275,6 @@ function getParameterRemarkText(parameterKey) {
 
 <template>
   <div class="card">
-    <Toast />
     
     <!-- 控制操作区域 -->
     <div class="control-area mb-4">

@@ -631,7 +631,7 @@ onUnmounted(() => {
 
 <template>
   <div class="card">
-    <Toast />
+    <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
     
     <!-- 控制操作区域 -->
     <div class="control-area mb-4">

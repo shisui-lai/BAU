@@ -279,6 +279,8 @@ const timeSetData = ref({
   Second: now.getSeconds()
 })
 
+
+
 // 动态电脑当前时间
 const currentComputerTime = ref({
   Year: now.getFullYear(),
@@ -569,10 +571,6 @@ function handleTimeWriteEvent(event, mqttMessage){
   // 补充分类名称，避免弹窗显示“未知分类”
   if (!parsed.className) parsed.className = '系统时间配置'
   handleTimeWriteResponse(parsed)
-}
-
-function onTimeSetFieldChange(key, val){
-  timeSetData.value[key] = Number(val ?? 0)
 }
 
 function sendTimeSet(){
@@ -933,7 +931,7 @@ function optionsForLabel(label){
       </div>
     </div>
 
-    <Toast />
+    <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
   </div>
 </template>
 

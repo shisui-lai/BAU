@@ -514,9 +514,9 @@ onBeforeUnmount(() => {
 </template>
 
   <style scoped>
-  .card { 
+  .card {
     /* 使用全局card样式，不覆盖margin-left */
-    background: white;
+    background: var(--surface-card);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     /* 保持原有的flex布局 */
@@ -555,13 +555,13 @@ onBeforeUnmount(() => {
 
   .cluster-divider {
     height: 1px;
-    background-color: #b1bfca; /* 灰色分隔线 */
+    background-color: var(--surface-border); /* 使用主题边框色 */
     margin: 0 8px; /* 减少分隔线左右边距 */
   }
 
   .cluster-info-card {
-    background: white; /* 白色卡片背景 */
-    border: 1px solid #92aabb; /* 灰色边框 */
+    background: var(--surface-card); /* 使用主题卡片背景 */
+    border: 1px solid var(--surface-border); /* 使用主题边框色 */
     border-radius: 6px;
     padding: 4px 6px; /* 增加左右内边距，为左对齐文字提供空间 */
     display: flex;
@@ -583,7 +583,7 @@ onBeforeUnmount(() => {
 
   .cluster-card-label {
     font-size: 0.85rem; /* 进一步增大标签字体 */
-    color: #51606d; /* 灰色文字 */
+    color: var(--text-color-secondary); /* 使用主题次要文字颜色 */
     text-align: left; /* 左对齐 */
     line-height: 1.1;
     font-weight: 500;
@@ -592,7 +592,7 @@ onBeforeUnmount(() => {
   .cluster-card-value {
     font-size: 1rem; /* 增大数值字体 */
     font-weight: 600;
-    color: #181b1e; /* 灰色数值 */
+    color: var(--text-color); /* 使用主题主要文字颜色 */
     text-align: left; /* 左对齐 */
     line-height: 1.1;
     font-variant-numeric: tabular-nums;
@@ -650,8 +650,8 @@ onBeforeUnmount(() => {
   /* ====== 单张卡片主体 ====== */
   .card-grid .card{
       min-width: 80px;                          /* 卡片最窄物理宽度；列宽 < 80px 就会换行 */
-      background: #f8f9fa;                      /* 卡片背景色（浅灰可区块化） */
-      border: 1px solid #ebeef4;                /* 1 像素细边；改粗细或改色都在这里 */
+      background: var(--surface-card);          /* 使用主题卡片背景色 */
+      border: 1px solid var(--surface-border);  /* 使用主题边框色 */
       border-radius: 6px;                       /* 圆角半径；0 = 方角，>8px = 更圆 */
       padding: .5rem .3rem;                     /* 内边距：上下 8px，左右 5px（.5rem≈8px） */
       display: flex;                            /* 启用 Flex → 纵向排列文字 */
@@ -659,18 +659,18 @@ onBeforeUnmount(() => {
       justify-content: center;                  /* 让两行文字在卡片内部垂直居中 */
       gap: .2rem;                               /* label 与 value 的间距（≈3px） */
   }
-  .card-grid .card:hover{ background:#eef1f4; }            /* 悬浮时背景稍变，鼠标指针反馈 */
+  .card-grid .card:hover{ background: var(--surface-hover); }  /* 悬浮时使用主题悬停色 */
 
   /* ====== 文本层级 ====== */
   .card-label{
       font-size: .95rem;                        /* 字号 ~15px；改小更紧凑，改大更醒目 */
-      color: #5f6368;                           /* 标签文字颜色（次要灰） */
+      color: var(--text-color-secondary);       /* 使用主题次要文字颜色 */
       line-height: 1.2;                         /* 行高；<=1.2 能缩小卡片高度 */
   }
   .card-value{
       font-size: 1.2rem;                        /* 数值字号 ~19px；决定卡片高度主要因素 */
       font-weight: 600;                         /* 半粗体，更突出主数值 */
       font-variant-numeric: tabular-nums;       /* 数字等宽对齐，便于比对 */
-      color: #111;                              /* 数值颜色；可改为彩色高亮或告警色 */
+      color: var(--text-color);                 /* 使用主题主要文字颜色 */
   }
 </style>

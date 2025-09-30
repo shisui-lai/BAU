@@ -239,8 +239,8 @@ function getStatusText(arr) {
 }
 
 .bmu-card {
-  background: #ffffff;
-  border: 1px solid #e0e0e0;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(0,0,0,.05);
   font-variant-numeric: tabular-nums;

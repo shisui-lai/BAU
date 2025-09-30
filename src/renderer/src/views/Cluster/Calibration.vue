@@ -488,6 +488,13 @@ const sendCalibration = async () => {
 // 数据处理（处理原始MQTT数据）
 const handleFactoryCalibUpdate = (_event, mqttMessage) => {
   const { blockId, clusterId, data } = mqttMessage
+
+  // 验证数据格式
+  if (!data || typeof data !== 'object') {
+    console.warn('[Calibration] 接收到无效的MQTT数据:', mqttMessage)
+    return
+  }
+
   const deviceFrameKey = `${blockId}-${clusterId}`
   const expectedFrameKey = selectedCluster.value
 

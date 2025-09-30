@@ -70,7 +70,7 @@ function onMqttStatusClick() {
 
 .bottom-fixed-area {
   border-top: 1px solid var(--surface-border);
-  background: var(--surface-ground);
+  background: transparent; /* 使用透明背景，继承侧边栏背景 */
 }
 
 .company-link {
@@ -89,8 +89,8 @@ function onMqttStatusClick() {
     border-radius: 6px;
 
     &:hover {
-      color: var(--primary-color, #007ad9);
-      background-color: var(--surface-hover, #e9ecef);
+      color: var(--primary-color);
+      background-color: var(--surface-hover);
     }
 
     i {
@@ -121,44 +121,44 @@ function onMqttStatusClick() {
   padding: 0.75rem 1rem;
   border: 1px solid var(--surface-border);
   border-radius: 6px;
-  background: var(--surface-card);
+  background: transparent; /* 使用透明背景，融入侧边栏 */
   color: var(--text-color);
   cursor: pointer;
   transition: all 0.2s;
   width: 100%;
   justify-content: center;
-  
+
   &:hover {
     background: var(--surface-hover);
   }
   
   &.mqtt-connected {
     border-color: var(--green-500);
-    background: var(--green-50);
-    color: var(--green-700);
-    
+    background: rgba(34, 197, 94, 0.1); /* 半透明绿色背景 */
+    color: var(--green-600);
+
     &:hover {
-      background: var(--green-100);
+      background: rgba(34, 197, 94, 0.15);
     }
   }
-  
+
   &.mqtt-disconnected {
     border-color: var(--red-500);
-    background: var(--red-50);
-    color: var(--red-700);
-    
+    background: rgba(239, 68, 68, 0.1); /* 半透明红色背景 */
+    color: var(--red-600);
+
     &:hover {
-      background: var(--red-100);
+      background: rgba(239, 68, 68, 0.15);
     }
   }
-  
+
   &.mqtt-connecting {
     border-color: var(--orange-500);
-    background: var(--orange-50);
-    color: var(--orange-700);
-    
+    background: rgba(249, 115, 22, 0.1); /* 半透明橙色背景 */
+    color: var(--orange-600);
+
     &:hover {
-      background: var(--orange-100);
+      background: rgba(249, 115, 22, 0.15);
     }
   }
 }

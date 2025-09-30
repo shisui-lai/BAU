@@ -11,19 +11,13 @@ function generateClientId() {
   return result
 }
 
-// 重连配置 - 更合理的参数
-const RECONNECT_CONFIG = {
-  maxAttempts: 3,        // 最大重连次数（降低到3次）
-  baseDelay: 2000,       // 基础延迟2秒（增加到2秒）
-  maxDelay: 10000,       // 最大延迟10秒（降低到10秒）
-  backoffFactor: 2       // 指数退避因子
-}
+
 
 export const useMqttStore = defineStore('mqtt', {
   state: () => ({
     // 连接状态
-    status: 'disconnected', // disconnected, connecting, connected, error, reconnecting
-    
+    status: 'disconnected', // disconnected, connecting, connected, error, reconnecting, offline
+
     // 连接配置
     config: {
       host: '',
@@ -34,29 +28,32 @@ export const useMqttStore = defineStore('mqtt', {
       keepalive: 30,
       subscribeTopics: ['bms/bau/d2s/+/+/#']
     },
-    
+
     // 历史连接配置列表
     savedConfigs: JSON.parse(localStorage.getItem('mqtt_saved_configs') || '[]'),
-    
+
     // 错误信息
     error: null,
-    
-    // 重连相关
+
+    // 重连相关（简化版，主要用于手动断开控制）
     reconnect: {
-      isEnabled: true,
-      currentAttempt: 0,
-      maxAttempts: RECONNECT_CONFIG.maxAttempts,
-      nextDelay: RECONNECT_CONFIG.baseDelay,
-      timer: null
+      timer: null // 仅保留timer用于手动断开时清理
     },
-    
+
     // 连接统计
     stats: {
       connectedAt: null,
       disconnectedAt: null,
       reconnectCount: 0,
-      lastError: null
-    }
+      lastError: null,
+      lastStatusChange: null
+    },
+
+    // IPC事件监听器状态
+    ipcListenersSetup: false,
+
+    // 断开原因跟踪
+    disconnectReason: 'unknown' // 'manual', 'server'
   }),
   
   getters: {
@@ -71,8 +68,9 @@ export const useMqttStore = defineStore('mqtt', {
       switch (state.status) {
         case 'connected': return '已连接'
         case 'connecting': return '连接中...'
-        case 'reconnecting': return `重连中... (${state.reconnect.currentAttempt}/${state.reconnect.maxAttempts})`
+        case 'reconnecting': return '重连中...'
         case 'disconnected': return '已断开'
+        case 'offline': return '掉线'
         case 'error': return '连接失败'
         default: return '未知状态'
       }
@@ -149,21 +147,17 @@ export const useMqttStore = defineStore('mqtt', {
       localStorage.setItem('mqtt_saved_configs', JSON.stringify(this.savedConfigs))
     },
     
-    // 发起连接 - 修复版本：添加isReconnect参数
-    async connect(isReconnect = false) {
+    // 发起连接 - 简化版本
+    async connect() {
       if (!this.canConnect) {
-        this.setError('请填写MQTT服务器地址')
+        this.status = 'error'
+        this.error = '请填写MQTT服务器地址'
         return false
       }
-      
+
       this.status = 'connecting'
       this.error = null
-      
-      // 只有首次连接时才重置重连计数，重连时保持计数
-      if (!isReconnect) {
-        this.reconnect.currentAttempt = 0
-      }
-      
+
       try {
         // 创建纯净的配置对象，避免Vue响应式代理导致序列化问题
         const cleanConfig = {
@@ -175,37 +169,38 @@ export const useMqttStore = defineStore('mqtt', {
           keepalive: Number(this.config.keepalive),
           subscribeTopics: [...this.config.subscribeTopics] // 创建新数组
         }
-        
+
         console.log('[MQTT Store] 发送连接配置:', cleanConfig)
-        
+
         // 通过IPC发送连接请求到主进程
         const success = await window.electron.ipcRenderer.invoke('mqtt-connect', cleanConfig)
-        
+
         if (success) {
           this.setConnected()
-          // 只有首次连接成功时才保存配置
-          if (!isReconnect) {
-            this.saveConfig() // 自动保存成功的连接配置
-          }
+          this.saveConfig() // 自动保存成功的连接配置
           return true
         } else {
-          this.setError('连接失败')
+          this.status = 'error'
+          this.error = '连接失败'
           return false
         }
       } catch (error) {
-        this.setError(error.message)
+        this.status = 'error'
+        this.error = error.message
         return false
       }
     },
     
     // 断开连接
     async disconnect() {
-      this.stopReconnect()
+      console.log('[MQTT Store] 手动断开连接')
       this.status = 'disconnected'
+      this.disconnectReason = 'manual' // 标记为手动断开
       this.stats.disconnectedAt = new Date().toISOString()
-      
+
       try {
         await window.electron.ipcRenderer.invoke('mqtt-disconnect')
+        console.log('[MQTT Store] 手动断开完成')
       } catch (error) {
         console.error('断开连接时出错:', error)
       }
@@ -237,123 +232,75 @@ export const useMqttStore = defineStore('mqtt', {
     // 设置连接成功状态
     setConnected() {
       this.status = 'connected'
+      this.disconnectReason = 'unknown' // 重置断开原因
       this.error = null
       this.stats.connectedAt = new Date().toISOString()
-      this.reconnect.currentAttempt = 0
-      this.reconnect.nextDelay = RECONNECT_CONFIG.baseDelay
       console.log('[MQTT Store] 连接成功')
     },
     
-    // 设置错误状态
-    setError(errorMessage) {
-      this.status = 'error'
-      this.error = errorMessage
-      this.stats.lastError = {
-        message: errorMessage,
-        timestamp: new Date().toISOString()
-      }
-      console.error('[MQTT Store] 连接错误:', errorMessage)
-      
-      // 如果启用重连，开始重连
-      if (this.reconnect.isEnabled && this.reconnect.currentAttempt < this.reconnect.maxAttempts) {
-        this.startReconnect()
-      }
-    },
+
     
-    // 设置断开连接状态
-    setDisconnected() {
-      this.status = 'disconnected'
-      this.stats.disconnectedAt = new Date().toISOString()
-      console.log('[MQTT Store] 连接断开')
-      
-      // 如果启用重连，开始重连
-      if (this.reconnect.isEnabled && this.reconnect.currentAttempt < this.reconnect.maxAttempts) {
-        this.startReconnect()
-      }
-    },
-    
-    // 开始重连 - 修复版本：调用connect时传入isReconnect=true
-    startReconnect() {
-      if (this.reconnect.timer) {
-        clearTimeout(this.reconnect.timer)
-      }
-      
-      this.reconnect.currentAttempt++
-      this.status = 'reconnecting'
-      this.stats.reconnectCount++
-      
-      // 检查是否达到最大重连次数
-      if (this.reconnect.currentAttempt > this.reconnect.maxAttempts) {
-        this.stopReconnect()
-        this.setError(`重连失败，已达到最大重连次数 (${this.reconnect.maxAttempts})，请检查网络连接和服务器配置`)
-        return
-      }
-      
-      console.log(`[MQTT Store] 开始第${this.reconnect.currentAttempt}次重连，延迟${this.reconnect.nextDelay}ms`)
-      
-      this.reconnect.timer = setTimeout(async () => {
-        // 检查重连是否被用户取消
-        if (!this.reconnect.isEnabled) {
-          return
-        }
-        
-        // 关键修复：传入isReconnect=true，避免重置计数器
-        const success = await this.connect(true)
-        
-        if (!success) {
-          // 重连失败，增加延迟时间
-          this.reconnect.nextDelay = Math.min(
-            this.reconnect.nextDelay * RECONNECT_CONFIG.backoffFactor,
-            RECONNECT_CONFIG.maxDelay
-          )
-          
-          // 如果达到最大重连次数，停止重连
-          if (this.reconnect.currentAttempt >= this.reconnect.maxAttempts) {
-            this.stopReconnect()
-            this.setError(`重连失败，已达到最大重连次数 (${this.reconnect.maxAttempts})，请检查网络连接和服务器配置`)
-          }
-        } else {
-          // 重连成功，重置重连参数
-          this.reconnect.currentAttempt = 0
-          this.reconnect.nextDelay = RECONNECT_CONFIG.baseDelay
-          this.reconnect.isEnabled = true
-        }
-      }, this.reconnect.nextDelay)
-    },
-    
-    // 停止重连
-    stopReconnect() {
-      if (this.reconnect.timer) {
-        clearTimeout(this.reconnect.timer)
-        this.reconnect.timer = null
-      }
-      this.reconnect.isEnabled = false
-      
-      // 如果当前是重连状态，改为断开状态
-      if (this.status === 'reconnecting') {
-        this.status = 'disconnected'
-        console.log('[MQTT Store] 用户取消重连')
-      }
-    },
-    
-    // 启用重连
-    enableReconnect() {
-      this.reconnect.isEnabled = true
-      this.reconnect.currentAttempt = 0
-      this.reconnect.nextDelay = RECONNECT_CONFIG.baseDelay
-    },
-    
-    // 重置重连状态
-    resetReconnect() {
-      this.stopReconnect()
-      this.reconnect.currentAttempt = 0
-      this.reconnect.nextDelay = RECONNECT_CONFIG.baseDelay
-      this.reconnect.isEnabled = true
-    },
+
     
     // 生成新的客户端ID
     generateNewClientId() {
       this.config.clientId = generateClientId()
+    },
+
+    // 设置IPC事件监听器
+    setupIpcListeners() {
+      if (this.ipcListenersSetup || !window.electron?.ipcRenderer) {
+        return
+      }
+
+      console.log('[MQTT Store] 设置IPC事件监听器')
+
+      // 监听MQTT连接成功事件
+      window.electron.ipcRenderer.on('mqtt-connected', (_, data) => {
+        console.log('[MQTT Store] 收到连接成功事件:', data)
+        this.setConnected()
+        this.stats.lastStatusChange = Date.now()
+      })
+
+      // 监听MQTT连接断开事件 - 简化版
+      window.electron.ipcRenderer.on('mqtt-disconnected', (_, data) => {
+        console.log('[MQTT Store] 服务器断开连接:', data)
+        this.status = 'offline'
+        this.disconnectReason = 'server'
+        this.stats.disconnectedAt = new Date().toISOString()
+        this.stats.lastStatusChange = Date.now()
+      })
+
+      // 监听MQTT离线事件 - 简化版
+      window.electron.ipcRenderer.on('mqtt-offline', (_, data) => {
+        console.log('[MQTT Store] 服务器离线:', data)
+        this.status = 'offline'
+        this.disconnectReason = 'server'
+        this.stats.disconnectedAt = new Date().toISOString()
+        this.stats.lastStatusChange = Date.now()
+      })
+
+      // 监听MQTT重连事件 - 简化版
+      window.electron.ipcRenderer.on('mqtt-reconnecting', (_, data) => {
+        console.log('[MQTT Store] 开始重连:', data)
+        this.status = 'reconnecting'
+        this.stats.lastStatusChange = Date.now()
+      })
+
+      // MQTT错误事件 - 重连过程中的错误是正常现象，只记录日志
+      window.electron.ipcRenderer.on('mqtt-error', (_, data) => {
+        console.log('[MQTT Store] MQTT错误（重连过程中正常）:', data.error)
+        // 不改变状态，让mqtt.js自动处理
+      })
+
+      this.ipcListenersSetup = true
+    },
+
+
+
+    // 初始化store（在组件挂载时调用）
+    initialize() {
+      this.setupIpcListeners()
     }
   }
-}) 
+})

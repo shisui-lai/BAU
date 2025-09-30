@@ -11,12 +11,12 @@ import { useFactoryCalibParam } from '@/composables/core/data-processing/paramet
 import { BASE_PARAM_REMARKS, FACTORY_CALIB_PARAM_REMARKS } from '@/configs/ui/Remarks'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useSystemConfig } from '@/composables/core/data-processing/parameter-management/useSystemConfig'
+import { DEFAULT_BASE_PARAMS } from '@/configs/parameterDefaults'
 
 import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
-import Toast from 'primevue/toast'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 
@@ -145,7 +145,9 @@ const {
   getParameterDropdownOptions: systemGetParameterDropdownOptions,
   updateDropdownParameterValue: systemUpdateDropdownParameterValue,
   enhancedParameterList: systemEnhancedParameterList
-} = useRemoteControlCore(systemBaseParamConfig, toastService)
+} = useRemoteControlCore(systemBaseParamConfig, toastService, {
+  defaultData: DEFAULT_BASE_PARAMS // 性能优化后重新启用
+})
 
 // 使用通用遥调核心功能 - 出厂校正参数（独立实例）
 const {
@@ -171,7 +173,9 @@ const {
   getParameterDropdownOptions: factoryCalibGetParameterDropdownOptions,
   updateDropdownParameterValue: factoryCalibUpdateDropdownParameterValue,
   enhancedParameterList: factoryCalibEnhancedParameterList
-} = useRemoteControlCore(factoryCalibParamConfig, toastService)
+} = useRemoteControlCore(factoryCalibParamConfig, toastService, {
+  defaultData: DEFAULT_BASE_PARAMS // 性能优化后重新启用
+})
 
 // 关键修复：在BaseParam.vue内部实现设备选择状态同步
 // 监听系统基本参数的设备选择状态变化，同步到出厂校正参数
@@ -504,13 +508,21 @@ function handleSystemWriteEvent(event, mqttMessage) {
 function handleFactoryReadEvent(event, mqttMessage) {
   retryLogic.markResponse()
 
-  const parsedData = factoryCalibParamHandler.parseFactoryCalibParamReadResponse(mqttMessage)
-
-  if (!parsedData) {
+  const parsedReadData = factoryCalibParamHandler.parseFactoryCalibParamReadResponse(mqttMessage)
+  if (!parsedReadData) return
+  if (parsedReadData.result?.error) {
+    handleParameterReadError({
+      ...mqttMessage,
+      ...parsedReadData
+    })
     return
   }
-
-  factoryCalibHandleReceivedParameterData(parsedData)
+  if (parsedReadData.data) {
+    factoryCalibHandleReceivedParameterData({
+      ...mqttMessage,
+      ...parsedReadData
+    })
+  }
 }
 
 function handleFactoryWriteEvent(event, mqttMessage) {
@@ -811,13 +823,13 @@ onUnmounted(() => {
 
 /* IPv4格式错误样式 */
 .ipv4-invalid {
-  border-color: #e74c3c !important;
-  background-color: #fdf2f2 !important;
+  border-color: var(--red-500) !important;
+  background-color: var(--red-50) !important;
 }
 
 .ipv4-invalid:focus {
-  border-color: #e74c3c !important;
-  box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25) !important;
+  border-color: var(--red-500) !important;
+  box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.25) !important;
 }
 </style>
 

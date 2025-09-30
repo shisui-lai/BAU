@@ -371,10 +371,10 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 
 /* 统一表格样式 */
 .fault-table-unified {
-  background: white;
+  background: var(--surface-card);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--surface-border);
   overflow: hidden;
 }
 
@@ -385,8 +385,8 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 
 /* 蓝色标题区域 */
 .header-title-blue {
-  background: #007ad9;
-  color: white;
+  background: var(--primary-color);
+  color: var(--primary-color-text);
   padding: 14px 20px;
   margin: 0;
 }
@@ -395,14 +395,14 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: white;
+  color: var(--primary-color-text);
 }
 
 /* 白色筛选区域 */
 .filter-content-white {
-  background: white;
+  background: var(--surface-card);
   padding: 8px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--surface-border);
 }
 
 /* 单行布局 */
@@ -427,9 +427,9 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 
 /*  故障统计徽章样式 */
 .fault-count-badge {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #0ea5e9;
-  color: #0369a1;
+  background: linear-gradient(135deg, var(--blue-50) 0%, var(--blue-100) 100%);
+  border: 1px solid var(--blue-500);
+  color: var(--blue-700);
   font-size: 12px;
   font-weight: 600;
   padding: 4px 12px;
@@ -482,9 +482,9 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 }
 
 :deep(.p-datatable-thead > tr > th) {
-  background: #f8fafc;
-  border-bottom: 2px solid #e5e7eb;
-  color: #374151;
+  background: var(--surface-section);
+  border-bottom: 2px solid var(--surface-border);
+  color: var(--text-color);
   font-weight: 600;
   font-size: 12px;
   padding: 6px 6px;
@@ -495,21 +495,21 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 }
 
 :deep(.p-datatable-tbody > tr:hover) {
-  background: #f0f9ff !important;
+  background: var(--surface-hover) !important;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 :deep(.p-datatable-tbody > tr > td) {
   padding: 6px 6px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--surface-border);
   font-size: 12px;
   line-height: 1.4;
 }
 
 /* 确保最后一行也有边框 */
 :deep(.p-datatable-tbody > tr:last-child > td) {
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--surface-border);
 
 /* 手动排序按钮样式 */
 .cursor-pointer {
@@ -518,15 +518,15 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 }
 
 .cursor-pointer:hover {
-  background-color: rgba(59, 130, 246, 0.1);
+  background-color: var(--surface-hover);
   border-radius: 4px;
   padding: 2px 4px;
 }
 }
 
 :deep(.p-paginator) {
-  background: #f8fafc;
-  border-top: 1px solid #e5e7eb;
+  background: var(--surface-section);
+  border-top: 1px solid var(--surface-border);
   border-radius: 0;
   padding: 12px 16px;
 }
@@ -535,7 +535,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 :deep(.filter-multiselect-compact.p-multiselect) {
   font-size: 12px;
   border-radius: 4px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--surface-border);
   transition: all 0.2s ease;
   height: 28px;
   min-height: 28px;
@@ -559,12 +559,12 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 }
 
 :deep(.filter-multiselect-compact.p-multiselect:hover) {
-  border-color: #9ca3af;
+  border-color: var(--surface-400);
 }
 
 :deep(.filter-multiselect-compact.p-multiselect.p-focus) {
-  border-color: #007ad9;
-  box-shadow: 0 0 0 2px rgba(0, 122, 217, 0.1);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
 :deep(.p-multiselect-panel) {
@@ -575,8 +575,8 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 /*  下拉面板内选项样式优化 */
 :deep(.p-multiselect-header) {
   padding: 6px 8px;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-section);
   font-size: 11px;
 }
 
@@ -594,12 +594,12 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 }
 
 :deep(.p-multiselect-item:hover) {
-  background: #f3f4f6;
+  background: var(--surface-hover);
 }
 
 :deep(.p-multiselect-item.p-highlight) {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--blue-100);
+  color: var(--blue-700);
 }
 
 /*  标签样式优化 */

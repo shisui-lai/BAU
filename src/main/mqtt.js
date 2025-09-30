@@ -14,7 +14,7 @@ import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/
     processCellVoltageRAW, processCellTemperatureRAW, processCellSocRAW, processCellSohRAW, parseFactoryCalibrationRAW } from '../protocol/utils'
   import { sendToParent, flushThrottlers, cancelThrottlers, setBackgroundMode } from '../protocol/ipcThrottler.js'
   import mqtt from 'mqtt'
-  import { 
+  import {
            BLOCK_COMMON_PARAM_R,//BAU通用参数配置
            BLOCK_BATT_PARAM_R, //系统堆电池配置参数
            BLOCK_COMM_DEV_CFG_R, //系统通讯设备配置参数
@@ -57,6 +57,13 @@ import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/
         } from './table.js'
 
   const util = require('util');
+
+  // 健康检查相关变量
+  let lastHeartbeatSent = 0
+  let lastMessageReceived = 0
+  let healthCheckTimer = null
+  let connectionQuality = 'good' // good, poor, bad
+  let parseErrorCount = 0
 
 
 
@@ -400,8 +407,8 @@ function withResponseCheck(fn) {
           password: config.password,
           clientId: config.clientId,
           keepalive: config.keepalive || 30,
-          connectTimeout: 5000, // 5秒连接超时，更快检测连接失败
-          reconnectPeriod: 0, // 禁用自动重连，由前端控制
+          connectTimeout: 10000, // 10秒连接超时
+          reconnectPeriod: 5000, // 5秒重连间隔，启用自动重连
           clean: false // 保持会话持久化，确保设备重连后消息路由正常
         })
         
@@ -428,17 +435,20 @@ function withResponseCheck(fn) {
           
           // 设置消息处理器
           setupMessageHandler()
-          
+
+          // 启动健康检查
+          startHealthCheck()
+
           // 通知主进程连接成功
           process.send({ type: 'mqtt-connected', data: { clientId: config.clientId, host: config.host } })
           resolve(true)
         })
 
-        // 连接错误事件
+        // 连接错误事件 - 简化版（重连过程中的错误是正常现象）
         client.on('error', (error) => {
-          console.error('[MQTT Child]  连接错误:', error)
+          console.log('[MQTT Child] 连接错误（重连过程中正常）:', error.message)
           isConnected = false
-          process.send({ type: 'mqtt-error', data: { error: error.message } })
+          // 不再发送错误事件到前端，让mqtt.js自动处理重连
           reject(error)
         })
 
@@ -459,6 +469,8 @@ function withResponseCheck(fn) {
           if (isConnected) {
             isConnected = false
             console.log('[MQTT Child]  连接已关闭')
+            // 停止健康检查
+            stopHealthCheck()
             process.send({ type: 'mqtt-disconnected', data: {} })
           }
         })
@@ -467,6 +479,12 @@ function withResponseCheck(fn) {
         client.on('offline', () => {
           console.log('[MQTT Child]  离线')
           process.send({ type: 'mqtt-offline', data: {} })
+        })
+
+        // 重连事件 - 新增
+        client.on('reconnect', () => {
+          console.log('[MQTT Child]  正在重连...')
+          process.send({ type: 'mqtt-reconnecting', data: {} })
         })
 
       } catch (error) {
@@ -573,6 +591,8 @@ function withResponseCheck(fn) {
       `hex=${hex.slice(0, 40)}...`,      // 打印前 20 Byte
       err                                // 堆栈
     )
+    // 增加解析错误计数
+    parseErrorCount++
     // console.log(hex);
     return
   }
@@ -593,12 +613,14 @@ function withResponseCheck(fn) {
     }
 
     sendToParent(msg)
+    // 更新最后消息接收时间
+    lastMessageReceived = Date.now()
     // logCompact('[发送给主进程]', msg)   // 单进程调试输出
         if (result.error) {
           logCompact('[遥信 失败响应]', msg);
         }
-      }) 
-    } 
+      })
+    }
 
     /* --- 接收主进程指令 --- */
     process.on('message', (message) => {
@@ -608,6 +630,27 @@ function withResponseCheck(fn) {
       if (cmd === 'SET_BACKGROUND_MODE') {
         isBackgroundMode = isBackground
         setBackgroundMode(isBackground) // 同步到限流器
+        return
+      }
+
+      // 健康检查命令处理
+      // 功能：响应主进程的健康检查请求，发送当前状态信息
+      if (cmd === 'HEALTH_CHECK') {
+        const now = Date.now()
+        // 更新连接质量评估
+        updateConnectionQuality()
+        // 发送心跳响应，包含子进程的健康状态信息
+        console.log('[MQTT Child] 发送心跳，连接质量:', connectionQuality)
+        process.send({
+          type: 'heartbeat',
+          data: {
+            timestamp: now,              // 当前时间戳
+            isConnected,                 // MQTT连接状态
+            connectionQuality,           // 连接质量评估 (good/poor/bad)
+            parseErrorCount,             // 数据解析错误累计次数
+            lastMessageReceived          // 最后接收消息的时间
+          }
+        })
         return
       }
       
@@ -667,11 +710,93 @@ function withResponseCheck(fn) {
 
   function cleanUp(){
     flushThrottlers   // lodash API，可立即发送队列中最后一帧:contentReference[oaicite:3]{index=3}
-    cancelThrottlers(); 
+    cancelThrottlers();
     client.end(true);          // true = 强制清空离线队列
     client.removeAllListeners();
     process.removeAllListeners('message');
     clearInterval(memTimer);   // 内存采样定时器
+    stopHealthCheck();         // 停止健康检查
+  }
+
+  // 健康检查相关函数
+  /**
+   * 启动健康检查机制
+   *
+   * 功能说明：
+   * 1. 每10秒主动发送心跳到主进程
+   * 2. 实时评估MQTT连接质量
+   * 3. 提供子进程健康状态监控
+   *
+   * 这个机制确保主进程能够：
+   * - 及时了解子进程运行状态
+   * - 检测MQTT连接质量变化
+   * - 在子进程异常时快速发现并重启
+   */
+  function startHealthCheck() {
+    if (healthCheckTimer) return
+
+    // 初始化时间戳 - 设置基准时间，避免启动时的误报
+    lastMessageReceived = Date.now()
+    lastHeartbeatSent = Date.now()
+
+    healthCheckTimer = setInterval(() => {
+      const now = Date.now()
+
+      // 评估连接质量 - 根据消息接收情况动态评估连接状态
+      updateConnectionQuality()
+
+      // 定期发送心跳 - 主动向主进程报告子进程状态
+      console.log('[MQTT Child] 定时心跳，连接质量:', connectionQuality)
+      process.send({
+        type: 'heartbeat',
+        data: {
+          timestamp: now,              // 心跳时间戳
+          isConnected,                 // MQTT连接状态
+          connectionQuality,           // 连接质量评估
+          parseErrorCount,             // 解析错误计数
+          lastMessageReceived          // 最后消息时间
+        }
+      })
+      lastHeartbeatSent = now
+    }, 10000) // 每10秒发送一次心跳
+
+    console.log('[MQTT Child] 健康检查已启动')
+  }
+
+  /**
+   * 更新连接质量评估
+   *
+   * 评估标准：
+   * - good: 15秒内有消息接收，连接正常
+   * - poor: 15-30秒无消息，连接质量下降
+   * - bad: 超过30秒无消息，连接可能异常
+   *
+   * 这个评估帮助主进程了解MQTT连接的实际质量，
+   * 而不仅仅是连接状态的true/false
+   */
+  function updateConnectionQuality() {
+    const now = Date.now()
+    const timeSinceLastMessage = now - lastMessageReceived
+
+    console.log('[MQTT Child] 更新连接质量，距离上次消息:', timeSinceLastMessage, 'ms')
+
+    if (timeSinceLastMessage > 30000) { // 30秒无消息 - 连接可能异常
+      connectionQuality = 'bad'
+    } else if (timeSinceLastMessage > 15000) { // 15秒无消息 - 连接质量下降
+      connectionQuality = 'poor'
+    } else { // 15秒内有消息 - 连接正常
+      connectionQuality = 'good'
+    }
+
+    console.log('[MQTT Child] 连接质量更新为:', connectionQuality)
+  }
+
+  function stopHealthCheck() {
+    if (healthCheckTimer) {
+      clearInterval(healthCheckTimer)
+      healthCheckTimer = null
+      console.log('[MQTT Child] 健康检查已停止')
+    }
   }
 
     // 内存采样

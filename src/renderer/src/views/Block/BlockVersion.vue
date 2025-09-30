@@ -1,7 +1,7 @@
 <template>
   <div class="card">
     <div class="version-header">
-      <h2 class="version-title">堆版本信息</h2>
+      <!-- <h2 class="version-title">堆版本信息</h2> -->
     </div>
     
     <div class="version-grid">
@@ -222,25 +222,25 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .card {
-  background: white;
+  background: var(--surface-card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  padding: 1rem;
-  height: calc(100vh - 120px);
+  padding: 0.5rem; /* 减少内边距 */
+  height: auto; /* 改为自适应高度 */
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 .version-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.5rem; /* 减少下边距 */
   text-align: center;
   flex-shrink: 0;
-  
+
   .version-title {
     font-size: 1.8rem;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--text-color);
     margin: 0;
   }
 }
@@ -248,38 +248,38 @@ onUnmounted(() => {
 .version-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 1.5rem;
+  gap: 1rem; /* 减少卡片间距 */
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 1rem;
+  padding-bottom: 0.5rem; /* 减少底部内边距 */
 }
 
 .version-card {
-  border: 1px solid #e3f2fd;
+  border: 1px solid var(--surface-border);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
   height: 320px;
   overflow: hidden;
-  
+
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.15);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   }
   
   :deep(.p-card-header) {
-    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-    color: #ffffff;
+    background: var(--primary-color); /* 使用主色调，与设备升级页面一致 */
+    color: var(--primary-color-text); /* 使用主色调文字颜色 */
     border-radius: 12px 12px 0 0;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 2px solid #0d47a1;
+    padding: 1rem 1.25rem; /* 减少内边距 */
+    border-bottom: 1px solid var(--primary-color); /* 使用主色调边框 */
     position: relative;
   }
-  
+
   :deep(.p-card-content) {
-    padding: 1.5rem;
+    padding: 1rem; /* 减少内边距 */
     height: 100%;
-    background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+    background: var(--surface-card); /* 主体使用卡片背景色 */
   }
 }
 
@@ -309,16 +309,16 @@ onUnmounted(() => {
     justify-content: space-between;
     align-items: center;
     padding: 1rem 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--surface-border);
     gap: 1rem;
     transition: all 0.2s ease;
-    
+
     &:last-child {
       border-bottom: none;
     }
-    
+
     &:hover {
-      background: rgba(0, 0, 0, 0.02);
+      background: var(--surface-hover);
       border-radius: 6px;
       padding-left: 0.5rem;
       padding-right: 0.5rem;
@@ -326,22 +326,22 @@ onUnmounted(() => {
     
     .info-label {
       font-weight: 500;
-      color: #666;
+      color: var(--text-color-secondary);
       font-size: 1rem;
       flex-shrink: 0;
       min-width: 80px;
       position: relative;
-      
+
       &::after {
         content: ':';
         margin-left: 0.25rem;
-        color: #999;
+        color: var(--text-color-secondary);
       }
     }
     
     .info-value {
       font-weight: 600;
-      color: #333;
+      color: var(--text-color);
       font-size: 1rem;
       text-align: right;
       flex: 1;
@@ -349,14 +349,14 @@ onUnmounted(() => {
       overflow-wrap: break-word;
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
-      background: rgba(0, 0, 0, 0.03);
+      background: var(--surface-ground); /* 使用地面背景色与卡片主体区分 */
       transition: all 0.2s ease;
-      
+
       &.version-highlight {
-        color: #1976d2;
+        color: var(--primary-color);
         font-weight: 700;
-        background: rgba(33, 150, 243, 0.1);
-        border: 1px solid rgba(33, 150, 243, 0.2);
+        background: var(--surface-hover);
+        border: 1px solid var(--primary-color);
       }
     }
   }

@@ -24,7 +24,7 @@ const dataReceptionStore = useDataReceptionStore()
 const mqttStore = useMqttStore()
 
 // 版本信息
-const version = 'test-v0.0.9 9.26'
+const version = 'test-v0.1.3 9.30'
 
 
 
@@ -286,7 +286,7 @@ const combinedDisplayClass = computed(() => {
 /* 版本信息 */
 .version-info {
   font-size: 1rem;
-  color: #efe8e8fa;
+  color: var(--text-color);
   margin-left: 1rem;
 }
 
@@ -350,14 +350,14 @@ const combinedDisplayClass = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.8rem;
+  font-size: 0.875rem; /* 比版本号小一个字号 */
   margin-left: 0.5rem;
   min-width: 150px; /* 固定宽度，容纳合并文本 */
 }
 
 .combined-status-text {
   font-family: 'Courier New', monospace; /* 使用等宽字体 */
-  color: rgba(255, 255, 255, 0.9); /* 白色文字，融入蓝色背景 */
+  color: var(--text-color); /* 使用主题文字颜色 */
   font-weight: 500;
 }
 
@@ -374,7 +374,7 @@ const combinedDisplayClass = computed(() => {
 /* 未连接状态（灰色圆圈） */
 .combined-status-unknown i,
 .combined-status-disconnected i {
-  color: rgba(255, 255, 255, 0.6); /* 半透明白色圆圈 */
+  color: var(--text-color-secondary); /* 使用主题次要文字颜色 */
 }
 
 /* 响应式设计 */

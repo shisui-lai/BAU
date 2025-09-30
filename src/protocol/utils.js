@@ -175,10 +175,10 @@
          cache[key] = rawVal;
 
          // 🔥🔥🔥 DEBUG: 解析结果打印 - 用于排查解析问题时启用
-        //  if (enableFieldDebug) {
-        //    const finalValue = type === 'hex' ? rawVal : (rawVal / (fld.scale ?? 1))
-        //    console.log(`🔥 结果${fieldCount.toString().padStart(3)}: ${key.padEnd(20)} 原值:${rawVal.toString().padStart(8)} 最终值:${finalValue.toString().padStart(8)} 比例:${(fld.scale ?? 1)}`)
-        //  }
+         // if (enableFieldDebug) {
+         //   const finalValue = type === 'hex' ? rawVal : (rawVal / (fld.scale ?? 1))
+         //   console.log(`🔥 结果${fieldCount.toString().padStart(3)}: ${key.padEnd(20)} 原值:${rawVal.toString().padStart(8)} 最终值:${finalValue.toString().padStart(8)} 比例:${(fld.scale ?? 1)}`)
+         // }
 
           off += ({ u8:1, s8:1, u16:2, s16:2, u32:4, s32:4, hex:2, hex16:2 })[type];
         

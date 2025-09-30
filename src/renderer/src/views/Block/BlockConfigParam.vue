@@ -13,7 +13,6 @@ import Column from 'primevue/column'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
-import Toast from 'primevue/toast'
 import TabMenu from 'primevue/tabmenu'
 // 下拉配置改为通过 useRemoteControlCore 内置函数处理（方案1）
 
@@ -525,7 +524,7 @@ function selectAllClusters(parameterDefinition) {
 
 <template>
   <div class="card">
-    <Toast />
+    <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
 
     <!-- 顶部导航（TabMenu，仅作导航，不渲染内容面板） -->
     <div class="control-area mb-1" style="justify-content: flex-start; align-items:center; gap:8px;">

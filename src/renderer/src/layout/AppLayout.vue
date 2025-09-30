@@ -93,22 +93,17 @@ const isOutsideClicked = (event) => {
 
 // MQTT状态相关方法
 function getStatusText() {
-  switch (mqttStore.status) {
-    case 'connected': return '已连接'
-    case 'connecting': return '连接中...'
-    case 'reconnecting': return `重连中(${mqttStore.reconnect.currentAttempt}/${mqttStore.reconnect.maxAttempts})`
-    case 'disconnected': return '未连接'
-    case 'error': return '连接失败'
-    default: return '未知状态'
-  }
+  // 使用store中的statusText getter，它已经包含了正确的状态映射
+  return mqttStore.statusText
 }
 
 function getStatusIcon() {
   switch (mqttStore.status) {
     case 'connected': return 'pi pi-check-circle'
-    case 'connecting': 
+    case 'connecting':
     case 'reconnecting': return 'pi pi-spin pi-spinner'
     case 'disconnected': return 'pi pi-times-circle'
+    case 'offline': return 'pi pi-times-circle'
     case 'error': return 'pi pi-exclamation-triangle'
     default: return 'pi pi-question-circle'
   }
@@ -141,7 +136,6 @@ function handleStatusClick() {
   if (mqttStore.status === 'connecting' || mqttStore.status === 'reconnecting') {
     // 如果正在连接或重连，显示确认对话框
     if (confirm('正在连接中，是否要取消连接并重新配置？')) {
-      mqttStore.stopReconnect()
       mqttStore.disconnect()
       displayMqttDialog.value = true
     }
@@ -170,9 +164,14 @@ function checkMqttConnection() {
 
 // 监听MQTT连接状态变化
 watch(() => mqttStore.status, (newStatus, oldStatus) => {
-  // 如果从连接状态变为断开，可能需要显示弹窗
-  if (oldStatus === 'connected' && (newStatus === 'disconnected' || newStatus === 'error')) {
-    onMqttDisconnected()
+  // 只有手动断开才显示弹窗，服务器掉线不显示弹窗
+  if (oldStatus === 'connected' && (newStatus === 'disconnected' || newStatus === 'offline' || newStatus === 'error')) {
+    // 检查断开原因，只有手动断开才显示弹窗
+    if (mqttStore.disconnectReason === 'manual') {
+      onMqttDisconnected()
+    } else {
+      console.log('[AppLayout] 服务器断开连接，不显示弹窗，等待自动重连')
+    }
   }
 
   // 如果MQTT连接成功，自动读取系统配置参数
@@ -213,6 +212,11 @@ watch(
 
 // 组件挂载时检查MQTT连接状态
 onMounted(() => {
+  // 【MQTT状态监听】初始化MQTT store的IPC事件监听器
+  // 功能：监听来自主进程的MQTT连接状态变化事件，实现实时状态检测
+  mqttStore.initialize()
+  console.log('[AppLayout] MQTT状态监听已初始化')
+
   checkMqttConnection()
 
   // 如果MQTT已经连接，立即读取系统配置

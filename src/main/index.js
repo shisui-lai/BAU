@@ -3,6 +3,7 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 const { fork } = require('child_process')
+import { processManager } from './handlers/processManager.js'
 // FTP服务器功能将在下面通过require导入
 import {
   // 网卡选择功能相关处理器 - 统一BAU操作方式
@@ -16,28 +17,11 @@ import {
 } from './handlers/bauAddressHandler.js'//地址探测
 
 let mainWindow
-let mqttChild;
 let quitting = false;
 import forkPath1 from './mqtt.js?modulePath'
-// 启动MQTT子进程
-console.log('[Main] 启动MQTT子进程...')
-let mqttTask = fork(forkPath1);
-console.log('[Main] MQTT子进程已启动，PID:', mqttTask.pid)
 
-// 监听MQTT子进程错误
-mqttTask.on('error', (error) => {
-  console.error('[Main] MQTT子进程启动错误:', error)
-})
-
-mqttTask.on('exit', (code, signal) => {
-  console.log('[Main] MQTT子进程退出，代码:', code, '信号:', signal)
-  // 如果异常退出，可以考虑重启
-  if (code !== 0) {
-    console.log('[Main] MQTT子进程异常退出，考虑重启...')
-  }
-})
-
-process.mqttChild = mqttTask
+// MQTT子进程将在createWindow函数中通过进程管理器启动
+console.log('[Main] 准备使用进程管理器管理MQTT子进程...')
 
 // 文件选择对话框
 ipcMain.handle('show-open-dialog', async () => {
@@ -179,6 +163,14 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
+  // 设置进程管理器的主窗口引用并启动MQTT子进程
+  processManager.initialize(forkPath1, mainWindow)
+  processManager.startMQTTProcess()
+
+  // 获取当前子进程引用（保持兼容性）
+  const mqttTask = processManager.getMQTTTask()
+  process.mqttChild = mqttTask
+
   // 设置FTP服务器的主窗口引用
   ftpServerModule.setMainWindow(mainWindow)
   
@@ -190,23 +182,24 @@ function createWindow() {
     isPageVisible = visible
     
     // 通知MQTT子进程调整限流策略
-    if (mqttTask && !mqttTask.killed) {
-      mqttTask.send({ cmd: 'SET_BACKGROUND_MODE', isBackground: !visible })
+    const currentTask = processManager.getMQTTTask()
+    if (currentTask && !currentTask.killed) {
+      currentTask.send({ cmd: 'SET_BACKGROUND_MODE', isBackground: !visible })
     }
   })
 
   mainWindow.webContents.once('did-finish-load', () => {
-    mqttTask.on('message', (msg) => {
-      // if (msg.type === 'mqtt-message') {
-        // console.log('主进程收到子进程的消息:', JSON.stringify(msg.data, null, 2));
-        // console.log('主进程收到子进程的消息:', msg);//打印信息
-        // console.log('数据类型：', msg.type);
-        // console.log('详细数据',msg.data.data);
-        // mainWindow.webContents.send('mqtt-message', msg.data);
+    // 设置进程管理器的消息处理器
+    // 功能：接收来自MQTT子进程的所有消息，进行分类处理
+    processManager.setMessageHandler((msg) => {
+      // 过滤心跳消息 - 心跳消息已在processManager中处理，不需要转发到渲染进程
+      // 这样可以避免渲染进程收到大量无用的心跳消息
+      if (msg.type === 'heartbeat') {
+        return
+      }
 
-
-
-        mainWindow.webContents.send(msg.type, msg.data)
+      // 转发业务消息到渲染进程 - 所有MQTT业务数据都会转发给前端显示
+      mainWindow.webContents.send(msg.type, msg.data)
 
       // 【数据接收监控】发送心跳信号到渲染进程
       // 功能：监控设备数据接收状态，支持5秒超时检测和数据速率统计
@@ -216,7 +209,8 @@ function createWindow() {
           msg.type !== 'mqtt-disconnected' &&
           msg.type !== 'mqtt-connect-result' &&
           msg.type !== 'mqtt-disconnect-result' &&
-          msg.type !== 'mqtt-test-result') {
+          msg.type !== 'mqtt-test-result' &&
+          msg.type !== 'heartbeat') {
 
         // 🚀 优化：使用原始MQTT payload大小，避免JSON序列化开销
         // payloadSize在msg.data中（来自MQTT子进程的原始payload字节长度）
@@ -229,22 +223,17 @@ function createWindow() {
           dataSize: dataSize
         })
       }
-
-      // // } else if (msg.type === 'mqtt-err') {
-      //   // console.error('子进程错误:', msg.err);
-      //   // mainWindow.webContents.send('mqtt-error', msg.err);
-      // }
     });
   }
   )
 
     // MQTT发布消息
     ipcMain.handle('mqttPublish', (_e, topic, payloadHex) => {
-      // mqttChild.send({ cmd: 'MQTT_PUBLISH', topic, payloadHex }); // Buffer 转换留给子进程
-      if (mqttTask && !mqttTask.killed) {
-        mqttTask.send({ cmd:'MQTT_PUBLISH', topic, payloadHex })
+      const currentTask = processManager.getMQTTTask()
+      if (currentTask && !currentTask.killed) {
+        currentTask.send({ cmd:'MQTT_PUBLISH', topic, payloadHex })
       } else {
-        console.error('[Main] mqttTask undefined')
+        console.error('[Main] MQTT子进程未运行')
         return false           // 让渲染端走 catch，便于排查
       }
       // console.log('[Main] publish → child', topic, payloadHex)
@@ -256,7 +245,8 @@ function createWindow() {
       console.log('[Main] 🔗 收到MQTT连接请求:', config)
 
       return new Promise((resolve) => {
-        if (!mqttTask || mqttTask.killed) {
+        const currentTask = processManager.getMQTTTask()
+        if (!currentTask || currentTask.killed) {
           console.error('[Main] ❌ MQTT子进程未运行')
           resolve(false)
           return
@@ -265,7 +255,7 @@ function createWindow() {
         try {
           // 发送连接指令到MQTT子进程
           console.log('[Main]  准备发送连接指令到MQTT子进程...')
-          mqttTask.send({ cmd: 'MQTT_CONNECT', config })
+          currentTask.send({ cmd: 'MQTT_CONNECT', config })
           console.log('[Main]  已发送连接指令到MQTT子进程')
         } catch (error) {
           console.error('[Main]  发送连接指令失败:', error)
@@ -281,17 +271,17 @@ function createWindow() {
           if (message.type === 'mqtt-connect-result') {
             // console.log('[Main]  收到连接结果:', message.data)
             if (timeoutId) clearTimeout(timeoutId)
-            mqttTask.removeListener('message', handleResult)
+            currentTask.removeListener('message', handleResult)
             resolve(message.data.success)
           }
         }
 
-        mqttTask.on('message', handleResult)
+        currentTask.on('message', handleResult)
 
         // 设置超时
         timeoutId = setTimeout(() => {
           console.error('[Main]  MQTT连接超时 (15秒)')
-          mqttTask.removeListener('message', handleResult)
+          currentTask.removeListener('message', handleResult)
           resolve(false)
         }, 15000) // 15秒超时
       })
@@ -300,24 +290,25 @@ function createWindow() {
     // MQTT断开连接
     ipcMain.handle('mqtt-disconnect', async (_e) => {
       return new Promise((resolve) => {
-        if (!mqttTask || mqttTask.killed) {
+        const currentTask = processManager.getMQTTTask()
+        if (!currentTask || currentTask.killed) {
           resolve(true)
           return
         }
 
-        mqttTask.send({ cmd: 'MQTT_DISCONNECT' })
+        currentTask.send({ cmd: 'MQTT_DISCONNECT' })
 
         const handleResult = (message) => {
           if (message.type === 'mqtt-disconnect-result') {
-            mqttTask.removeListener('message', handleResult)
+            currentTask.removeListener('message', handleResult)
             resolve(message.data.success)
           }
         }
 
-        mqttTask.on('message', handleResult)
+        currentTask.on('message', handleResult)
 
         setTimeout(() => {
-          mqttTask.removeListener('message', handleResult)
+          currentTask.removeListener('message', handleResult)
           resolve(true) // 断开连接总是成功
         }, 5000)
       })
@@ -326,29 +317,48 @@ function createWindow() {
     // MQTT测试连接
     ipcMain.handle('mqtt-test-connection', async (_e, config) => {
       return new Promise((resolve) => {
-        if (!mqttTask || mqttTask.killed) {
+        const currentTask = processManager.getMQTTTask()
+        if (!currentTask || currentTask.killed) {
           resolve({ success: false, error: 'MQTT进程未运行' })
           return
         }
 
-        mqttTask.send({ cmd: 'MQTT_TEST_CONNECTION', config })
+        currentTask.send({ cmd: 'MQTT_TEST_CONNECTION', config })
 
         const handleResult = (message) => {
           if (message.type === 'mqtt-test-result') {
-            mqttTask.removeListener('message', handleResult)
+            currentTask.removeListener('message', handleResult)
             resolve(message.data)
           }
         }
 
-        mqttTask.on('message', handleResult)
+        currentTask.on('message', handleResult)
 
         setTimeout(() => {
-          mqttTask.removeListener('message', handleResult)
+          currentTask.removeListener('message', handleResult)
           resolve({ success: false, error: '测试超时' })
         }, 10000)
       })
     })
 
+    // 添加进程管理相关的IPC处理器
+    // 这些接口允许渲染进程查询和控制MQTT子进程状态
+
+    // 获取进程基本状态 - 返回运行状态、PID、重启次数等基本信息
+    ipcMain.handle('get-process-status', async () => {
+      return processManager.getStatus()
+    })
+
+    // 手动重启MQTT进程 - 允许用户在界面上手动触发重启
+    ipcMain.handle('restart-mqtt-process', async () => {
+      processManager.restartProcess('manual')
+      return { success: true }
+    })
+
+    // 获取详细统计信息 - 返回心跳时间、连接质量等详细监控数据
+    ipcMain.handle('get-process-stats', async () => {
+      return processManager.getStats()
+    })
 
 }
 
@@ -386,10 +396,9 @@ app.whenReady().then(() => {
 
 app.on('before-quit', async (e) => {
   quitting = true;
-  if (mqttTask && !mqttTask.killed) {     // ★判空判活
+  if (processManager.isRunning()) {
     e.preventDefault();                   // 等子进程退出再 quit
-    mqttTask.once('exit', () => app.quit());
-    mqttTask.kill();
+    processManager.cleanupAsync().then(() => app.quit());
   }
 });
 

@@ -35,14 +35,14 @@
     <div v-if="mqttStore.hasError" class="error-info">
       <Message severity="error" :closable="false">
         {{ mqttStore.error }}
-        <template v-if="mqttStore.reconnect.isEnabled && mqttStore.isReconnecting">
+        <template v-if="mqttStore.isReconnecting">
           <br>
-          <small>正在尝试重连... ({{ mqttStore.reconnect.currentAttempt }}/{{ mqttStore.reconnect.maxAttempts }})</small>
+          <small>正在尝试重连...</small>
           <br>
-          <Button 
-            label="取消重连" 
-            severity="secondary" 
-            size="small" 
+          <Button
+            label="取消重连"
+            severity="secondary"
+            size="small"
             outlined
             @click="cancelReconnect"
             style="margin-top: 0.5rem;"
@@ -411,7 +411,7 @@ async function handleDisconnect() {
 
 // 取消重连
 function cancelReconnect() {
-  mqttStore.stopReconnect()
+  mqttStore.disconnect()
   toast.add({
     severity: 'info',
     summary: '已取消',

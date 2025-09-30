@@ -99,10 +99,10 @@ export const REMOTE_COMMANDS = {
       { label: '高边6', value: 32, bit: 5 },
       { label: '高边7', value: 64, bit: 6 },
       { label: '高边8', value: 128, bit: 7 },
-      { label: '高边9', value: 256, bit: 8 },
-      { label: '高边10', value: 512, bit: 9 },
-      { label: '高边11', value: 1024, bit: 10 },
-      { label: '高边12', value: 2048, bit: 11 }
+      // { label: '高边9', value: 256, bit: 8 },
+      // { label: '高边10', value: 512, bit: 9 },
+      // { label: '高边11', value: 1024, bit: 10 },
+      // { label: '高边12', value: 2048, bit: 11 }
     ]
   },
 
@@ -129,9 +129,9 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要执行其他IO控制吗？',
     options: [
-      { label: 'DO1', value: 1, bit: 0 },
-      { label: 'DO2', value: 2, bit: 1 },
-      { label: 'DO3', value: 4, bit: 2 }
+      { label: '地址自适应输出', value: 1, bit: 0 },
+      { label: '干接点1', value: 2, bit: 1 },
+      { label: '干接点2', value: 4, bit: 2 }
     ]
   },
 

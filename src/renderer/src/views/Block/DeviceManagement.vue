@@ -13,7 +13,6 @@ import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputNumber from 'primevue/inputnumber'
-import Toast from 'primevue/toast'
 import Card from 'primevue/card'
 import Divider from 'primevue/divider'
 import InputText from 'primevue/inputtext'
@@ -944,7 +943,7 @@ function optionsForLabel(label){
   overflow-x: hidden; /* 禁止水平滚动 */
 }
 
-.dm-card { border: 1px solid #e9ecef; }
+.dm-card { border: 1px solid var(--surface-border); }
 
 .form-grid {
   display: grid;
@@ -963,7 +962,7 @@ function optionsForLabel(label){
 
 .time-grid { display: flex; flex-direction: column; gap: 8px; }
 .time-block { display: flex; flex-direction: column; gap: 6px; }
-.time-title { color: #4d5965; font-weight: 500; }
+.time-title { color: var(--text-color-secondary); font-weight: 500; }
 .time-line { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .time-input { width: 52px; }
 .time-input :deep(input) { 
@@ -976,16 +975,16 @@ function optionsForLabel(label){
 
 /* 电脑实时时间特殊样式 */
 .time-input.current-time :deep(.p-inputnumber-input) {
-  background: #f8f9fa;
-  border: 1px solid #7c94a6;
-  color: #70818f;
+  background: var(--surface-section);
+  border: 1px solid var(--surface-border);
+  color: var(--text-color-secondary);
   font-weight: 600;
   text-align: left;
-  box-shadow: 0 0 0 1px rgba(0, 122, 217, 0.1);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
 }
 
 .live-indicator {
-  color: #4caf50;
+  color: var(--green-500);
   font-weight: 600;
   font-size: 0.85rem;
   animation: pulse 2s infinite;
@@ -1027,12 +1026,12 @@ function optionsForLabel(label){
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
-  background: white;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-card);
 }
 .order-like-card .table-title {
-  background: #007ad9;
-  color: #ffffff;
+  background: var(--primary-color);
+  color: var(--primary-color-text);
   padding: 12px 20px;
   margin: 0;
   font-weight: 600;
@@ -1043,9 +1042,9 @@ function optionsForLabel(label){
 .time-card { min-height: 200px; padding-bottom: 8px; }
 .port-card .table-content { padding-top: 8px; }
 /* .port-card 高度由JavaScript动态设置 */
-.section-divider { margin: 8px 0 6px; border-top: 1px solid #e2e8f0; opacity: 1; }
+.section-divider { margin: 8px 0 6px; border-top: 1px solid var(--surface-border); opacity: 1; }
 
-.form-row > label { color: #4d5965; font-weight: 500; }
+.form-row > label { color: var(--text-color-secondary); font-weight: 500; }
 .form-row > .w-full { max-width: 520px; }
 .form-grid { display: grid; grid-template-columns: 200px 1fr; gap: 10px 16px; }
 
@@ -1065,8 +1064,8 @@ function optionsForLabel(label){
   padding-right: 6px; 
 }
 .two-col-item { display: block; }
-.port-col { display: flex; flex-direction: column; gap: 6px; border: 1px solid #e9ecef; border-radius: 8px; padding: 10px; background: #fff; }
-.port-field-label { color: #4d5965; font-weight: 500; }
+.port-col { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--surface-border); border-radius: 8px; padding: 10px; background: var(--surface-card); }
+.port-field-label { color: var(--text-color-secondary); font-weight: 500; }
 .port-field-input { width: 100%; }
 
 /* IPv4验证错误样式 */

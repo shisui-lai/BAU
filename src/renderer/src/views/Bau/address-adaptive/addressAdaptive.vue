@@ -885,7 +885,7 @@ onUnmounted(() => {
 /* 主卡片 */
 .card {
   padding: 12px;
-  background: #f8fafc;
+  background: var(--surface-ground);
 }
 
 /* 内容网格 */
@@ -901,16 +901,16 @@ onUnmounted(() => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
-  background: white;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-card);
   display: flex;
   flex-direction: column;
   min-height: 100%;
 }
 
 .adaptive-card .adaptive-title {
-  background: #007ad9;
-  color: #ffffff;
+  background: var(--primary-color);
+  color: var(--primary-color-text);
   padding: 12px 20px;
   margin: 0;
   font-weight: 600;
@@ -943,7 +943,7 @@ onUnmounted(() => {
 .form-row label {
   min-width: 80px;
   font-weight: 500;
-  color: #495057;
+  color: var(--text-color);
   font-size: 0.9rem;
 }
 
@@ -956,7 +956,7 @@ onUnmounted(() => {
   gap: 0.5rem;
   margin-top: 1rem;
   padding-top: 1rem;
-  border-top: 1px solid #e9ecef;
+  border-top: 1px solid var(--surface-border);
 }
 
 .config-button {
@@ -966,9 +966,9 @@ onUnmounted(() => {
 /* 结果区域 */
 .result-section {
   padding: 1rem;
-  background: #f8f9fa;
+  background: var(--surface-section);
   border-radius: 8px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--surface-border);
   margin-top: 1rem;
 }
 
@@ -1017,12 +1017,12 @@ onUnmounted(() => {
 .detail-label {
   min-width: 70px;
   font-weight: 500;
-  color: #6c757d;
+  color: var(--text-color-secondary);
 }
 
 .detail-value {
   flex: 1;
-  color: #495057;
+  color: var(--text-color);
   word-break: break-all;
 }
 
@@ -1041,10 +1041,10 @@ onUnmounted(() => {
 }
 
 .cluster-result {
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--surface-border);
   border-radius: 6px;
   padding: 0.75rem;
-  background: #ffffff;
+  background: var(--surface-card);
 }
 
 .cluster-result-header {
@@ -1053,12 +1053,12 @@ onUnmounted(() => {
   align-items: center;
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f1f3f4;
+  border-bottom: 1px solid var(--surface-border);
 }
 
 .cluster-number {
   font-weight: 600;
-  color: #007ad9;
+  color: var(--primary-color);
   font-size: 0.9rem;
 }
 
@@ -1070,19 +1070,19 @@ onUnmounted(() => {
 
 /* 颜色样式 */
 .text-green-600 {
-  color: #059669;
+  color: var(--green-500);
 }
 
 .text-blue-600 {
-  color: #2563eb;
+  color: var(--blue-500);
 }
 
 .text-red-600 {
-  color: #dc2626;
+  color: var(--red-500);
 }
 
 .text-gray-400 {
-  color: #9ca3af;
+  color: var(--text-color-secondary);
 }
 
 /* 响应式设计 */

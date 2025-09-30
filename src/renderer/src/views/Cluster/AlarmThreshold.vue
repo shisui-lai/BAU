@@ -6,11 +6,11 @@ import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { useAlarmThreshold } from '@/composables/core/data-processing/parameter-management/useAlarmThreshold'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
+import { DEFAULT_CLUSTER_DNS_PARAMS } from '@/configs/parameterDefaults'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputNumber from 'primevue/inputnumber'
-import Toast from 'primevue/toast'
 
 const toastService = useToast()
 const alarmThresholdHandler = useAlarmThreshold()
@@ -105,7 +105,9 @@ const {
   handleReceivedParameterData,
   handleParameterWriteResponse,
   handleParameterReadError
-} = useRemoteControlCore(alarmThresholdConfig, toastService)
+} = useRemoteControlCore(alarmThresholdConfig, toastService, {
+  defaultData: DEFAULT_CLUSTER_DNS_PARAMS // 性能优化后重新启用
+})
 
 // 重试逻辑
 const retryLogic = useRetryLogic(toastService, stopParameterReading)

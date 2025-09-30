@@ -643,7 +643,7 @@ onUnmounted(() => {
 <style scoped>
 .card {
   padding: 10px;
-  background: #f8fafc;
+  background: var(--surface-ground);
 }
 
 /* 网格布局 - 确保左右两列高度一致 */
@@ -666,18 +666,18 @@ onUnmounted(() => {
 }
 
 .content-card {
-  background: white;
+  background: var(--surface-card);
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--surface-border);
   margin-bottom: 2px;
   overflow: hidden;
   flex: 1;
 }
 
 .content-card h3 {
-  background: #007ad9;
-  color: white;
+  background: var(--primary-color);
+  color: var(--primary-color-text);
   padding: 12px 20px;
   margin: 0;
   font-weight: 600;
@@ -691,7 +691,7 @@ onUnmounted(() => {
 
 .section-divider {
   margin: 12px 0;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--surface-border);
 }
 
 /* 参数配置区域通用样式 */
@@ -699,16 +699,16 @@ onUnmounted(() => {
 .bmu-params-section {
   margin: 12px 0;
   padding: 12px;
-  background: #f8fafc;
+  background: var(--surface-section);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  border-left: 4px solid #007ad9;
+  border: 1px solid var(--surface-border);
+  border-left: 4px solid var(--primary-color);
 }
 
 .cluster-selection-section h4,
 .bmu-params-section h4 {
   margin: 0 0 16px 0;
-  color: #1e293b;
+  color: var(--text-color);
   font-size: 16px;
   font-weight: 600;
 }
@@ -729,7 +729,7 @@ onUnmounted(() => {
 .cluster-row-label {
   font-size: 14px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-color-secondary);
   min-width: 80px;
   flex-shrink: 0;
 }
@@ -747,29 +747,29 @@ onUnmounted(() => {
   gap: 4px;
   padding: 4px 6px;
   border-radius: 4px;
-  background: white;
-  border: 1px solid #d1d5db;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
   transition: all 0.2s ease;
   min-height: 28px;
 }
 
 .cluster-checkbox-compact:hover {
-  border-color: #007ad9;
-  background: #e3f2fd;
+  border-color: var(--primary-color);
+  background: var(--surface-hover);
 }
 
 .cluster-checkbox-compact label {
   font-size: 12px;
   cursor: pointer;
-  color: #374151;
+  color: var(--text-color);
   font-weight: 500;
 }
 
 .upgrade-status {
   padding: 8px;
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  background: var(--surface-section);
   border-radius: 8px;
-  border-left: 4px solid #007ad9;
+  border-left: 4px solid var(--primary-color);
   margin-top: 12px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -777,18 +777,18 @@ onUnmounted(() => {
 .upgrade-status p {
   margin: 4px 0;
   font-size: 0.9rem;
-  color: #1e293b;
+  color: var(--text-color);
 }
 
 /* 禁用状态样式 */
 .cluster-checkbox-compact:has(input:disabled) {
   opacity: 0.6;
   cursor: not-allowed;
-  background: #f1f5f9;
+  background: var(--surface-section);
 }
 
 .cluster-checkbox-compact:has(input:disabled):hover {
-  border-color: #d1d5db;
-  background: #f1f5f9;
+  border-color: var(--surface-border);
+  background: var(--surface-section);
 }
 </style>

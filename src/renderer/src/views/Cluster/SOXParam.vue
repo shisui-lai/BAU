@@ -6,11 +6,11 @@ import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { useSOXParam } from '@/composables/core/data-processing/parameter-management/useSOXParam'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
+import { DEFAULT_SOX_PARAMS } from '@/configs/parameterDefaults'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputNumber from 'primevue/inputnumber'
-import Toast from 'primevue/toast'
 
 const toastService = useToast()
 const soxParamHandler = useSOXParam()
@@ -167,7 +167,9 @@ const {
   handleReceivedParameterData,
   handleParameterWriteResponse,
   handleParameterReadError
-} = useRemoteControlCore(soxParamConfig, toastService)
+} = useRemoteControlCore(soxParamConfig, toastService, {
+  defaultData: DEFAULT_SOX_PARAMS // 性能优化后重新启用
+})
 
 // 重试逻辑
 const retryLogic = useRetryLogic(toastService, stopParameterReading)

@@ -545,7 +545,7 @@ watch(selectedBlock, handleBlockChange)
 <style scoped>
 .card {
   /* 使用全局card样式，不覆盖margin-left */
-  background: white;
+  background: var(--surface-card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
 }
@@ -563,7 +563,7 @@ watch(selectedBlock, handleBlockChange)
 
 .table-header h6 {
   margin: 0;
-  color: #374151;
+  color: var(--text-color);
   font-weight: 600;
 }
 
@@ -572,45 +572,45 @@ watch(selectedBlock, handleBlockChange)
 }
 
 :deep(.p-datatable .p-datatable-header) {
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--surface-section);
+  border-bottom: 1px solid var(--surface-border);
 }
 
 :deep(.p-datatable .p-datatable-thead > tr > th) {
-  background: #f3f4f6;
-  border-bottom: 1px solid #d1d5db;
+  background: var(--surface-section);
+  border-bottom: 1px solid var(--surface-border);
   font-weight: 600;
-  color: #374151;
+  color: var(--text-color);
 }
 
 :deep(.p-datatable .p-datatable-tbody > tr:nth-child(even)) {
-  background: #f9fafb;
+  background: var(--surface-hover);
 }
 
 :deep(.p-datatable .p-datatable-tbody > tr:hover) {
-  background: #f3f4f6;
+  background: var(--surface-hover);
 }
 
 :deep(.p-datatable .p-datatable-tbody > tr > td) {
-  border-bottom: 1px solid #f1f3f4;
+  border-bottom: 1px solid var(--surface-border);
   padding: 12px 16px;
 }
 
 .text-gray-600 {
-  color: #6b7280;
+  color: var(--text-color-secondary);
 }
 
 :deep(.p-accordion .p-accordion-header) {
-  background: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
+  background: var(--surface-section);
+  border-bottom: 1px solid var(--surface-border);
 }
 
 :deep(.p-accordion .p-accordion-header:not(.p-disabled).p-highlight) {
-  background: #e9ecef;
+  background: var(--surface-hover);
 }
 
 :deep(.p-accordion .p-accordion-content) {
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--surface-border);
   padding: 0;
 }
 

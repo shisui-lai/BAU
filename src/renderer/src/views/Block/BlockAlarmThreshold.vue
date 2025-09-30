@@ -11,7 +11,6 @@ import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputNumber from 'primevue/inputnumber'
-import Toast from 'primevue/toast'
 
 const toastService = useToast()
 const blockStore = useBlockStore()
@@ -168,7 +167,7 @@ function getParameterRemarkText(){ return '' }
 
 <template>
   <div class="card">
-    <Toast />
+    <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
 
     <!-- 操作区 -->
     <div class="control-area mb-4">

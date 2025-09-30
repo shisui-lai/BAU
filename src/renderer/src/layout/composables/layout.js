@@ -1,12 +1,11 @@
 import { toRefs, reactive, computed } from 'vue'
-
 const layoutConfig = reactive({
   ripple: true,
-  darkTheme: false,
+  darkTheme: true,
   inputStyle: 'outlined',
   menuMode: 'static',
-  theme: 'aura-light-purple',
-  scale: 12,
+  theme: 'lara-dark-blue',
+  scale: 11,
   activeMenuItem: null
 })
 
@@ -40,26 +39,21 @@ export function useLayout() {
     }
   }
 
-  const onTopBarMenuButton = () => {
-    // 切换移动端顶部菜单的显示状态
-    layoutState.profileSidebarVisible = !layoutState.profileSidebarVisible
-    console.log('顶部菜单按钮被点击，当前状态:', layoutState.profileSidebarVisible)
-  }
-
   const isSidebarActive = computed(
     () => layoutState.overlayMenuActive || layoutState.staticMenuMobileActive
   )
 
   const isDarkTheme = computed(() => layoutConfig.darkTheme)
-
+  // 菜单是否折叠（桌面静态模式下）
+  const isMenuCollapsed = computed(() => layoutState.staticMenuDesktopInactive)
   return {
     layoutConfig: toRefs(layoutConfig),
     layoutState: toRefs(layoutState),
     setScale,
     onMenuToggle,
-    onTopBarMenuButton,
     isSidebarActive,
     isDarkTheme,
-    setActiveMenuItem
+    setActiveMenuItem,
+    isMenuCollapsed
   }
 }

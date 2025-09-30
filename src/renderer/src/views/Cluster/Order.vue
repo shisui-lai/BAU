@@ -9,7 +9,6 @@ import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 
 import Dialog from 'primevue/dialog'
-import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
 
@@ -580,7 +579,7 @@ onUnmounted(() => {
 <template>
   <div class="order-page">
     <div class="card">
-      <Toast />
+      <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
       <!-- 主要内容区域 - 上下两行布局 -->
       <div class="main-content">
         <!-- 上行：三个表格并排 -->
@@ -806,7 +805,7 @@ onUnmounted(() => {
               </DataTable>
 
               <!-- 下发按钮 - 放在表格右下方 -->
-              <div class="send-button-container">
+              <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; padding: 0 0.75rem;">
                 <Button
                   label="发送"
                   class="command-send-btn"
@@ -916,35 +915,29 @@ onUnmounted(() => {
       <!-- 确认对话框 -->
       <Dialog
         v-model:visible="showConfirmDialog"
-        header="确认操作"
-        modal
-        :style="{ width: '480px' }"
-        class="modern-confirm-dialog"
+        header="操作确认"
+        :modal="true"
+        :closable="true"
+        :style="{ width: '400px' }"
       >
-        <template #default>
-          <div class="confirm-message">
-            <i class="pi pi-exclamation-triangle confirmation-icon"></i>
-            <div class="confirmation-message">
-              {{ confirmMessage }}
-            </div>
-          </div>
-        </template>
+        <div class="confirm-content">
+          <i class="pi pi-exclamation-triangle confirm-icon"></i>
+          <span>{{ confirmMessage }}</span>
+        </div>
 
         <template #footer>
-          <div class="confirmation-footer">
-            <Button
-              label="取消"
-              icon="pi pi-times"
-              @click="showConfirmDialog = false"
-              class="p-button-outlined p-button-secondary cancel-btn"
-            />
-            <Button
-              label="确认"
-              icon="pi pi-check"
-              @click="executeConfirmedCommandWithToast"
-              class="confirm-btn"
-            />
-          </div>
+          <Button
+            label="取消"
+            icon="pi pi-times"
+            class="p-button-text"
+            @click="showConfirmDialog = false"
+          />
+          <Button
+            label="确认"
+            icon="pi pi-check"
+            class="p-button-danger"
+            @click="executeConfirmedCommandWithToast"
+          />
         </template>
       </Dialog>
 
@@ -996,16 +989,16 @@ onUnmounted(() => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
-  background: white;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-card);
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .table-title {
-  background: #007ad9;
-  color: #ffffff;
+  background: var(--primary-color);
+  color: var(--primary-color-text);
   padding: 12px 20px;
   margin: 0;
   font-weight: 600;
@@ -1032,7 +1025,7 @@ onUnmounted(() => {
 
 .dropdown-label {
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--text-color);
   font-weight: 500;
 }
 
@@ -1056,7 +1049,7 @@ onUnmounted(() => {
 
 .checkbox-label {
   font-size: 0.9rem;
-  color: #374151;
+  color: var(--text-color);
   font-weight: 500;
   cursor: pointer;
 }
@@ -1071,17 +1064,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #fafbfc;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-section);
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-color);
   font-size: 1rem;
 }
 
 .section-header .section-title {
   flex: 1;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-color);
 }
 
 .section-header .section-title:first-child {
@@ -1094,11 +1087,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 1.25rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--surface-border);
 }
 
 .feedback-control-row:hover {
-  background: #f9fafb;
+  background: var(--surface-hover);
 }
 
 .feedback-control-row:last-child {
@@ -1108,13 +1101,13 @@ onUnmounted(() => {
 .feedback-value {
   min-width: 120px;
   padding: 0.75rem 1rem;
-  background: #f8fafc;
+  background: var(--surface-section);
   border-radius: 8px;
   text-align: center;
-  color: #1f2937;
+  color: var(--text-color);
   font-weight: 600;
   font-size: 0.875rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--surface-border);
   margin-left: auto;
   margin-right: 68px;
 }
@@ -1133,7 +1126,7 @@ onUnmounted(() => {
 
 .command-name {
   font-weight: 500;
-  color: #111827;
+  color: var(--text-color);
   font-size: 0.95rem;
 }
 
@@ -1154,23 +1147,14 @@ onUnmounted(() => {
 
 .contactor-name {
   font-weight: 500;
-  color: #374151;
+  color: var(--text-color);
 }
 
 .operation-wrapper {
   padding: 0.5rem 0;
 }
 
-/* ========== 下发按钮容器 ========== */
-.send-button-container {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border-top: 1px solid #e5e7eb;
-}
+
 
 .command-row {
   display: flex;
@@ -1198,7 +1182,7 @@ onUnmounted(() => {
 .control-info-table :deep(.p-datatable-tbody > tr:hover),
 .test-mode-table :deep(.p-datatable-tbody > tr:hover),
 .contactor-independent-table :deep(.p-datatable-tbody > tr:hover) {
-  background-color: #e3f2fd !important;
+  background-color: var(--surface-hover) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
   transform: translateY(-1px);
@@ -1211,30 +1195,21 @@ onUnmounted(() => {
 }
 
 .contactor-independent-table :deep(.p-datatable-tbody > tr > td) {
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--surface-border);
   padding: 0.75rem;
 }
 
 /* ========== 确认对话框 ========== */
-.confirmation-footer {
+.confirm-content {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 12px; /* 图标和文字之间的间距 */
 }
 
-.cancel-btn,
-.confirm-btn {
-  min-width: 80px;
-  height: 40px;
-  font-size: 0.95rem;
-  border-radius: 8px;
-}
-
-.confirm-message {
-  padding: 1rem 0;
-  font-size: 1rem;
-  color: #374151;
-  text-align: center;
+.confirm-icon {
+  font-size: 24px;
+  color: var(--orange-500);
+  flex-shrink: 0; /* 防止图标被压缩 */
 }
 
 /* ========== 响应式设计 ========== */
@@ -1259,7 +1234,7 @@ onUnmounted(() => {
 /* ========== 卡片样式 ========== */
 .card {
   /* 使用全局card样式，不覆盖margin-left */
-  background: white;
+  background: var(--surface-card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
 }

@@ -1,9 +1,8 @@
 <!-- 堆遥控页面 - 基于实际通信协议的堆级遥控命令操作界面 -->
 <template>
   <div class="card">
-    <!-- Toast 消息提示 -->
-    <Toast />
-    
+    <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
+
     <!-- 主要内容区域 -->
     <div class="content-wrapper">
       <!-- 控制命令卡片 -->
@@ -551,7 +550,7 @@ onUnmounted(() => {
   min-height: calc(100vh - 78px);
   display: flex;
   flex-direction: column;
-  background: #f8fafc;
+  background: var(--surface-ground);
   overflow: hidden;
 }
 
@@ -569,8 +568,8 @@ onUnmounted(() => {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--surface-border);
+  background: linear-gradient(135deg, var(--surface-card) 0%, var(--surface-section) 100%);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -583,13 +582,13 @@ onUnmounted(() => {
 }
 
 .order-like-card .table-title {
-  background: linear-gradient(135deg, #007ad9 0%, #0056b3 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-700) 100%);
+  color: var(--primary-color-text);
   padding: 12px 16px;
   margin: 0;
   font-weight: 600;
   font-size: 1.1rem;
-  box-shadow: 0 2px 8px rgba(0, 122, 217, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .order-like-card .table-content {
@@ -598,14 +597,14 @@ onUnmounted(() => {
 
 /* 区域标题样式 - 紧凑版本 */
 .section-title {
-  color: #1e293b;
+  color: var(--text-color);
   font-weight: 700;
   font-size: 1rem;
   margin: 0 0 12px 0;
   padding: 8px 12px;
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  background: linear-gradient(135deg, var(--surface-section) 0%, var(--surface-hover) 100%);
   border-radius: 6px;
-  border-left: 4px solid #007ad9;
+  border-left: 4px solid var(--primary-color);
   display: block;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -615,7 +614,7 @@ onUnmounted(() => {
   margin: 16px 0;
   border: none;
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, #cbd5e1 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, var(--surface-border) 50%, transparent 100%);
 }
 
 .card-content {
@@ -641,14 +640,14 @@ onUnmounted(() => {
   align-items: center;
   padding: 12px 16px;
   gap: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(135deg, var(--surface-card) 0%, var(--surface-section) 100%);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--surface-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .command-label {
-  color: #1e293b;
+  color: var(--text-color);
   font-weight: 600;
   font-size: 0.95rem;
   line-height: 1.4;
@@ -685,9 +684,9 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, var(--surface-ground) 0%, var(--surface-section) 100%);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--surface-border);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
@@ -696,23 +695,23 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(135deg, var(--surface-card) 0%, var(--surface-section) 100%);
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--surface-border);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .checkbox-item:hover {
-  border-color: #007ad9;
-  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--highlight-bg) 0%, var(--surface-hover) 100%);
   transform: translateX(2px);
 }
 
 .checkbox-label {
   flex: 1;
   font-size: 14px;
-  color: #374151;
+  color: var(--text-color);
   cursor: pointer;
   font-weight: 500;
   line-height: 1.4;
@@ -738,14 +737,14 @@ onUnmounted(() => {
   align-items: center;
   padding: 12px 16px;
   gap: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+  background: linear-gradient(135deg, var(--surface-section) 0%, var(--surface-card) 100%);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--surface-border);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .result-label {
-  color: #1e293b;
+  color: var(--text-color);
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -765,8 +764,8 @@ onUnmounted(() => {
 }
 
 .executing .p-button {
-  background: #94a3b8 !important;
-  border-color: #94a3b8 !important;
+  background: var(--surface-400) !important;
+  border-color: var(--surface-400) !important;
 }
 
 
@@ -780,7 +779,7 @@ onUnmounted(() => {
 
 .confirm-icon {
   font-size: 24px;
-  color: #f39c12;
+  color: var(--orange-500);
   flex-shrink: 0; /* 防止图标被压缩 */
 }
 

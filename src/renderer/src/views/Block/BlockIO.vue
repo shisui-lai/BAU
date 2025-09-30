@@ -153,7 +153,7 @@ const getLEDClass = (value) => {
 
 <style lang="scss" scoped>
 .card {
-  background: white;
+  background: var(--surface-card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 1rem;
@@ -166,19 +166,19 @@ const getLEDClass = (value) => {
 }
 
 .io-card {
-  border: 1px solid #e3f2fd;
+  border: 1px solid var(--surface-border);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
-  
 
-  
+
+
   :deep(.p-card-header) {
-    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-    color: #ffffff;
+    background: var(--primary-color);
+    color: var(--primary-color-text);
     border-radius: 12px 12px 0 0;
     padding: 1.25rem 1.5rem;
-    border-bottom: 2px solid #0d47a1;
+    border-bottom: 2px solid var(--primary-color);
     position: relative;
   }
   
@@ -213,14 +213,14 @@ const getLEDClass = (value) => {
     align-items: center;
     justify-content: center;
     padding: 2rem;
-    color: #999;
+    color: var(--text-color-secondary);
     gap: 0.5rem;
-    
+
     i {
       font-size: 2rem;
-      color: #ccc;
+      color: var(--text-color-secondary);
     }
-    
+
     span {
       font-size: 1rem;
     }
@@ -242,20 +242,20 @@ const getLEDClass = (value) => {
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
-    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+    background: var(--surface-section);
     border-radius: 8px;
     margin-bottom: 0.75rem;
-    border-left: 4px solid #1976d2;
-    
+    border-left: 4px solid var(--primary-color);
+
     .section-icon {
       font-size: 1.1rem;
-      color: #1976d2;
+      color: var(--primary-color);
     }
-    
+
     .section-title {
       font-size: 1rem;
       font-weight: 600;
-      color: #333;
+      color: var(--text-color);
     }
   }
   
@@ -272,31 +272,31 @@ const getLEDClass = (value) => {
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--surface-border);
   border-radius: 6px;
-  background: white;
+  background: var(--surface-card);
   transition: all 0.2s ease;
   
   &:hover {
-    border-color: #1976d2;
-    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.1);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
-  
+
   .io-info {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
     flex: 1;
-    
+
     .io-label {
       font-weight: 600;
-      color: #333;
+      color: var(--text-color);
       font-size: 0.9rem;
     }
-    
+
     .io-remark {
       font-size: 0.75rem;
-      color: #666;
+      color: var(--text-color-secondary);
       font-style: italic;
     }
   }
@@ -315,24 +315,24 @@ const getLEDClass = (value) => {
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      border: 2px solid #ddd;
+      border: 2px solid var(--surface-border);
       transition: all 0.3s ease;
-      
+
       &.led-active {
-        background: #4caf50;
-        border-color: #4caf50;
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+        background: var(--green-500);
+        border-color: var(--green-500);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
       }
-      
+
       &.led-inactive {
-        background: #9e9e9e;
-        border-color: #9e9e9e;
+        background: var(--surface-400);
+        border-color: var(--surface-400);
       }
-      
+
       &.led-unknown {
-        background: #ff9800;
-        border-color: #ff9800;
-        box-shadow: 0 0 8px rgba(255, 152, 0, 0.5);
+        background: var(--orange-500);
+        border-color: var(--orange-500);
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
       }
     }
   }

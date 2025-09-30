@@ -226,8 +226,9 @@ watch(selectedBlock, handleBlockChange)
 .fault-overview {
   max-width: 1400px;
   margin: 0 auto;
-  background-color: white;
-  min-height: 100vh;
+  background-color: var(--surface-ground);
+  min-height: auto; /* 改为自适应高度 */
+  height: auto; /* 自适应高度 */
 }
 
 .loading-indicator {
@@ -235,7 +236,7 @@ watch(selectedBlock, handleBlockChange)
   align-items: center;
   justify-content: center;
   padding: 40px;
-  color: #7f8c8d;
+  color: var(--text-color-secondary);
   font-size: 16px;
 }
 
@@ -246,19 +247,22 @@ watch(selectedBlock, handleBlockChange)
 
 /* 手风琴样式优化 - 贴合主题 */
 .fault-accordion {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--surface-border);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  background: white;
+  background: var(--surface-card);
   margin: 0;
+  height: auto; /* 自适应高度 */
 }
+
+
 
 /* 手风琴头部样式 */
 :deep(.p-accordion .p-accordion-header) {
-  background: #f8f9fa;
+  background: var(--surface-section);
   border: none;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--surface-border);
   margin: 0;
   transition: all 0.2s ease;
 }
@@ -267,31 +271,48 @@ watch(selectedBlock, handleBlockChange)
   border-bottom: none;
 }
 
+/* 第一个手风琴面板的上圆角 */
+:deep(.p-accordion .p-accordion-tab:first-child .p-accordion-header) {
+  border-radius: 12px 12px 0 0;
+}
+
+/* 最后一个手风琴面板的下圆角 - 当收起时 */
+:deep(.p-accordion .p-accordion-tab:last-child .p-accordion-header:not(.p-highlight)) {
+  border-radius: 0 0 12px 12px;
+}
+
+/* 最后一个手风琴面板的内容区域下圆角 - 当展开时 */
+:deep(.p-accordion .p-accordion-tab:last-child .p-accordion-content) {
+  border-radius: 0 0 12px 12px;
+}
+
 :deep(.p-accordion .p-accordion-header a) {
   padding: 16px 20px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-color);
   background: transparent;
   border: none;
   border-radius: 0;
   transition: all 0.2s ease;
 }
 
+
+
 :deep(.p-accordion .p-accordion-header:hover) {
-  background: #e9ecef;
+  background: var(--surface-hover);
 }
 
 :deep(.p-accordion .p-accordion-header:hover a) {
   background: transparent;
-  color: #1f2937;
+  color: var(--text-color);
 }
 
-:deep(.p-accordion .p-accordion-header.p-highlight) {
-  background: #007ad9;
+:deep(.p-accordion .p-accordion-header:not(.p-disabled).p-highlight) {
+  background: var(--surface-hover);
 }
 
 :deep(.p-accordion .p-accordion-header.p-highlight a) {
-  color: white;
+  color: var(--text-color);
   background: transparent;
 }
 
@@ -308,14 +329,20 @@ watch(selectedBlock, handleBlockChange)
   flex-direction: column;
   gap: 0;
   padding: 0;
-  background: white;
+  background: var(--surface-card);
   height: 100%;
+}
+
+/* 最后一个手风琴面板内的卡片下圆角 */
+:deep(.p-accordion .p-accordion-tab:last-child .fault-cards) {
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
 }
 
 .fault-grid {
   position: relative;
   padding: 16px;
-  min-height: 200px;
+  min-height: auto; /* 改为自适应高度 */
 }
 
 /* 指示灯说明 - 左上角 */
@@ -333,12 +360,12 @@ watch(selectedBlock, handleBlockChange)
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--surface-card);
   border-radius: 4px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--surface-border);
   font-size: 13px;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--text-color);
   backdrop-filter: blur(4px);
 }
 
@@ -361,13 +388,13 @@ watch(selectedBlock, handleBlockChange)
   align-items: center;
   padding: 8px 12px;
   border-radius: 6px;
-  background: #f8f9fa;
-  border: 1px solid #e9ecef;
+  background: var(--surface-section);
+  border: 1px solid var(--surface-border);
   transition: all 0.2s ease;
 }
 
 .fault-indicator:hover {
-  background: #e9ecef;
+  background: var(--surface-hover);
   transform: translateY(-1px);
 }
 
@@ -376,29 +403,29 @@ watch(selectedBlock, handleBlockChange)
   height: 14px;
   border-radius: 50%;
   margin-right: 8px;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--surface-card);
   box-shadow: 0 0 4px rgba(0,0,0,0.2);
   transition: all 0.3s ease;
 }
 
 .indicator-light.severe {
-  background-color: #ff0000;
+  background-color: var(--red-500);
 }
 
 .indicator-light.general {
-  background-color: #ff8c00;
+  background-color: var(--orange-500);
 }
 
 .indicator-light.minor {
-  background-color: #ffd700;
+  background-color: var(--yellow-500);
 }
 
 .indicator-light.normal {
-  background-color: #0bdf0b;
+  background-color: var(--green-500);
 }
 
 .indicator-light.inactive {
-  background-color: #6c757d;
+  background-color: var(--surface-500);
   opacity: 0.3;
   box-shadow: none;
 }
@@ -406,15 +433,15 @@ watch(selectedBlock, handleBlockChange)
 .fault-name {
   font-size: 14px;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--text-color);
   flex: 1;
 }
 
 .fault-card {
-  border: 1px solid #e1e8ed;
+  border: 1px solid var(--surface-border);
   border-radius: 0;
   padding: 0;
-  background: white;
+  background: var(--surface-card);
   box-shadow: none;
   transition: all 0.3s ease;
   height: 100%;
@@ -429,7 +456,7 @@ watch(selectedBlock, handleBlockChange)
 .card-subtitle {
   margin: 0;
   font-size: 14px;
-  color: #7f8c8d;
+  color: var(--text-color-secondary);
 }
 
 /* 响应式设计 */

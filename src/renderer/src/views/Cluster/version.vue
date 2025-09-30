@@ -174,9 +174,9 @@ const tableRows = computed(() => {
 </template>
 
 <style lang="less" scoped>
-.card { 
+.card {
   /* 使用全局card样式，不覆盖margin-left */
-  background: white;
+  background: var(--surface-card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
 }

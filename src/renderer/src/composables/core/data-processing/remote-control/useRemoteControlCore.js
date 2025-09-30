@@ -502,20 +502,23 @@ export function parseParameterWriteResponse(mqttMessage, logPrefix, dataTypeName
  * 通用遥调核心功能 - 所有遥调页面的基础功能提供者
  * @param {Object} remoteControlConfig - 遥调配置对象，包含数据源、参数分类、序列化函数等配置
  * @param {Object} toastService - PrimeVue toast消息服务，用于用户提示
+ * @param {Object} options - 选项配置
+ * @param {string} options.selectorMode - 选择器模式：'cluster' | 'block'
+ * @param {Object} options.defaultData - 默认数据配置（可选）
  * @returns {Object} 遥调核心功能对象，包含状态数据和操作函数
  */
 export function useRemoteControlCore(remoteControlConfig, toastService, options = {}) {
-  // 选择模式：cluster | block（默认 cluster，兼容旧页面）
-  const selectorMode = options.selectorMode === 'block' ? 'block' : 'cluster'
+  // 解构选项配置，保持向后兼容
+  const { selectorMode = 'cluster', defaultData = null } = options
 
   // ========== 方案一：参数表预分组优化 ==========
   // 在函数初始化时就对参数表进行预分组，避免运行时重复filter操作
-  const preGroupedParameterFields = computed(() => {
-    const startTime = performance.now()
+  // ========== 性能优化：一次性预分组参数字段 ==========
+  const preGroupedParameterFields = (() => {
     const allFields = remoteControlConfig.dataSource.parameterFields || []
     const groupedByClass = {}
 
-    // 按分类预先分组所有参数
+    // 按分类预先分组所有参数（一次性计算，避免computed开销）
     allFields.forEach(field => {
       const className = field.class
       if (!groupedByClass[className]) {
@@ -525,16 +528,13 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       groupedByClass[className].push(markRaw(field))
     })
 
-    const endTime = performance.now()
-    // console.log(`[优化验证] ${remoteControlConfig.dataSource.name} 预分组完成: ${allFields.length}个参数, 耗时${(endTime - startTime).toFixed(2)}ms`)
-
     // 将整个结果标记为非响应式，避免Vue深度跟踪
     return markRaw({
       allFields: markRaw(allFields),
       groupedByClass: markRaw(groupedByClass),
       totalCount: allFields.length
     })
-  })
+  })()
   
   
   // 选择器适配：根据模式读取不同的全局选择状态
@@ -657,7 +657,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
 
   // 预计算整表长度（用于无分类模式与整表下发）
   const totalTableByteLengthForAllFields = computed(() => {
-    return preGroupedParameterFields.value.allFields.reduce((sum, field) => {
+    return preGroupedParameterFields.allFields.reduce((sum, field) => {
       const count = field.count || 1
       return sum + (getParameterFieldByteSize(field.type) * count)
     }, 0)
@@ -672,7 +672,35 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
   
   
   
-    //  获取当前分类下的所有参数列表 - 核心数据处理逻辑 
+  // ========== 性能优化：预计算所有分类的默认值缓存 ==========
+  const precomputedClassDefaults = (() => {
+    if (!defaultData) return {}
+
+    const result = {}
+    const allFields = remoteControlConfig.dataSource.parameterFields || []
+
+    // 一次性预计算所有分类的默认值，避免运行时重复计算
+    allFields.forEach(field => {
+      const className = field.class
+      if (!result[className]) {
+        result[className] = {}
+      }
+      if (defaultData[field.key] !== undefined) {
+        result[className][field.key] = defaultData[field.key]
+      }
+    })
+
+    return markRaw(result) // 标记为非响应式，避免Vue跟踪开销
+  })()
+
+  // ========== 性能优化：分类级默认值计算（简化为查表操作） ==========
+  const currentClassDefaults = computed(() => {
+    if (!currentSelectedClass.value) return {}
+    // 直接查表获取预计算的默认值，避免运行时计算开销
+    return precomputedClassDefaults[currentSelectedClass.value.name] || {}
+  })
+
+    //  获取当前分类下的所有参数列表 - 核心数据处理逻辑
     // 作用：根据当前选中的分类，筛选并组合参数定义、当前值、原始值等信息
     // 返回：包含完整参数信息的数组，供表格组件使用
   const currentClassParameterList = computed(() => {
@@ -713,11 +741,11 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     let classFields
     if (noClassMode) {
       // 无分类模式：使用所有未隐藏的字段
-      classFields = preGroupedParameterFields.value.allFields.filter(field => field.hide !== true)
+      classFields = preGroupedParameterFields.allFields.filter(field => field.hide !== true)
     } else {
       // 有分类模式：直接使用预分组的结果
       const className = currentSelectedClass.value.name
-      classFields = preGroupedParameterFields.value.groupedByClass[className] || []
+      classFields = preGroupedParameterFields.groupedByClass[className] || []
 
       // 应用分类级别的隐藏字段过滤
       if (currentSelectedClass.value.hiddenFields?.length > 0) {
@@ -746,7 +774,11 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       // 当前值：优先使用用户编辑的数据，否则使用原始数据；避免 undefined 回落为 0 导致“01/0”现象
       currentValue: (editableData[parameterField.key] !== undefined
         ? editableData[parameterField.key]
-        : originalData[parameterField.key]) ?? null,
+        : (originalData[parameterField.key] !== undefined
+          ? originalData[parameterField.key]
+          : (currentClassDefaults.value[parameterField.key] !== undefined
+            ? currentClassDefaults.value[parameterField.key]
+            : null))),
       // 原始值：从设备读取的未修改数据
       originalValue: originalData[parameterField.key] ?? null
       }))
@@ -1188,7 +1220,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       const clusterDataKey = `${dataSourceName}_${currentKey}`
       
       // 获取当前分类对应的Topic和参数表
-      let topicParameterFields = preGroupedParameterFields.value.allFields
+      let topicParameterFields = preGroupedParameterFields.allFields
       
       // 如果配置了getDataType函数，说明是多Topic架构，需要特殊处理
       if (remoteControlConfig.dataSource.getDataType) {
@@ -1199,7 +1231,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
         if (dataSourceName === 'ALARM_THRESHOLD') {
           // 通过序列化函数的签名可以判断这是告警阈值
           // 需要从全局参数表中筛选出属于当前Topic的参数
-          const allFields = preGroupedParameterFields.value.allFields
+          const allFields = preGroupedParameterFields.allFields
           topicParameterFields = allFields.filter(field => {
             // 简单的Topic判断逻辑 - 可以根据实际情况优化
             if (currentDataType === 'cluster_dns_param') {
@@ -1266,7 +1298,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       let registerCount
       if (writeWholeTable) {
         // 计算整个表的字节长度
-        const totalTableByteLength = preGroupedParameterFields.value.allFields
+        const totalTableByteLength = preGroupedParameterFields.allFields
           .reduce((sum, field) => {
             const count = field.count || 1
             return sum + (getParameterFieldByteSize(field.type) * count)
@@ -1745,6 +1777,44 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
   }
 
   /**
+   * 使用默认值初始化参数列表
+   * @param {Array} fields - 参数字段定义
+   * @param {Object} defaults - 默认值配置
+   * @returns {Array} 初始化后的参数列表
+   */
+  function initializeWithDefaults(fields, defaults) {
+    return fields.map(field => ({
+      ...field,
+      currentValue: defaults[field.key] !== undefined ?
+        defaults[field.key] :
+        getDefaultValueByType(field.type),
+      hasDefaultValue: defaults[field.key] !== undefined
+    }))
+  }
+
+  /**
+   * 根据字段类型获取默认值
+   * @param {string} type - 字段类型
+   * @returns {number} 默认值
+   */
+  function getDefaultValueByType(type) {
+    switch (type) {
+      case 'u8':
+      case 'u16':
+      case 'u32':
+        return 0
+      case 's8':
+      case 's16':
+      case 's32':
+        return 0
+      case 'f32':
+        return 0.0
+      default:
+        return 0
+    }
+  }
+
+  /**
    * 增强的参数列表 - 包含下拉框信息
    * 为每个参数添加输入类型、选项列表、显示值等信息
    */
@@ -1853,6 +1923,10 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     // 数据处理 - MQTT事件处理函数
     handleReceivedParameterData,  // 处理接收数据
     handleParameterWriteResponse, // 处理写入响应
-    handleParameterReadError      // 处理读取错误
+    handleParameterReadError,     // 处理读取错误
+
+    // 默认值支持 - 新增功能
+    initializeWithDefaults,       // 使用默认值初始化参数列表
+    getDefaultValueByType         // 根据类型获取默认值
   }
 }

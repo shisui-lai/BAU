@@ -288,6 +288,50 @@ const toggleBcuSelection = (selectionArray, clusterId) => {
 const toggleBcuSelection1 = (clusterId) => toggleBcuSelection(bcuSelection1.value, clusterId)
 const toggleBcuSelection2 = (clusterId) => toggleBcuSelection(bcuSelection2.value, clusterId)
 
+// 全选1-10簇的状态（计算属性）
+const isAllSelected1 = computed(() => {
+  // 检查1-10簇是否全部被选中
+  for (let i = 1; i <= 10; i++) {
+    if (!bcuSelection1.value.includes(i)) {
+      return false
+    }
+  }
+  return true
+})
+
+// 全选11-20簇的状态（计算属性）
+const isAllSelected2 = computed(() => {
+  // 检查11-20簇是否全部被选中
+  for (let i = 11; i <= 20; i++) {
+    if (!bcuSelection2.value.includes(i)) {
+      return false
+    }
+  }
+  return true
+})
+
+// 切换全选1-10簇
+const toggleSelectAll1 = () => {
+  if (isAllSelected1.value) {
+    // 如果已经全选，则清空
+    bcuSelection1.value = []
+  } else {
+    // 否则全选1-10簇
+    bcuSelection1.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  }
+}
+
+// 切换全选11-20簇
+const toggleSelectAll2 = () => {
+  if (isAllSelected2.value) {
+    // 如果已经全选，则清空
+    bcuSelection2.value = []
+  } else {
+    // 否则全选11-20簇
+    bcuSelection2.value = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+  }
+}
+
 const startUpgrade = async () => {
   try {
     await upgradeStore.startUpgrade()
@@ -538,7 +582,19 @@ onUnmounted(() => {
                 <div class="cluster-selection-compact">
                   <!-- 第1-10簇 -->
                   <div class="cluster-row">
-                    <span class="cluster-row-label">第1-10簇:</span>
+                    <div class="cluster-label-column">
+                      <span class="cluster-row-label">第1-10簇:</span>
+                      <!-- 全选按钮 -->
+                      <div class="cluster-checkbox-compact">
+                        <Checkbox
+                          :modelValue="isAllSelected1"
+                          @update:modelValue="toggleSelectAll1"
+                          :binary="true"
+                          :disabled="selectedUpgrade === '0xA000'"
+                        />
+                        <label>全选</label>
+                      </div>
+                    </div>
                     <div class="cluster-checkboxes-compact">
                       <div v-for="i in 10" :key="i" class="cluster-checkbox-compact">
                         <Checkbox
@@ -553,7 +609,19 @@ onUnmounted(() => {
                   </div>
                   <!-- 第11-20簇 -->
                   <div class="cluster-row">
-                    <span class="cluster-row-label">第11-20簇:</span>
+                    <div class="cluster-label-column">
+                      <span class="cluster-row-label">第11-20簇:</span>
+                      <!-- 全选按钮 -->
+                      <div class="cluster-checkbox-compact">
+                        <Checkbox
+                          :modelValue="isAllSelected2"
+                          @update:modelValue="toggleSelectAll2"
+                          :binary="true"
+                          :disabled="selectedUpgrade === '0xA000'"
+                        />
+                        <label>全选</label>
+                      </div>
+                    </div>
                     <div class="cluster-checkboxes-compact">
                       <div v-for="i in 10" :key="i+10" class="cluster-checkbox-compact">
                         <Checkbox
@@ -722,16 +790,23 @@ onUnmounted(() => {
 
 .cluster-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
+}
+
+/* 标签列 - 包含文字和全选按钮 */
+.cluster-label-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 80px;
+  flex-shrink: 0;
 }
 
 .cluster-row-label {
   font-size: 14px;
   font-weight: 500;
   color: var(--text-color-secondary);
-  min-width: 80px;
-  flex-shrink: 0;
 }
 
 .cluster-checkboxes-compact {

@@ -321,12 +321,12 @@ onMounted(() => {
   window.electron.ipcRenderer.on('SOH_CFG_PARAM_W', handleSOHCfgParamWriteEvent)
 
   // 使用全局调度器避免多页面并发读取
-  scheduleAutoRead(allReadTopics, 600, 'SOXParam')
+  scheduleAutoRead(allReadTopics, 500, 'SOXParam')
 })
 
 // keep-alive 激活时的处理
 onActivated(() => {
-  scheduleAutoRead(allReadTopics, 600, 'SOXParam')
+  scheduleAutoRead(allReadTopics, 500, 'SOXParam')
 })
 
 // keep-alive 失活时的处理
@@ -423,10 +423,7 @@ function getParameterRemarkText(parameterKey) {
       <!-- 参数名称列 -->
       <Column header="参数名称" style="width: 250px" :frozen="true">
         <template #body="slotProps">
-          <div>
-            <div class="font-medium">{{ slotProps.data.label }}</div>
-            <div class="text-xs text-gray-500">{{ slotProps.data.key }}</div>
-          </div>
+          <div class="font-medium">{{ slotProps.data.label }}</div>
         </template>
       </Column>
 

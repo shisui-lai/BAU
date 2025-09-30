@@ -101,24 +101,23 @@ const getActualKBValues = (calibrationType) => {
       return { k: '', b: '' }
   }
 
-  // 从扁平化数据中获取原始KB值
+  // 从扁平化数据中获取KB值（MQTT层parseByTable已经除以scale）
   const rawK = factoryCalibData.value[kKey]
   const rawB = factoryCalibData.value[bKey]
 
-  // 根据表定义，K值的scale是1000，B值的scale是10
-  // 需要将原始值除以scale来得到实际显示值
+  // 直接使用，不需要再除以scale（parseByTable已经处理过）
+  // parseByTable: base[key] = rawVal / (fld.scale ?? 1)
+  // 例如：设备存储1234，scale=1000，parseByTable返回1.234
   let k = '', b = ''
 
   // 确保即使是0值也能正确显示
   if (rawK !== undefined && rawK !== null) {
-    k = (rawK / 1000).toFixed(3)  // K值scale为1000
+    k = rawK.toFixed(3)  // 直接使用，不需要再除以1000
   }
 
   if (rawB !== undefined && rawB !== null) {
-    b = (rawB / 10).toFixed(1)    // B值scale为10
+    b = rawB.toFixed(1)  // 直接使用，不需要再除以10
   }
-
-
 
   return { k, b }
 }

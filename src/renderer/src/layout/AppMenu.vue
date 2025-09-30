@@ -32,7 +32,7 @@ const menuItems = ref([
       { label: '簇配置参数', icon: 'pi pi-sliders-h', route: '/Cluster/BaseParam' },
       { label: '簇报警阈值', icon: 'pi pi-bell', route: '/Cluster/AlarmThreshold' },
       { label: 'SOX参数', icon: 'pi pi-chart-line', route: '/Cluster/SOXParam' },
-      { label: '模拟量校准', icon: 'pi pi-cog', route: '/Cluster/IvCalibration' }
+      { label: '模拟量校准', icon: 'pi pi-wrench', route: '/Cluster/IvCalibration' }
     ]
   },
   {
@@ -43,7 +43,7 @@ const menuItems = ref([
     items: [
       { label: '指令下发', icon: 'pi pi-send', route: '/Cluster/Order' },
       { label: '设备升级', icon: 'pi pi-download', route: '/Bau/upgrade' },
-      { label: '地址自适应', icon: 'pi pi-cog', route: '/Bau/address-adaptive' }
+      { label: '地址自适应', icon: 'pi pi-sitemap', route: '/Bau/address-adaptive' }
     ]
   },
   {

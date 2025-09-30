@@ -1159,6 +1159,7 @@ onUnmounted(() => {
 .command-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1.25rem;
   width: 100%;
   padding: 0.25rem 0;
@@ -1166,6 +1167,11 @@ onUnmounted(() => {
 
 .command-dropdown,
 .command-dropdown-inline {
+  min-width: 140px;
+  font-size: 0.9rem;
+}
+
+.command-multiselect-inline {
   min-width: 140px;
   font-size: 0.9rem;
 }

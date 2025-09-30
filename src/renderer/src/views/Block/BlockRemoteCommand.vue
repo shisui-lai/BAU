@@ -27,7 +27,7 @@
                     class="mode-tag"
                   />
                 </div>
-                <div class="flex align-items-center gap-2 flex-1">
+                <div class="flex align-items-center gap-2 flex-1 justify-content-end">
                   <!-- 下拉选择类型 -->
                   <div v-if="command.uiType === 'dropdown'" class="flex align-items-center gap-2">
                     <Dropdown
@@ -58,8 +58,8 @@
                   <!-- 复选框组类型 - 直接展示 -->
                   <div v-else-if="command.uiType === 'checkbox_group'" class="checkbox-group-control">
                     <div class="checkbox-group-container">
-                      <div 
-                        v-for="bitField in command.bitFields" 
+                      <div
+                        v-for="bitField in command.bitFields"
                         :key="bitField.bit"
                         class="checkbox-item"
                       >
@@ -76,7 +76,7 @@
                       </div>
                     </div>
                   </div>
-                </div>  
+                </div>
                 <div class="flex justify-content-end">
                   <Button
                     label="发送"
@@ -670,7 +670,7 @@ onUnmounted(() => {
 
 
 
-  
+
   /* 复选框组样式 */
 
 /* 控件样式 */

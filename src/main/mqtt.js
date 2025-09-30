@@ -469,8 +469,9 @@ function withResponseCheck(fn) {
           if (isConnected) {
             isConnected = false
             console.log('[MQTT Child]  连接已关闭')
-            // 停止健康检查
-            stopHealthCheck()
+            // 不停止健康检查，让子进程继续发送心跳
+            // 健康检查只在子进程真正退出时停止（cleanUp函数中）
+            // 这样可以避免主进程误判子进程异常而重启子进程
             process.send({ type: 'mqtt-disconnected', data: {} })
           }
         })

@@ -227,12 +227,12 @@ onMounted(() => {
   window.electron.ipcRenderer.on('CELL_DNS_PARAM_W', handleCellAlarmWriteEvent)
 
   // 使用全局调度器避免多页面并发读取
-  scheduleAutoRead(allReadTopics, 300, 'AlarmThreshold')
+  scheduleAutoRead(allReadTopics, 500, 'AlarmThreshold')
 })
 
 // keep-alive 激活时的处理
 onActivated(() => {
-  scheduleAutoRead(allReadTopics, 300, 'AlarmThreshold')
+  scheduleAutoRead(allReadTopics, 500, 'AlarmThreshold')
 })
 
 // keep-alive 失活时的处理
@@ -332,9 +332,15 @@ function getParameterRemarkText(parameterKey) {
       <!-- 参数名称列 -->
       <Column header="参数名称" style="width: 250px" :frozen="true">
         <template #body="slotProps">
-          <div>
-            <div class="font-medium">{{ slotProps.data.label }}</div>
-            <div class="text-xs text-gray-500">{{ slotProps.data.key }}</div>
+          <div
+            class="font-medium"
+            :class="{
+              'text-red-600': slotProps.data.label.includes('严重'),
+              'text-yellow-600': slotProps.data.label.includes('一般'),
+              'text-cyan-600': slotProps.data.label.includes('轻微')
+            }"
+          >
+            {{ slotProps.data.label }}
           </div>
         </template>
       </Column>

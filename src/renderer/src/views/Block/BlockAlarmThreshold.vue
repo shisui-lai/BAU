@@ -194,9 +194,15 @@ function getParameterRemarkText(){ return '' }
     <DataTable :value="currentClassParameterList" class="p-datatable-sm" :show-gridlines="true">
       <Column header="参数名称" style="width: 260px" :frozen="true">
         <template #body="{ data }">
-          <div>
-            <div class="font-medium">{{ data.label }}</div>
-            <div class="text-xs text-gray-500">{{ data.key }}</div>
+          <div
+            class="font-medium"
+            :class="{
+              'text-red-600': data.label.includes('严重'),
+              'text-yellow-600': data.label.includes('一般'),
+              'text-cyan-600': data.label.includes('轻微')
+            }"
+          >
+            {{ data.label }}
           </div>
         </template>
       </Column>

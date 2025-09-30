@@ -581,31 +581,13 @@ onMounted(() => {
   window.electron.ipcRenderer.on('FACTORY_CALIB_PARAM_R', handleFactoryReadEvent)
   window.electron.ipcRenderer.on('FACTORY_CALIB_PARAM_W', handleFactoryWriteEvent)
 
-  // 初始化出厂校正参数的默认值
-  setTimeout(() => {
-    const defaultFactoryData = factoryCalibParamHandler.createDefaultFactoryCalibParamData()
-
-    // 模拟接收到的数据结构，触发默认值设置
-    const mockFactoryData = {
-      frameKey: '1-1',
-      blockId: 1,
-      clusterId: 1,
-      data: defaultFactoryData,
-      result: { success: true },
-      dataSource: 'FACTORY_CALIB_PARAM'
-    }
-
-    // 调用数据处理函数设置默认值
-    factoryCalibHandleReceivedParameterData(mockFactoryData)
-  }, 100)
-
   // 使用全局调度器避免多页面并发读取
-  scheduleAutoRead(allReadTopics, 600, 'BaseParam')
+  scheduleAutoRead(allReadTopics, 500, 'BaseParam')
 })
 
 // keep-alive 激活时的处理
 onActivated(() => {
-  scheduleAutoRead(allReadTopics, 600, 'BaseParam')
+  scheduleAutoRead(allReadTopics, 500, 'BaseParam')
 })
 
 // keep-alive 失活时的处理
@@ -698,10 +680,7 @@ onUnmounted(() => {
       <!-- 参数名称列 -->
       <Column header="参数名称" style="width: 250px">
         <template #body="slotProps">
-          <div>
-            <div class="font-medium">{{ slotProps.data.label }}</div>
-            <div class="text-xs text-gray-500">{{ slotProps.data.key }}</div>
-          </div>
+          <div class="font-medium">{{ slotProps.data.label }}</div>
         </template>
       </Column>
 

@@ -1,12 +1,14 @@
 <!-- 堆配置参数页面 - 包含系统簇端电池配置、系统通讯设备配置、系统操作配置三类参数 -->
 <script setup>
 import { useToast } from 'primevue/usetoast'
-import { onMounted, onUnmounted, ref, computed  } from 'vue'
+import { onMounted, onUnmounted, onActivated, onDeactivated, ref, computed  } from 'vue'
+import { scheduleAutoRead, cancelAutoRead, registerAutoReadFunction } from '@/composables/utils/useAutoReadScheduler'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useBlockStore } from '@/stores/device/blockStore'
 import { BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R } from '../../../../main/table.js'
+import { DEFAULT_BLOCK_CONFIG_PARAMS } from '@/configs/parameterDefaults'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -100,6 +102,9 @@ const operateConfig = {
   }
 }
 
+// ========== BlockConfigParam自动读取topic数组 ==========
+const allReadTopics = ['BLOCK_BATT_PARAM', 'BLOCK_COMM_DEV_CFG', 'BLOCK_OPERATE_CFG']
+
 // 复用通用核心（block模式由usePageTypeDetection控制）
 const {
   isCurrentlyReading: isReadingBattery,
@@ -123,7 +128,10 @@ const {
   getParameterDropdownOptions: getBattParameterDropdownOptions,
   updateDropdownParameterValue: updateBattDropdownParameterValue,
   enhancedParameterList: battEnhancedParameterList
-} = useRemoteControlCore(batteryConfig, toastService, { selectorMode: 'block' })
+} = useRemoteControlCore(batteryConfig, toastService, {
+  selectorMode: 'block',
+  defaultData: DEFAULT_BLOCK_CONFIG_PARAMS // 性能优化：传递默认数据
+})
 
 const {
   isCurrentlyReading: isReadingCommDev,
@@ -147,7 +155,10 @@ const {
   getParameterDropdownOptions: getCommParameterDropdownOptions,
   updateDropdownParameterValue: updateCommDropdownParameterValue,
   enhancedParameterList: commEnhancedParameterList
-} = useRemoteControlCore(commDevConfig, toastService, { selectorMode: 'block' })
+} = useRemoteControlCore(commDevConfig, toastService, {
+  selectorMode: 'block',
+  defaultData: DEFAULT_BLOCK_CONFIG_PARAMS // 性能优化：传递默认数据
+})
 
 const {
   isCurrentlyReading: isReadingOperate,
@@ -171,13 +182,44 @@ const {
   getParameterDropdownOptions: getOperateParameterDropdownOptions,
   updateDropdownParameterValue: updateOperateDropdownParameterValue,
   enhancedParameterList: operateEnhancedParameterList
-} = useRemoteControlCore(operateConfig, toastService, { selectorMode: 'block' })
+} = useRemoteControlCore(operateConfig, toastService, {
+  selectorMode: 'block',
+  defaultData: DEFAULT_BLOCK_CONFIG_PARAMS // 性能优化：传递默认数据
+})
 
 // 统一的停止函数
 function stopAllReading() {
   if (isReadingBattery.value) stopBatteryReading()
   if (isReadingCommDev.value) stopCommDevReading()
   if (isReadingOperate.value) stopOperateReading()
+}
+
+// 多Topic一次性自动读取函数
+function autoReadMultiTopicOnce(topics) {
+  console.log('[BlockConfigParam] 自动读取Topics:', topics)
+
+  // 检查是否有选中的堆
+  if (!blockStore.selectedBlockForView) {
+    console.log('[BlockConfigParam] 等待堆选择器就绪...')
+    return
+  }
+
+  // 遍历所有topics，发送读取请求
+  topics.forEach(topic => {
+    switch(topic) {
+      case 'BLOCK_BATT_PARAM':
+        sendBatteryReadRequest()
+        break
+      case 'BLOCK_COMM_DEV_CFG':
+        sendCommDevReadRequest()
+        break
+      case 'BLOCK_OPERATE_CFG':
+        sendOperateReadRequest()
+        break
+      default:
+        console.warn('[BlockConfigParam] 未知的Topic:', topic)
+    }
+  })
 }
 
 // 重试逻辑
@@ -384,6 +426,9 @@ function handleOperateWriteEvent(event, mqttMessage){
 }
 
 onMounted(() => {
+  // 注册全局autoRead函数
+  registerAutoReadFunction(autoReadMultiTopicOnce)
+
   const ipc = window.electron?.ipcRenderer
   if (ipc){
     // 簇端电池配置参数
@@ -391,70 +436,73 @@ onMounted(() => {
     ipc.removeAllListeners?.('BLOCK_BATT_PARAM_W')
     ipc.on('BLOCK_BATT_PARAM_R', handleBatteryReadEvent)
     ipc.on('BLOCK_BATT_PARAM_W', handleBatteryWriteEvent)
-    
+
     // 通讯设备配置参数
     ipc.removeAllListeners?.('BLOCK_COMM_DEV_CFG_R')
     ipc.removeAllListeners?.('BLOCK_COMM_DEV_CFG_W')
     ipc.on('BLOCK_COMM_DEV_CFG_R', handleCommDevReadEvent)
     ipc.on('BLOCK_COMM_DEV_CFG_W', handleCommDevWriteEvent)
-    
+
     // 操作配置参数
     ipc.removeAllListeners?.('BLOCK_OPERATE_CFG_R')
     ipc.removeAllListeners?.('BLOCK_OPERATE_CFG_W')
     ipc.on('BLOCK_OPERATE_CFG_R', handleOperateReadEvent)
     ipc.on('BLOCK_OPERATE_CFG_W', handleOperateWriteEvent)
   }
-  
+
   // 确保页面类型正确设置
   blockStore.setCurrentPageType('block')
-  
-     // 默认选中第一个分类，并自动读取一次
-   // 簇端电池配置参数不分类，直接显示所有参数
-   if (allCommDevClasses?.value?.length && !currentCommDevClass?.value){
-     switchToCommDevClass(allCommDevClasses.value[0].name)
-   }
-   if (allOperateClasses?.value?.length && !currentOperateClass?.value){
-     switchToOperateClass(allOperateClasses.value[0].name)
-   }
-  
-  // 延迟读取，确保选择器已就绪
-  setTimeout(() => {
-    try { 
-      // 检查是否有选中的堆
-      if (blockStore.selectedBlockForView) {
-        console.log('[BlockConfigParam] 自动执行一次读取')
-        sendBatteryReadRequest()
-        sendCommDevReadRequest()
-        sendOperateReadRequest()
-      } else {
-        console.log('[BlockConfigParam] 等待堆选择器就绪...')
-      }
-    } catch(e){
-      console.warn('[BlockConfigParam] 自动读取触发失败:', e)
-    }
-  }, 800)
+
+  // 默认选中第一个分类
+  // 簇端电池配置参数不分类，直接显示所有参数
+  if (allCommDevClasses?.value?.length && !currentCommDevClass?.value){
+    switchToCommDevClass(allCommDevClasses.value[0].name)
+  }
+  if (allOperateClasses?.value?.length && !currentOperateClass?.value){
+    switchToOperateClass(allOperateClasses.value[0].name)
+  }
+
+  // 使用全局调度器避免多页面并发读取
+  scheduleAutoRead(allReadTopics, 500, 'BlockConfigParam')
+})
+
+// keep-alive 激活时的处理
+onActivated(() => {
+  scheduleAutoRead(allReadTopics, 500, 'BlockConfigParam')
+})
+
+// keep-alive 失活时的处理
+onDeactivated(() => {
+  cancelAutoRead('BlockConfigParam')
+  stopBatteryReading()
+  stopCommDevReading()
+  stopOperateReading()
 })
 
 onUnmounted(() => {
+  // 取消统一调度器的待处理请求
+  cancelAutoRead('BlockConfigParam')
+
+  // 停止读取操作
+  stopBatteryReading()
+  stopCommDevReading()
+  stopOperateReading()
+
+  // 清理事件监听器
   const ipc = window.electron?.ipcRenderer
   if (ipc){
     // 簇端电池配置参数
     ipc.removeAllListeners('BLOCK_BATT_PARAM_R', handleBatteryReadEvent)
     ipc.removeAllListeners('BLOCK_BATT_PARAM_W', handleBatteryWriteEvent)
-    
+
     // 通讯设备配置参数
     ipc.removeAllListeners('BLOCK_COMM_DEV_CFG_R', handleCommDevReadEvent)
     ipc.removeAllListeners('BLOCK_COMM_DEV_CFG_W', handleCommDevWriteEvent)
-    
+
     // 操作配置参数
     ipc.removeAllListeners('BLOCK_OPERATE_CFG_R', handleOperateReadEvent)
     ipc.removeAllListeners('BLOCK_OPERATE_CFG_W', handleOperateWriteEvent)
   }
-  
-  // 停止所有读取
-  if (isReadingBattery.value) stopBatteryReading()
-  if (isReadingCommDev.value) stopCommDevReading()
-  if (isReadingOperate.value) stopOperateReading()
 
   // 清理重试逻辑资源
   retryLogic.cleanup()
@@ -554,10 +602,7 @@ function selectAllClusters(parameterDefinition) {
       </template>
       <Column header="参数名称" style="width: 260px" :frozen="true">
         <template #body="{ data }">
-          <div v-if="data">
-            <div class="font-medium">{{ data.label }}</div>
-            <div class="text-xs text-gray-500">{{ data.key }}</div>
-          </div>
+          <div v-if="data" class="font-medium">{{ data.label }}</div>
         </template>
       </Column>
       <Column header="参数值" style="width: 220px">

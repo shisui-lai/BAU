@@ -3,14 +3,25 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useUpgradeStore } from '@/stores/upgradeStore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
+import { PAGE_PASSWORDS } from '@/configs/passwords'
+import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 import Checkbox from 'primevue/checkbox'
+import Dialog from 'primevue/dialog'
+import Password from 'primevue/password'
 import { useFtpFileManager } from '@/composables/core/data-processing/upgrade/useFtpFileManager.js'
 
 const toast = useToast()
+const router = useRouter()
+
+// 密码保护相关
+const showPasswordDialog = ref(false)
+const inputPwd = ref('')
+const pwdError = ref(false)
+const showCancelTip = ref(false)
 const upgradeStore = useUpgradeStore()
 
 // FTP文件管理功能
@@ -420,7 +431,32 @@ watch(ftpServerRunning, async (newValue) => {
 })
 
 // 初始化
-onMounted(async () => {
+// 密码验证函数
+const checkPwd = () => {
+  pwdError.value = false
+  if (inputPwd.value === PAGE_PASSWORDS.UPGRADE) {
+    showPasswordDialog.value = false
+    sessionStorage.setItem('upgradePagePassword', 'ok')
+    pwdError.value = false
+    // 验证通过后初始化页面
+    initializePage()
+  } else {
+    pwdError.value = true
+  }
+}
+
+// 取消密码输入
+const cancelPwd = () => {
+  showPasswordDialog.value = false
+  showCancelTip.value = true
+  // 返回上一页
+  setTimeout(() => {
+    router.go(-1)
+  }, 500)
+}
+
+// 初始化页面函数
+const initializePage = async () => {
   try {
     // 预清理，避免重复绑定
     window.electron.ipcRenderer.removeAllListeners?.('UPGRADE')
@@ -430,6 +466,9 @@ onMounted(async () => {
 
     // 初始化FTP文件管理功能
     setupFileEventListeners()
+
+    // 自动刷新一次
+    await refreshFileList()
 
     // 获取FTP根目录
     const result = await window.electron.ipcRenderer.invoke('get-ftp-root')
@@ -448,8 +487,19 @@ onMounted(async () => {
       }
     }
   } catch (error) {
-    console.error('初始化失败:', error)
+    console.error('页面初始化失败:', error)
   }
+}
+
+onMounted(async () => {
+  // 密码保护检查
+  if (sessionStorage.getItem('upgradePagePassword') !== 'ok') {
+    showPasswordDialog.value = true
+    return
+  }
+
+  // 密码已验证，直接初始化
+  await initializePage()
 })
 
 // 清理
@@ -706,6 +756,27 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+
+  <!-- 密码保护对话框 -->
+  <Dialog
+    v-model:visible="showPasswordDialog"
+    :closable="false"
+    :modal="true"
+    header="请输入密码"
+    :style="{ width: '25rem' }"
+  >
+    <div class="flex flex-column gap-3">
+      <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
+      <Button label="确认" @click="checkPwd" style="margin-right: 0.5rem" />
+      <Button label="取消" severity="secondary" @click="cancelPwd" />
+      <div v-if="pwdError" style="color: red; margin-top: 0.5rem">密码错误</div>
+    </div>
+  </Dialog>
+
+  <!-- 取消提示 -->
+  <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
+    <span>已取消操作，未进入升级页面</span>
+  </Dialog>
 </template>
 
 <style scoped>

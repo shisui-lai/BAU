@@ -306,29 +306,29 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 
 
         <!-- 序号列 -->
-        <Column header="序号" style="width:80px;text-align:center">
+        <Column header="序号" headerClass="text-center" bodyClass="text-center" style="width:80px">
           <template #body="{ index }">
             {{ first + index + 1 }}
           </template>
         </Column>
         <Column field="time" header="发生时间" style="min-width:160px" />
         <Column field="desc" header="故障" style="min-width:260px" />
-      <Column header="堆/簇号" style="width:110px;text-align:center">
+      <Column header="堆/簇号" headerClass="text-center" bodyClass="text-center" style="width:110px">
         <template #body="{ data }">
           {{ data.cluster.endsWith('-0') ? data.cluster.split('-')[0] : data.cluster }}
         </template>
       </Column>
-        <Column field="bmu" header="BMU 编号" style="width:120px;text-align:center" >
+        <Column field="bmu" header="BMU 编号" headerClass="text-center" bodyClass="text-center" style="width:120px" >
           <template #body="{ data }">
             {{ data.bmu === null || data.bmu === 0 ? '-' : data.bmu }}
           </template>
         </Column>
-      <Column header="Cell" style="width:100px;text-align:center">
+      <Column header="Cell" headerClass="text-center" bodyClass="text-center" style="width:100px">
         <template #body="{ data }">
           {{ data.cell === null || data.cell === 0 ? '-' : data.cell }}
         </template>
       </Column>
-      <Column header="全局序号" style="width:120px;text-align:center">
+      <Column header="全局序号" headerClass="text-center" bodyClass="text-center" style="width:120px">
         <template #body="{ data }">
           {{
             data.globalTemp !== null && data.globalTemp !== 0 ? data.globalTemp :
@@ -337,7 +337,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
           }}
         </template>
       </Column>
-      <Column style="width:120px;text-align:center">
+      <Column headerClass="text-center" bodyClass="p-0" style="width:120px">
         <template #header>
           <div class="flex align-items-center justify-content-center gap-1 cursor-pointer" @click="toggleSort">
             <span>故障等级</span>
@@ -352,10 +352,12 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
           </div>
         </template>
         <template #body="{ data }">
-          <Tag
-            :value="data.levelTxt"
-            :severity="getSeverityColor(data.levelTag)"
-          />
+          <div class="cell-center">
+            <Tag
+              :value="data.levelTxt"
+              :severity="getSeverityColor(data.levelTag)"
+            />
+          </div>
         </template>
       </Column>
       </DataTable>
@@ -510,6 +512,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 /* 确保最后一行也有边框 */
 :deep(.p-datatable-tbody > tr:last-child > td) {
   border-bottom: 2px solid var(--surface-border);
+}
 
 /* 手动排序按钮样式 */
 .cursor-pointer {
@@ -522,6 +525,13 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   border-radius: 4px;
   padding: 2px 4px;
 }
+
+/* 单元格居中样式 - 用于flex元素如Tag组件 */
+.cell-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 :deep(.p-paginator) {
@@ -609,6 +619,22 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   padding: 2px 6px;
   border-radius: 4px;
 }
+
+/* 让使用了 headerClass="text-center" 的列，表头真正水平居中 */
+:deep(.p-datatable .p-datatable-thead > tr > th.text-center .p-column-header-content) {
+  justify-content: center;
+}
+
+/* 保底：表头文本居中 */
+:deep(.p-datatable .p-datatable-thead > tr > th.text-center) {
+  text-align: center;
+}
+
+/* 让使用了 bodyClass="text-center" 的列，单元格文本水平居中 */
+:deep(.p-datatable .p-datatable-tbody > tr > td.text-center) {
+  text-align: center;
+}
+
 
 /*  响应式优化 */
 @media (max-width: 768px) {

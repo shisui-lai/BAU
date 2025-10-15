@@ -625,51 +625,50 @@ onUnmounted(() => {
 
 <template>
   <div class="card">
-    <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
-    
-    <!-- 控制操作区域 -->
-    <div class="control-area mb-4">
-      <div class="control-left">
-        <!-- 操作按钮组 -->
-        <div class="button-group">
-          <Button
-            :label="isCurrentlyReading ? '停止读取' : '开始读取'"
-            @click="() => {
-              if (isCurrentlyReading) {
-                stopParameterReading()
-              } else {
-                startMultiTopicReadingWithRetry()
-              }
-            }"
-            :severity="isCurrentlyReading ? 'danger' : 'primary'"
-            size="small"
-          />
-          <Button
-            label="下发参数"
-            @click="sendCurrentClassParameters"
-            :disabled="isCurrentlyReading || !currentSelectedClass"
-            severity="warning"
-            size="small"
-          />
+    <!-- 固定表头区域 -->
+    <div class="fixed-header">
+      <!-- 操作按钮组 -->
+      <div class="control-area mb-3">
+        <div class="control-left">
+          <div class="button-group">
+            <Button
+              :label="isCurrentlyReading ? '停止读取' : '开始读取'"
+              @click="() => {
+                if (isCurrentlyReading) {
+                  stopParameterReading()
+                } else {
+                  startMultiTopicReadingWithRetry()
+                }
+              }"
+              :severity="isCurrentlyReading ? 'danger' : 'primary'"
+              size="small"
+            />
+            <Button
+              label="下发参数"
+              @click="sendCurrentClassParameters"
+              :disabled="isCurrentlyReading || !currentSelectedClass"
+              severity="warning"
+              size="small"
+            />
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- 协议修改：参数分类切换标签（包含出厂校正参数） -->
-    <div class="class-tabs mb-4">
-      <Button
-        v-for="parameterClass in allAvailableClasses"
-        :key="parameterClass.name"
-        :label="parameterClass.name"
-        @click="switchToParameterClass(parameterClass.name)"
-        :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
-        :outlined="currentSelectedClass?.name !== parameterClass.name"
-        size="small"
-        class="class-tab-button"
-      />
+      <!-- 参数分类切换标签（包含出厂校正参数） -->
+      <div class="class-tabs">
+        <Button
+          v-for="parameterClass in allAvailableClasses"
+          :key="parameterClass.name"
+          :label="parameterClass.name"
+          @click="switchToParameterClass(parameterClass.name)"
+          :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
+          :outlined="currentSelectedClass?.name !== parameterClass.name"
+          size="small"
+          class="class-tab-button"
+        />
+      </div>
     </div>
-
-    <!-- 当前分类的参数数据表格 - 使用增强列表支持下拉框 -->
+      <!-- 当前分类的参数数据表格 - 使用增强列表支持下拉框 -->
     <DataTable
       :value="enhancedParameterList"
       class="p-datatable-sm"
@@ -750,7 +749,7 @@ onUnmounted(() => {
       <!-- 参数单位列 -->
       <Column header="单位" style="width: 80px">
         <template #body="slotProps">
-          <div class="text-gray-600">
+          <div>
             {{ slotProps.data.unit || '-' }}
           </div>
         </template>
@@ -759,7 +758,7 @@ onUnmounted(() => {
       <!-- 参数备注列 -->
       <Column header="备注说明">
         <template #body="slotProps">
-          <div class="text-sm text-gray-600 whitespace-pre-line">
+          <div class="text-sm whitespace-pre-line">
             {{ getParameterRemarkText(slotProps.data.key) }}
           </div>
         </template>
@@ -769,6 +768,20 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* 固定表头样式 */
+.fixed-header {
+  position: sticky;
+  top: 40px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: var(--surface-card);
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--surface-border);
+  margin-bottom: 1rem;
+}
+
 .control-area {
   display: flex;
   align-items: flex-start;

@@ -1,0 +1,29 @@
+{
+  "login": {
+    "title": "System Login",
+    "username": "Username",
+    "usernamePlaceholder": "Enter admin account",
+    "password": "Password",
+    "passwordPlaceholder": "Enter password",
+    "adminButton": "Admin Login",
+    "guestButton": "Guest Login",
+    "error": "Invalid username or password",
+    "language": "Language"
+  },
+  "menu": {
+    "admin": "Admin",
+    "guest": "Guest",
+    "logout": "Logout",
+    "settings": "Settings"
+  },
+  "password": {
+    "error": "Password error",
+    "header": "Please input a password",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "cancelTip": "Operation cancelled"
+  }
+}
+
+
+

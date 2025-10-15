@@ -224,13 +224,13 @@ function getParameterRemarkText(){ return '' }
 
       <Column header="单位" style="width: 90px">
         <template #body="{ data }">
-          <span class="text-gray-600">{{ data.unit || '-' }}</span>
+          <span>{{ data.unit || '-' }}</span>
         </template>
       </Column>
 
       <Column header="备注说明" style="width: 320px">
         <template #body>
-          <span class="text-sm text-gray-600">{{ getParameterRemarkText() }}</span>
+          <span class="text-sm">{{ getParameterRemarkText() }}</span>
         </template>
       </Column>
     </DataTable>

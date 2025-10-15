@@ -30,13 +30,11 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
   const currentTime = ref(Date.now()) // 用于触发响应式更新的当前时间
   const hasReceivedData = ref(false) // 标记是否曾经接收过数据
 
-  // 数据速率监控
-  const dataRate = ref(0) // 当前显示的数据速率 KB/s
-  const dataAccumulator = ref(0) // 当前秒累计的数据量（字节）
+  // 【数据速率】状态变量（接收来自子进程的计算结果）
+  const dataRate = ref(0) // 当前显示的数据速率 KB/s（由MQTT子进程计算并发送）
 
   let timeoutId = null
   let updateTimeId = null
-  let rateCalculateId = null // 速率计算定时器
 
   // ========== 计算属性 ==========
   const timeSinceLastData = computed(() => {
@@ -122,19 +120,52 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
     }
   })
 
+  // 【诊断】心跳接收统计
+  let heartbeatReceivedCount = 0
+  let lastHeartbeatLogTime = 0
+  let heartbeatDelayWarningCount = 0
+
   // ========== 方法 ==========
-  function markDataReceived(messageType = 'unknown', dataSize = 0) {
+  function markDataReceived(messageType = 'unknown') {
     const now = Date.now()
     const isFirstData = !hasReceivedData.value
+    
+    // 【诊断】统计心跳接收
+    heartbeatReceivedCount++
+    
+    // 【诊断】检测心跳延迟
+    // 阈值说明：考虑到throttle间隔2000ms，设置为5000ms（2.5倍余量）
+    // 只有真正异常的延迟才会触发警告
+    const timeSinceLastHeartbeat = lastDataTime.value ? now - lastDataTime.value : 0
+    if (timeSinceLastHeartbeat > 5000 && lastDataTime.value > 0) {
+      heartbeatDelayWarningCount++
+      console.warn(`[DataReception] ⚠️ 心跳延迟 ${timeSinceLastHeartbeat}ms (类型: ${messageType})`)
+      
+      // 【关键诊断】连续延迟说明主线程被阻塞
+      if (heartbeatDelayWarningCount > 3) {
+        console.error(`[DataReception] 🚨 连续${heartbeatDelayWarningCount}次心跳延迟，渲染主线程可能被阻塞！`)
+      }
+    } else {
+      heartbeatDelayWarningCount = 0 // 重置连续延迟计数
+    }
+    
+    // 【诊断】每1秒输出统计（临时改为1秒，方便对比速率显示）
+    // 用途：验证速率0KB/s时，实际是否真的无消息
+    if (now - lastHeartbeatLogTime > 1000 && lastHeartbeatLogTime > 0) {
+      const heartbeatsPerSecond = heartbeatReceivedCount / ((now - lastHeartbeatLogTime) / 1000)
+      const currentRate = dataRate.value
+      // console.log(`[DataReception] 📊 1秒统计: ${heartbeatsPerSecond.toFixed(1)} beats/s | 显示速率: ${currentRate} KB/s`)
+      heartbeatReceivedCount = 0
+      lastHeartbeatLogTime = now
+    } else if (lastHeartbeatLogTime === 0) {
+      lastHeartbeatLogTime = now
+    }
 
     lastDataTime.value = now
     currentTime.value = now // 更新当前时间以触发响应式更新
     lastMessageType.value = messageType
     hasReceivedData.value = true // 标记已接收过数据
     isReceivingData.value = true
-
-    // 【数据速率】更新数据速率统计
-    updateDataRate(dataSize)
 
     if (isFirstData) {
       // 【智能配置读取】首次接收数据时，检查是否需要触发配置读取
@@ -145,29 +176,46 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
     resetTimeout()
   }
 
-  /**
-   * 【数据速率】累加数据量
-   *
-   * 功能：每次接收到数据时累加到当前秒的累加器中
-   * 时机：每次接收到数据时调用
-   */
-  function updateDataRate(newDataSize) {
-    // 简单累加到累加器中
-    dataAccumulator.value += newDataSize
-  }
+  // 【诊断】速率更新统计
+  let rateUpdateCount = 0
+  let lastRateUpdateTime = 0
+  let rateUpdateDelayWarningCount = 0
 
   /**
-   * 【数据速率】计算并更新速率
-   *
-   * 功能：每秒执行一次，计算上一秒的速率并清零累加器
+   * 【数据速率】更新速率（接收来自MQTT子进程的计算结果）
+   * 
+   * 新架构说明：
+   * - 速率计算已迁移到MQTT子进程（mqtt.js）
+   * - 基于原始MQTT payload大小计算，避免序列化开销
+   * - 渲染进程只负责接收和显示速率值
+   * 
+   * @param {number} rate - 速率值（KB/s）
    */
-  function calculateDataRate() {
-    // 计算上一秒的速率 (字节/秒 → KB/s)
-    const rateKBps = parseFloat((dataAccumulator.value / 1024).toFixed(1))
-    dataRate.value = rateKBps
-
-    // 清零累加器，开始下一秒的统计
-    dataAccumulator.value = 0
+  function updateDataRate(rate) {
+    const now = Date.now()
+    rateUpdateCount++
+    
+    // 【诊断】检测速率更新延迟（理论上每1秒更新一次）
+    // 阈值说明：速率计算在MQTT子进程，理论每1000ms，设置为3000ms（3倍余量）
+    // 避免正常的事件循环波动导致误报
+    const timeSinceLastUpdate = lastRateUpdateTime ? now - lastRateUpdateTime : 0
+    if (timeSinceLastUpdate > 3000 && lastRateUpdateTime > 0) {
+      rateUpdateDelayWarningCount++
+      console.warn(`[DataReception] ⚠️ 速率更新延迟 ${timeSinceLastUpdate}ms (速率: ${rate} KB/s)`)
+      
+      // 【关键诊断】如果速率更新延迟但心跳正常，说明速率消息被阻塞
+      if (rateUpdateDelayWarningCount > 3) {
+        console.error(`[DataReception] 🚨 连续${rateUpdateDelayWarningCount}次速率更新延迟，可能是IPC或主线程阻塞！`)
+        console.error(`  - 当前速率: ${rate} KB/s`)
+        console.error(`  - 上次更新: ${timeSinceLastUpdate}ms 前`)
+        console.error(`  - 建议检查: 主进程事件循环、渲染进程主线程`)
+      }
+    } else {
+      rateUpdateDelayWarningCount = 0
+    }
+    
+    lastRateUpdateTime = now
+    dataRate.value = rate
   }
 
   /**
@@ -234,17 +282,13 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
       currentTime.value = Date.now()
     }, 1000) // 每秒更新一次
 
-    // 【数据速率】启动速率计算定时器
-    rateCalculateId = setInterval(() => {
-      calculateDataRate()
-    }, 1000) // 每秒计算一次速率
+    // 【数据速率】不再需要本地计算定时器，等待子进程发送速率
   }
 
   function stopMonitoring() {
     console.log('[DataReception] 停止数据接收监控')
     clearTimeout(timeoutId)
     clearInterval(updateTimeId)
-    clearInterval(rateCalculateId) // 清理速率计算定时器
 
     // 重置为初始状态
     isReceivingData.value = false
@@ -254,7 +298,6 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
 
     // 【数据速率】重置速率状态
     dataRate.value = 0
-    dataAccumulator.value = 0
   }
 
   function setTimeoutDuration(duration) {
@@ -289,6 +332,7 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
 
     // 方法
     markDataReceived,
+    updateDataRate,      // 【数据速率】导出更新函数，供外部调用
     startMonitoring,
     stopMonitoring,
     setTimeoutDuration

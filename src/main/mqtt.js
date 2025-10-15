@@ -12,7 +12,12 @@ import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/
     parseBlockBattParamRAW, parseBlockCommDevCfgRAW, parseBlockOperateCfgRAW,
     processBcuAdaptiveQueryResult, processBmuAdaptiveQueryResult,
     processCellVoltageRAW, processCellTemperatureRAW, processCellSocRAW, processCellSohRAW, parseFactoryCalibrationRAW } from '../protocol/utils'
-  import { sendToParent, flushThrottlers, cancelThrottlers, setBackgroundMode } from '../protocol/ipcThrottler.js'
+  // 【限流优化】已注释掉限流机制，改为直接发送
+  // 原因：1) 速率计算已移到子进程，渲染进程负担已减轻
+  //       2) 限流器存在内存管理复杂度
+  //       3) 现代IPC通信能力足够处理高频消息
+  //       4) 简化架构，降低维护成本
+  // import { sendToParent, flushThrottlers, cancelThrottlers, setBackgroundMode } from '../protocol/ipcThrottler.js'
   import mqtt from 'mqtt'
   import {
            BLOCK_COMMON_PARAM_R,//BAU通用参数配置
@@ -64,6 +69,122 @@ import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/
   let healthCheckTimer = null
   let connectionQuality = 'good' // good, poor, bad
   let parseErrorCount = 0
+
+  // 【数据速率统计】子进程内部计算
+  let dataRateAccumulator = 0      // 当前秒累计的原始MQTT数据量（字节）
+  let currentDataRate = 0          // 当前显示的数据速率 KB/s
+  let dataRateTimer = null         // 速率计算定时器
+
+  /**
+   * 重置健康检查相关数据
+   * 
+   * 功能说明：
+   * 在每次新的连接尝试前，清空所有旧的健康检查数据，
+   * 避免使用历史数据导致的时间计算错误
+   */
+  function resetHealthCheckData() {
+    lastHeartbeatSent = 0
+    lastMessageReceived = 0
+    connectionQuality = 'good'
+    parseErrorCount = 0
+    console.log('[MQTT Child] 健康检查数据已重置')
+  }
+
+  // 【诊断】速率计算统计
+  let lastRateCalculateTime = 0
+  let rateCalculateCallCount = 0
+
+  /**
+   * 【数据速率】计算并发送速率到主进程
+   * 
+   * 功能说明：
+   * 1. 每秒执行一次，计算上一秒的速率（基于原始MQTT payload大小）
+   * 2. 清零累加器，开始下一秒的统计
+   * 3. 发送速率数据到主进程 → 转发到渲染进程 → 显示在UI
+   */
+  function calculateAndSendDataRate() {
+    const now = Date.now()
+    rateCalculateCallCount++
+    
+    // 【诊断】计算实际时间间隔
+    const actualInterval = lastRateCalculateTime ? now - lastRateCalculateTime : 1000
+    lastRateCalculateTime = now
+    
+    // 计算上一秒的速率 (字节/秒 → KB/s)
+    // 【修复精度丢失】使用toFixed(2)保留2位小数，避免小流量被四舍五入为0
+    // 例如：0.05 KB/s 会显示为 "0.05" 而不是 "0.0"
+    const rateKBps = parseFloat((dataRateAccumulator / 1024).toFixed(2))
+    currentDataRate = rateKBps
+    
+    // 【诊断】检测异常情况并记录详细日志
+    // 阈值说明：
+    // - 速率>90: 正常40-60KB/s，90是1.5倍余量（检测监听器重复注册）
+    // - 间隔>1500ms: 定时器应该1000ms，允许500ms波动
+    // - 间隔<700ms: 定时器不应该提前超过300ms
+    const isAbnormal = rateKBps > 100 || actualInterval > 1500 || actualInterval < 700
+    if (isAbnormal) {
+      console.warn(`[MQTT Child] ⚠️ 速率异常检测:`)
+      console.warn(`  - 计算速率: ${rateKBps} KB/s ${rateKBps > 100 ? '(异常高)' : '(正常)'}`)
+      console.warn(`  - 实际间隔: ${actualInterval}ms ${actualInterval > 1500 || actualInterval < 700 ? '(异常)' : '(正常)'}`)
+      console.warn(`  - 累积字节: ${dataRateAccumulator} bytes`)
+      console.warn(`  - 调用次数: ${rateCalculateCallCount}`)
+      console.warn(`  - 监听器数: ${messageHandlerRegisteredCount}`)
+      
+      // 【关键诊断】如果监听器注册次数>1，说明有重复注册
+      if (messageHandlerRegisteredCount > 1) {
+        console.error(`[MQTT Child] 🚨 发现重复注册！监听器数=${messageHandlerRegisteredCount}，这会导致速率翻倍！`)
+      }
+    }
+
+    // 发送速率数据到主进程
+    process.send({
+      type: 'data-rate-update',
+      data: {
+        rate: currentDataRate,
+        timestamp: now,
+        // 【诊断】附加诊断信息
+        diagnostic: isAbnormal ? {
+          actualInterval,
+          accumulatedBytes: dataRateAccumulator,
+          handlerCount: messageHandlerRegisteredCount
+        } : undefined
+      }
+    })
+
+    // 清零累加器，开始下一秒的统计
+    dataRateAccumulator = 0
+  }
+
+  /**
+   * 【数据速率】启动速率计算定时器
+   */
+  function startDataRateCalculation() {
+    if (dataRateTimer) return
+
+    // 重置状态
+    dataRateAccumulator = 0
+    currentDataRate = 0
+
+    // 每秒计算一次速率并发送
+    dataRateTimer = setInterval(() => {
+      calculateAndSendDataRate()
+    }, 1000)
+
+    console.log('[MQTT Child] 数据速率计算已启动')
+  }
+
+  /**
+   * 【数据速率】停止速率计算定时器
+   */
+  function stopDataRateCalculation() {
+    if (dataRateTimer) {
+      clearInterval(dataRateTimer)
+      dataRateTimer = null
+      dataRateAccumulator = 0
+      currentDataRate = 0
+      console.log('[MQTT Child] 数据速率计算已停止')
+    }
+  }
 
 
 
@@ -383,6 +504,7 @@ function withResponseCheck(fn) {
   let client = null
   let currentConfig = null
   let isConnected = false
+  let isConnecting = false // 新增：连接中标志，防止重复连接
   let isBackgroundMode = false // 后台模式标识
 
   // 动态连接函数
@@ -390,12 +512,38 @@ function withResponseCheck(fn) {
     // console.log('[MQTT Child]  connectMqtt 函数开始执行')
     return new Promise((resolve, reject) => {
       try {
-        // 如果已有连接，先断开
-        if (client) {
-          console.log('[MQTT Child] 断开现有连接...')
-          client.end(true)
-          client.removeAllListeners()
+        // 【关键1】如果正在连接中，拒绝新的连接请求
+        if (isConnecting) {
+          console.warn('[MQTT Child] ⚠️ 已有连接正在进行中，忽略重复请求')
+          reject(new Error('连接正在进行中'))
+          return
         }
+
+        // 【关键2】如果mqtt.js正在自动重连，拒绝手动连接请求
+        if (client && client.reconnecting) {
+          console.warn('[MQTT Child] ⚠️ MQTT正在自动重连中，忽略手动连接请求')
+          reject(new Error('正在自动重连中'))
+          return
+        }
+
+        // 标记为连接中
+        isConnecting = true
+
+        // 如果已有连接，先断开（只在真正需要重新配置时）
+        if (client) {
+          console.log('[MQTT Child] 断开现有连接以重新配置...')
+          try {
+            client.removeAllListeners()
+            client.end(true)
+          } catch (e) {
+            console.error('[MQTT Child] 断开连接时出错:', e.message)
+          }
+          client = null
+        }
+
+        // 停止旧的健康检查并重置所有健康数据
+        stopHealthCheck()
+        resetHealthCheckData()
 
         currentConfig = config
         const mqttUrl = `mqtt://${config.host}:${config.port}`
@@ -414,9 +562,23 @@ function withResponseCheck(fn) {
         
         console.log('[MQTT Child]  MQTT客户端已创建，等待连接事件...')
 
+        // 【关键3】立即注册error监听器，防止任何error事件导致进程崩溃
+        // 这个监听器会一直存在，即使重连也不会被移除
+        client.on('error', (error) => {
+          console.log('[MQTT Child] MQTT错误（将自动重连）:', error.message)
+          isConnected = false
+          // 不reject Promise，让mqtt.js的reconnectPeriod机制自动处理重连
+          // 通知主进程连接错误
+          process.send({ 
+            type: 'mqtt-connect-error', 
+            data: { error: error.message } 
+          })
+        })
+
         // 连接成功事件
         client.on('connect', () => {
           isConnected = true
+          isConnecting = false // 【关键】连接成功，清除连接中标志
           console.log(`[MQTT Child]  连接成功，客户端ID: ${config.clientId}`)
           
           // 订阅主题
@@ -439,39 +601,23 @@ function withResponseCheck(fn) {
           // 启动健康检查
           startHealthCheck()
 
+          // 【数据速率】启动速率计算
+          startDataRateCalculation()
+
           // 通知主进程连接成功
           process.send({ type: 'mqtt-connected', data: { clientId: config.clientId, host: config.host } })
           resolve(true)
         })
-
-        // 连接错误事件 - 简化版（重连过程中的错误是正常现象）
-        client.on('error', (error) => {
-          console.log('[MQTT Child] 连接错误（重连过程中正常）:', error.message)
-          isConnected = false
-          // 不再发送错误事件到前端，让mqtt.js自动处理重连
-          reject(error)
-        })
-
-        // 连接超时处理
-        setTimeout(() => {
-          if (!isConnected) {
-            console.error('[MQTT Child]  连接超时 (5秒)')
-            if (client) {
-              client.end(true)
-              client.removeAllListeners()
-            }
-            reject(new Error('连接超时'))
-          }
-        }, 5000)
 
         // 连接关闭事件
         client.on('close', () => {
           if (isConnected) {
             isConnected = false
             console.log('[MQTT Child]  连接已关闭')
-            // 不停止健康检查，让子进程继续发送心跳
-            // 健康检查只在子进程真正退出时停止（cleanUp函数中）
-            // 这样可以避免主进程误判子进程异常而重启子进程
+            // 停止健康检查 - 连接断开后不再发送心跳
+            stopHealthCheck()
+            // 【数据速率】停止速率计算
+            stopDataRateCalculation()
             process.send({ type: 'mqtt-disconnected', data: {} })
           }
         })
@@ -479,17 +625,25 @@ function withResponseCheck(fn) {
         // 离线事件
         client.on('offline', () => {
           console.log('[MQTT Child]  离线')
+          isConnected = false
+          // 离线时停止健康检查，等待重连成功后再启动
+          stopHealthCheck()
+          // 【数据速率】停止速率计算
+          stopDataRateCalculation()
           process.send({ type: 'mqtt-offline', data: {} })
         })
 
-        // 重连事件 - 新增
+        // 重连事件
         client.on('reconnect', () => {
-          console.log('[MQTT Child]  正在重连...')
+          console.log('[MQTT Child]  正在自动重连...')
+          // 重连时重置健康检查数据，准备新的连接
+          resetHealthCheckData()
           process.send({ type: 'mqtt-reconnecting', data: {} })
-        })
+        })  
 
       } catch (error) {
         console.error('[MQTT Child]  连接异常:', error)
+        isConnecting = false // 【关键】异常时也要清除连接标志
         reject(error)
       }
     })
@@ -498,17 +652,109 @@ function withResponseCheck(fn) {
   // 断开连接函数
   function disconnectMqtt() {
     return new Promise((resolve) => {
-      if (client) {
-        client.end(true, () => {
-          client.removeAllListeners()
-          client = null
-          isConnected = false
-          currentConfig = null
-          console.log('[MQTT] 已断开连接')
-          resolve()
-        })
-      } else {
+      if (!client) {
         resolve()
+        return
+      }
+
+      console.log('[MQTT Child] 开始断开连接...')
+      
+      // 【关键1】先停止健康检查
+      stopHealthCheck()
+      
+      // 【关键2】先更新状态标志
+      isConnecting = false
+      isConnected = false
+      
+      // 【关键3】禁用自动重连，防止断开后继续重连
+      try {
+        if (client.options) {
+          client.options.reconnectPeriod = 0
+          console.log('[MQTT Child] 已禁用自动重连')
+        }
+      } catch (e) {
+        console.warn('[MQTT Child] 禁用重连时出错:', e.message)
+      }
+
+      // 【关键4】在移除监听器前，先添加一个兜底的error监听器
+      // 防止pending的连接尝试触发error事件时进程崩溃
+      const safetyErrorHandler = (error) => {
+        console.log('[MQTT Child] 断开期间的error事件（已安全处理）:', error.message)
+        // 不做任何操作，只是防止崩溃
+      }
+      
+      try {
+        client.on('error', safetyErrorHandler)
+      } catch (e) {
+        console.warn('[MQTT Child] 添加兜底error监听器失败:', e.message)
+      }
+
+      // 【关键5】设置超时保护，防止callback不执行导致Promise挂起
+      let resolved = false
+      const timeoutId = setTimeout(() => {
+        if (!resolved) {
+          console.warn('[MQTT Child] 断开连接超时，强制清理')
+          resolved = true
+          
+          // 延迟清理，给pending连接一些时间完成
+          setTimeout(() => {
+            if (client) {
+              try {
+                client.removeAllListeners()
+              } catch (e) {}
+            }
+            client = null
+            currentConfig = null
+          }, 1000) // 1秒后清理
+          
+          resolve()
+        }
+      }, 3000) // 3秒超时（增加到3秒，给更多时间）
+
+      try {
+        // 强制断开连接
+        client.end(true, () => {
+          if (!resolved) {
+            resolved = true
+            clearTimeout(timeoutId)
+            
+            // 延迟移除监听器，确保所有pending的error都被处理
+            setTimeout(() => {
+              if (client) {
+                try {
+                  client.removeAllListeners()
+                } catch (e) {
+                  console.warn('[MQTT Child] 移除监听器时出错:', e.message)
+                }
+              }
+              client = null
+              currentConfig = null
+              console.log('[MQTT] 已完全清理连接')
+            }, 500) // 500ms后清理，给pending error时间
+            
+            console.log('[MQTT] 已断开连接')
+            resolve()
+          }
+        })
+      } catch (error) {
+        console.error('[MQTT Child] 断开连接时出错:', error)
+        if (!resolved) {
+          resolved = true
+          clearTimeout(timeoutId)
+          
+          // 同样延迟清理
+          setTimeout(() => {
+            if (client) {
+              try {
+                client.removeAllListeners()
+              } catch (e) {}
+            }
+            client = null
+            currentConfig = null
+          }, 500)
+          
+          resolve()
+        }
       }
     })
   }
@@ -544,116 +790,132 @@ function withResponseCheck(fn) {
     })
   }
 
+  // 【诊断】消息处理器引用，用于防止重复注册
+  let messageHandlerRef = null
+  let messageHandlerRegisteredCount = 0  // 【诊断】监听器注册次数计数
+
   // 将原有的client.on('message')包装成函数，添加连接状态检查
   function setupMessageHandler() {
     if (!client) return
     
-    client.on('message', (topic, payload) => {
+    // 【修复+诊断】移除旧的消息处理器，防止重复注册导致速率翻倍
+    if (messageHandlerRef) {
+      try {
+        client.removeListener('message', messageHandlerRef)
+        console.log('[MQTT Child] 🔧 已移除旧的消息处理器，防止重复注册')
+      } catch (e) {
+        console.warn('[MQTT Child] ⚠️ 移除旧处理器失败:', e.message)
+      }
+    }
+    
+    // 【诊断】记录监听器注册次数
+    messageHandlerRegisteredCount++
+    const currentCount = messageHandlerRegisteredCount
+    console.log(`[MQTT Child] 📊 消息处理器注册次数: ${currentCount}`)
+    
+    // 创建新的消息处理器并保存引用
+    messageHandlerRef = (topic, payload) => {
       // 只有在连接状态下才处理消息
       if (!isConnected || !client) {
         return
       }
 
 
+      const parts = topic.split('/')
+      const suffix    = parts.at(-1)               // cell_volt / sys_abstract / …
+      const blockId   = Number(parts[3].slice(1))  // b1 -> 1
 
-    const parts = topic.split('/')
-    const suffix    = parts.at(-1)               // cell_volt / sys_abstract / …
-    const blockId   = Number(parts[3].slice(1))  // b1 -> 1
+      // 堆级数据没有簇号，簇级数据有簇号
+      let clusterId = 0  // 默认值
+      if (parts.length > 4 && parts[4].startsWith('c')) {
+        clusterId = Number(parts[4].slice(1))  // c1 -> 1
+      }
 
-    // 堆级数据没有簇号，簇级数据有簇号
-    let clusterId = 0  // 默认值
-    if (parts.length > 4 && parts[4].startsWith('c')) {
-      clusterId = Number(parts[4].slice(1))  // c1 -> 1
+      const tRecv = performance.now(); //收到时间戳
+      const dataType = suffix.toUpperCase();
+      const buf      = payload;
+      const len      = buf.length;
+      const hex      = buf.toString('hex');
+
+      // 【数据速率】累加原始MQTT payload大小（所有接收到的数据，不管是否被限流）
+      dataRateAccumulator += len
+
+       /*  读取 / 遥测 / 遥信：按 TOPIC_TABLE_MAP 常规解析 —— */
+      const parseFun  = TOPIC_TABLE_MAP[suffix]
+      if (!parseFun) {
+        // console.warn(`[MQTT Child] ⚠️ 跳过未知消息 - 未注册解析表: ${suffix}`);
+        return;
+      }
+
+      let result;
+      try {
+        result = parseFun(hex)        // 只需传 hex
+        // console.log(result)
+      } catch (err) {
+        console.error(
+          `[PARSE_ERR] ${dataType} len=${len} topic=${topic}\n` +
+          `hex=${hex.slice(0, 40)}...`,      // 打印前 20 Byte
+          err                                // 堆栈
+        )
+        // 增加解析错误计数
+        parseErrorCount++
+        // console.log(hex);
+        return
+      }
+
+      const tParsed = performance.now();
+      const { baseConfig, data } = result
+
+      const msg = {
+        blockId,
+        clusterId,
+        dataType: suffix.toUpperCase(),//转大写
+        topic,
+        baseConfig,
+        data,
+        tRecv,
+        tParsed
+        // ⚠️ 移除 payloadSize，不再在msg中传递，速率由子进程独立计算
+      }
+
+      // 【限流优化】直接发送，不再使用限流器
+      // 优势：1) 架构简化，避免限流器内存管理复杂度
+      //       2) 数据实时性更好，无300ms延迟
+      //       3) 渲染进程负担已减轻（速率计算在子进程）
+      process.send({ type: msg.dataType, data: msg })
+      
+      // 更新最后消息接收时间
+      lastMessageReceived = Date.now()
+      // logCompact('[发送给主进程]', msg)   // 单进程调试输出
+      if (result.error) {
+        logCompact('[遥信 失败响应]', msg);
+      }
     }
-
-
-
-    const tRecv = performance.now(); //收到时间戳
-    const dataType = suffix.toUpperCase();
-    const buf      = payload;
-    const len      = buf.length;
-    const hex      = buf.toString('hex');
-
-
-     /*  读取 / 遥测 / 遥信：按 TOPIC_TABLE_MAP 常规解析 —— */
-    const parseFun  = TOPIC_TABLE_MAP[suffix]
-    if (!parseFun) {
-      // console.warn(`[MQTT Child] ⚠️ 跳过未知消息 - 未注册解析表: ${suffix}`);
-      return;
-    }
-
-  let result;
-  try {
-    result = parseFun(hex)        // 只需传 hex
-    // console.log(result)
-  } catch (err) {
-    console.error(
-      `[PARSE_ERR] ${dataType} len=${len} topic=${topic}\n` +
-      `hex=${hex.slice(0, 40)}...`,      // 打印前 20 Byte
-      err                                // 堆栈
-    )
-    // 增加解析错误计数
-    parseErrorCount++
-    // console.log(hex);
-    return
+    
+    // 【修复】注册新的消息处理器
+    client.on('message', messageHandlerRef)
+    console.log(`[MQTT Child] ✅ 已注册消息处理器 #${currentCount}`)
   }
-
-  const tParsed = performance.now();
-  const { baseConfig, data } = result
-
-    const msg = {
-      blockId,
-      clusterId,
-      dataType: suffix.toUpperCase(),//转大写
-      topic,
-      baseConfig,
-      data,
-      tRecv,
-      tParsed,
-      payloadSize: len  // 添加原始MQTT payload字节大小
-    }
-
-    sendToParent(msg)
-    // 更新最后消息接收时间
-    lastMessageReceived = Date.now()
-    // logCompact('[发送给主进程]', msg)   // 单进程调试输出
-        if (result.error) {
-          logCompact('[遥信 失败响应]', msg);
-        }
-      })
-    }
 
     /* --- 接收主进程指令 --- */
     process.on('message', (message) => {
       const { cmd, topic, payloadHex, config, type, data, isBackground } = message
       
-      // 设置后台模式
+      // 设置后台模式 - 已禁用，保留接口兼容性
       if (cmd === 'SET_BACKGROUND_MODE') {
-        isBackgroundMode = isBackground
-        setBackgroundMode(isBackground) // 同步到限流器
+        // isBackgroundMode = isBackground
+        // setBackgroundMode(isBackground) // 同步到限流器
+        // 已禁用后台节流，不执行任何操作
         return
       }
 
-      // 健康检查命令处理
-      // 功能：响应主进程的健康检查请求，发送当前状态信息
-      if (cmd === 'HEALTH_CHECK') {
-        const now = Date.now()
-        // 更新连接质量评估
-        updateConnectionQuality()
-        // 发送心跳响应，包含子进程的健康状态信息
-        console.log('[MQTT Child] 发送心跳，连接质量:', connectionQuality)
-        process.send({
-          type: 'heartbeat',
-          data: {
-            timestamp: now,              // 当前时间戳
-            isConnected,                 // MQTT连接状态
-            connectionQuality,           // 连接质量评估 (good/poor/bad)
-            parseErrorCount,             // 数据解析错误累计次数
-            lastMessageReceived          // 最后接收消息的时间
-          }
-        })
+      // 不再需要响应 HEALTH_CHECK 命令
+      // 改为子进程在连接成功后主动发送心跳
+      // 简化架构：子进程自主管理，不被动响应
+      /* if (cmd === 'HEALTH_CHECK') {
+        // 旧逻辑已移除
         return
-      }
+      } */
       
       // console.log('[MQTT Child]  收到主进程指令:', cmd)
       
@@ -710,13 +972,14 @@ function withResponseCheck(fn) {
   process.once('SIGTERM', cleanUp);
 
   function cleanUp(){
-    flushThrottlers   // lodash API，可立即发送队列中最后一帧:contentReference[oaicite:3]{index=3}
-    cancelThrottlers();
+    // flushThrottlers   // 节流器已删除
+    // cancelThrottlers(); // 节流器已删除
     client.end(true);          // true = 强制清空离线队列
     client.removeAllListeners();
     process.removeAllListeners('message');
     clearInterval(memTimer);   // 内存采样定时器
     stopHealthCheck();         // 停止健康检查
+    stopDataRateCalculation(); // 【数据速率】停止速率计算
   }
 
   // 健康检查相关函数
@@ -741,6 +1004,12 @@ function withResponseCheck(fn) {
     lastHeartbeatSent = Date.now()
 
     healthCheckTimer = setInterval(() => {
+      // 只有在MQTT连接成功后才执行健康检查
+      if (!isConnected) {
+        console.log('[MQTT Child] 未连接，跳过健康检查')
+        return
+      }
+
       const now = Date.now()
 
       // 评估连接质量 - 根据消息接收情况动态评估连接状态
@@ -802,7 +1071,7 @@ function withResponseCheck(fn) {
 
     // 内存采样
   const MB = 1024*1024;
-  setInterval(()=>{
+  const memTimer = setInterval(()=>{
     const { rss, heapUsed, heapTotal } = process.memoryUsage();
     // console.log(`[MEM] rss ${(rss/MB).toFixed(1)} MB  heap ${(heapUsed/MB).toFixed(1)}/${(heapTotal/MB).toFixed(1)} MB`);
   }, 10_000);

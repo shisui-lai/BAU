@@ -4,16 +4,26 @@ import { useToast } from 'primevue/usetoast'
 import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
 import { pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
 import { parseClusterSummary } from '@/composables/core/data-processing/cluster/parseClusterSummary'
-
 import { useFactoryCalibParam } from '@/composables/core/data-processing/parameter-management/useFactoryCalibParam'
+import { PAGE_PASSWORDS } from '@/configs/passwords'
+import { useRouter } from 'vue-router'
 
 import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import Dialog from 'primevue/dialog'
+import Password from 'primevue/password'
 
 const toast = useToast()
+const router = useRouter()
+
+// 密码保护相关
+const showPasswordDialog = ref(false)
+const inputPwd = ref('')
+const pwdError = ref(false)
+const showCancelTip = ref(false)
 const { selectedCluster } = useClusterSelect()
 
 // 使用出厂校正参数处理器
@@ -613,7 +623,35 @@ const stopPeriodicReading = () => {
 }
 
 // 生命周期
+// 密码验证函数
+const checkPwd = () => {
+  pwdError.value = false
+  if (inputPwd.value === PAGE_PASSWORDS.CALIBRATION) {
+    showPasswordDialog.value = false
+    sessionStorage.setItem('calibrationPagePassword', 'ok')
+    pwdError.value = false
+  } else {
+    pwdError.value = true
+  }
+}
+
+// 取消密码输入
+const cancelPwd = () => {
+  showPasswordDialog.value = false
+  showCancelTip.value = true
+  // 返回上一页
+  setTimeout(() => {
+    router.go(-1)
+  }, 500)
+}
+
 onMounted(() => {
+  // 密码保护检查
+  if (sessionStorage.getItem('calibrationPagePassword') !== 'ok') {
+    showPasswordDialog.value = true
+    return
+  }
+
   // 监听出厂校正参数数据
   window.electron.ipcRenderer.on('FACTORY_CALIB_PARAM_R', handleFactoryCalibUpdate)
 
@@ -801,6 +839,27 @@ onUnmounted(() => {
         </Column>
       </DataTable>
   </div>
+
+  <!-- 密码保护对话框 -->
+  <Dialog
+    v-model:visible="showPasswordDialog"
+    :closable="false"
+    :modal="true"
+    header="请输入密码"
+    :style="{ width: '25rem' }"
+  >
+    <div class="flex flex-column gap-3">
+      <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
+      <Button label="确认" @click="checkPwd" style="margin-right: 0.5rem" />
+      <Button label="取消" severity="secondary" @click="cancelPwd" />
+      <div v-if="pwdError" style="color: red; margin-top: 0.5rem">密码错误</div>
+    </div>
+  </Dialog>
+
+  <!-- 取消提示 -->
+  <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
+    <span>已取消操作，未进入校准页面</span>
+  </Dialog>
 </template>
 
 

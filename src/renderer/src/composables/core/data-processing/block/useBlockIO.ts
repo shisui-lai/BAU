@@ -1,7 +1,6 @@
 // composables/useBlockIO.ts
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, type Ref } from 'vue'
 import { reactive } from 'vue'
-import { ensureBlockOption } from '../../device-selection/useBlockSelect'
 import { BLOCK_IO_STATUS } from '../../../../../../main/table.js'
 
 export const blockIOFrames = reactive(new Map<string, Map<string, any[]>>())
@@ -59,18 +58,18 @@ function groupBlockIOByClass(data: any): Record<string, any[]> {
           continue
         }
         
-        // 过滤掉寄存器状态项（只保留位级解析项）
-        if (fieldDef.type === 'bit') {
+        // 保留位级解析项和u16类型的心跳字段
+        if (fieldDef.type === 'bit' || (fieldDef.type === 'u16' && fieldDef.class === 'I/O心跳')) {
           grouped[classKey].push({
             key: fieldDef.key,
             label: fieldDef.label,
             value: element.value,
-            unit: fieldDef.unit || '',
-            remark: fieldDef.remarks || '',
-            scale: fieldDef.scale || 1,
+            unit: (fieldDef as any).unit || '',
+            remark: (fieldDef as any).remarks || '',
+            scale: (fieldDef as any).scale || 1,
             type: fieldDef.type,
-            bitsOf: fieldDef.bitsOf,
-            bit: fieldDef.bit
+            bitsOf: (fieldDef as any).bitsOf,
+            bit: (fieldDef as any).bit
           })
         }
       }
@@ -99,18 +98,18 @@ function groupBlockIOByClass(data: any): Record<string, any[]> {
         grouped[classKey] = []
       }
       
-      // 过滤掉寄存器状态项（只保留位级解析项）
-      if (fieldDef.type === 'bit') {
+      // 保留位级解析项和u16类型的心跳字段
+      if (fieldDef.type === 'bit' || (fieldDef.type === 'u16' && fieldDef.class === 'I/O心跳')) {
         grouped[classKey].push({
           key,
           label: fieldDef.label,
           value,
-          unit: fieldDef.unit || '',
-          remark: fieldDef.remarks || '',
-          scale: fieldDef.scale || 1,
+          unit: (fieldDef as any).unit || '',
+          remark: (fieldDef as any).remarks || '',
+          scale: (fieldDef as any).scale || 1,
           type: fieldDef.type,
-          bitsOf: fieldDef.bitsOf,
-          bit: fieldDef.bit
+          bitsOf: (fieldDef as any).bitsOf,
+          bit: (fieldDef as any).bit
         })
       }
     }
@@ -138,19 +137,20 @@ export function getBlockIOStatus(blockId: number): boolean {
   return blockIOFrames.has(blockKey)
 }
 
-export function useBlockIO() {
+export function useBlockIO(selectedBlock?: Ref<string>) {
   const blockIOData = ref(null)
   const isLoading = ref(false)
 
   // 监听MQTT数据
-  const handleBlockIOMessage = (event, data) => {
+  const handleBlockIOMessage = (event: any, data: any) => {
     // console.log('[useBlockIO] 收到BLOCK_IO_STATUS消息:', data)
     parseBlockIO(data)
   }
 
   // 格式化数据 - 系统DI
   const systemDI = computed(() => {
-    const data = pickBlockIO('block1', ['系统DI输入状态'])
+    if (!selectedBlock?.value) return []
+    const data = pickBlockIO(selectedBlock.value, ['系统DI输入状态'])
     const result = data['系统DI输入状态'] || []
     // console.log('[useBlockIO] systemDI computed:', result)
     return result
@@ -158,20 +158,30 @@ export function useBlockIO() {
 
   // 格式化数据 - 系统DO
   const systemDO = computed(() => {
-    const data = pickBlockIO('block1', ['系统DO输出状态'])
+    if (!selectedBlock?.value) return []
+    const data = pickBlockIO(selectedBlock.value, ['系统DO输出状态'])
     return data['系统DO输出状态'] || []
   })
 
   // 格式化数据 - I/O控制板DI
   const ioControlDI = computed(() => {
-    const data = pickBlockIO('block1', ['I/O控制板-DI'])
+    if (!selectedBlock?.value) return []
+    const data = pickBlockIO(selectedBlock.value, ['I/O控制板-DI'])
     return data['I/O控制板-DI'] || []
   })
 
   // 格式化数据 - I/O控制板DO
   const ioControlDO = computed(() => {
-    const data = pickBlockIO('block1', ['I/O控制板-DO'])
+    if (!selectedBlock?.value) return []
+    const data = pickBlockIO(selectedBlock.value, ['I/O控制板-DO'])
     return data['I/O控制板-DO'] || []
+  })
+
+  // 格式化数据 - I/O心跳
+  const ioHeartbeat = computed(() => {
+    if (!selectedBlock?.value) return []
+    const data = pickBlockIO(selectedBlock.value, ['I/O心跳'])
+    return data['I/O心跳'] || []
   })
 
   // 获取IO状态显示文本
@@ -203,6 +213,7 @@ export function useBlockIO() {
     systemDO,
     ioControlDI,
     ioControlDO,
+    ioHeartbeat,
     isLoading,
     getIOStatusText,
     getIOStatusSeverity

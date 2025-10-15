@@ -1,26 +1,48 @@
-<!-- 电池管理系统菜单栏 - 统一的菜单结构 -->
+<!-- 电池管理系统菜单栏 - 带权限控制 -->
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth.js'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
+const userMenu = ref(null)
 
-// 统一的菜单项结构，包含可折叠和不可折叠的项
-const menuItems = ref([
+// 根据 role.value 值映射一个 key 用于比对
+// role=1 时 key='admin'；role=2 时 key='guest'
+const roleKey = computed(() => (authStore.isAdmin ? 'admin' : 'guest'))
 
-  
+// 用户菜单项
+const userMenuItems = computed(() => [
+  {
+    label: authStore.isAdmin ? '管理员' : '访客',
+    icon: 'pi pi-user',
+    items: [
+      {
+        label: '注销',
+        icon: 'pi pi-sign-out',
+        command: () => onLogout()
+      }
+    ]
+  }
+])
+
+// 统一的菜单项结构，包含可折叠和不可折叠的项，并添加角色控制
+const rawMenuItems = ref([
   // 可折叠的分组项
   {
     label: '运行信息',
     icon: 'pi pi-chart-line',
     expanded: false,
-    type: 'group', // 分组项，可折叠
+    type: 'group',
+    roles: ['admin', 'guest'], // 管理员和访客都能看
     items: [
-      { label: '电池信息', icon: 'pi pi-home', route: '/' },
-      { label: '簇版本信息', icon: 'pi pi-info-circle', route: '/Cluster/version' },
-      { label: '掉线信息', icon: 'pi pi-link', route: '/Cluster/Brokenwire' },
-      { label: '故障总览', icon: 'pi pi-eye', route: '/FaultOverview' }
+      { label: '电池信息', icon: 'pi pi-home', route: '/', roles: ['admin', 'guest'] },
+      { label: '簇版本信息', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
+      { label: '掉线信息', icon: 'pi pi-link', route: '/Cluster/Brokenwire', roles: ['admin', 'guest'] },
+      { label: '故障总览', icon: 'pi pi-eye', route: '/FaultOverview', roles: ['admin', 'guest'] },
+      { label: 'DI/DO状态', icon: 'pi pi-th-large', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
     ]
   },
   {
@@ -28,11 +50,12 @@ const menuItems = ref([
     icon: 'pi pi-cog',
     expanded: false,
     type: 'group',
+    roles: ['admin'], // 仅管理员能看
     items: [
-      { label: '簇配置参数', icon: 'pi pi-sliders-h', route: '/Cluster/BaseParam' },
-      { label: '簇报警阈值', icon: 'pi pi-bell', route: '/Cluster/AlarmThreshold' },
-      { label: 'SOX参数', icon: 'pi pi-chart-line', route: '/Cluster/SOXParam' },
-      { label: '模拟量校准', icon: 'pi pi-wrench', route: '/Cluster/IvCalibration' }
+      { label: '簇配置参数', icon: 'pi pi-sliders-h', route: '/Cluster/BaseParam', roles: ['admin'] },
+      { label: '簇报警阈值', icon: 'pi pi-bell', route: '/Cluster/AlarmThreshold', roles: ['admin'] },
+      { label: 'SOX参数', icon: 'pi pi-chart-line', route: '/Cluster/SOXParam', roles: ['admin'] },
+      { label: '模拟量校准', icon: 'pi pi-wrench', route: '/Cluster/IvCalibration', roles: ['admin'] }
     ]
   },
   {
@@ -40,10 +63,11 @@ const menuItems = ref([
     icon: 'pi pi-play',
     expanded: false,
     type: 'group',
+    roles: ['admin'], // 仅管理员能看
     items: [
-      { label: '指令下发', icon: 'pi pi-send', route: '/Cluster/Order' },
-      { label: '设备升级', icon: 'pi pi-download', route: '/Bau/upgrade' },
-      { label: '地址自适应', icon: 'pi pi-sitemap', route: '/Bau/address-adaptive' }
+      { label: '指令下发', icon: 'pi pi-send', route: '/Cluster/Order', roles: ['admin'] },
+      { label: '设备升级', icon: 'pi pi-download', route: '/Bau/upgrade', roles: ['admin'] },
+      { label: '地址自适应', icon: 'pi pi-sitemap', route: '/Bau/address-adaptive', roles: ['admin'] }
     ]
   },
   {
@@ -51,35 +75,62 @@ const menuItems = ref([
     icon: 'pi pi-server',
     expanded: false,
     type: 'group',
+    roles: ['admin', 'guest'], // 部分子项所有人可见
     items: [
-      { label: '堆信息', icon: 'pi pi-chart-bar', route: '/Block/BlockInfo' },
-      { label: '堆版本信息', icon: 'pi pi-info-circle', route: '/Block/BlockVersion' },
-      { label: '堆报警阈值', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold' },
-      { label: '堆IO状态', icon: 'pi pi-server', route: '/Block/BlockIO' },
-      { label: '堆配置参数', icon: 'pi pi-cog', route: '/Block/BlockConfigParam' },
-      { label: '堆命令下设', icon: 'pi pi-send', route: '/Block/BlockRemoteCommand' }
+      { label: '堆信息', icon: 'pi pi-chart-bar', route: '/Block/BlockInfo', roles: ['admin', 'guest'] },
+      { label: '堆版本信息', icon: 'pi pi-info-circle', route: '/Block/BlockVersion', roles: ['admin', 'guest'] },
+      { label: '堆报警阈值', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold', roles: ['admin'] },
+      { label: '堆IO状态', icon: 'pi pi-server', route: '/Block/BlockIO', roles: ['admin', 'guest'] },
+      { label: '堆配置参数', icon: 'pi pi-cog', route: '/Block/BlockConfigParam', roles: ['admin'] },
+      { label: '堆命令下设', icon: 'pi pi-send', route: '/Block/BlockRemoteCommand', roles: ['admin'] }
     ]
   },
-    // 不可折叠的独立项
-    {
+  // 不可折叠的独立项
+  {
     label: '告警信息',
     icon: 'pi pi-exclamation-triangle',
     route: '/Cluster/Fault',
-    type: 'single'
-    },
-    {
+    type: 'single',
+    roles: ['admin', 'guest']
+  },
+  {
     label: 'BAU地址探测',
     icon: 'pi pi-search',
     route: '/Device/BauAddressDetection',
-    type: 'single'
-    },
-    {
+    type: 'single',
+    roles: ['admin']
+  },
+  {
     label: '设备管理',
     icon: 'pi pi-wrench',
     route: '/Block/DeviceManagement',
-    type: 'single' // 单独项，不可折叠
-  },
+    type: 'single',
+    roles: ['admin']
+  }
 ])
+
+// 根据角色过滤菜单项
+const menuItems = computed(() => {
+  return rawMenuItems.value
+    .filter(item => item.roles.includes(roleKey.value))
+    .map(item => {
+      if (item.type === 'group' && item.items) {
+        // 过滤子项
+        return {
+          ...item,
+          items: item.items.filter(subItem => subItem.roles.includes(roleKey.value))
+        }
+      }
+      return item
+    })
+    .filter(item => {
+      // 如果是分组且没有子项，则不显示
+      if (item.type === 'group' && (!item.items || item.items.length === 0)) {
+        return false
+      }
+      return true
+    })
+})
 
 // 处理菜单项点击
 const handleMenuClick = (item, index) => {
@@ -87,8 +138,11 @@ const handleMenuClick = (item, index) => {
     // 单独项直接导航
     router.push(item.route)
   } else if (item.type === 'group') {
-    // 分组项切换展开状态
-    menuItems.value[index].expanded = !menuItems.value[index].expanded
+    // 分组项切换展开状态 - 需要找到原始菜单中对应的项
+    const originalItem = rawMenuItems.value.find(raw => raw.label === item.label)
+    if (originalItem) {
+      originalItem.expanded = !originalItem.expanded
+    }
   }
 }
 
@@ -106,6 +160,12 @@ const isRouteActive = (targetRoute) => {
 const hasActiveRoute = (items) => {
   return items && items.some(item => isRouteActive(item.route))
 }
+
+// 点击"注销"时，把状态清掉并跳到登录页
+function onLogout() {
+  authStore.logout()
+  router.replace({ name: 'Login' })
+}
 </script>
 
 <template>
@@ -121,52 +181,62 @@ const hasActiveRoute = (items) => {
     <!-- 仅菜单项区域可滚动，且隐藏滚动条 -->
     <div class="menu-list-scroll">
       <div class="menu-list">
-      <div 
-        v-for="(item, index) in menuItems" 
-        :key="item.label"
-        class="menu-group"
-      >
-        <!-- 菜单项（单独项或分组标题） -->
         <div 
-          class="menu-header"
-          :class="{ 
-            active: item.type === 'single' && isRouteActive(item.route),
-            expanded: item.type === 'group' && item.expanded,
-            'has-active': item.type === 'group' && hasActiveRoute(item.items)
-          }"
-          @click="handleMenuClick(item, index)"
+          v-for="(item, index) in menuItems" 
+          :key="item.label"
+          class="menu-group"
         >
-          <i :class="item.icon" class="menu-icon"></i>
-          <span class="menu-label">{{ item.label }}</span>
-          <i 
-            v-if="item.type === 'group'" 
-            class="pi pi-chevron-right expand-icon" 
-            :class="{ expanded: item.expanded }"
-          ></i>
-        </div>
-
-        <!-- 分组子项（仅对group类型显示） -->
-        <div 
-          v-if="item.type === 'group'"
-          class="group-content"
-          :class="{ expanded: item.expanded }"
-        >
+          <!-- 菜单项（单独项或分组标题） -->
           <div 
-            v-for="subItem in item.items" 
-            :key="subItem.route"
-            class="menu-item sub-item"
-            :class="{ active: isRouteActive(subItem.route) }"
-            @click="navigateTo(subItem.route)"
+            class="menu-header"
+            :class="{ 
+              active: item.type === 'single' && isRouteActive(item.route),
+              expanded: item.type === 'group' && item.expanded,
+              'has-active': item.type === 'group' && hasActiveRoute(item.items)
+            }"
+            @click="handleMenuClick(item, index)"
           >
-            <i :class="subItem.icon" class="menu-icon"></i>
-            <span class="menu-label">{{ subItem.label }}</span>
+            <i :class="item.icon" class="menu-icon"></i>
+            <span class="menu-label">{{ item.label }}</span>
+            <i 
+              v-if="item.type === 'group'" 
+              class="pi pi-chevron-right expand-icon" 
+              :class="{ expanded: item.expanded }"
+            ></i>
+          </div>
+
+          <!-- 分组子项（仅对group类型显示） -->
+          <div 
+            v-if="item.type === 'group'"
+            class="group-content"
+            :class="{ expanded: item.expanded }"
+          >
+            <div 
+              v-for="subItem in item.items" 
+              :key="subItem.route"
+              class="menu-item sub-item"
+              :class="{ active: isRouteActive(subItem.route) }"
+              @click="navigateTo(subItem.route)"
+            >
+              <i :class="subItem.icon" class="menu-icon"></i>
+              <span class="menu-label">{{ subItem.label }}</span>
+            </div>
           </div>
         </div>
       </div>
-      </div>
     </div>
 
-
+    <!-- 底部用户菜单 -->
+    <div class="menu-footer">
+      <Avatar
+        style="cursor: pointer"
+        size="large"
+        shape="circle"
+        icon="pi pi-user"
+        @click="userMenu.toggle($event)"
+      />
+      <Menu ref="userMenu" :model="userMenuItems" popup />
+    </div>
   </div>
 </template>
 
@@ -177,18 +247,17 @@ const hasActiveRoute = (items) => {
   height: 100%;
   color: var(--text-color, #495057);
   font-family: 'Microsoft YaHei', Arial, sans-serif;
-  background: transparent; // 与整体容器一致的背景
-  overflow-x: hidden; // 防止内部元素横向溢出造成滚动条
+  background: transparent;
+  overflow-x: hidden;
   
   // 菜单列表滚动容器（只让菜单滚动，完全隐藏滚动条）
   .menu-list-scroll {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-width: none;      // Firefox - 隐藏滚动条
-    -ms-overflow-style: none;   // IE/Edge Legacy - 隐藏滚动条
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 
-    // Webkit浏览器 - 完全隐藏滚动条
     &::-webkit-scrollbar {
       width: 0;
       height: 0;
@@ -207,16 +276,16 @@ const hasActiveRoute = (items) => {
   // 菜单列表内容
   .menu-list {
     flex: 1;
-    padding: 0.5rem 0; // 去掉左右内边距，让菜单项能够更宽
+    padding: 0.5rem 0;
     
     .menu-group {
-      margin-bottom: 0; // 去掉间距，让菜单更紧凑
+      margin-bottom: 0;
       
       // 菜单项标题（包括单独项和分组标题）
       .menu-header {
         display: flex;
         align-items: center;
-        padding: 0.75rem 0.5rem;  // 减少左右内边距，让文字有更多空间
+        padding: 0.75rem 0.5rem;
         cursor: pointer;
         transition: background-color 0.15s ease, color 0.15s ease;
         color: var(--text-color, #495057);
@@ -225,9 +294,9 @@ const hasActiveRoute = (items) => {
         border-radius: 6px;
         position: relative;
         outline: 0 none;
-        width: 75%; // 占用侧边栏75%的宽度
-        margin: 0 auto; // 居中显示
-        min-width: 110px; // 确保最小宽度
+        width: 75%;
+        margin: 0 auto;
+        min-width: 110px;
         
         &:hover {
           background-color: var(--surface-hover, #e9ecef);
@@ -254,23 +323,23 @@ const hasActiveRoute = (items) => {
           font-size: 1.05rem; 
           width: 1rem;
           text-align: center;
-          flex-shrink: 0; // 防止图标被压缩
+          flex-shrink: 0;
         }
         
         .menu-label {
           flex: 1;
           overflow: hidden;
           text-overflow: ellipsis;
-          white-space: nowrap; // 确保标签文字不换行
-          min-width: 0; // 允许flex子项缩小
+          white-space: nowrap;
+          min-width: 0;
         }
         
         .expand-icon {
-          font-size: 0.75rem;  // 75%的字体大小，与原有设计一致
+          font-size: 0.75rem;
           margin-left: auto;
           transition: transform 0.15s ease;
-          flex-shrink: 0; // 防止展开图标被压缩
-          width: 0.75rem; // 固定宽度
+          flex-shrink: 0;
+          width: 0.75rem;
           
           &.expanded {
             transform: rotate(90deg);
@@ -291,16 +360,16 @@ const hasActiveRoute = (items) => {
         .menu-item.sub-item {
           display: flex;
           align-items: center;
-          padding: 0.75rem 0.5rem 0.75rem 1rem; // 左缩进表示层级关系，减少内边距
+          padding: 0.75rem 0.5rem 0.75rem 1rem;
           cursor: pointer;
           transition: background-color 0.15s ease, color 0.15s ease;
           color: var(--text-color, #495057);
           font-size: 0.95rem;  
           border-radius: 6px;
           outline: 0 none;
-          width: 75%; // 占用侧边栏75%的宽度
-          margin: 0 auto; // 居中显示
-          min-width: 110px; // 确保最小宽度
+          width: 75%;
+          margin: 0 auto;
+          min-width: 110px;
           
           &:hover {
             background-color: var(--surface-hover, #e9ecef);
@@ -313,26 +382,26 @@ const hasActiveRoute = (items) => {
           }
           
           .menu-icon {
-            margin-right: 0.5rem;  // 与原有菜单一致的图标边距
-            font-size: 1.05rem;  // 稍微放大图标
+            margin-right: 0.5rem;
+            font-size: 1.05rem;
             width: 1rem;
             text-align: center;
-            flex-shrink: 0; // 防止图标被压缩
+            flex-shrink: 0;
           }
           
           .menu-label {
             flex: 1;
             overflow: hidden;
             text-overflow: ellipsis;
-            white-space: nowrap; // 确保标签文字不换行
-            min-width: 0; // 允许flex子项缩小
+            white-space: nowrap;
+            min-width: 0;
           }
         }
       }
     }
   }
   
-  // 顶部品牌标识（方案A样式：无卡片，仅分隔线与居中内容）
+  // 顶部品牌标识
   .brand-header {
     padding: 0.9rem 0 0.8rem 0;
     border-bottom: 1px solid var(--surface-border, #dee2e6);
@@ -343,8 +412,8 @@ const hasActiveRoute = (items) => {
       margin: 0 auto;
       display: flex;
       align-items: center;
-      justify-content: center; // 内容居中，左右留白对称
-      gap: 0.4rem; // 保持图标与文字间距
+      justify-content: center;
+      gap: 0.4rem;
       padding: 0 0.75rem;
       box-sizing: border-box;
 
@@ -364,6 +433,14 @@ const hasActiveRoute = (items) => {
     }
   }
 
-
+  // 底部用户菜单
+  .menu-footer {
+    margin-top: auto;
+    padding: 1rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid var(--surface-border, #dee2e6);
+  }
 }
 </style>

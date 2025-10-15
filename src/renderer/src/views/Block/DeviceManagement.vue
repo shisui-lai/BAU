@@ -879,11 +879,16 @@ function optionsForLabel(label){
         <div class="table-container order-like-card dm-card port-card" ref="rightCardRef">
           <h2 class="table-title">系统端口配置参数</h2>
           <div class="table-content">
-            <div class="button-row left compact">
-              <Button :label="isReadingPort ? '停止读取' : '开始读取'" :icon="isReadingPort ? 'pi pi-stop' : 'pi pi-play'" :severity="isReadingPort ? 'danger' : 'success'" size="small" @click="handlePortReadButtonClick" />
-              <Button label="设置" icon="pi pi-upload" size="small" severity="warning" @click="sendPortSetParametersWithValidation" :disabled="isReadingPort" />
+            <!-- 固定按钮区域 -->
+            <div class="fixed-buttons">
+              <div class="button-row left compact">
+                <Button :label="isReadingPort ? '停止读取' : '开始读取'" :icon="isReadingPort ? 'pi pi-stop' : 'pi pi-play'" :severity="isReadingPort ? 'danger' : 'success'" size="small" @click="handlePortReadButtonClick" />
+                <Button label="设置" icon="pi pi-upload" size="small" severity="warning" @click="sendPortSetParametersWithValidation" :disabled="isReadingPort" />
+              </div>
             </div>
-            <div class="port-grid">
+            <!-- 可滚动内容区域 -->
+            <div class="port-content">
+              <div class="port-grid">
               <div
                 v-for="p in portEnhancedParameterList"
                 :key="p.key"
@@ -925,6 +930,7 @@ function optionsForLabel(label){
                 </div>
               </div>
             </div>
+            </div>
           </div>
         </div>
       </div>
@@ -962,7 +968,7 @@ function optionsForLabel(label){
 
 .time-grid { display: flex; flex-direction: column; gap: 8px; }
 .time-block { display: flex; flex-direction: column; gap: 6px; }
-.time-title { color: var(--text-color-secondary); font-weight: 500; }
+.time-title { font-weight: 500; }
 .time-line { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .time-input { width: 52px; }
 .time-input :deep(input) { 
@@ -977,7 +983,6 @@ function optionsForLabel(label){
 .time-input.current-time :deep(.p-inputnumber-input) {
   background: var(--surface-section);
   border: 1px solid var(--surface-border);
-  color: var(--text-color-secondary);
   font-weight: 600;
   text-align: left;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
@@ -1044,7 +1049,7 @@ function optionsForLabel(label){
 /* .port-card 高度由JavaScript动态设置 */
 .section-divider { margin: 8px 0 6px; border-top: 1px solid var(--surface-border); opacity: 1; }
 
-.form-row > label { color: var(--text-color-secondary); font-weight: 500; }
+.form-row > label { font-weight: 500; }
 .form-row > .w-full { max-width: 520px; }
 .form-grid { display: grid; grid-template-columns: 200px 1fr; gap: 10px 16px; }
 
@@ -1065,7 +1070,7 @@ function optionsForLabel(label){
 }
 .two-col-item { display: block; }
 .port-col { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--surface-border); border-radius: 8px; padding: 10px; background: var(--surface-card); }
-.port-field-label { color: var(--text-color-secondary); font-weight: 500; }
+.port-field-label { font-weight: 500; }
 .port-field-input { width: 100%; }
 
 /* IPv4验证错误样式 */
@@ -1077,6 +1082,22 @@ function optionsForLabel(label){
 .port-field-input.ipv4-invalid:focus {
   border-color: #e24c4c !important;
   box-shadow: 0 0 0 0.2rem rgba(226, 76, 76, 0.25) !important;
+}
+
+/* 系统端口配置参数固定按钮样式 */
+.port-card .fixed-buttons {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: var(--surface-card);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  margin-bottom: 0.5rem;
+}
+
+.port-content {
+  max-height: auto;
+  overflow-y: auto;
 }
 
 @media (max-width: 1200px) {

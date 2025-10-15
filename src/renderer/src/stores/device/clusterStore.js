@@ -667,6 +667,40 @@ export const useClusterStore = defineStore('cluster', () => {
 
   // ================== 系统配置驱动初始化 ==================
   
+  // 保存上一次的配置，用于检测变化
+  let lastSystemConfig = null
+  
+  /**
+   * 检测系统配置是否发生变化
+   * @param {Object} newConfig - 新的配置参数
+   * @returns {boolean} 是否发生变化
+   */
+  function hasSystemConfigChanged(newConfig) {
+    if (!lastSystemConfig) {
+      return true // 首次配置，认为有变化
+    }
+    
+    const { BlockCount, ClusterCount1, ClusterCount2 } = newConfig
+    const { BlockCount: lastBlockCount, ClusterCount1: lastClusterCount1, ClusterCount2: lastClusterCount2 } = lastSystemConfig
+    
+    return BlockCount !== lastBlockCount || 
+           ClusterCount1 !== lastClusterCount1 || 
+           ClusterCount2 !== lastClusterCount2
+  }
+  
+  /**
+   * 检查当前选中的簇是否仍然有效
+   * @param {Array} newOptions - 新的簇选项列表
+   * @returns {boolean} 当前选择是否有效
+   */
+  function isCurrentSelectionValid(newOptions) {
+    if (!selectedClusterForView.value) {
+      return false
+    }
+    
+    return newOptions.some(option => option.value === selectedClusterForView.value)
+  }
+  
   /**
    * 根据系统配置参数初始化堆簇结构
    * @param {Object} config - 配置参数 {BlockCount, ClusterCount1, ClusterCount2}
@@ -678,8 +712,22 @@ export const useClusterStore = defineStore('cluster', () => {
     if (!BlockCount || BlockCount < 1) {
       console.warn(' [簇配置] 无效的堆数配置:', BlockCount)
       clearClusterOptions()
+      lastSystemConfig = null
       return
     }
+
+    // 检测配置是否发生变化
+    const configChanged = hasSystemConfigChanged(config)
+    
+    if (!configChanged) {
+      console.log('🔄 [簇配置] 配置未变化，跳过重新初始化')
+      return
+    }
+    
+    console.log('🔄 [簇配置] 检测到配置变化，重新初始化堆簇结构')
+    
+    // 保存当前配置
+    lastSystemConfig = { ...config }
 
     // 清空现有选项
     clearClusterOptions()
@@ -721,11 +769,20 @@ export const useClusterStore = defineStore('cluster', () => {
       return a.cluster - b.cluster
     })
 
-    availableClusters.value = newOptions
-
-    // 触发自动选择最佳簇
-    if (newOptions.length > 0) {
-      scheduleAutoSelect()
+    // 检查当前选择是否仍然有效
+    const currentSelectionValid = isCurrentSelectionValid(newOptions)
+    
+    if (currentSelectionValid) {
+      console.log('🔄 [簇配置] 当前选择仍然有效，保持选择:', selectedClusterForView.value)
+      // 直接设置选项，不触发重新选择
+      availableClusters.value = newOptions
+    } else {
+      console.log('🔄 [簇配置] 当前选择无效，将重新选择')
+      // 设置选项并触发重新选择
+      availableClusters.value = newOptions
+      if (newOptions.length > 0) {
+        scheduleAutoSelect()
+      }
     }
   }
 

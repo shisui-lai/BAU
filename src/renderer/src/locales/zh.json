@@ -1,0 +1,29 @@
+{
+  "login": {
+    "title": "系统登录",
+    "username": "用户名",
+    "usernamePlaceholder": "请输入管理员账号",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "adminButton": "管理员登录",
+    "guestButton": "访客登录",
+    "error": "用户名或密码错误",
+    "language": "语言"
+  },
+  "menu": {
+    "admin": "管理员",
+    "guest": "访客",
+    "logout": "注销",
+    "settings": "设置"
+  },
+  "password": {
+    "error": "密码错误",
+    "header": "请输入密码",
+    "confirm": "确认",
+    "cancel": "取消",
+    "cancelTip": "已取消操作"
+  }
+}
+
+
+

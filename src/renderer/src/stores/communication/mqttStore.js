@@ -40,6 +40,14 @@ export const useMqttStore = defineStore('mqtt', {
       timer: null // 仅保留timer用于手动断开时清理
     },
 
+    // 自动重连配置（已禁用 - 由mqtt.js的reconnectPeriod机制处理）
+    autoReconnect: {
+      enabled: false,          // 禁用前端自动重连，避免与mqtt.js冲突
+      timer: null,            // 重连定时器（保留用于兼容性）
+      attempt: 0,             // 当前重连尝试次数
+      interval: 5000          // 固定重连间隔（5秒）
+    },
+
     // 连接统计
     stats: {
       connectedAt: null,
@@ -198,6 +206,9 @@ export const useMqttStore = defineStore('mqtt', {
       this.disconnectReason = 'manual' // 标记为手动断开
       this.stats.disconnectedAt = new Date().toISOString()
 
+      //  手动断开时停止自动重连
+      this.stopAutoReconnect()
+
       try {
         await window.electron.ipcRenderer.invoke('mqtt-disconnect')
         console.log('[MQTT Store] 手动断开完成')
@@ -235,6 +246,10 @@ export const useMqttStore = defineStore('mqtt', {
       this.disconnectReason = 'unknown' // 重置断开原因
       this.error = null
       this.stats.connectedAt = new Date().toISOString()
+      
+      //  连接成功时重置自动重连状态
+      this.resetAutoReconnect()
+      
       console.log('[MQTT Store] 连接成功')
     },
     
@@ -262,22 +277,45 @@ export const useMqttStore = defineStore('mqtt', {
         this.stats.lastStatusChange = Date.now()
       })
 
-      // 监听MQTT连接断开事件 - 简化版
+      // 监听MQTT连接断开事件
       window.electron.ipcRenderer.on('mqtt-disconnected', (_, data) => {
         console.log('[MQTT Store] 服务器断开连接:', data)
         this.status = 'offline'
-        this.disconnectReason = 'server'
+        
+        //  只有在非手动断开时才设置为'server'，保护手动断开状态
+        if (this.disconnectReason !== 'manual') {
+          this.disconnectReason = 'server'
+        }
         this.stats.disconnectedAt = new Date().toISOString()
         this.stats.lastStatusChange = Date.now()
+        
+        // 前端自动重连已禁用 - mqtt.js会自动处理重连（reconnectPeriod: 5000）
+        // 避免前后端重连机制冲突导致进程崩溃
+        // if (this.autoReconnect.enabled && this.disconnectReason === 'server') {
+        //   console.log('[MQTT Store] 检测到服务器断开，启动自动重连')
+        //   this.startAutoReconnect()
+        // }
       })
 
-      // 监听MQTT离线事件 - 简化版
+      // 监听MQTT离线事件
       window.electron.ipcRenderer.on('mqtt-offline', (_, data) => {
         console.log('[MQTT Store] 服务器离线:', data)
         this.status = 'offline'
-        this.disconnectReason = 'server'
+        
+        //  只有在非手动断开时才设置为'server'，保护手动断开状态
+        if (this.disconnectReason !== 'manual') {
+          this.disconnectReason = 'server'
+        }
+        
         this.stats.disconnectedAt = new Date().toISOString()
         this.stats.lastStatusChange = Date.now()
+        
+        // 前端自动重连已禁用 - mqtt.js会自动处理重连（reconnectPeriod: 5000）
+        // 避免前后端重连机制冲突导致进程崩溃
+        // if (this.autoReconnect.enabled && this.disconnectReason === 'server') {
+        //   console.log('[MQTT Store] 检测到服务器离线，启动自动重连')
+        //   this.startAutoReconnect()
+        // }
       })
 
       // 监听MQTT重连事件 - 简化版
@@ -297,6 +335,47 @@ export const useMqttStore = defineStore('mqtt', {
     },
 
 
+
+    //  启动自动重连
+    startAutoReconnect() {
+      // 清理现有的重连定时器
+      this.stopAutoReconnect()
+      
+      console.log(`[MQTT Store] 将在 ${this.autoReconnect.interval}ms 后尝试第 ${this.autoReconnect.attempt + 1} 次重连`)
+      
+      this.autoReconnect.timer = setTimeout(async () => {
+        this.autoReconnect.attempt++
+        console.log(`[MQTT Store] 开始第 ${this.autoReconnect.attempt} 次自动重连尝试`)
+        
+        const success = await this.connect()
+        
+        if (!success) {
+          // 重连失败，继续尝试（无限重连）
+          console.log(`[MQTT Store] 第 ${this.autoReconnect.attempt} 次重连失败，将继续尝试`)
+          this.startAutoReconnect()
+        } else {
+          // 重连成功，重置计数器
+          console.log(`[MQTT Store] 第 ${this.autoReconnect.attempt} 次重连成功`)
+          this.resetAutoReconnect()
+        }
+      }, this.autoReconnect.interval)
+    },
+
+    // 停止自动重连
+    stopAutoReconnect() {
+      if (this.autoReconnect.timer) {
+        clearTimeout(this.autoReconnect.timer)
+        this.autoReconnect.timer = null
+        console.log('[MQTT Store] 已停止自动重连')
+      }
+    },
+
+    // 重置自动重连状态
+    resetAutoReconnect() {
+      this.stopAutoReconnect()
+      this.autoReconnect.attempt = 0
+      console.log('[MQTT Store] 自动重连状态已重置')
+    },
 
     // 初始化store（在组件挂载时调用）
     initialize() {

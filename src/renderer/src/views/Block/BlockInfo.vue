@@ -30,7 +30,7 @@
           <!-- 左侧单位列 -->
           <Column field="leftUnit" header="单位" style="min-width:80px">
             <template #body="{ data }">
-              <span class="text-gray-600">{{ getFieldUnit(data.leftLabel) || '-' }}</span>
+              <span>{{ getFieldUnit(data.leftLabel) || '-' }}</span>
             </template>
           </Column>
           
@@ -51,7 +51,7 @@
           <!-- 右侧单位列 -->
           <Column field="rightUnit" header="单位" style="min-width:80px">
             <template #body="{ data }">
-              <span class="text-gray-600">{{ getFieldUnit(data.rightLabel) || '-' }}</span>
+              <span>{{ getFieldUnit(data.rightLabel) || '-' }}</span>
             </template>
           </Column>
         </DataTable>
@@ -596,9 +596,6 @@ watch(selectedBlock, handleBlockChange)
   padding: 12px 16px;
 }
 
-.text-gray-600 {
-  color: var(--text-color-secondary);
-}
 
 :deep(.p-accordion .p-accordion-header) {
   background: var(--surface-section);

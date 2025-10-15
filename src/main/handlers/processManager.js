@@ -125,8 +125,10 @@ class MQTTProcessManager {
       // 设置进程监控
       this.setupProcessMonitoring()
       
-      // 启动健康检查
-      this.startHealthCheck()
+      // 不再由processManager主动发送健康检查请求
+      // 改为监听mqtt.js子进程主动发送的心跳消息
+      // mqtt.js会在连接成功后自己启动定时心跳
+      // this.startHealthCheck()
       
       this.isStarting = false
       return true
@@ -149,15 +151,16 @@ class MQTTProcessManager {
     // 监听进程错误
     this.mqttTask.on('error', (error) => {
       console.error('[ProcessManager] MQTT子进程错误:', error)
-      this.handleProcessError(error)
+      // this.handleProcessError(error)
     })
 
     // 监听进程退出
     this.mqttTask.on('exit', (code, signal) => {
       console.log('[ProcessManager] MQTT子进程退出，代码:', code, '信号:', signal)
-      if (code !== 0 && code !== null) {
-        this.handleProcessCrash(code, signal)
-      }
+      // 已禁用自动重启功能 - 由mqtt.js的reconnectPeriod机制处理重连
+      // if (code !== 0 && code !== null) {
+      //   this.handleProcessCrash(code, signal)
+      // }
     })
 
     // 监听消息
@@ -191,60 +194,36 @@ class MQTTProcessManager {
    */
   updateHeartbeat(data) {
     this.lastHeartbeat = Date.now()
-    console.log('[ProcessManager] 收到心跳，连接质量:', data.connectionQuality)
+    // console.log('[ProcessManager] 收到心跳，连接质量:', data.connectionQuality)
   }
 
   /**
-   * 启动健康检查
+   * 启动健康检查（已废弃 - 改为被动接收心跳）
+   * 
+   * 新架构说明：
+   * - processManager不再主动发送健康检查请求
+   * - mqtt.js子进程在连接成功后会主动发送心跳
+   * - processManager只需被动接收心跳并更新lastHeartbeat
+   * 
+   * 优势：
+   * - 子进程自主管理，逻辑更清晰
+   * - 只在真正需要时（连接成功）才发送心跳
+   * - 减少不必要的进程间通信
    */
   startHealthCheck() {
-    // 清理旧的定时器
-    if (this.healthCheckTimer) {
-      clearInterval(this.healthCheckTimer)
-    }
-
-    this.lastHeartbeat = Date.now() // 初始化心跳时间
-
-    this.healthCheckTimer = setInterval(() => {
-      this.performHealthCheck()
-    }, this.healthCheckInterval)
-
-    console.log('[ProcessManager] 健康检查已启动，间隔:', this.healthCheckInterval, 'ms')
+    console.log('[ProcessManager] 健康检查机制：等待子进程主动发送心跳')
+    // 不再启动定时器主动发送HEALTH_CHECK
+    // 改为被动接收mqtt.js发送的心跳消息
   }
 
   /**
-   * 执行健康检查
-   *
-   * 功能说明：
-   * 1. 检查子进程心跳是否超时（超过20秒未响应）
-   * 2. 向子进程发送健康检查请求
-   * 3. 如果发送失败或超时，触发进程重启
-   *
-   * 这是检测子进程异常的核心机制，能够及时发现：
-   * - 子进程卡死（不响应心跳）
-   * - 子进程崩溃（发送失败）
-   * - 通讯异常（消息无法传递）
+   * 执行健康检查（已废弃）
+   * 
+   * 说明：不再需要主动检查，mqtt.js会主动发送心跳
    */
   performHealthCheck() {
-    const now = Date.now()
-
-    // 检查心跳超时 - 如果超过heartbeatTimeout(20秒)未收到心跳，认为子进程异常
-    const timeSinceLastHeartbeat = now - this.lastHeartbeat
-    if (timeSinceLastHeartbeat > this.heartbeatTimeout) {
-      console.warn('[ProcessManager] 子进程心跳超时，最后心跳:', timeSinceLastHeartbeat, 'ms前')
-      this.restartProcess('heartbeat_timeout')
-      return
-    }
-
-    // 发送健康检查请求 - 主动向子进程发送检查命令，要求响应心跳
-    if (this.mqttTask && !this.mqttTask.killed) {
-      try {
-        this.mqttTask.send({ cmd: 'HEALTH_CHECK', timestamp: now })
-      } catch (error) {
-        console.error('[ProcessManager] 发送健康检查失败:', error)
-        this.restartProcess('health_check_failed')
-      }
-    }
+    // 已废弃 - mqtt.js会在连接成功后主动发送心跳
+    // processManager只需在handleMessage中更新lastHeartbeat即可
   }
 
   /**
@@ -253,7 +232,8 @@ class MQTTProcessManager {
    */
   handleProcessError(error) {
     this.logError('process_error', error)
-    this.scheduleRestart('process_error')
+    // 已禁用自动重启功能 - 由mqtt.js的reconnectPeriod机制处理重连
+    // this.scheduleRestart('process_error')
   }
 
   /**
@@ -263,7 +243,8 @@ class MQTTProcessManager {
    */
   handleProcessCrash(code, signal) {
     this.logError('process_crash', { code, signal })
-    this.scheduleRestart('process_crash')
+    // 已禁用自动重启功能 - 由mqtt.js的reconnectPeriod机制处理重连
+    // this.scheduleRestart('process_crash')
   }
 
   /**

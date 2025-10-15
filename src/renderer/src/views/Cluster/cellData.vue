@@ -1,19 +1,20 @@
-  <script setup>  
-  import { ref, reactive, computed, onMounted, onBeforeUnmount, onActivated, onDeactivated } from 'vue'
-  import Dropdown  from 'primevue/dropdown'
-  import Button    from 'primevue/button'
-  import DataTable from 'primevue/datatable'
-  import Column    from 'primevue/column'
-  import SystemAbstract from './SystemAbstract.vue'
-  
-  import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
-  const { clusterOptions, selectedCluster,
-        ensureClusterOption, replaceClusterOptions } = useClusterSelect()
-  import cluster from './version.vue' 
-  import { pickCluster        } from '@/composables/core/data-processing/cluster/parseClusterSummary'
-  import { pickPack           } from '@/composables/core/data-processing/cluster/parsePackSummary'
-  import { parsePackSummary }    from '@/composables/core/data-processing/cluster/parsePackSummary'
-  import { parseClusterSummary }    from '@/composables/core/data-processing/cluster/parseClusterSummary'
+<script setup>  
+import { ref, reactive, computed, onMounted, onBeforeUnmount, onActivated, onDeactivated, watch } from 'vue'
+import { throttle } from 'lodash'
+import Dropdown  from 'primevue/dropdown'
+import Button    from 'primevue/button'
+import DataTable from 'primevue/datatable'
+import Column    from 'primevue/column'
+import SystemAbstract from './SystemAbstract.vue'
+
+import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
+const { clusterOptions, selectedCluster,
+      ensureClusterOption, replaceClusterOptions } = useClusterSelect()
+import cluster from './version.vue' 
+import { pickCluster        } from '@/composables/core/data-processing/cluster/parseClusterSummary'
+import { pickPack           } from '@/composables/core/data-processing/cluster/parsePackSummary'
+import { parsePackSummary }    from '@/composables/core/data-processing/cluster/parsePackSummary'
+import { parseClusterSummary }    from '@/composables/core/data-processing/cluster/parseClusterSummary'
   function onPackSummary (_e, msg) {
     parsePackSummary(msg)
   }
@@ -22,20 +23,36 @@
     parseClusterSummary(msg)
   }
 
-  /* ────────── 常量 ────────── */
-  const DATA_TYPE_MAP = {
-    CELL_VOLT: { label: '电压',  decimals: 3 },
-    CELL_TEMP: { label: '温度',  decimals: 1 },
-    CELL_SOC : { label: 'SOC',   decimals: 1 },
-    CELL_SOH : { label: 'SOH',   decimals: 1 },
-    BMU_VOLT:         { label: 'BMU 电压',     decimals: 1 },
-    BMU_TEMP:         { label: 'BMU 温度',     decimals: 1 },
-    BMU_PLUGIN_TEMP:  { label: '动力接插件温度',     decimals: 1 },
-    BMU_SOC:          { label: 'BMU SOC',      decimals: 1 },    // 协议修改新增
-    BMU_PRODUCT_CODE: { label: 'BMU产品编码',   decimals: -1 },  // 协议修改新增
-    // BMU_PLUGIN_TEMP2:  { label: '动力接插件温度2',     decimals: 1 }
-    //decimals 保留小数位数，-1 表示不显示小数
-  }
+/* ────────── 常量 ────────── */
+const DATA_TYPE_MAP = {
+  CELL_VOLT: { label: '电压(V)',  decimals: 3 },
+  CELL_TEMP: { label: '温度(℃)',  decimals: 1 },
+  CELL_SOC : { label: 'SOC(%)',   decimals: 1 },
+  CELL_SOH : { label: 'SOH(%)',   decimals: 1 },
+  BMU_VOLT:         { label: 'BMU 电压(V)',     decimals: 1 },
+  BMU_TEMP:         { label: 'BMU 温度(℃)',     decimals: 1 },
+  BMU_PLUGIN_TEMP:  { label: '动力接插件温度(℃)',     decimals: 1 },
+  BMU_SOC:          { label: 'BMU SOC(%)',      decimals: 1 },    // 协议修改新增
+  BMU_PRODUCT_CODE: { label: 'BMU产品编码',   decimals: -1 },  // 协议修改新增
+  // BMU_PLUGIN_TEMP2:  { label: '动力接插件温度2',     decimals: 1 }
+  //decimals 保留小数位数，-1 表示不显示小数
+}
+
+/* ────────── 限流配置 ────────── */
+const THROTTLE_CONFIG = {
+  CELL_DATA: 2000,      // 单体数据更新间隔：1000ms（每秒最多1次更新）
+  CONFIG_UPDATE: 2000,  // 配置更新间隔：1000ms
+  SUMMARY_DATA: 2000    // 概要数据更新间隔：1000ms
+}
+
+/* ────────── 缓存配置 ────────── */
+const CACHE_CONFIG = {
+  PREFIX: 'CLUSTER_CACHE_',           // 缓存键前缀
+  OPTIONS_KEY: 'CLUSTER_OPTIONS',     // 下拉选项缓存键
+  SELECTED_KEY: 'CLUSTER_SELECTED',   // 当前选中缓存键
+  VERSION: '1.0',                     // 缓存版本号，用于失效控制
+  ENABLED: true                       // 缓存开关
+}
 
   /* ────────── 响应式状态 ────────── */
   const clusterCache    = reactive({})       // 二维缓存：type → Map<clusterKey, matrix>
@@ -44,6 +61,259 @@
   const activeView      = ref('CELL_VOLT')   // 当前数据类型按钮
 
   const dataTableRef = ref(null)             // DataTable引用（保留用于其他可能的操作）
+
+  /* ────────── 缓存工具函数 ────────── */
+  
+  // 序列化 Map 结构到 localStorage
+  function serializeMapCache(dataType) {
+    if (!CACHE_CONFIG.ENABLED) return
+    
+    try {
+      const map = clusterCache[dataType]
+      if (!map || !(map instanceof Map)) return
+      
+      // 将 Map 转换为数组格式：[[key, value], [key, value], ...]
+      const serialized = Array.from(map.entries())
+      const cacheKey = `${CACHE_CONFIG.PREFIX}${dataType}`
+      
+      localStorage.setItem(cacheKey, JSON.stringify({
+        version: CACHE_CONFIG.VERSION,
+        timestamp: Date.now(),
+        data: serialized
+      }))
+      
+      // console.log(`[缓存写入] ${dataType}: ${serialized.length} 个堆簇`)
+    } catch (error) {
+      console.error(`[缓存写入失败] ${dataType}:`, error)
+    }
+  }
+
+  // 从 localStorage 反序列化 Map 结构
+  function deserializeMapCache(dataType) {
+    if (!CACHE_CONFIG.ENABLED) return null
+    
+    try {
+      const cacheKey = `${CACHE_CONFIG.PREFIX}${dataType}`
+      const cached = localStorage.getItem(cacheKey)
+      
+      if (!cached) return null
+      
+      const parsed = JSON.parse(cached)
+      
+      // 版本校验
+      if (parsed.version !== CACHE_CONFIG.VERSION) {
+        console.warn(`[缓存版本不匹配] ${dataType}: ${parsed.version} !== ${CACHE_CONFIG.VERSION}`)
+        localStorage.removeItem(cacheKey)
+        return null
+      }
+      
+      // 将数组转换回 Map
+      const map = new Map(parsed.data)
+      // 精简日志：只在有数据时输出简要信息
+      // console.log(`[缓存读取] ${dataType}: ${map.size} 个堆簇`)
+      
+      return map
+    } catch (error) {
+      console.error(`[缓存读取失败] ${dataType}:`, error)
+      return null
+    }
+  }
+
+  // 保存所有数据类型的缓存
+  function saveAllCachesToStorage() {
+    if (!CACHE_CONFIG.ENABLED) return
+    
+    try {
+      // 保存所有数据类型的缓存
+      Object.keys(DATA_TYPE_MAP).forEach(dataType => {
+        if (clusterCache[dataType]) {
+          serializeMapCache(dataType)
+        }
+      })
+      
+      // 保存下拉选项
+      if (clusterOptions.value.length > 0) {
+        localStorage.setItem(CACHE_CONFIG.OPTIONS_KEY, JSON.stringify(clusterOptions.value))
+      }
+      
+      // 保存当前选中
+      if (selectedCluster.value) {
+        localStorage.setItem(CACHE_CONFIG.SELECTED_KEY, selectedCluster.value)
+      }
+      
+      // 精简日志：静默保存
+      // console.log('[缓存保存完成]')
+    } catch (error) {
+      console.error('[缓存保存失败]', error)
+    }
+  }
+
+  // 从 localStorage 恢复所有缓存
+  function loadAllCachesFromStorage() {
+    if (!CACHE_CONFIG.ENABLED) return
+    
+    try {
+      let loadedCount = 0
+      let totalClusters = 0
+      
+      // 恢复所有数据类型的缓存
+      Object.keys(DATA_TYPE_MAP).forEach(dataType => {
+        const map = deserializeMapCache(dataType)
+        if (map && map.size > 0) {
+          clusterCache[dataType] = map
+          loadedCount++
+          totalClusters = map.size // 记录堆簇数量
+        }
+      })
+      
+      // 恢复下拉选项（静默）
+      const cachedOptions = localStorage.getItem(CACHE_CONFIG.OPTIONS_KEY)
+      if (cachedOptions) {
+        try {
+          const options = JSON.parse(cachedOptions)
+          if (Array.isArray(options) && options.length > 0) {
+            replaceClusterOptions(options)
+          }
+        } catch (e) {
+          console.error('[缓存恢复失败] 下拉选项:', e)
+        }
+      }
+      
+      // 恢复当前选中（静默）
+      const cachedSelected = localStorage.getItem(CACHE_CONFIG.SELECTED_KEY)
+      if (cachedSelected && !selectedCluster.value) {
+        selectedCluster.value = cachedSelected
+      }
+      
+      // 精简日志：只输出汇总信息
+      if (loadedCount > 0) {
+        console.log(`✅ 缓存恢复: ${loadedCount}种类型 × ${totalClusters}个堆簇`)
+        updateTrigger.value++
+      }
+    } catch (error) {
+      console.error('[缓存恢复失败]', error)
+    }
+  }
+
+  // 清空所有缓存
+  function clearAllCaches() {
+    try {
+      // 清空内存缓存
+      Object.keys(clusterCache).forEach(key => {
+        delete clusterCache[key]
+      })
+      
+      // 清空 localStorage 缓存
+      Object.keys(DATA_TYPE_MAP).forEach(dataType => {
+        const cacheKey = `${CACHE_CONFIG.PREFIX}${dataType}`
+        localStorage.removeItem(cacheKey)
+      })
+      localStorage.removeItem(CACHE_CONFIG.OPTIONS_KEY)
+      localStorage.removeItem(CACHE_CONFIG.SELECTED_KEY)
+      
+      console.log('[缓存清空完成]')
+    } catch (error) {
+      console.error('[缓存清空失败]', error)
+    }
+  }
+
+  /* ────────── 限流处理器管理 ────────── */
+  const throttledHandlers = new Map()        // 存储每个数据类型的throttled处理函数
+  const updateTrigger = ref(0)               // 强制更新触发器（用于手动触发视图刷新）
+  const isPageActive = ref(true)             // 页面是否处于活动状态
+
+  // 性能统计
+  const performanceStats = reactive({
+    totalMessages: 0,        // 总消息数
+    throttledMessages: 0,    // 被节流的消息数
+    processedMessages: 0,    // 实际处理的消息数
+    lastResetTime: Date.now()
+  })
+
+  // 为不同数据类型创建独立的throttled处理器
+  function getThrottledHandler(dataType, clusterKey) {
+    const key = `${dataType}-${clusterKey}`
+    
+    if (!throttledHandlers.has(key)) {
+      // 根据数据类型选择合适的节流间隔
+      let throttleMs = THROTTLE_CONFIG.CELL_DATA
+      if (dataType === 'BLOCK_COMMON_PARAM_R') {
+        throttleMs = THROTTLE_CONFIG.CONFIG_UPDATE
+      } else if (dataType === 'PACK_SUMMARY' || dataType === 'CLUSTER_SUMMARY') {
+        throttleMs = THROTTLE_CONFIG.SUMMARY_DATA
+      }
+
+      // 如果页面不活动，增加节流间隔以节省性能
+      if (!isPageActive.value) {
+        throttleMs = throttleMs * 2
+      }
+
+      // 创建throttled函数
+      const throttled = throttle(
+        (msg) => {
+          processMessageInternal(msg)
+          performanceStats.processedMessages++
+          // 触发视图更新（仅针对单体数据，避免配置更新触发不必要的刷新）
+          if (msg.dataType !== 'BLOCK_COMMON_PARAM_R') {
+            updateTrigger.value++
+          }
+        },
+        throttleMs,
+        { 
+          leading: true,   // 首次调用立即执行
+          trailing: true   // 结束时执行最后一次
+        }
+      )
+
+      throttledHandlers.set(key, throttled)
+    }
+
+    return throttledHandlers.get(key)
+  }
+
+  // 清理所有throttled处理器
+  function cleanupThrottlers() {
+    throttledHandlers.forEach(handler => {
+      if (handler.cancel) {
+        handler.cancel()
+      }
+    })
+    throttledHandlers.clear()
+  }
+
+  // 刷新所有待处理的throttled调用
+  function flushThrottlers() {
+    throttledHandlers.forEach(handler => {
+      if (handler.flush) {
+        handler.flush()
+      }
+    })
+  }
+
+  // 获取性能统计信息
+  function getPerformanceStats() {
+    const elapsed = (Date.now() - performanceStats.lastResetTime) / 1000
+    const throttleRate = performanceStats.totalMessages > 0 
+      ? ((performanceStats.totalMessages - performanceStats.processedMessages) / performanceStats.totalMessages * 100).toFixed(1)
+      : 0
+    
+    return {
+      ...performanceStats,
+      elapsedSeconds: elapsed.toFixed(1),
+      messagesPerSecond: (performanceStats.totalMessages / elapsed).toFixed(1),
+      processedPerSecond: (performanceStats.processedMessages / elapsed).toFixed(1),
+      throttleRate: `${throttleRate}%`,
+      activeHandlers: throttledHandlers.size
+    }
+  }
+
+  // 重置性能统计
+  function resetPerformanceStats() {
+    performanceStats.totalMessages = 0
+    performanceStats.throttledMessages = 0
+    performanceStats.processedMessages = 0
+    performanceStats.lastResetTime = Date.now()
+  }
 
   /* ────────── MQTT / IPC 监听 ────────── */
 
@@ -62,6 +332,11 @@ function onCellMsg (_e, msg) {
 }  // 保留原 handler
 
 onMounted(() => {
+  const mountStartTime = performance.now()
+  
+  // 【缓存恢复】先从 localStorage 恢复所有缓存数据
+  loadAllCachesFromStorage()
+
   // 先清理可能存在的旧监听器（防止快速切换导致的残留）
   CELL_CHANNELS.forEach(ch => {
     window.electron.ipcRenderer.removeAllListeners(ch)
@@ -76,10 +351,48 @@ onMounted(() => {
   window.electron.ipcRenderer.on('CLUSTER_SUMMARY', onClusterSummary)
   // window.electron.ipcRenderer.on('SYS_ABSTRACT',    handler)     
 
-  // 立即检查是否已有可用数据，避免等待新数据
-  // console.log('[cellData] 页面挂载，检查已有数据')
-  if (selectedCluster.value && clusterCache[activeView.value]?.has(selectedCluster.value)) {
-    // console.log('[cellData] 发现已有数据，立即渲染')
+  // 重置性能统计
+  resetPerformanceStats()
+  
+  const mountTime = (performance.now() - mountStartTime).toFixed(2)
+  console.log(` cellData 页面加载完成: ${mountTime}ms`)
+
+  // 将调试函数挂载到window对象（仅在开发环境）
+  if (import.meta.env.DEV) {
+    window.__cellDataDebug = {
+      // 性能统计
+      getStats: getPerformanceStats,
+      resetStats: resetPerformanceStats,
+      flushAll: flushThrottlers,
+      getHandlerCount: () => throttledHandlers.size,
+      getConfig: () => THROTTLE_CONFIG,
+      setPageActive: (active) => { isPageActive.value = active },
+      // 缓存管理
+      saveCache: saveAllCachesToStorage,
+      loadCache: loadAllCachesFromStorage,
+      clearCache: clearAllCaches,
+      getCacheSize: () => {
+        let total = 0
+        Object.keys(DATA_TYPE_MAP).forEach(dataType => {
+          const map = clusterCache[dataType]
+          if (map instanceof Map) total += map.size
+        })
+        return total
+      },
+      getCacheInfo: () => {
+        const info = {}
+        Object.keys(DATA_TYPE_MAP).forEach(dataType => {
+          const map = clusterCache[dataType]
+          if (map instanceof Map) {
+            info[dataType] = {
+              clusters: map.size,
+              keys: Array.from(map.keys())
+            }
+          }
+        })
+        return info
+      }
+    }
   }
 })
 
@@ -90,6 +403,86 @@ onBeforeUnmount(() => {
   window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY',    onPackSummary)
   window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY', onClusterSummary)
   // window.electron.ipcRenderer.removeAllListeners('SYS_ABSTRACT',    handler)
+  
+  // 刷新所有待处理的更新
+  flushThrottlers()
+  
+  // 清理所有节流处理器，释放内存
+  cleanupThrottlers()
+})
+
+// 页面激活时的处理（从其他页面切回）
+onActivated(() => {
+  isPageActive.value = true
+  
+  //页面激活时尝试恢复缓存（如果内存中没有数据）
+  const hasData = Object.keys(clusterCache).some(dataType => {
+    const map = clusterCache[dataType]
+    return map instanceof Map && map.size > 0
+  })
+  
+  if (!hasData) {
+    console.log('[页面激活] 检测到内存缓存为空，尝试从 localStorage 恢复')
+    loadAllCachesFromStorage()
+  }
+})
+
+// 页面停用时的处理（切换到其他页面）
+onDeactivated(() => {
+  const startTime = performance.now()
+  
+  isPageActive.value = false
+  
+  //刷新所有待处理的更新，确保最新数据被保存到缓存
+  flushThrottlers()
+  
+  // 页面切换前保存所有数据到 localStorage
+  saveAllCachesToStorage()
+  
+  const saveTime = (performance.now() - startTime).toFixed(2)
+  console.log(`📤 离开页面，保存缓存: ${saveTime}ms`)
+})
+
+// 【堆簇切换监听】监听堆簇选择变化，保存当前选中状态
+watch(selectedCluster, (newCluster, oldCluster) => {
+  if (newCluster && newCluster !== oldCluster) {
+    const startTime = performance.now()
+    
+    // 保存当前选中的堆簇
+    if (CACHE_CONFIG.ENABLED) {
+      localStorage.setItem(CACHE_CONFIG.SELECTED_KEY, newCluster)
+    }
+    
+    // 检查当前数据类型是否有该堆簇的缓存数据
+    const currentMap = clusterCache[activeView.value]
+    const hasCache = currentMap instanceof Map && currentMap.has(newCluster)
+    const rows = hasCache ? currentMap.get(newCluster).length : 0
+    
+    if (hasCache) {
+      updateTrigger.value++
+      const switchTime = (performance.now() - startTime).toFixed(2)
+      console.log(`🔀 堆簇切换: ${oldCluster || '无'} → ${newCluster} [${activeView.value}] ${rows}行 ${switchTime}ms`)
+    } else {
+      console.log(`🔀 堆簇切换: ${oldCluster || '无'} → ${newCluster} [${activeView.value}] ⏳ 等待数据`)
+    }
+  }
+})
+
+// 【数据类型切换监听】监听数据类型切换
+watch(activeView, (newView, oldView) => {
+  if (newView !== oldView) {
+    const startTime = performance.now()
+    
+    // 检查是否有该类型的缓存数据
+    const currentMap = clusterCache[newView]
+    const hasCache = currentMap instanceof Map && selectedCluster.value && currentMap.has(selectedCluster.value)
+    const rows = hasCache ? currentMap.get(selectedCluster.value).length : 0
+    
+    const switchTime = (performance.now() - startTime).toFixed(2)
+    const cluster = selectedCluster.value || '未选择'
+    const status = hasCache ? `${rows}行` : '⏳ 等待数据'
+    // console.log(`📊 数据类型切换: ${oldView || '无'} → ${newView} [${cluster}] ${status} ${switchTime}ms`)
+  }
 })
 
 
@@ -104,10 +497,9 @@ onBeforeUnmount(() => {
   // })
  
    //单体数据
-  /* ==========  消息处理  ========== */
-  function handler (_e, msg) {
-    // console.log('[handler] 收到原始 msg ↓↓↓')
-    // console.log(JSON.stringify(msg, null, 2))
+  /* ==========  消息处理 - 内部实现（无限流）========== */
+  function processMessageInternal(msg) {
+    // console.log('[processMessageInternal] 处理消息', msg.dataType)
 
     /*  堆簇数量帧：只更新下拉 */
     if (msg.dataType === 'BLOCK_COMMON_PARAM_R') {
@@ -130,12 +522,8 @@ onBeforeUnmount(() => {
     const MEASURE_TYPES = ['CELL_VOLT', 'CELL_TEMP', 'CELL_SOC', 'CELL_SOH']
     if (!MEASURE_TYPES.includes(msg.dataType)) return
 
-      const clusterKey = `${msg.blockId}-${msg.clusterId}`
-      const cfg = DATA_TYPE_MAP[msg.dataType]
-    // if (!cfg) {
-    //     console.error('未知 dataType', msg.dataType)
-    //     return
-    //   }
+    const clusterKey = `${msg.blockId}-${msg.clusterId}`
+    const cfg = DATA_TYPE_MAP[msg.dataType]
 
     /*  如果首见该簇 → 创建空矩阵 */
     if (!clusterCache[msg.dataType]) clusterCache[msg.dataType] = new Map()
@@ -144,8 +532,7 @@ onBeforeUnmount(() => {
         console.error('缺少 baseConfig，无法建矩阵')
         return
       }
-      // const m = buildEmptyMatrix(msg.baseConfig)
-            /* ➊ 选对计数数组：CELL_TEMP 用温感，其他用电芯 */
+      /* ➊ 选对计数数组：CELL_TEMP 用温感，其他用电芯 */
       const counts = msg.dataType === 'CELL_TEMP'
         ? msg.baseConfig.afeTempCounts
         : msg.baseConfig.afeCellCounts
@@ -159,16 +546,26 @@ onBeforeUnmount(() => {
       // console.log(`   创建空矩阵 rows=${m.length} for ${clusterKey} ${msg.dataType}`)
     }
 
-    /*  写入数据并强制触发响应式 */
-    // const updated = fillMatrix(
-    //   clusterCache[msg.dataType].get(clusterKey),
-    //   msg,
-    //   cfg.decimals
-    // )
-    // // 用新数组替换，保证 Vue 能侦测到变更
-    // clusterCache[msg.dataType].set(clusterKey, [...updated])
-    // console.log(`  ✔ 已写入 ${msg.data.length} 组 element (${msg.dataType})`)
+    /*  写入数据 */
     fillMatrix(clusterCache[msg.dataType].get(clusterKey), msg)
+  }
+
+  /* ==========  消息处理 - 限流入口  ========== */
+  function handler (_e, msg) {
+    // console.log('[handler] 收到原始 msg ↓↓↓')
+    // console.log(JSON.stringify(msg, null, 2))
+
+    // 统计消息数
+    performanceStats.totalMessages++
+
+    // 生成节流键
+    const clusterKey = msg.clusterId != null 
+      ? `${msg.blockId}-${msg.clusterId}` 
+      : `${msg.blockId}-0`
+
+    // 使用节流处理器
+    const throttledHandler = getThrottledHandler(msg.dataType, clusterKey)
+    throttledHandler(msg)
   }
 
 
@@ -188,9 +585,13 @@ onBeforeUnmount(() => {
       }
     }
 
-    replaceClusterOptions(opts)    
-    // console.log('   下拉更新 =', opts.map(o => o.value))
-
+    // 【关键修复】比较选项，只有在真正变化时才更新，避免循环触发
+    const currentValues = clusterOptions.value.map(o => o.value).sort().join(',')
+    const newValues = opts.map(o => o.value).sort().join(',')
+    
+    if (currentValues !== newValues) {
+      replaceClusterOptions(opts)
+    }
   }
 
   /* ---------- 创建空矩阵 ---------- */
@@ -229,11 +630,16 @@ onBeforeUnmount(() => {
 
   /* ---------- 计算表格行列 ---------- */
   const matrixRows = computed(() => {
+    const startTime = performance.now()
+    // 依赖 updateTrigger 来触发重新计算
+    updateTrigger.value
+    
     const map = clusterCache[activeView.value]
     const rows = map?.get(selectedCluster.value) || []
-    // console.log('[渲染] 当前簇', selectedCluster.value,
-    //             '类型', activeView.value,
-    //             'rows=', rows.length)
+    
+    const computeTime = (performance.now() - startTime).toFixed(2)
+    // console.log(`[🔄 matrixRows] 簇=${selectedCluster.value} | 类型=${activeView.value} | 行数=${rows.length} | 耗时=${computeTime}ms`)
+    
     return rows
   })
 
@@ -248,7 +654,19 @@ onBeforeUnmount(() => {
   const displayCols = computed(() => Array.from({ length: maxCols.value }, (_, i) => i + 1))
 
   function formatCell(v){          //  模板内按需格式化
-    return v === '--' ? v : Number(v).toFixed(DATA_TYPE_MAP[activeView.value].decimals)
+    // 处理占位符
+    if (v === '--' || v === '-') return '---'
+    
+    // 转换为数字
+    const numValue = Number(v)
+    
+    // 检查无效值（这些值是32767或1000经过分辨率计算后的结果）
+    if (numValue === 32.767 || numValue === 3276.7 || numValue === 100.0) {
+      return '---'
+    }
+    
+    // 正常格式化
+    return numValue.toFixed(DATA_TYPE_MAP[activeView.value].decimals)
   }
 
 
@@ -328,34 +746,40 @@ onBeforeUnmount(() => {
     )
   );
 
-  const orderedElems = computed(() =>
-    FIELD_ORDER.map(fieldLabel => {
-      // 尝试多种匹配方式
-      let found = flatElems.value.find(e => e.label === fieldLabel);
+  const orderedElems = computed(() => {
+    const elemMap = new Map()
+    flatElems.value.forEach(e => {
+      elemMap.set(e.label, e)
+    })
+    
+    return FIELD_ORDER.map(fieldLabel => {
+      // 尝试多种匹配方式（使用 O(1) 的 Map 查找）
+      let found = elemMap.get(fieldLabel)
+      
       // 如果直接匹配失败，尝试带单位的匹配
       if (!found) {
-        const unit = UNIT_MAP[fieldLabel];
+        const unit = UNIT_MAP[fieldLabel]
         if (unit) {
-          found = flatElems.value.find(e => e.label === `${fieldLabel}(${unit})`);
+          found = elemMap.get(`${fieldLabel}(${unit})`)
         }
       }
       // 如果还是没找到，返回默认值
       if (!found) {
-        return { label: fieldLabel, value: '–' };
+        return { label: fieldLabel, value: '–' }
       }
       
       // 对系统状态和故障等级进行文本映射
-      let displayValue = found.value;
+      let displayValue = found.value
       if (fieldLabel === '系统状态' && SYSTEM_STATUS_MAP[found.value] !== undefined) {
-        displayValue = SYSTEM_STATUS_MAP[found.value];
+        displayValue = SYSTEM_STATUS_MAP[found.value]
       } else if (fieldLabel === '故障等级' && FAULT_LEVEL_MAP[found.value] !== undefined) {
-        displayValue = FAULT_LEVEL_MAP[found.value];
+        displayValue = FAULT_LEVEL_MAP[found.value]
       }
       
       // 返回纯标签名（不带单位），单位会在模板中通过UNIT_MAP添加
-      return { label: fieldLabel, value: displayValue };
+      return { label: fieldLabel, value: displayValue }
     })
-  );
+  });
 
 
 
@@ -477,7 +901,6 @@ onBeforeUnmount(() => {
     <!-- ▼▼ 单体数据表（完整渲染，无内部滚动）▼▼ -->
     <DataTable v-if="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH'].includes(activeView)"
                ref="dataTableRef"
-               :key="`cell-table-${activeView}-${selectedCluster}`"
                :value="matrixRows"
                showGridlines
                style="width:auto">

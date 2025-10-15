@@ -15,7 +15,6 @@ import Column from 'primevue/column'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
-import TabMenu from 'primevue/tabmenu'
 // 下拉配置改为通过 useRemoteControlCore 内置函数处理（方案1）
 
 const toastService = useToast()
@@ -233,7 +232,7 @@ function startReadingWithRetry() {
 
 // 下拉相关函数已从各自实例解构，无需重复创建实例
 
-// 方案：顶部TabMenu仅作导航，内容区始终是一张表（两层框架）
+// 方案：顶部Button导航，内容区始终是一张表（两层框架）
 
 // 顶部导航（仅导航，无内容面板）
 const topMenuItems = [
@@ -241,8 +240,12 @@ const topMenuItems = [
   { label: '系统通讯设备配置参数', key: 'comm' },
   { label: '系统操作配置参数', key: 'operate' }
 ]
-const activeIndex = ref(0)
-const activeType = computed(() => (topMenuItems[activeIndex.value]?.key || 'batt'))
+const activeType = ref('batt')
+
+// 切换顶部菜单
+function switchToTopMenu(menuKey) {
+  activeType.value = menuKey
+}
 
 // 当前视图映射（不在切换时重新读取）
 const currentIsReading = computed(() =>
@@ -574,9 +577,20 @@ function selectAllClusters(parameterDefinition) {
   <div class="card">
     <!-- Toast组件已移至AppLayout.vue，避免重复声明 -->
 
-    <!-- 顶部导航（TabMenu，仅作导航，不渲染内容面板） -->
+    <!-- 顶部导航（Button组件，仅作导航，不渲染内容面板） -->
     <div class="control-area mb-1" style="justify-content: flex-start; align-items:center; gap:8px;">
-      <TabMenu :model="topMenuItems" v-model:activeIndex="activeIndex" />
+      <div class="class-tabs">
+        <Button
+          v-for="menuItem in topMenuItems"
+          :key="menuItem.key"
+          :label="menuItem.label"
+          @click="switchToTopMenu(menuItem.key)"
+          :severity="activeType === menuItem.key ? 'primary' : 'secondary'"
+          :outlined="activeType !== menuItem.key"
+          size="small"
+          class="class-tab-button"
+        />
+      </div>
     </div>
 
     <!-- 二级分类（仅当当前类型存在多个分类时出现；电池类型无分类） -->
@@ -673,12 +687,12 @@ function selectAllClusters(parameterDefinition) {
       </Column>
       <Column header="单位" style="width: 90px">
         <template #body="{ data }">
-          <span v-if="data" class="text-gray-600">{{ data.unit || '-' }}</span>
+          <span v-if="data">{{ data.unit || '-' }}</span>
         </template>
       </Column>
       <Column header="备注说明" style="width: 320px">
         <template #body="{ data }">
-          <span v-if="data" class="text-sm text-gray-600">{{ activeType==='batt' ? getBatteryRemarks(data) : (data.remarks || getParameterRemarkText()) }}</span>
+          <span v-if="data" class="text-sm">{{ activeType==='batt' ? getBatteryRemarks(data) : (data.remarks || getParameterRemarkText()) }}</span>
         </template>
       </Column>
     </DataTable>
@@ -691,55 +705,7 @@ function selectAllClusters(parameterDefinition) {
 .class-tabs{ display:flex; flex-wrap:wrap; gap:8px }
 .class-tab-button{ min-width:100px }
 
-/* TabMenu容器：去掉整框，避免把所有Tab包成一个大框 */
-:deep(.p-tabmenu){
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-/* 去掉导航条线条，避免三Tab连成一体 */
-:deep(.p-tabmenu .p-tabmenu-nav){
-  border: none !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-/* 单个Tab之间的间距 */
-:deep(.p-tabmenu .p-tabmenu-nav .p-tabmenuitem){
-  margin-right: 8px;
-}
-/* 每个Tab自身有完整边框（四边一致），强制下边框颜色 */
-:deep(.p-tabmenu .p-tabmenu-nav .p-tabmenuitem .p-menuitem-link){
-  border: 1px solid var(--surface-border,#dee2e6) !important;
-  border-bottom-color: var(--surface-border,#dee2e6) !important;
-  background: var(--surface-card,#ffffff) !important;
-  border-radius: 6px !important;
-  box-shadow: none !important;
-  position: relative; /* 供 ::after 制作底边线 */
-}
-/* 选中态：四边一致，仅改变颜色 */
-:deep(.p-tabmenu .p-tabmenu-nav .p-tabmenuitem.p-highlight .p-menuitem-link){
-  border-color: var(--primary-color,#3B82F6) !important;
-  border-bottom-color: var(--primary-color,#3B82F6) !important;
-  color: var(--primary-color-text,#ffffff) !important;
-  background: var(--primary-color,#3B82F6) !important;
-}
 
-/* 强制底边线可见：用伪元素绘制，避免主题覆盖或边线合并 */
-:deep(.p-tabmenu .p-tabmenu-nav .p-tabmenuitem .p-menuitem-link::after){
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1px;
-  background: var(--surface-border,#dee2e6);
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
-  pointer-events: none;
-}
-:deep(.p-tabmenu .p-tabmenu-nav .p-tabmenuitem.p-highlight .p-menuitem-link::after){
-  background: var(--primary-color,#3B82F6);
-}
 
 /* 顶部控制区不产生额外"容器线条" */
 .control-area{ border: none; padding: 0 0 .5rem 0; margin-bottom: 20px; }

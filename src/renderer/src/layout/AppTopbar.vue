@@ -24,7 +24,7 @@ const dataReceptionStore = useDataReceptionStore()
 const mqttStore = useMqttStore()
 
 // 版本信息
-const version = 'test-v0.1.5 9.30'
+const version = 'test-v0.1.9 10.14'
 
 
 
@@ -154,11 +154,21 @@ const combinedDisplayClass = computed(() => {
 <style scoped>
 /* 整体顶部导航栏 */
 .layout-topbar {
+  position: fixed;
+  height: 3.5rem;
+  z-index: 997;
+  left: 0;
+  top: 0;
+  width: 100%;
+  padding: 0 0.4rem;
+  background-color: var(--surface-card);
+  transition: left 0.2s;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 1rem;
-  min-height: 4rem;
+  box-shadow:
+    0px 3px 5px rgba(0, 0, 0, 0.02),
+    0px 0px 2px rgba(0, 0, 0, 0.05),
+    0px 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 /* 左侧区域：菜单按钮和选择器 */
@@ -179,16 +189,16 @@ const combinedDisplayClass = computed(() => {
 .cluster-selector-area {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
 }
 
 /* 堆选择器区域 */
 .block-selector-area {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 0;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
 }
 
 /* 查看簇选择器 */
@@ -199,7 +209,7 @@ const combinedDisplayClass = computed(() => {
 
 .cluster-view-dropdown {
   width: 10rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 /* 查看堆选择器 */
@@ -210,7 +220,7 @@ const combinedDisplayClass = computed(() => {
 
 .block-view-dropdown {
   width: 10rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 /* 下发目标选择器 */
@@ -221,7 +231,7 @@ const combinedDisplayClass = computed(() => {
 
 .cluster-write-multiselect {
   width: 12rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 /* 堆下发目标选择器 */
@@ -232,37 +242,44 @@ const combinedDisplayClass = computed(() => {
 
 .block-write-multiselect {
   width: 10rem;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
-/* 菜单按钮样式 */
+/* 菜单按钮样式 - 参考modbus设计 */
 .layout-menu-button {
   display: inline-flex;
-  width: 3rem;
-  height: 3rem;
+  width: 2rem;
+  height: 2rem;
+  margin-left: 0rem;
 }
 
 .layout-topbar-menu-button {
   display: inline-flex;
-  width: 3rem;
-  height: 3rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 .layout-topbar-button {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: var(--text-color);
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  left: 0rem;
+  color: var(--text-color-secondary);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  background: none;
+  border: none;
   padding: 0;
   margin: 0;
-  min-width: 3rem;
-  height: 3rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  transition: background-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
 .layout-topbar-button:enabled:hover {
-  background-color: rgba(255, 255, 255, 0.3);
   color: var(--text-color);
+  background-color: var(--surface-hover);
 }
 
 .layout-topbar-button:focus {
@@ -272,7 +289,7 @@ const combinedDisplayClass = computed(() => {
 }
 
 .layout-topbar-button i {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
 .layout-topbar-button .layout-topbar-button-text {
@@ -285,14 +302,15 @@ const combinedDisplayClass = computed(() => {
 
 /* 版本信息 */
 .version-info {
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: var(--text-color);
-  margin-left: 1rem;
+  margin-left: 0.5rem;
 }
 
-/* 多选框样式优化 */
+/* 下拉选择器和多选框样式 - 参考modbus设计 */
+:deep(.p-dropdown),
 :deep(.p-multiselect) {
-  font-size: 12px;
+  font-size: 1rem;
 }
 
 :deep(.p-multiselect-panel) {
@@ -350,9 +368,9 @@ const combinedDisplayClass = computed(() => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.875rem; /* 比版本号小一个字号 */
+  font-size: 0.8rem; /* 比版本号小一个字号 */
   margin-left: 0.5rem;
-  min-width: 150px; /* 固定宽度，容纳合并文本 */
+  min-width: 120px; /* 固定宽度，容纳合并文本 */
 }
 
 .combined-status-text {

@@ -99,12 +99,29 @@
                         <span class="io-remark">{{ item.remark }}</span>
                       </div>
                       <div class="io-status-indicator">
-                        <Tag 
-                          :value="getIOStatusText(item.value)" 
+                        <Tag
+                          :value="getIOStatusText(item.value)"
                           :severity="getIOStatusSeverity(item.value)"
                           class="status-tag"
                         />
                         <div class="led-indicator" :class="getLEDClass(item.value)"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- I/O控制板心跳 -->
+                <div class="io-section">
+                  <div class="section-header">
+                    <span class="section-title">I/O控制板心跳</span>
+                  </div>
+                  <div class="section-items">
+                    <div v-for="item in ioHeartbeat" :key="item.key" class="io-item">
+                      <div class="io-info">
+                        <span class="io-label">{{ item.label }}</span>
+                      </div>
+                      <div class="io-status-indicator">
+                        <span class="io-value">{{ item.value }}</span>
                       </div>
                     </div>
                   </div>
@@ -119,18 +136,23 @@
 
 <script setup>
 import { useBlockIO } from '@/composables/core/data-processing/block/useBlockIO'
+import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import { computed } from 'vue'
+
+// 堆选择功能
+const { selectedBlock } = useBlockSelect()
 
 const {
   systemDI,
   systemDO,
   ioControlDI,
   ioControlDO,
+  ioHeartbeat,
   getIOStatusText,
   getIOStatusSeverity
-} = useBlockIO()
+} = useBlockIO(selectedBlock)
 
 // 添加调试日志
 // console.log('[BlockIO.vue] 组件初始化，systemDI:', systemDI.value)
@@ -139,8 +161,9 @@ const {
 
 // 检查是否有数据
 const hasData = computed(() => {
-  return systemDI.value.length > 0 || systemDO.value.length > 0 || 
-         ioControlDI.value.length > 0 || ioControlDO.value.length > 0
+  return systemDI.value.length > 0 || systemDO.value.length > 0 ||
+         ioControlDI.value.length > 0 || ioControlDO.value.length > 0 ||
+         ioHeartbeat.value.length > 0
 })
 
 // 获取LED指示器样式类
@@ -298,6 +321,13 @@ const getLEDClass = (value) => {
       font-size: 0.75rem;
       color: var(--text-color-secondary);
       font-style: italic;
+    }
+
+    .io-value {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--primary-color);
+      font-family: 'Courier New', monospace;
     }
   }
   

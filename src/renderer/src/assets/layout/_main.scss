@@ -25,3 +25,8 @@ a {
 .layout-wrapper {
   min-height: 100vh;
 }
+
+.layout-main-container {
+  margin-top: 3.5rem; /* 为固定导航栏留出空间 */
+  margin-left: 150px; /* 为侧边栏留出空间，适当减少空白 */
+}

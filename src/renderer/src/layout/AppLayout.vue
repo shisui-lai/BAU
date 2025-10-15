@@ -184,13 +184,17 @@ watch(() => mqttStore.status, (newStatus, oldStatus) => {
   }
 })
 
-// 【数据接收监控】处理心跳信号
-// 功能：接收主进程发送的心跳信号，更新数据接收状态和数据速率统计
+// 【数据接收监控】处理心跳信号（仅用于通讯状态监控）
+// 功能：接收主进程发送的心跳信号，更新数据接收状态
+// 速率计算已迁移到MQTT子进程，此处不再处理速率
 function handleDataHeartbeat(event, heartbeat) {
-  dataReceptionStore.markDataReceived(
-    heartbeat.messageType,
-    heartbeat.dataSize || 0  // 传递数据大小用于速率计算
-  )
+  dataReceptionStore.markDataReceived(heartbeat.messageType)
+}
+
+// 【数据速率】处理速率更新（接收来自MQTT子进程的计算结果）
+// 新架构：速率在MQTT子进程计算，渲染进程只负责显示
+function handleDataRateUpdate(event, rateData) {
+  dataReceptionStore.updateDataRate(rateData.rate)
 }
 
 // 监听数据接收状态变化 - 已移除toast提示，只保留状态更新
@@ -212,6 +216,9 @@ watch(
 
 // 组件挂载时检查MQTT连接状态
 onMounted(() => {
+  const appLayoutStart = performance.now()
+  console.log('[AppLayout] 开始初始化')
+  
   // 【MQTT状态监听】初始化MQTT store的IPC事件监听器
   // 功能：监听来自主进程的MQTT连接状态变化事件，实现实时状态检测
   mqttStore.initialize()
@@ -235,18 +242,27 @@ onMounted(() => {
   dataReceptionStore.startMonitoring()
   console.log('[AppLayout] 数据接收监控已启动')
 
+  // 【数据速率】监听来自MQTT子进程的速率更新
+  // 新架构：速率在子进程计算，渲染进程只负责显示
+  window.electron.ipcRenderer.on('data-rate-update', handleDataRateUpdate)
+  console.log('[AppLayout] 数据速率监听已启动')
+
   // 监听页面可见性变化，优化后台性能
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  const appLayoutEnd = performance.now()
+  const appLayoutTime = (appLayoutEnd - appLayoutStart).toFixed(2)
+  console.log(`[AppLayout] 初始化完成，耗时: ${appLayoutTime}ms`)
 })
 
-// 处理页面可见性变化
+// 处理页面可见性变化 - 已禁用后台节流
 function handleVisibilityChange() {
   const isVisible = !document.hidden
-  
-  // 通知主进程调整MQTT限流策略
-  if (window.electron?.ipcRenderer) {
-    window.electron.ipcRenderer.send('page-visibility-change', isVisible)
-  }
+
+  // 通知主进程调整MQTT限流策略 - 已禁用
+  // if (window.electron?.ipcRenderer) {
+  //   window.electron.ipcRenderer.send('page-visibility-change', isVisible)
+  // }
 }
 
 // 清理资源
@@ -256,6 +272,10 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('mqtt-data-heartbeat')
   dataReceptionStore.stopMonitoring()
   console.log('[AppLayout] 数据接收监控已停止')
+
+  // 【数据速率】清理速率监听器
+  window.electron.ipcRenderer.removeAllListeners('data-rate-update')
+  console.log('[AppLayout] 数据速率监听已停止')
 
   document.removeEventListener('visibilitychange', handleVisibilityChange)
 })

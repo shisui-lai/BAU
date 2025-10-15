@@ -2000,7 +2000,21 @@ function processCellDataRAW(hex, resolution, tag = 'cell', isSigned = false) {
     const raw = isSigned
       ? pick.s16(view, nextOffset + i * 2)
       : pick.u16(view, nextOffset + i * 2);
-    valueArr.push((raw * resolution).toFixed(resolution < 0.01 ? 3 : 1) * 1);
+    
+    // 检查无效值
+    let displayValue;
+    if (raw === 32767) {
+      // 32767是无效值标志，显示为'-'
+      displayValue = '---';
+    } else if (raw === 32766) {
+      // 32766也是无效值标志，显示为'-'
+      displayValue = '---';
+    } else {
+      // 正常值计算
+      displayValue = (raw * resolution).toFixed(resolution < 0.01 ? 3 : 1) * 1;
+    }
+    
+    valueArr.push(displayValue);
   }
 
   // 组装成 BMU-AFE-Cell 树

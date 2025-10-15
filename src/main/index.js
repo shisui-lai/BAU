@@ -1,4 +1,4 @@
-import { app, Menu, shell, BrowserWindow, ipcMain, dialog, screen, session } from 'electron'
+import { app, Menu, shell, BrowserWindow, ipcMain, dialog, screen, session, powerMonitor } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -177,32 +177,74 @@ function createWindow() {
   // 页面可见性状态管理
   let isPageVisible = true
   
-  // 监听渲染进程的可见性变化
+  // 监听渲染进程的可见性变化 - 已禁用后台节流
   ipcMain.on('page-visibility-change', (_e, visible) => {
     isPageVisible = visible
-    
-    // 通知MQTT子进程调整限流策略
-    const currentTask = processManager.getMQTTTask()
-    if (currentTask && !currentTask.killed) {
-      currentTask.send({ cmd: 'SET_BACKGROUND_MODE', isBackground: !visible })
-    }
+
+    // 通知MQTT子进程调整限流策略 - 已禁用
+    // const currentTask = processManager.getMQTTTask()
+    // if (currentTask && !currentTask.killed) {
+    //   currentTask.send({ cmd: 'SET_BACKGROUND_MODE', isBackground: !visible })
+    // }
   })
+
+  // 【诊断】主进程消息处理统计
+  let mainProcessMessageCount = 0
+  let mainProcessLastLogTime = Date.now()
+  let pendingSetImmediateCount = 0
 
   mainWindow.webContents.once('did-finish-load', () => {
     // 设置进程管理器的消息处理器
     // 功能：接收来自MQTT子进程的所有消息，进行分类处理
     processManager.setMessageHandler((msg) => {
+      mainProcessMessageCount++
+      
+      // 【诊断】每1秒输出一次统计信息（临时改为1秒，方便对比速率显示）
+      // 用途：验证速率0KB/s时，主进程是否真的无消息
+      const now = Date.now()
+      if (now - mainProcessLastLogTime > 1000) {
+        const messagesPerSecond = mainProcessMessageCount / ((now - mainProcessLastLogTime) / 1000)
+        // console.log(`[Main Process] 📊 1秒统计: ${messagesPerSecond.toFixed(1)} msg/s, 待处理: ${pendingSetImmediateCount}`)
+        
+        // 【关键诊断】如果消息速率过高或待处理队列过长，发出警告
+        // 阈值说明：根据用户实际负载（200+ beats/s），调整为300 msg/s和100队列长度
+        // if (messagesPerSecond > 300) {
+        //   console.warn(`[Main Process] ⚠️ 消息速率过高 (${messagesPerSecond.toFixed(1)} msg/s)，可能导致事件循环拥堵`)
+        // }
+        // if (pendingSetImmediateCount > 100) {
+        //   console.warn(`[Main Process] ⚠️ setImmediate队列过长 (${pendingSetImmediateCount})，可能导致UI更新延迟`)
+        // }
+        
+        mainProcessMessageCount = 0
+        mainProcessLastLogTime = now
+      }
+      
       // 过滤心跳消息 - 心跳消息已在processManager中处理，不需要转发到渲染进程
       // 这样可以避免渲染进程收到大量无用的心跳消息
       if (msg.type === 'heartbeat') {
         return
       }
 
-      // 转发业务消息到渲染进程 - 所有MQTT业务数据都会转发给前端显示
-      mainWindow.webContents.send(msg.type, msg.data)
+      // 【数据速率】直接转发速率更新消息到渲染进程
+      // 新架构：速率在MQTT子进程中计算，主进程只负责转发
+      if (msg.type === 'data-rate-update') {
+        pendingSetImmediateCount++
+        setImmediate(() => {
+          mainWindow.webContents.send('data-rate-update', msg.data)
+          pendingSetImmediateCount--
+        })
+        return
+      }
 
-      // 【数据接收监控】发送心跳信号到渲染进程
-      // 功能：监控设备数据接收状态，支持5秒超时检测和数据速率统计
+      // 转发其他消息到渲染进程
+      pendingSetImmediateCount++
+      setImmediate(() => {
+        mainWindow.webContents.send(msg.type, msg.data)
+        pendingSetImmediateCount--
+      })
+
+      // 【数据接收监控】发送心跳信号到渲染进程（仅用于通讯状态监控，不再包含速率数据）
+      // 功能：监控设备数据接收状态，支持5秒超时检测
       // 只有在收到真正的设备业务数据时才发送心跳，排除连接状态等控制消息
       if (msg.data && typeof msg.data === 'object' && Object.keys(msg.data).length > 0 &&
           msg.type !== 'mqtt-connected' &&
@@ -210,17 +252,17 @@ function createWindow() {
           msg.type !== 'mqtt-connect-result' &&
           msg.type !== 'mqtt-disconnect-result' &&
           msg.type !== 'mqtt-test-result' &&
+          msg.type !== 'data-rate-update' &&
           msg.type !== 'heartbeat') {
 
-        // 🚀 优化：使用原始MQTT payload大小，避免JSON序列化开销
-        // payloadSize在msg.data中（来自MQTT子进程的原始payload字节长度）
-        const dataSize = msg.data.payloadSize || JSON.stringify(msg.data).length
-
-        // 发送心跳信号，包含数据大小用于速率统计
-        mainWindow.webContents.send('mqtt-data-heartbeat', {
-          timestamp: Date.now(),
-          messageType: msg.type,
-          dataSize: dataSize
+        // 异步发送心跳信号（不再包含dataSize，速率由子进程独立计算）
+        pendingSetImmediateCount++
+        setImmediate(() => {
+          mainWindow.webContents.send('mqtt-data-heartbeat', {
+            timestamp: Date.now(),
+            messageType: msg.type
+          })
+          pendingSetImmediateCount--
         })
       }
     });
@@ -264,26 +306,42 @@ function createWindow() {
         }
 
         let timeoutId = null
+        let firstResponseReceived = false
 
         // 监听连接结果（一次性）
         const handleResult = (message) => {
           console.log('[Main]  收到MQTT子进程消息:', message.type)
           if (message.type === 'mqtt-connect-result') {
-            // console.log('[Main]  收到连接结果:', message.data)
-            if (timeoutId) clearTimeout(timeoutId)
+            // 标记已收到首次响应
+            if (!firstResponseReceived) {
+              firstResponseReceived = true
+              if (timeoutId) {
+                clearTimeout(timeoutId)
+                timeoutId = null
+              }
+            }
+            
             currentTask.removeListener('message', handleResult)
+            
+            // 无论成功或失败，都返回结果
+            // 失败时mqtt.js会自动重连，不需要前端再次请求
             resolve(message.data.success)
           }
         }
 
         currentTask.on('message', handleResult)
 
-        // 设置超时
+        // 只为首次连接尝试设置超时（略大于mqtt.js的connectTimeout）
+        // mqtt.js connectTimeout是10秒，我们设置12秒
+        // 如果超时，说明首次连接失败，但mqtt.js会继续自动重连
         timeoutId = setTimeout(() => {
-          console.error('[Main]  MQTT连接超时 (15秒)')
+          console.warn('[Main]  首次连接超时 (12秒)，mqtt.js将继续自动重连')
           currentTask.removeListener('message', handleResult)
+          
+          // 返回false表示首次连接未成功
+          // 但不影响mqtt.js后台的自动重连
           resolve(false)
-        }, 15000) // 15秒超时
+        }, 12000) // 12秒超时，与mqtt.js的connectTimeout(10秒)协调
       })
     })
 

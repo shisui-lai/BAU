@@ -1641,7 +1641,7 @@ export const SAVED_FAULT_MAP = [
     ...Array.from({ length:32 }, (_,i)=>({
       class:'BMU配置',
       key:`virtualCellOffset${i+1}`,
-      label:`虚拟电池偏移${i+1}`, type:'u16'
+      label:`AFE${Math.floor(i / 2) + 1}的虚拟电池偏移位置${(i % 2) + 1}`, type:'u16'
     })),
 
     /* ④ 预留 32 B ------------------------------------------------------- */
@@ -2362,7 +2362,7 @@ export const REAL_TIME_SAVE_R = [
 
   { class: '实时SOH', key: 'sohCalcChargeAccTime1', label: 'SOH计算-充电累积安时', type: 's32', scale: 10, unit: 'Ah' },
   { class: '实时SOH', key: 'sohCalcDischargeAccTime1', label: 'SOH计算-放电累积安时', type: 's32', scale: 10, unit: 'Ah' },
-  { class: '实时SOH', key: 'sohPowerOnInitFlag', label: 'soh上电初始化标志位', type: 'u16' },
+  { class: '实时SOH', key: 'sohPowerOnInitFlag', label: 'SOH上电初始化标志位', type: 'u16' },
   { class: '实时SOH', key: 'sohCurrentUpdateCapacity', label: '存储的SOH当前更新容量', type: 'u16', scale: 10, unit: 'Ah' },
   { class: '实时SOH', key: '_reserve4', label: '预留4', type: 'u16' },
   { class: '实时SOH', key: '_reserve5', label: '预留5', type: 'u16' },
@@ -2910,12 +2910,12 @@ export const BLOCK_IO_STATUS = [
   { class: 'I/O控制板-DO', key: 'do15Status', label: 'DO1.5', type: 'bit', bitsOf: 'ioControlBoardDO', bit: 13 },
   { class: 'I/O控制板-DO', key: 'do16Status', label: 'DO1.6', type: 'bit', bitsOf: 'ioControlBoardDO', bit: 14 },
   { class: 'I/O控制板-DO', key: 'do17Status', label: 'DO1.7', type: 'bit', bitsOf: 'ioControlBoardDO', bit: 15 },
-  
+  { class: 'I/O心跳', key: 'I/OheartBeat', label: 'I/O控制板心跳', type: 'u16'},
   // 第5个寄存器：预留字段 (2字节，16位)
   { class: '预留', key: 'reserved1', label: '预留字段1', type: 'u16', hide: false },
   
   // 第6个寄存器：预留字段 (2字节，16位)
-  { class: '预留', key: 'reserved2', label: '预留字段2', type: 'u16', hide: false }
+  // { class: '预留', key: 'reserved2', label: '预留字段2', type: 'u16', hide: false }
 ];
 
 // 堆硬件故障定义
@@ -3496,7 +3496,7 @@ export const BLOCK_BATT_PARAM_R = [
   ...Array.from({ length: 32 }, (_, i) => ({
     class: '系统簇端电池配置参数',
     key: `VirtualCellOffset${i+1}`,
-    label: `虚拟电池偏移位置${i+1}`,
+    label: `AFE${Math.floor(i / 2) + 1}的虚拟电池偏移位置${(i % 2) + 1}`,
     type: 'u16',
     scale: 1,
   })),

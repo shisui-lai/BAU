@@ -217,8 +217,6 @@ watch(
 // 组件挂载时检查MQTT连接状态
 onMounted(() => {
   const appLayoutStart = performance.now()
-  console.log('[AppLayout] 开始初始化')
-  
   // 【MQTT状态监听】初始化MQTT store的IPC事件监听器
   // 功能：监听来自主进程的MQTT连接状态变化事件，实现实时状态检测
   mqttStore.initialize()
@@ -249,10 +247,6 @@ onMounted(() => {
 
   // 监听页面可见性变化，优化后台性能
   document.addEventListener('visibilitychange', handleVisibilityChange)
-  
-  const appLayoutEnd = performance.now()
-  const appLayoutTime = (appLayoutEnd - appLayoutStart).toFixed(2)
-  console.log(`[AppLayout] 初始化完成，耗时: ${appLayoutTime}ms`)
 })
 
 // 处理页面可见性变化 - 已禁用后台节流
@@ -306,9 +300,9 @@ defineExpose({
     </div>
     <div class="layout-main-container">
       <div class="layout-main">
-        <!-- 为参数管理页面启用keep-alive，避免频繁mount/unmount -->
+        <!-- 为参数管理页面和电池信息页面启用keep-alive，避免频繁mount/unmount -->
         <router-view v-slot="{ Component }">
-          <keep-alive include="SOXParam,BaseParam,AlarmThreshold">
+          <keep-alive include="SOXParam,BaseParam,AlarmThreshold,cellData">
             <component :is="Component" />
           </keep-alive>
         </router-view>

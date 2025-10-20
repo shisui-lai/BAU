@@ -71,16 +71,16 @@ export const useMqttStore = defineStore('mqtt', {
     hasError: (state) => state.status === 'error',
     canConnect: (state) => state.config.host && state.config.host.trim() !== '',
     
-    // 格式化连接状态文本
+    // 格式化连接状态文本 - 返回状态键，由组件使用i18n翻译
     statusText: (state) => {
       switch (state.status) {
-        case 'connected': return '已连接'
-        case 'connecting': return '连接中...'
-        case 'reconnecting': return '重连中...'
-        case 'disconnected': return '已断开'
-        case 'offline': return '掉线'
-        case 'error': return '连接失败'
-        default: return '未知状态'
+        case 'connected': return 'mqtt.status.connected'
+        case 'connecting': return 'mqtt.status.connecting'
+        case 'reconnecting': return 'mqtt.status.reconnecting'
+        case 'disconnected': return 'mqtt.status.disconnected'
+        case 'offline': return 'mqtt.status.disconnected' // 掉线状态也显示为断开
+        case 'error': return 'mqtt.status.error'
+        default: return 'mqtt.status.disconnected'
       }
     },
     

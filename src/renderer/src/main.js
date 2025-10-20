@@ -1,7 +1,9 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import { createPinia } from 'pinia'
+import { createI18n } from 'vue-i18n'
 import router from './router'
+import messages from '@intlify/unplugin-vue-i18n/messages'
 
 import PrimeVue from 'primevue/config'
 import AutoComplete from 'primevue/autocomplete'
@@ -226,4 +228,29 @@ app.component('TreeTable', TreeTable)
 /* app.component('TriStateCheckbox', TriStateCheckbox) */
 app.component('VirtualScroller', VirtualScroller)
 
-app.mount('#app')
+async function bootstrap() {
+  // 从 Electron 主进程获取用户语言偏好
+  let defaultLocale = 'zh'
+  
+  if (window.electronAPI?.getLocale) {
+    defaultLocale = await window.electronAPI.getLocale()
+  } else {
+    // 浏览器环境使用 localStorage
+    const saved = localStorage.getItem('locale')
+    if (saved) defaultLocale = saved
+  }
+
+  // 创建 i18n 实例
+  const i18n = createI18n({
+    legacy: false, // 使用 Composition API 模式
+    locale: defaultLocale,
+    fallbackLocale: 'en',
+    messages
+  })
+  
+  app.use(i18n)
+  app.mount('#app')
+}
+
+// 启动应用
+bootstrap()

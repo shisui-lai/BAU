@@ -10,10 +10,10 @@ export const BASE_PARAM_REMARKS = {
   // 'afeTemp1': '备有缓1：afe1的温度测量输入点；备有缓2：afe2的温度测量输入点；备有缓3：afe3的温度测量输入点；备有缓4：afe4的温度测量输入点',
   
   // 类型选择备注
-  'EventRecordMode': '0x00 简约模式\n0x01 详细模式',
+  'EventRecordMode': '0x00 简约模式；0x01 详细模式',
   'TestMode': '0: 关闭内测模式；1: 内测模式1（V、T）2: 内测模式2（IACP）3: 内测模式3（DO）',
-  'InternalMode': '0:自动均衡\n1:手动均衡',
-  'RunMode': '0x5BB5运维模式\n0x1221非运维模式（默认）',
+  'InternalMode': '0:自动均衡；1:手动均衡',
+  'RunMode': '0x5BB5运维模式；0x1221非运维模式（默认）',
   'PcsType': '0xFFFF：无PCS；1：星星PCS；2：双一力PCS-01；3：科华PCS',
   'CoolDeviceType': '0xFFFF：无制冷设备；1：柯诺威水冷机；2：英维克；3：埃森特交流空调',
   'DehumidifyType': '0xFFFF：无除湿机设备；1：除湿机-01',
@@ -45,7 +45,7 @@ export const BASE_PARAM_REMARKS = {
   'rs4853Baud': '0-1200；1-2400；2-4800；3-9600；4-19200；5-38400；6-57600；7-115200',
   
   // 传感器与电池备注
-  'currentSensorType': '0x00：LEM-CAB500-C/SP5-012\n0x01：LEM-DHAB-5/118\n0x30：JC-JHAB-5/18\n0xC0：QY-PL2C-200A/75mV',
+  'currentSensorType': '0x00：LEM-CAB500-C/SP5-012；0x01：LEM-DHAB-5/118；0x30：JC-JHAB-5/18；0xC0：QY-PL2C-200A/75mV',
   // 'sensor1Range': '1A',
   // 'sensor2Range': '1A', 
   // 'sensor3Range': '1A',
@@ -60,7 +60,7 @@ export const BASE_PARAM_REMARKS = {
   // 均衡参数备注
   'balanceStartTime': '例开启时间3S，停止1S；实际运行均衡3S停止1S，周期为4S；',
   'balanceStopTime': '',
-  'balanceModeOption': '0：禁止自动均衡\n1：开路\n2：静置\n3：放电\n4：充电\n5：开路、静置\n6：开路、放电\n7：开路、充电\n8：静置、放电\n9：静置、充电\n10：放电、充电\n11：开路、静置、放电\n12：开路、静置、充电\n13：开路、充电、放电\n14：静置、充电、放电\n15：开路、静置、放电、充电',
+  'balanceModeOption': '0：禁止自动均衡；1：开路；2：静置；3：放电；4：充电；5：开路、静置；6：开路、放电；7：开路、充电；8：静置、放电；9：静置、充电；10：放电、充电；11：开路、静置、放电；12：开路、静置、充电；13：开路、充电、放电；14：静置、充电、放电；15：开路、静置、放电、充电',
   'balanceVoltMax': '',
   'balanceVoltMin': '',
   'chargeBalanceK': '10:2mv；100:15mv；1000:150mv；其他值：20mv',
@@ -94,7 +94,7 @@ export const FACTORY_CALIB_PARAM_REMARKS = {
   'localId': '默认0xE8，正式版本为0xD0-0xEF',
 
   // 网络配置备注
-  'localIp': '第一堆起始地址：192.168.10.208\n第二堆起始地址：192.168.10.231',
+  'localIp': '第一堆起始地址:192.168.10.208;第二堆起始地址:192.168.10.231',
   'subnetMask': '255.255.255.0',
   'defaultGateway': '192.168.10.1',
   'primaryDns': '8.8.8.8',

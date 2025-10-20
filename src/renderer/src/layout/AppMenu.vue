@@ -3,7 +3,9 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth.js'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
@@ -16,11 +18,11 @@ const roleKey = computed(() => (authStore.isAdmin ? 'admin' : 'guest'))
 // 用户菜单项
 const userMenuItems = computed(() => [
   {
-    label: authStore.isAdmin ? '管理员' : '访客',
+    label: authStore.isAdmin ? t('menu.admin') : t('menu.guest'),
     icon: 'pi pi-user',
     items: [
       {
-        label: '注销',
+        label: t('menu.logout'),
         icon: 'pi pi-sign-out',
         command: () => onLogout()
       }
@@ -32,76 +34,76 @@ const userMenuItems = computed(() => [
 const rawMenuItems = ref([
   // 可折叠的分组项
   {
-    label: '运行信息',
+    labelKey: 'menu.operationInfo',
     icon: 'pi pi-chart-line',
     expanded: false,
     type: 'group',
     roles: ['admin', 'guest'], // 管理员和访客都能看
     items: [
-      { label: '电池信息', icon: 'pi pi-home', route: '/', roles: ['admin', 'guest'] },
-      { label: '簇版本信息', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
-      { label: '掉线信息', icon: 'pi pi-link', route: '/Cluster/Brokenwire', roles: ['admin', 'guest'] },
-      { label: '故障总览', icon: 'pi pi-eye', route: '/FaultOverview', roles: ['admin', 'guest'] },
-      { label: 'DI/DO状态', icon: 'pi pi-th-large', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
+      { labelKey: 'menu.batteryInfo', icon: 'pi pi-home', route: '/', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.clusterVersion', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.disconnection', icon: 'pi pi-link', route: '/Cluster/Brokenwire', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.faultOverview', icon: 'pi pi-eye', route: '/FaultOverview', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.didoStatus', icon: 'pi pi-th-large', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
     ]
   },
   {
-    label: '系统配置',
+    labelKey: 'menu.systemConfig',
     icon: 'pi pi-cog',
     expanded: false,
     type: 'group',
     roles: ['admin'], // 仅管理员能看
     items: [
-      { label: '簇配置参数', icon: 'pi pi-sliders-h', route: '/Cluster/BaseParam', roles: ['admin'] },
-      { label: '簇报警阈值', icon: 'pi pi-bell', route: '/Cluster/AlarmThreshold', roles: ['admin'] },
-      { label: 'SOX参数', icon: 'pi pi-chart-line', route: '/Cluster/SOXParam', roles: ['admin'] },
-      { label: '模拟量校准', icon: 'pi pi-wrench', route: '/Cluster/IvCalibration', roles: ['admin'] }
+      { labelKey: 'menu.clusterConfigParam', icon: 'pi pi-sliders-h', route: '/Cluster/BaseParam', roles: ['admin'] },
+      { labelKey: 'menu.clusterAlarmThreshold', icon: 'pi pi-bell', route: '/Cluster/AlarmThreshold', roles: ['admin'] },
+      { labelKey: 'menu.soxParam', icon: 'pi pi-chart-line', route: '/Cluster/SOXParam', roles: ['admin'] },
+      { labelKey: 'menu.analogCalibration', icon: 'pi pi-wrench', route: '/Cluster/IvCalibration', roles: ['admin'] }
     ]
   },
   {
-    label: '控制功能',
+    labelKey: 'menu.controlFunction',
     icon: 'pi pi-play',
     expanded: false,
     type: 'group',
     roles: ['admin'], // 仅管理员能看
     items: [
-      { label: '指令下发', icon: 'pi pi-send', route: '/Cluster/Order', roles: ['admin'] },
-      { label: '设备升级', icon: 'pi pi-download', route: '/Bau/upgrade', roles: ['admin'] },
-      { label: '地址自适应', icon: 'pi pi-sitemap', route: '/Bau/address-adaptive', roles: ['admin'] }
+      { labelKey: 'menu.commandIssue', icon: 'pi pi-send', route: '/Cluster/Order', roles: ['admin'] },
+      { labelKey: 'menu.deviceUpgrade', icon: 'pi pi-download', route: '/Bau/upgrade', roles: ['admin'] },
+      { labelKey: 'menu.addressAdaptive', icon: 'pi pi-sitemap', route: '/Bau/address-adaptive', roles: ['admin'] }
     ]
   },
   {
-    label: '堆汇总信息',
+    labelKey: 'menu.blockSummary',
     icon: 'pi pi-server',
     expanded: false,
     type: 'group',
     roles: ['admin', 'guest'], // 部分子项所有人可见
     items: [
-      { label: '堆信息', icon: 'pi pi-chart-bar', route: '/Block/BlockInfo', roles: ['admin', 'guest'] },
-      { label: '堆版本信息', icon: 'pi pi-info-circle', route: '/Block/BlockVersion', roles: ['admin', 'guest'] },
-      { label: '堆报警阈值', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold', roles: ['admin'] },
-      { label: '堆IO状态', icon: 'pi pi-server', route: '/Block/BlockIO', roles: ['admin', 'guest'] },
-      { label: '堆配置参数', icon: 'pi pi-cog', route: '/Block/BlockConfigParam', roles: ['admin'] },
-      { label: '堆命令下设', icon: 'pi pi-send', route: '/Block/BlockRemoteCommand', roles: ['admin'] }
+      { labelKey: 'menu.blockInfo', icon: 'pi pi-chart-bar', route: '/Block/BlockInfo', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.blockVersion', icon: 'pi pi-info-circle', route: '/Block/BlockVersion', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.blockAlarmThreshold', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold', roles: ['admin'] },
+      { labelKey: 'menu.blockIOStatus', icon: 'pi pi-server', route: '/Block/BlockIO', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.blockConfigParam', icon: 'pi pi-cog', route: '/Block/BlockConfigParam', roles: ['admin'] },
+      { labelKey: 'menu.blockRemoteCommand', icon: 'pi pi-send', route: '/Block/BlockRemoteCommand', roles: ['admin'] }
     ]
   },
   // 不可折叠的独立项
   {
-    label: '告警信息',
+    labelKey: 'menu.alarmInfo',
     icon: 'pi pi-exclamation-triangle',
     route: '/Cluster/Fault',
     type: 'single',
     roles: ['admin', 'guest']
   },
   {
-    label: 'BAU地址探测',
+    labelKey: 'menu.bauAddressDetection',
     icon: 'pi pi-search',
     route: '/Device/BauAddressDetection',
     type: 'single',
     roles: ['admin']
   },
   {
-    label: '设备管理',
+    labelKey: 'menu.deviceManagement',
     icon: 'pi pi-wrench',
     route: '/Block/DeviceManagement',
     type: 'single',
@@ -109,19 +111,29 @@ const rawMenuItems = ref([
   }
 ])
 
-// 根据角色过滤菜单项
+// 根据角色过滤菜单项并翻译
 const menuItems = computed(() => {
   return rawMenuItems.value
     .filter(item => item.roles.includes(roleKey.value))
     .map(item => {
       if (item.type === 'group' && item.items) {
-        // 过滤子项
+        // 过滤并翻译子项
+        const translatedItems = item.items
+          .filter(subItem => subItem.roles.includes(roleKey.value))
+          .map(subItem => ({
+            ...subItem,
+            label: t(subItem.labelKey)
+          }))
         return {
           ...item,
-          items: item.items.filter(subItem => subItem.roles.includes(roleKey.value))
+          label: t(item.labelKey),
+          items: translatedItems
         }
       }
-      return item
+      return {
+        ...item,
+        label: t(item.labelKey)
+      }
     })
     .filter(item => {
       // 如果是分组且没有子项，则不显示
@@ -139,7 +151,7 @@ const handleMenuClick = (item, index) => {
     router.push(item.route)
   } else if (item.type === 'group') {
     // 分组项切换展开状态 - 需要找到原始菜单中对应的项
-    const originalItem = rawMenuItems.value.find(raw => raw.label === item.label)
+    const originalItem = rawMenuItems.value.find(raw => raw.labelKey === item.labelKey)
     if (originalItem) {
       originalItem.expanded = !originalItem.expanded
     }
@@ -276,27 +288,27 @@ function onLogout() {
   // 菜单列表内容
   .menu-list {
     flex: 1;
-    padding: 0.5rem 0;
+    padding: 0.5rem 0.5rem;
     
     .menu-group {
-      margin-bottom: 0;
+      margin-bottom: 0.5rem;
       
       // 菜单项标题（包括单独项和分组标题）
       .menu-header {
         display: flex;
         align-items: center;
-        padding: 0.75rem 0.5rem;
+        padding: 0.5rem 0.75rem;
         cursor: pointer;
         transition: background-color 0.15s ease, color 0.15s ease;
         color: var(--text-color, #495057);
-        font-size: 0.95rem;  
+        font-size: 1rem;  
         font-weight: 500;
         border-radius: 6px;
         position: relative;
         outline: 0 none;
-        width: 75%;
-        margin: 0 auto;
-        min-width: 110px;
+        width: 100%;
+        margin: 0;
+        min-width: 120px;
         
         &:hover {
           background-color: var(--surface-hover, #e9ecef);
@@ -320,7 +332,7 @@ function onLogout() {
         
         .menu-icon {
           margin-right: 0.5rem;  
-          font-size: 1.05rem; 
+          font-size: 1rem; 
           width: 1rem;
           text-align: center;
           flex-shrink: 0;
@@ -360,16 +372,16 @@ function onLogout() {
         .menu-item.sub-item {
           display: flex;
           align-items: center;
-          padding: 0.75rem 0.5rem 0.75rem 1rem;
+          padding: 0.4rem 0.75rem 0.4rem 1.2rem;
           cursor: pointer;
           transition: background-color 0.15s ease, color 0.15s ease;
           color: var(--text-color, #495057);
           font-size: 0.95rem;  
           border-radius: 6px;
           outline: 0 none;
-          width: 75%;
-          margin: 0 auto;
-          min-width: 110px;
+          width: 100%;
+          margin: 0;
+          min-width: 120px;
           
           &:hover {
             background-color: var(--surface-hover, #e9ecef);
@@ -383,8 +395,8 @@ function onLogout() {
           
           .menu-icon {
             margin-right: 0.5rem;
-            font-size: 1.05rem;
-            width: 1rem;
+            font-size: 0.95rem;
+            width: 0.9rem;
             text-align: center;
             flex-shrink: 0;
           }
@@ -444,3 +456,4 @@ function onLogout() {
   }
 }
 </style>
+

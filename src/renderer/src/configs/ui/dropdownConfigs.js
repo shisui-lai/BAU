@@ -503,6 +503,34 @@ export function getDisplayLabel(dataType, topicType, parameterKey, value) {
 }
 
 /**
+ * 翻译下拉框选项
+ * @param {Array} options - 下拉框选项数组
+ * @param {string} parameterKey - 参数名称
+ * @param {Function} t - 翻译函数
+ * @returns {Array} 翻译后的选项数组
+ */
+export function translateDropdownOptions(options, parameterKey, t) {
+  if (!Array.isArray(options)) return options
+  
+  return options.map(option => {
+    const translatedOption = { ...option }
+    
+    // 如果有翻译键，使用翻译键进行翻译
+    if (option.translationKey) {
+      translatedOption.label = t(option.translationKey)
+    } else {
+      // 否则尝试使用参数名称+选项标签作为翻译键
+      const fallbackKey = `clusterConfigParam.dropdownOptions.${parameterKey}.${option.label}`
+      if (t(fallbackKey) !== fallbackKey) {
+        translatedOption.label = t(fallbackKey)
+      }
+    }
+    
+    return translatedOption
+  })
+}
+
+/**
  * 根据显示标签获取实际值
  * @param {string} dataType - 数据类型
  * @param {string} topicType - 主题类型

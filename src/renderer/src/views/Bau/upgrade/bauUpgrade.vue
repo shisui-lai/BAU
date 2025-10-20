@@ -558,7 +558,7 @@ onUnmounted(() => {
                 <h4>文件升级状态</h4>
                 <div class="flex align-items-center mb-3 gap-3">
                   <label class="w-8rem font-semibold text-sm">文件名:</label>
-                  <div class="flex-1 p-2 border-1 border-round bg-white" :class="!ftpServerRunning ? 'text-gray-400' : ''">
+                  <div class="flex-1 p-2 border-1 border-round" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
                     <span class="text-sm">
                       {{ !ftpServerRunning ? '请先启动FTP服务器' : (updateFile || '未选择文件') }}
                     </span>
@@ -566,9 +566,9 @@ onUnmounted(() => {
                 </div>
                 <div class="flex align-items-center mb-3 gap-3">
                   <label class="w-8rem font-semibold text-sm">状态:</label>
-                  <div class="flex-1 p-2 border-1 border-round bg-white flex align-items-center gap-2">
+                  <div class="flex-1 p-2 border-1 border-round flex align-items-center gap-2" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
                     <template v-if="!ftpServerRunning">
-                      <span class="text-sm text-gray-400">-</span>
+                      <span class="text-sm">-</span>
                     </template>
                     <template v-else>
                       <i :class="selectedFileStatus.exists ? 'pi pi-check-circle text-green-600' : 'pi pi-exclamation-triangle text-orange-600'"></i>
@@ -586,8 +586,8 @@ onUnmounted(() => {
                 </div>
                 <div class="flex align-items-center mb-3 gap-3">
                   <label class="w-8rem font-semibold text-sm">大小:</label>
-                  <div class="flex-1 p-2 border-1 border-round bg-white">
-                    <span class="text-sm" :class="!ftpServerRunning ? 'text-gray-400' : ''">
+                  <div class="flex-1 p-2 border-1 border-round" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
+                    <span class="text-sm">
                       {{ !ftpServerRunning ? '-' : (selectedFileStatus.exists && selectedFileStatus.fileInfo ? selectedFileStatus.fileInfo.sizeFormatted : '-') }}
                     </span>
                   </div>
@@ -936,5 +936,24 @@ onUnmounted(() => {
 .cluster-checkbox-compact:has(input:disabled):hover {
   border-color: var(--surface-border);
   background: var(--surface-section);
+}
+
+/* 文件升级状态区域样式优化 */
+.file-status-disabled {
+  background: var(--surface-section) !important;
+  border-color: var(--surface-border) !important;
+}
+
+.file-status-disabled .text-sm {
+  color: var(--text-color-secondary) !important;
+}
+
+.file-status-enabled {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+}
+
+.file-status-enabled .text-sm {
+  color: var(--text-color) !important;
 }
 </style>

@@ -1,5 +1,11 @@
 <template>
   <div class="login-container">
+    <!-- 页面级语言切换 -->
+    <div class="page-lang-select-wrapper">
+      <span class="lang-title">{{ t('login.language') }}:</span>
+      <LangSelect />
+    </div>
+    
     <!-- 动态背景装饰 -->
     <div class="background-effects">
       <!-- 浮动粒子效果 -->
@@ -34,13 +40,14 @@
     
     <!-- 登录卡片容器 -->
     <div class="login-card">
+      
       <!-- 系统Logo和标题 -->
       <div class="login-header">
         <div class="brand-container">
           <img src="../../../images/icon.ico" alt="RISEN BMS" class="brand-image" />
           <span class="brand-text">RISEN BMS</span>
         </div>
-        <h2>系统登录</h2>
+        <h2>{{ t('login.title') }}</h2>
       </div>
 
       <!-- 表单主体 -->
@@ -48,12 +55,12 @@
         <div class="login-field">
           <label for="username">
             <i class="pi pi-user"></i>
-            用户名
+            {{ t('login.username') }}
           </label>
           <InputText
             v-model="username"
             id="username"
-            placeholder="请输入管理员账号"
+            :placeholder="t('login.usernamePlaceholder')"
             class="login-input"
             :class="{ 'p-invalid': errorMessage }"
           />
@@ -62,12 +69,12 @@
         <div class="login-field">
           <label for="password">
             <i class="pi pi-lock"></i>
-            密码
+            {{ t('login.password') }}
           </label>
           <Password
             v-model="password"
             id="password"
-            placeholder="请输入密码"
+            :placeholder="t('login.passwordPlaceholder')"
             toggleMask
             :feedback="false"
             class="login-input"
@@ -81,19 +88,19 @@
             inputId="remember"
             binary
           />
-          <label for="remember">记住密码</label>
+          <label for="remember">{{ t('login.rememberMe') }}</label>
         </div>
 
         <div class="login-buttons">
           <Button
-            label="管理员登录"
+            :label="t('login.adminButton')"
             icon="pi pi-sign-in"
             class="login-btn primary"
             @click="onAdminLogin"
             :loading="isLoading"
           />
           <Button
-            label="访客登录"
+            :label="t('login.guestButton')"
             icon="pi pi-user"
             class="login-btn secondary"
             @click="onGuestEnter"
@@ -109,8 +116,8 @@
 
       <!-- 底部信息 -->
       <div class="login-footer">
-        <p>© 2024 东方日升储能技术有限公司</p>
-        <p>版本 v1.0.0</p>
+        <p>© 2025 {{ t('login.company') }}</p>
+        <p>{{ t('login.version') }}</p>
       </div>
     </div>
   </div>
@@ -120,7 +127,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth.js'
+import { useI18n } from 'vue-i18n'
 import Checkbox from 'primevue/checkbox'
+import LangSelect from '../../components/LangSelect.vue'
+
+const { t } = useI18n()
 
 const username = ref('')
 const password = ref('')
@@ -137,7 +148,7 @@ const onAdminLogin = async () => {
   
   const ok = username.value === 'admin' && password.value === 'admin'
   if (!ok) {
-    errorMessage.value = '用户名或密码错误'
+    errorMessage.value = t('login.error')
     isLoading.value = false
     return
   }
@@ -689,6 +700,24 @@ onMounted(() => {
   border-radius: 4px;
   color: var(--red-500, #e53e3e);
   font-size: 0.85rem;
+  font-weight: 500;
+}
+
+/* 页面级语言切换区域 */
+.page-lang-select-wrapper {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lang-title {
+  font-size: 14px;
+  color: #a0aec0;
+  white-space: nowrap;
   font-weight: 500;
 }
 

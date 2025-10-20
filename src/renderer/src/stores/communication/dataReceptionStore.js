@@ -60,16 +60,14 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
   })
 
   const statusText = computed(() => {
-    switch (receptionStatus.value) {
-      case 'waiting':
-        return '未通讯'
-      case 'receiving':
-        return '通讯正常'
-      case 'timeout':
-        return '通讯超时'
-      default:
-        return '状态未知'
+    // 使用简单的字符串映射，避免在computed中调用i18n
+    const statusMap = {
+      'waiting': '未通讯',
+      'receiving': '通讯正常', 
+      'timeout': '通讯超时',
+      'unknown': '状态未知'
     }
+    return statusMap[receptionStatus.value] || '状态未知'
   })
 
   const statusIcon = computed(() => {
@@ -98,12 +96,7 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
     }
   })
 
-  // 合并显示的计算属性
-  const combinedStatusText = computed(() => {
-    const status = statusText.value
-    const rateText = `${dataRate.value} KB/s`
-    return `${status} | ${rateText}`
-  })
+  // 注意：combinedStatusText已移至AppTopbar组件中处理翻译
 
   const combinedStatusIcon = computed(() => {
     return 'pi pi-circle-fill' // 始终显示实心圆
@@ -326,7 +319,7 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
     statusClass,
 
     // 【合并显示】合并状态和速率
-    combinedStatusText,
+    // combinedStatusText, // 已移至AppTopbar组件中处理翻译
     combinedStatusIcon,
     combinedStatusClass,
 

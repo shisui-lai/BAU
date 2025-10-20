@@ -176,7 +176,6 @@ export const useClusterStore = defineStore('cluster', () => {
     
     const validOptions = newOptions.filter(option => {
       const isValid = option && 
-                     typeof option.label === 'string' && 
                      typeof option.value === 'string' &&
                      isValidClusterKey(option.value)
       
@@ -190,10 +189,12 @@ export const useClusterStore = defineStore('cluster', () => {
     // 为每个选项添加解析后的block和cluster信息
     const enrichedOptions = validOptions.map(option => {
       const parts = option.value.split('-')
+      const block = parseInt(parts[0])
+      const cluster = parseInt(parts[1])
       return {
         ...option,
-        block: parseInt(parts[0]),
-        cluster: parseInt(parts[1])
+        block: block,
+        cluster: cluster
       }
     })
     
@@ -406,7 +407,6 @@ export const useClusterStore = defineStore('cluster', () => {
     availableBlocks.value = Array.from(blocks)
       .sort((a, b) => a - b)
       .map(block => ({
-        label: `堆${block}`,
         value: block
       }))
     
@@ -417,7 +417,6 @@ export const useClusterStore = defineStore('cluster', () => {
         return a.cluster - b.cluster
       })
       .map(item => ({
-        label: `堆${item.block}/簇${item.cluster}`,
         value: `${item.block}-${item.cluster}`,
         block: item.block,
         cluster: item.cluster
@@ -740,10 +739,10 @@ export const useClusterStore = defineStore('cluster', () => {
 
       for (let cluster = 1; cluster <= ClusterCount1; cluster++) {
         newOptions.push({
-          label: `堆1/簇${cluster}`,
           value: `1-${cluster}`,
           block: 1,
-          cluster: cluster
+          cluster: cluster,
+          label: `堆1/簇${cluster}`
         })
       }
     }
@@ -753,10 +752,10 @@ export const useClusterStore = defineStore('cluster', () => {
 
       for (let cluster = 1; cluster <= ClusterCount2; cluster++) {
         newOptions.push({
-          label: `堆2/簇${cluster}`,
           value: `2-${cluster}`,
           block: 2,
-          cluster: cluster
+          cluster: cluster,
+          label: `堆2/簇${cluster}`
         })
       }
     }

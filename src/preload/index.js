@@ -88,6 +88,16 @@ if (process.contextIsolated) {
 
       filesystem: {
         getDirname: () => ipcRenderer.invoke('get-dirname') // 从主进程获取 __dirname
+      },
+
+      // 新增：多语言相关 API
+      getLocale: () => ipcRenderer.invoke('get-locale'),
+      setLocale: (locale) => ipcRenderer.invoke('set-locale', locale),
+      
+      // 暴露ipcRenderer用于事件监听
+      ipcRenderer: {
+        on: (channel, listener) => ipcRenderer.on(channel, listener),
+        removeListener: (channel, listener) => ipcRenderer.removeListener(channel, listener)
       }
     })
   } catch (error) {

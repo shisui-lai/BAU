@@ -2,6 +2,9 @@
 import AppMenu from './AppMenu.vue'
 import { useMqttStore } from '@/stores/communication/mqttStore'
 import { inject } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // 获取MQTT store
 const mqttStore = useMqttStore()
@@ -33,7 +36,7 @@ function onMqttStatusClick() {
       <div class="company-link">
         <a href="https://risenstorage.com/" target="_blank">
           <i class="pi pi-external-link"></i>
-          <span>东方日升储能</span>
+          <span>{{ t('sidebar.companyLink') }}</span>
         </a>
       </div>
 

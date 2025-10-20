@@ -11,9 +11,11 @@ import { useDataReceptionStore } from '@/stores/communication/dataReceptionStore
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useSystemConfig } from '@/composables/core/data-processing/parameter-management/useSystemConfig'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from 'vue-i18n'
 
 const { layoutConfig, layoutState, isSidebarActive } = useLayout()
 const mqttStore = useMqttStore()
+const { t } = useI18n()
 
 // 【数据接收监控】初始化数据接收监控store
 // 功能：监控MQTT数据接收状态，提供5秒超时检测和智能配置读取
@@ -94,7 +96,7 @@ const isOutsideClicked = (event) => {
 // MQTT状态相关方法
 function getStatusText() {
   // 使用store中的statusText getter，它已经包含了正确的状态映射
-  return mqttStore.statusText
+  return t(mqttStore.statusText)
 }
 
 function getStatusIcon() {
@@ -317,7 +319,7 @@ defineExpose({
       :closable="true"
       :style="{ width: '90%', maxWidth: '900px' }"
       :modal="true"
-      header="MQTT服务器连接"
+      :header="t('mqtt.title')"
       @hide="onMqttDialogHide"
     >
       <MqttConnection 

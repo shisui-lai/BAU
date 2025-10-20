@@ -630,6 +630,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
   const isCurrentlyReading = ref(false)  // 是否正在进行数据读取，用于控制按钮状态和防止重复操作
   const readingIntervalTimer = ref(null) // 定时读取的计时器引用，用于每2秒自动读取数据
   let isFirstReadAfterStart = false      // 标记是否是开始读取后的第一次，用于控制首次读取成功弹窗
+  let isFirstErrorAfterStart = false     // 标记是否是开始读取后的第一次错误，用于控制首次错误弹窗
 
   // 批量更新优化 - 减少频繁的响应式触发
   let pendingUpdates = new Map()         // 待处理的参数更新
@@ -829,6 +830,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     }
     isCurrentlyReading.value = true // 设置读取状态为true，按钮变为"停止读取"
     isFirstReadAfterStart = true    // 标记这是开始读取后的第一次
+    isFirstErrorAfterStart = true   // 标记这是开始读取后的第一次错误
     if (ids) {
       // console.log(`[RemoteControlCore] 开始单topic读取参数数据: b${ids.blockNumber}${selectorMode==='cluster'?`-c${ids.clusterNumber}`:''}`)
     } else {
@@ -909,6 +911,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     // console.log(`[RemoteControlCore] 开始多topic读取: ${topics.join(', ')}`)
     isCurrentlyReading.value = true;
     isFirstReadAfterStart = true;
+    isFirstErrorAfterStart = true;
 
     // 先清除可能存在的定时器
     if (readingIntervalTimer.value) {
@@ -944,6 +947,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     // 重置状态
     isCurrentlyReading.value = false // 设置读取状态为false，按钮变为"开始读取"
     isFirstReadAfterStart = false    // 停止时重置首次读取标记
+    isFirstErrorAfterStart = false   // 停止时重置首次错误标记
 
     // console.log('[RemoteControlCore] 读取状态已重置')
   }
@@ -1628,12 +1632,20 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     // 错误代码映射（与写入错误使用相同的映射）
     const errorCode = Number(errorData.result?.code)
     const errorDescription = errorData.result?.message || ERROR_CODES[errorCode] || '未知错误'
-    toastService.add({
-      severity: 'error',
-      summary: '操作失败',
-      detail: `${dataSourceName}: ${errorDescription} (错误代码: 0x${errorCode?.toString(16).toUpperCase() || 'Unknown'})`,
-      life: 5000
-    })
+    
+    // 只在首次错误时显示弹窗，避免连续错误时的弹窗轰炸
+    if (isFirstErrorAfterStart) {
+      isFirstErrorAfterStart = false  // 重置标记，后续错误不再弹窗
+      toastService.add({
+        severity: 'error',
+        summary: '操作失败',
+        detail: `${dataSourceName}: ${errorDescription} (错误代码: 0x${errorCode?.toString(16).toUpperCase() || 'Unknown'})`,
+        life: 5000
+      })
+    } else {
+      // 后续错误只记录到控制台，不显示弹窗
+      console.warn(`[错误去重] ${dataSourceName}: ${errorDescription} (错误代码: 0x${errorCode?.toString(16).toUpperCase() || 'Unknown'})`)
+    }
   }
 
   // ========== 下拉框支持功能 ==========
@@ -1717,20 +1729,10 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
    * @returns {string} 显示标签
    */
   function getDropdownDisplayValue(parameterLabel, actualValue) {
-    const topicType = getDropdownTopicType()
-    const config = getDropdownConfig(DROPDOWN_DATA_TYPE, topicType, parameterLabel)
-
-    if (!config) {
-      return actualValue?.toString() || ''
-    }
-
-    // 获取选项数组
-    let options = []
-    if (config.options && Array.isArray(config.options)) {
-      options = config.options
-    } else if (Array.isArray(config)) {
-      options = config
-    } else {
+    // 使用已经翻译过的下拉框选项
+    const options = getParameterDropdownOptions(parameterLabel)
+    
+    if (!options || options.length === 0) {
       return actualValue?.toString() || ''
     }
 

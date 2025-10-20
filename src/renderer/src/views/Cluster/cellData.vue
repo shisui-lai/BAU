@@ -6,6 +6,7 @@ import Button    from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column    from 'primevue/column'
 import SystemAbstract from './SystemAbstract.vue'
+import { useI18n } from 'vue-i18n'
 
 import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
 const { clusterOptions, selectedCluster,
@@ -15,6 +16,9 @@ import { pickCluster        } from '@/composables/core/data-processing/cluster/p
 import { pickPack           } from '@/composables/core/data-processing/cluster/parsePackSummary'
 import { parsePackSummary }    from '@/composables/core/data-processing/cluster/parsePackSummary'
 import { parseClusterSummary }    from '@/composables/core/data-processing/cluster/parseClusterSummary'
+
+const { t } = useI18n()
+
   function onPackSummary (_e, msg) {
     parsePackSummary(msg)
   }
@@ -24,19 +28,19 @@ import { parseClusterSummary }    from '@/composables/core/data-processing/clust
   }
 
 /* ────────── 常量 ────────── */
-const DATA_TYPE_MAP = {
-  CELL_VOLT: { label: '电压(V)',  decimals: 3 },
-  CELL_TEMP: { label: '温度(℃)',  decimals: 1 },
-  CELL_SOC : { label: 'SOC(%)',   decimals: 1 },
-  CELL_SOH : { label: 'SOH(%)',   decimals: 1 },
-  BMU_VOLT:         { label: 'BMU 电压(V)',     decimals: 1 },
-  BMU_TEMP:         { label: 'BMU 温度(℃)',     decimals: 1 },
-  BMU_PLUGIN_TEMP:  { label: '动力接插件温度(℃)',     decimals: 1 },
-  BMU_SOC:          { label: 'BMU SOC(%)',      decimals: 1 },    // 协议修改新增
-  BMU_PRODUCT_CODE: { label: 'BMU产品编码',   decimals: -1 },  // 协议修改新增
+const DATA_TYPE_MAP = computed(() => ({
+  CELL_VOLT: { label: t('batteryInfo.dataTypes.cellVolt'),  decimals: 3 },
+  CELL_TEMP: { label: t('batteryInfo.dataTypes.cellTemp'),  decimals: 1 },
+  CELL_SOC : { label: t('batteryInfo.dataTypes.cellSOC'),   decimals: 1 },
+  CELL_SOH : { label: t('batteryInfo.dataTypes.cellSOH'),   decimals: 1 },
+  BMU_VOLT:         { label: t('batteryInfo.dataTypes.bmuVolt'),     decimals: 1 },
+  BMU_TEMP:         { label: t('batteryInfo.dataTypes.bmuTemp'),     decimals: 1 },
+  BMU_PLUGIN_TEMP:  { label: t('batteryInfo.dataTypes.bmuPluginTemp'),     decimals: 1 },
+  BMU_SOC:          { label: t('batteryInfo.dataTypes.bmuSOC'),      decimals: 1 },    // 协议修改新增
+  BMU_PRODUCT_CODE: { label: t('batteryInfo.dataTypes.bmuProductCode'),   decimals: -1 },  // 协议修改新增
   // BMU_PLUGIN_TEMP2:  { label: '动力接插件温度2',     decimals: 1 }
   //decimals 保留小数位数，-1 表示不显示小数
-}
+}))
 
 /* ────────── 限流配置 ────────── */
 const THROTTLE_CONFIG = {
@@ -45,14 +49,8 @@ const THROTTLE_CONFIG = {
   SUMMARY_DATA: 2000    // 概要数据更新间隔：1000ms
 }
 
-/* ────────── 缓存配置 ────────── */
-const CACHE_CONFIG = {
-  PREFIX: 'CLUSTER_CACHE_',           // 缓存键前缀
-  OPTIONS_KEY: 'CLUSTER_OPTIONS',     // 下拉选项缓存键
-  SELECTED_KEY: 'CLUSTER_SELECTED',   // 当前选中缓存键
-  VERSION: '1.0',                     // 缓存版本号，用于失效控制
-  ENABLED: true                       // 缓存开关
-}
+/* ────────── 内存缓存配置 ────────── */
+// 只使用内存缓存，用于页面切换防闪烁，不进行localStorage持久化
 
   /* ────────── 响应式状态 ────────── */
   const clusterCache    = reactive({})       // 二维缓存：type → Map<clusterKey, matrix>
@@ -62,158 +60,18 @@ const CACHE_CONFIG = {
 
   const dataTableRef = ref(null)             // DataTable引用（保留用于其他可能的操作）
 
-  /* ────────── 缓存工具函数 ────────── */
+  /* ────────── 内存缓存管理 ────────── */
   
-  // 序列化 Map 结构到 localStorage
-  function serializeMapCache(dataType) {
-    if (!CACHE_CONFIG.ENABLED) return
-    
-    try {
-      const map = clusterCache[dataType]
-      if (!map || !(map instanceof Map)) return
-      
-      // 将 Map 转换为数组格式：[[key, value], [key, value], ...]
-      const serialized = Array.from(map.entries())
-      const cacheKey = `${CACHE_CONFIG.PREFIX}${dataType}`
-      
-      localStorage.setItem(cacheKey, JSON.stringify({
-        version: CACHE_CONFIG.VERSION,
-        timestamp: Date.now(),
-        data: serialized
-      }))
-      
-      // console.log(`[缓存写入] ${dataType}: ${serialized.length} 个堆簇`)
-    } catch (error) {
-      console.error(`[缓存写入失败] ${dataType}:`, error)
-    }
-  }
-
-  // 从 localStorage 反序列化 Map 结构
-  function deserializeMapCache(dataType) {
-    if (!CACHE_CONFIG.ENABLED) return null
-    
-    try {
-      const cacheKey = `${CACHE_CONFIG.PREFIX}${dataType}`
-      const cached = localStorage.getItem(cacheKey)
-      
-      if (!cached) return null
-      
-      const parsed = JSON.parse(cached)
-      
-      // 版本校验
-      if (parsed.version !== CACHE_CONFIG.VERSION) {
-        console.warn(`[缓存版本不匹配] ${dataType}: ${parsed.version} !== ${CACHE_CONFIG.VERSION}`)
-        localStorage.removeItem(cacheKey)
-        return null
-      }
-      
-      // 将数组转换回 Map
-      const map = new Map(parsed.data)
-      // 精简日志：只在有数据时输出简要信息
-      // console.log(`[缓存读取] ${dataType}: ${map.size} 个堆簇`)
-      
-      return map
-    } catch (error) {
-      console.error(`[缓存读取失败] ${dataType}:`, error)
-      return null
-    }
-  }
-
-  // 保存所有数据类型的缓存
-  function saveAllCachesToStorage() {
-    if (!CACHE_CONFIG.ENABLED) return
-    
-    try {
-      // 保存所有数据类型的缓存
-      Object.keys(DATA_TYPE_MAP).forEach(dataType => {
-        if (clusterCache[dataType]) {
-          serializeMapCache(dataType)
-        }
-      })
-      
-      // 保存下拉选项
-      if (clusterOptions.value.length > 0) {
-        localStorage.setItem(CACHE_CONFIG.OPTIONS_KEY, JSON.stringify(clusterOptions.value))
-      }
-      
-      // 保存当前选中
-      if (selectedCluster.value) {
-        localStorage.setItem(CACHE_CONFIG.SELECTED_KEY, selectedCluster.value)
-      }
-      
-      // 精简日志：静默保存
-      // console.log('[缓存保存完成]')
-    } catch (error) {
-      console.error('[缓存保存失败]', error)
-    }
-  }
-
-  // 从 localStorage 恢复所有缓存
-  function loadAllCachesFromStorage() {
-    if (!CACHE_CONFIG.ENABLED) return
-    
-    try {
-      let loadedCount = 0
-      let totalClusters = 0
-      
-      // 恢复所有数据类型的缓存
-      Object.keys(DATA_TYPE_MAP).forEach(dataType => {
-        const map = deserializeMapCache(dataType)
-        if (map && map.size > 0) {
-          clusterCache[dataType] = map
-          loadedCount++
-          totalClusters = map.size // 记录堆簇数量
-        }
-      })
-      
-      // 恢复下拉选项（静默）
-      const cachedOptions = localStorage.getItem(CACHE_CONFIG.OPTIONS_KEY)
-      if (cachedOptions) {
-        try {
-          const options = JSON.parse(cachedOptions)
-          if (Array.isArray(options) && options.length > 0) {
-            replaceClusterOptions(options)
-          }
-        } catch (e) {
-          console.error('[缓存恢复失败] 下拉选项:', e)
-        }
-      }
-      
-      // 恢复当前选中（静默）
-      const cachedSelected = localStorage.getItem(CACHE_CONFIG.SELECTED_KEY)
-      if (cachedSelected && !selectedCluster.value) {
-        selectedCluster.value = cachedSelected
-      }
-      
-      // 精简日志：只输出汇总信息
-      if (loadedCount > 0) {
-        console.log(`✅ 缓存恢复: ${loadedCount}种类型 × ${totalClusters}个堆簇`)
-        updateTrigger.value++
-      }
-    } catch (error) {
-      console.error('[缓存恢复失败]', error)
-    }
-  }
-
-  // 清空所有缓存
-  function clearAllCaches() {
+  // 清空内存缓存
+  function clearMemoryCache() {
     try {
       // 清空内存缓存
       Object.keys(clusterCache).forEach(key => {
         delete clusterCache[key]
       })
-      
-      // 清空 localStorage 缓存
-      Object.keys(DATA_TYPE_MAP).forEach(dataType => {
-        const cacheKey = `${CACHE_CONFIG.PREFIX}${dataType}`
-        localStorage.removeItem(cacheKey)
-      })
-      localStorage.removeItem(CACHE_CONFIG.OPTIONS_KEY)
-      localStorage.removeItem(CACHE_CONFIG.SELECTED_KEY)
-      
-      console.log('[缓存清空完成]')
+      console.log('[内存缓存清空完成]')
     } catch (error) {
-      console.error('[缓存清空失败]', error)
+      console.error('[内存缓存清空失败]', error)
     }
   }
 
@@ -334,8 +192,7 @@ function onCellMsg (_e, msg) {
 onMounted(() => {
   const mountStartTime = performance.now()
   
-  // 【缓存恢复】先从 localStorage 恢复所有缓存数据
-  loadAllCachesFromStorage()
+  // 不再从localStorage恢复缓存，只使用内存缓存防闪烁
 
   // 先清理可能存在的旧监听器（防止快速切换导致的残留）
   CELL_CHANNELS.forEach(ch => {
@@ -367,13 +224,11 @@ onMounted(() => {
       getHandlerCount: () => throttledHandlers.size,
       getConfig: () => THROTTLE_CONFIG,
       setPageActive: (active) => { isPageActive.value = active },
-      // 缓存管理
-      saveCache: saveAllCachesToStorage,
-      loadCache: loadAllCachesFromStorage,
-      clearCache: clearAllCaches,
+      // 内存缓存管理
+      clearCache: clearMemoryCache,
       getCacheSize: () => {
         let total = 0
-        Object.keys(DATA_TYPE_MAP).forEach(dataType => {
+        Object.keys(DATA_TYPE_MAP.value).forEach(dataType => {
           const map = clusterCache[dataType]
           if (map instanceof Map) total += map.size
         })
@@ -381,7 +236,7 @@ onMounted(() => {
       },
       getCacheInfo: () => {
         const info = {}
-        Object.keys(DATA_TYPE_MAP).forEach(dataType => {
+        Object.keys(DATA_TYPE_MAP.value).forEach(dataType => {
           const map = clusterCache[dataType]
           if (map instanceof Map) {
             info[dataType] = {
@@ -414,44 +269,25 @@ onBeforeUnmount(() => {
 // 页面激活时的处理（从其他页面切回）
 onActivated(() => {
   isPageActive.value = true
-  
-  //页面激活时尝试恢复缓存（如果内存中没有数据）
-  const hasData = Object.keys(clusterCache).some(dataType => {
-    const map = clusterCache[dataType]
-    return map instanceof Map && map.size > 0
-  })
-  
-  if (!hasData) {
-    console.log('[页面激活] 检测到内存缓存为空，尝试从 localStorage 恢复')
-    loadAllCachesFromStorage()
-  }
+  console.log('[页面激活] 页面已激活，使用内存缓存防闪烁')
 })
 
 // 页面停用时的处理（切换到其他页面）
 onDeactivated(() => {
-  const startTime = performance.now()
-  
   isPageActive.value = false
   
-  //刷新所有待处理的更新，确保最新数据被保存到缓存
+  // 刷新所有待处理的更新，确保最新数据被保存到内存缓存
   flushThrottlers()
   
-  // 页面切换前保存所有数据到 localStorage
-  saveAllCachesToStorage()
-  
-  const saveTime = (performance.now() - startTime).toFixed(2)
-  console.log(`📤 离开页面，保存缓存: ${saveTime}ms`)
+  console.log('📤 离开页面，内存缓存已更新')
 })
 
-// 【堆簇切换监听】监听堆簇选择变化，保存当前选中状态
+// 【堆簇切换监听】监听堆簇选择变化
 watch(selectedCluster, (newCluster, oldCluster) => {
   if (newCluster && newCluster !== oldCluster) {
     const startTime = performance.now()
     
-    // 保存当前选中的堆簇
-    if (CACHE_CONFIG.ENABLED) {
-      localStorage.setItem(CACHE_CONFIG.SELECTED_KEY, newCluster)
-    }
+    // 不再保存到localStorage，簇选择状态由全局store管理
     
     // 检查当前数据类型是否有该堆簇的缓存数据
     const currentMap = clusterCache[activeView.value]
@@ -523,7 +359,7 @@ watch(activeView, (newView, oldView) => {
     if (!MEASURE_TYPES.includes(msg.dataType)) return
 
     const clusterKey = `${msg.blockId}-${msg.clusterId}`
-    const cfg = DATA_TYPE_MAP[msg.dataType]
+    const cfg = DATA_TYPE_MAP.value[msg.dataType]
 
     /*  如果首见该簇 → 创建空矩阵 */
     if (!clusterCache[msg.dataType]) clusterCache[msg.dataType] = new Map()
@@ -581,7 +417,7 @@ watch(activeView, (newView, oldView) => {
     for (let b = 1; b <= blockCnt; b++) {
       const clusterCnt = +kv[`${b === 1 ? '第一' : '第二'}堆簇数`] || 0
       for (let c = 1; c <= clusterCnt; c++) {
-        opts.push({ label: `堆${b}/簇${c}`, value: `${b}-${c}` })
+        opts.push({ label: `${t('cluster.block')}${b}/${t('cluster.cluster')}${c}`, value: `${b}-${c}` })
       }
     }
 
@@ -655,18 +491,23 @@ watch(activeView, (newView, oldView) => {
 
   function formatCell(v){          //  模板内按需格式化
     // 处理占位符
-    if (v === '--' || v === '-') return '---'
+    if (v === '--' || v === '-' || v === '---') return '---'
     
     // 转换为数字
     const numValue = Number(v)
     
+    // 检查 NaN 值（当 v 为 '---' 等非数字字符串时会产生 NaN）
+    if (isNaN(numValue)) {
+      return '---'
+    }
+    
     // 检查无效值（这些值是32767或1000经过分辨率计算后的结果）
-    if (numValue === 32.767 || numValue === 3276.7 || numValue === 100.0) {
+    if (numValue === 32.767 || numValue === 3276.7) {
       return '---'
     }
     
     // 正常格式化
-    return numValue.toFixed(DATA_TYPE_MAP[activeView.value].decimals)
+    return numValue.toFixed(DATA_TYPE_MAP.value[activeView.value].decimals)
   }
 
 
@@ -679,60 +520,97 @@ watch(activeView, (newView, oldView) => {
     pickCluster(selectedCluster.value, NEED))
 
   // 系统状态映射
-  const SYSTEM_STATUS_MAP = {
-    0: '静置状态',
-    1: '充电状态', 
-    2: '放电状态',
-    3: '开路状态',
-    4: '接触器自检'
-  }
+  const SYSTEM_STATUS_MAP = computed(() => ({
+    0: t('batteryInfo.systemStatus.idle'),
+    1: t('batteryInfo.systemStatus.charge'), 
+    2: t('batteryInfo.systemStatus.discharge'),
+    3: t('batteryInfo.systemStatus.open'),
+    4: t('batteryInfo.systemStatus.contactorSelfTest')
+  }))
 
   // 故障等级映射
-  const FAULT_LEVEL_MAP = {
-    0: '无故障',
-    1: '严重故障',
-    2: '一般故障', 
-    3: '轻微故障'
-  }
+  const FAULT_LEVEL_MAP = computed(() => ({
+    0: t('batteryInfo.faultLevel.noFault'),
+    1: t('batteryInfo.faultLevel.critical'),
+    2: t('batteryInfo.faultLevel.general'), 
+    3: t('batteryInfo.faultLevel.minor')
+  }))
 
-  const FIELD_ORDER = [
-    'AFE 数','电芯数','温感数','系统状态','故障等级',
-    '簇电压','预充电压','簇电流',
-    '绝缘 R+','绝缘 R-',
-    '温度1','温度2','温度3','温度4','温度5',
-    '簇SOC','簇SOH','簇SOE',
-    '最大允充功率','最大允放功率',
-    '单次充电电量','单次放电电量',
-    '单次充电容量','单次放电容量'
-  ];
+  const FIELD_ORDER = computed(() => [
+    t('batteryInfo.clusterInfo.afeNum'), t('batteryInfo.clusterInfo.cellNum'), t('batteryInfo.clusterInfo.tempSensorNum'), t('batteryInfo.clusterInfo.systemStatus'), t('batteryInfo.clusterInfo.faultLevel'),
+    t('batteryInfo.clusterInfo.clusterVoltage'), t('batteryInfo.clusterInfo.prechargeVoltage'), t('batteryInfo.clusterInfo.clusterCurrent'),
+    t('batteryInfo.clusterInfo.insulationRPlus'), t('batteryInfo.clusterInfo.insulationRMinus'),
+    t('batteryInfo.clusterInfo.temperature1'), t('batteryInfo.clusterInfo.temperature2'), t('batteryInfo.clusterInfo.temperature3'), t('batteryInfo.clusterInfo.temperature4'), t('batteryInfo.clusterInfo.temperature5'),
+    t('batteryInfo.clusterInfo.clusterSOC'), t('batteryInfo.clusterInfo.clusterSOH'), t('batteryInfo.clusterInfo.clusterSOE'),
+    t('batteryInfo.clusterInfo.maxChargePower'), t('batteryInfo.clusterInfo.maxDischargePower'),
+    t('batteryInfo.clusterInfo.singleChargeEnergy'), t('batteryInfo.clusterInfo.singleDischargeEnergy'),
+    t('batteryInfo.clusterInfo.singleChargeCapacity'), t('batteryInfo.clusterInfo.singleDischargeCapacity')
+  ]);
+
+  // 服务器发送的原始中文标签到翻译后标签的映射
+  const LABEL_MAPPING = computed(() => ({
+    'AFE 数': t('batteryInfo.clusterInfo.afeNum'),
+    '电芯数': t('batteryInfo.clusterInfo.cellNum'),
+    '温感数': t('batteryInfo.clusterInfo.tempSensorNum'),
+    '系统状态': t('batteryInfo.clusterInfo.systemStatus'),
+    '故障等级': t('batteryInfo.clusterInfo.faultLevel'),
+    '簇电压': t('batteryInfo.clusterInfo.clusterVoltage'),
+    '预充电压': t('batteryInfo.clusterInfo.prechargeVoltage'),
+    '簇电流': t('batteryInfo.clusterInfo.clusterCurrent'),
+    '绝缘 R+': t('batteryInfo.clusterInfo.insulationRPlus'),
+    '绝缘 R-': t('batteryInfo.clusterInfo.insulationRMinus'),
+    '温度1': t('batteryInfo.clusterInfo.temperature1'),
+    '温度2': t('batteryInfo.clusterInfo.temperature2'),
+    '温度3': t('batteryInfo.clusterInfo.temperature3'),
+    '温度4': t('batteryInfo.clusterInfo.temperature4'),
+    '温度5': t('batteryInfo.clusterInfo.temperature5'),
+    '簇SOC': t('batteryInfo.clusterInfo.clusterSOC'),
+    '簇SOH': t('batteryInfo.clusterInfo.clusterSOH'),
+    '簇SOE': t('batteryInfo.clusterInfo.clusterSOE'),
+    '最大允充功率': t('batteryInfo.clusterInfo.maxChargePower'),
+    '最大允放功率': t('batteryInfo.clusterInfo.maxDischargePower'),
+    '单次充电电量': t('batteryInfo.clusterInfo.singleChargeEnergy'),
+    '单次放电电量': t('batteryInfo.clusterInfo.singleDischargeEnergy'),
+    '单次充电容量': t('batteryInfo.clusterInfo.singleChargeCapacity'),
+    '单次放电容量': t('batteryInfo.clusterInfo.singleDischargeCapacity')
+  }));
+
+  // 反向映射：翻译后标签到原始中文标签的映射
+  const REVERSE_LABEL_MAPPING = computed(() => {
+    const reverse = {}
+    Object.keys(LABEL_MAPPING.value).forEach(key => {
+      reverse[LABEL_MAPPING.value[key]] = key
+    })
+    return reverse
+  });
 
   // 单位映射
-  const UNIT_MAP = {
-    'AFE 数': '',
-    '电芯数': '',
-    '温感数': '',
-    '系统状态': '',
-    '故障等级': '',
-    '簇电压': 'V',
-    '预充电压': 'V',
-    '簇电流': 'A',
-    '绝缘 R+': 'kΩ',
-    '绝缘 R-': 'kΩ',
-    '温度1': '°C',
-    '温度2': '°C',
-    '温度3': '°C',
-    '温度4': '°C',
-    '温度5': '°C',
-    '簇SOC': '%',
-    '簇SOH': '%',
-    '簇SOE': '%',
-    '最大允充功率': 'kW',
-    '最大允放功率': 'kW',
-    '单次充电电量': 'kWh',
-    '单次放电电量': 'kWh',
-    '单次充电容量': 'Ah',
-    '单次放电容量': 'Ah'
-  };
+  const UNIT_MAP = computed(() => ({
+    [t('batteryInfo.clusterInfo.afeNum')]: '',
+    [t('batteryInfo.clusterInfo.cellNum')]: '',
+    [t('batteryInfo.clusterInfo.tempSensorNum')]: '',
+    [t('batteryInfo.clusterInfo.systemStatus')]: '',
+    [t('batteryInfo.clusterInfo.faultLevel')]: '',
+    [t('batteryInfo.clusterInfo.clusterVoltage')]: t('batteryInfo.units.voltage'),
+    [t('batteryInfo.clusterInfo.prechargeVoltage')]: t('batteryInfo.units.voltage'),
+    [t('batteryInfo.clusterInfo.clusterCurrent')]: t('batteryInfo.units.current'),
+    [t('batteryInfo.clusterInfo.insulationRPlus')]: t('batteryInfo.units.resistance'),
+    [t('batteryInfo.clusterInfo.insulationRMinus')]: t('batteryInfo.units.resistance'),
+    [t('batteryInfo.clusterInfo.temperature1')]: t('batteryInfo.units.temperature'),
+    [t('batteryInfo.clusterInfo.temperature2')]: t('batteryInfo.units.temperature'),
+    [t('batteryInfo.clusterInfo.temperature3')]: t('batteryInfo.units.temperature'),
+    [t('batteryInfo.clusterInfo.temperature4')]: t('batteryInfo.units.temperature'),
+    [t('batteryInfo.clusterInfo.temperature5')]: t('batteryInfo.units.temperature'),
+    [t('batteryInfo.clusterInfo.clusterSOC')]: t('batteryInfo.units.percentage'),
+    [t('batteryInfo.clusterInfo.clusterSOH')]: t('batteryInfo.units.percentage'),
+    [t('batteryInfo.clusterInfo.clusterSOE')]: t('batteryInfo.units.percentage'),
+    [t('batteryInfo.clusterInfo.maxChargePower')]: t('batteryInfo.units.power'),
+    [t('batteryInfo.clusterInfo.maxDischargePower')]: t('batteryInfo.units.power'),
+    [t('batteryInfo.clusterInfo.singleChargeEnergy')]: t('batteryInfo.units.energy'),
+    [t('batteryInfo.clusterInfo.singleDischargeEnergy')]: t('batteryInfo.units.energy'),
+    [t('batteryInfo.clusterInfo.singleChargeCapacity')]: t('batteryInfo.units.capacity'),
+    [t('batteryInfo.clusterInfo.singleDischargeCapacity')]: t('batteryInfo.units.capacity')
+  }));
 
   const flatElems = computed(() => 
     // 每个 block.element 里已经是 {label,value}
@@ -752,28 +630,38 @@ watch(activeView, (newView, oldView) => {
       elemMap.set(e.label, e)
     })
     
-    return FIELD_ORDER.map(fieldLabel => {
+    return FIELD_ORDER.value.map(fieldLabel => {
+      // 通过反向映射找到对应的中文标签
+      const originalLabel = REVERSE_LABEL_MAPPING.value[fieldLabel]
+      
+      if (!originalLabel) {
+        console.warn(`[orderedElems] 未找到对应的原始标签: ${fieldLabel}`)
+        return { label: fieldLabel, value: '–' }
+      }
+      
       // 尝试多种匹配方式（使用 O(1) 的 Map 查找）
-      let found = elemMap.get(fieldLabel)
+      let found = elemMap.get(originalLabel)
       
       // 如果直接匹配失败，尝试带单位的匹配
       if (!found) {
-        const unit = UNIT_MAP[fieldLabel]
+        const unit = UNIT_MAP.value[fieldLabel]
         if (unit) {
-          found = elemMap.get(`${fieldLabel}(${unit})`)
+          found = elemMap.get(`${originalLabel}(${unit})`)
         }
       }
+      
       // 如果还是没找到，返回默认值
       if (!found) {
+        // console.warn(`[orderedElems] 未找到数据: ${originalLabel} -> ${fieldLabel}`)
         return { label: fieldLabel, value: '–' }
       }
       
       // 对系统状态和故障等级进行文本映射
       let displayValue = found.value
-      if (fieldLabel === '系统状态' && SYSTEM_STATUS_MAP[found.value] !== undefined) {
-        displayValue = SYSTEM_STATUS_MAP[found.value]
-      } else if (fieldLabel === '故障等级' && FAULT_LEVEL_MAP[found.value] !== undefined) {
-        displayValue = FAULT_LEVEL_MAP[found.value]
+      if (fieldLabel === t('batteryInfo.clusterInfo.systemStatus') && SYSTEM_STATUS_MAP.value[found.value] !== undefined) {
+        displayValue = SYSTEM_STATUS_MAP.value[found.value]
+      } else if (fieldLabel === t('batteryInfo.clusterInfo.faultLevel') && FAULT_LEVEL_MAP.value[found.value] !== undefined) {
+        displayValue = FAULT_LEVEL_MAP.value[found.value]
       }
       
       // 返回纯标签名（不带单位），单位会在模板中通过UNIT_MAP添加
@@ -787,9 +675,9 @@ watch(activeView, (newView, oldView) => {
   const NEED_FIELDS = computed(() => {
     if (activeView.value === 'BMU_VOLT') return ['BMU电压'];
     if (activeView.value === 'BMU_TEMP') return ['BMU电路板温度'];
-    if (activeView.value === 'BMU_PLUGIN_TEMP') return ['动力接插件温度1','动力接插件温度2'];
-    if (activeView.value === 'BMU_SOC') return ['BMU SOC'];              // 协议修改新增
-    if (activeView.value === 'BMU_PRODUCT_CODE') return ['BMU产品编码'];   // 协议修改新增
+    if (activeView.value === 'BMU_PLUGIN_TEMP') return ['动力接插件温度1', '动力接插件温度2'];
+    if (activeView.value === 'BMU_SOC') return ['BMU SOC'];
+    if (activeView.value === 'BMU_PRODUCT_CODE') return ['BMU产品编码'];
     // if (activeView.value === 'BMU_PLUGIN_TEMP2') return ['动力接插件温度2'];
     return [];
   });
@@ -809,6 +697,25 @@ watch(activeView, (newView, oldView) => {
     return `BMU${bmuNumber}-${pluginNumber}(℃) #${globalIndex}`
   }
 
+  // BMU标签转换函数
+  function transformBMULabel(originalLabel, dataType) {
+    // 从原标签中提取BMU编号：BMU1 SOC(%) → BMU1 SOC(%)
+    const bmuMatch = originalLabel.match(/^BMU(\d+)/)
+    if (bmuMatch) {
+      const bmuNumber = bmuMatch[1]
+      if (dataType === 'BMU_SOC') {
+        return `BMU${bmuNumber} ${t('batteryInfo.bmuData.bmuSOC')}`
+      } else if (dataType === 'BMU_PRODUCT_CODE') {
+        return `BMU${bmuNumber} ${t('batteryInfo.bmuData.bmuProductCode')}`
+      } else if (dataType === 'BMU_VOLT') {
+        return `BMU${bmuNumber} ${t('batteryInfo.bmuData.bmuVoltage')}`
+      } else if (dataType === 'BMU_TEMP') {
+        return `BMU${bmuNumber} ${t('batteryInfo.bmuData.bmuBoardTemp')}`
+      }
+    }
+    return originalLabel
+  }
+
   const bmuRows = computed(() => {
     if (!['BMU_VOLT', 'BMU_TEMP', 'BMU_PLUGIN_TEMP', 'BMU_SOC', 'BMU_PRODUCT_CODE'].includes(activeView.value)) {
       return [];
@@ -816,6 +723,7 @@ watch(activeView, (newView, oldView) => {
     const secs = pickPack(selectedCluster.value, NEED_FIELDS.value) || []
     // 对于动力接插件温度，需要重新排序：插件1温度一排，插件2温度一排
     if (activeView.value === 'BMU_PLUGIN_TEMP') {
+      // 使用原始中文标签查找数据，因为服务器发送的是中文标签
       const plugin1Data = secs.find(sec => sec.class === '动力接插件温度1')?.element || []
       const plugin2Data = secs.find(sec => sec.class === '动力接插件温度2')?.element || []
 
@@ -843,6 +751,16 @@ watch(activeView, (newView, oldView) => {
       }
 
       return reorderedData
+    }
+
+    // 对于BMU_SOC、BMU_PRODUCT_CODE、BMU_VOLT、BMU_TEMP，需要转换标签
+    if (['BMU_SOC', 'BMU_PRODUCT_CODE', 'BMU_VOLT', 'BMU_TEMP'].includes(activeView.value)) {
+      return secs.flatMap(sec => 
+        sec.element.map(item => ({
+          ...item,
+          label: transformBMULabel(item.label, activeView.value)
+        }))
+      )
     }
 
     // 其他情况保持原有逻辑
@@ -906,7 +824,7 @@ watch(activeView, (newView, oldView) => {
                style="width:auto">
 
         <!-- 冻结 BMU-AFE 列 -->
-        <Column frozen header="BMU-AFE" style="width:120px">
+        <Column frozen :header="t('batteryInfo.table.bmuAfe')" style="width:120px">
           <template #body="{ data }">{{ data.bmuLabel }}</template>
         </Column>
 

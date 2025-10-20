@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, watch,  onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Dropdown from 'primevue/dropdown'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -11,6 +12,8 @@ import { parsePackSummary }    from '@/composables/core/data-processing/cluster/
 import { parseClusterSummary }    from '@/composables/core/data-processing/cluster/parseClusterSummary'
  import {clusterFrames as clusterFramesMap,pickCluster} from '@/composables/core/data-processing/cluster/parseClusterSummary'
  import {packFrames    as packFramesMap,   pickPack   } from '@/composables/core/data-processing/cluster/parsePackSummary'
+
+const { t, te } = useI18n()
 
 const { clusterOptions, selectedCluster } = useClusterSelect()
 
@@ -51,7 +54,7 @@ const props = defineProps({
   }
 })
 
-const FIELD_TEMPLATES = {
+const FIELD_TEMPLATES = computed(() => ({
   'CAN-Hall信息': ['LEM/SP5状态信息', 'Hall 名称', 'Hall 软件'],
   '系统及空间信息': ['系统状态位', '周期任务堆栈大小', '系统堆栈空间', '系统堆栈最小空间'],
   '版本信息': [
@@ -64,20 +67,55 @@ const FIELD_TEMPLATES = {
     'BCU_事件记录版本号',
     'BCU_SOX算法版本号'
   ]
-}
+}))
 
 // BMU 默认占位到 Pack 进来前用
-const BMU_PLACEHOLDERS = ['BMU1 软件版本', 'BMU1 BOOT版本']
+const BMU_PLACEHOLDERS = computed(() => ['BMU1 软件版本', 'BMU1 BOOT版本'])
 
-// 格式化数值显示函数 - 专门处理堆栈相关数据和bits类型数据
+// 通用标签翻译函数 - 参考 Reference Modbus 项目的方式
+const getLabelTranslation = (label) => {
+  // 直接尝试翻译（现在所有标签都在本地化文件中预定义了）
+  const directTranslation = t(`versionInfo.labels.${label}`)
+  if (directTranslation && !directTranslation.startsWith('versionInfo.labels.')) {
+    return directTranslation
+  }
+  
+  // 如果翻译失败，返回原始标签
+  return label
+}
+
+// 格式化数值显示函数 - 参考 Reference Modbus 项目的方式
 const formatStackValue = (value, label) => {
   if (value === '–' || value === null || value === undefined) {
     return '–'
   }
 
+  // 处理空字符串或无效值 - 直接返回，不需要翻译
+  if (value === '' || value === '0000' || value === '0') {
+    return '–'
+  }
+
   // 处理bits类型的对象（如LEM/SP5状态信息）
   if (value && typeof value === 'object' && 'txt' in value) {
+    // 对txt值进行翻译，使用 te() 检查翻译是否存在
+    if (te(`versionInfo.values.${value.txt}`)) {
+      return t(`versionInfo.values.${value.txt}`)
+    }
     return value.txt
+  }
+
+  // 只对特定标签的值进行翻译（如状态信息）
+  const translatableLabels = [
+    'LEM/SP5状态信息',
+    '系统状态位'
+  ]
+  
+  if (translatableLabels.includes(label) && typeof value === 'string') {
+    // 使用 te() 检查翻译是否存在，避免警告
+    if (te(`versionInfo.values.${value}`)) {
+      return t(`versionInfo.values.${value}`)
+    }
+    return value
   }
 
   // 处理这三个特定的堆栈字段
@@ -92,7 +130,7 @@ const formatStackValue = (value, label) => {
     return `${value.toFixed(2)} KB`
   }
 
-  // 其他字段保持原样
+  // 其他字段（如版本号）直接返回，不翻译
   return value
 }
 const tableRows = computed(() => {
@@ -104,24 +142,28 @@ const tableRows = computed(() => {
   const clusterMap = new Map(clusterData.map(b => [b.class, b.element]))
   const clusterRows = clsArr.map((cls, idx) => {
     const ele = clusterMap.get(cls) || []
-    const labels = FIELD_TEMPLATES[cls] || []
+    const labels = FIELD_TEMPLATES.value[cls] || []
     const m = new Map(ele.map(e => [e.label, e.value]))
     
     const completed = labels.map(label => {
       const value = m.get(label)
       if (value !== undefined) {
         return {
-          label,
+          label: getLabelTranslation(label),
           value: formatStackValue(value, label)
         }
       } else {
         return {
-          label,
+          label: getLabelTranslation(label),
           value: '–'
         }
       }
     })
-    return { id: idx, classification: cls, element: completed }
+    return { 
+      id: idx, 
+      classification: t(`versionInfo.classification.${cls}`) || cls, 
+      element: completed 
+    }
   })
 
   // 处理 BMU 版本
@@ -129,12 +171,18 @@ const tableRows = computed(() => {
   const packData = pickPack(key, ['BMU版本信息'])  
   const elems = packData.length ? packData[0].element : []
   const completed2 = elems.length
-    ? elems.map(e => ({ label: e.label, value: e.value }))
-    : BMU_PLACEHOLDERS.map(label => ({ label, value: '–' }))
+    ? elems.map(e => ({ 
+        label: getLabelTranslation(e.label), 
+        value: formatStackValue(e.value, e.label)
+      }))
+    : BMU_PLACEHOLDERS.value.map(label => ({ 
+        label: getLabelTranslation(label), 
+        value: '–' 
+      }))
 
   const bmuRow = {
     id: clusterRows.length,
-    classification: 'BMU版本信息',
+    classification: t('versionInfo.classification.BMU版本信息') || 'BMU版本信息',
     element: completed2
   }
 
@@ -148,28 +196,19 @@ const tableRows = computed(() => {
 
 <template>
   <div class="card">
-
-    <DataTable :value="tableRows" dataKey="id" showGridlines class="center-table">
-      <Column header="分类" style="width:12rem">
-        <template #body="{ data }">
-          <div class="class-cell">{{ data.classification }}</div>
-        </template>
-      </Column>
-      <Column header="">
-        <template #body="{ data }">
-  <div class="property-row">
     <div
-      v-for="e in data.element"
-      :key="e.label"
-      class="kv-cell"
+      v-for="group in tableRows"
+      :key="group.id"
+      class="group-section"
     >
-      <div class="kv-label">{{ e.label }}</div>
-      <div class="kv-value">{{ e.value }}</div>
+      <h5>{{ group.classification }}</h5>
+      <div class="items-grid">
+        <div v-for="item in group.element" :key="item.label" class="item-card">
+          <div class="item-label">{{ item.label }}</div>
+          <div class="item-value">{{ item.value }}</div>
+        </div>
+      </div>
     </div>
-  </div>
-</template>
-      </Column>
-    </DataTable>
   </div>
 </template>
 
@@ -179,31 +218,58 @@ const tableRows = computed(() => {
   background: var(--surface-card);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  padding: 1rem;
 }
-.center-table :deep(th),
-.center-table :deep(td) {
-  border: 1px solid #dadada;
+
+.group-section + .group-section {
+  margin-top: 2rem;
 }
-.class-cell {
+
+.group-section h5 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
   font-weight: 600;
+  color: var(--text-color);
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 0.5rem;
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+
+.item-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 0.75rem;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 4rem;
+  background: var(--surface-0);
+  transition: box-shadow 0.2s;
 }
-.property-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+
+.item-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-.kv-cell {
-  min-width: 133px;
-  padding: .35rem .5rem;
-  border: 1px solid #c0c0c0;
-  border-radius: 4px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
+
+.item-label {
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
 }
-.kv-label  { font-weight: 600; }   /* 上半部 */
-.kv-value  { margin-top: 2px; }    /* 下半部 */
+
+.item-value {
+  word-break: break-word;
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 1rem;
+}
 </style>

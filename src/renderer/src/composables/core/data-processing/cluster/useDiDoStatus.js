@@ -13,7 +13,7 @@ import { useClusterStore } from '@/stores/device/clusterStore'
  * 数据来源：bms/bau/d2s/bM/cN/di_do_temp_status
  * 数据格式：按class分组的对象，每个class包含多个信号状态
  */
-export function useDiDoStatus() {
+export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})) {
   const blockStore = useBlockStore()
   const clusterStore = useClusterStore()
 
@@ -54,8 +54,11 @@ export function useDiDoStatus() {
       // 跳过隐藏字段和非bit类型字段
       if (item.hide || !item.label) continue
       
+      // 获取翻译后的信号名称，如果没有翻译则使用原始名称
+      const translatedLabel = signalNames.value[item.label] || item.label
+      
       result.push({
-        label: item.label,
+        label: translatedLabel,
         value: item.value || 0
       })
     }
@@ -65,21 +68,27 @@ export function useDiDoStatus() {
 
   /**
    * 解析RT温度数据（对齐modbus）
-   * - 将编码映射为中文名
+   * - 将编码映射为温度名称
    * - 始终按固定顺序输出（即使未上报，填占位）
    */
-  const parseRTData = (dataArray) => {
+  const parseRTData = (dataArray, temperatureLabels = {}) => {
     const NAME_MAP = {
-      1: 'BCU温度',
-      2: 'B+温度',
-      3: 'B-温度',
-      4: 'P+温度',
-      5: 'P-温度',
-      6: '熔断器1温度',
-      7: '熔断器2温度'
+      1: temperatureLabels.bcuTemp || 'BCU温度',
+      2: temperatureLabels.bPlusTemp || 'B+温度',
+      3: temperatureLabels.bMinusTemp || 'B-温度',
+      4: temperatureLabels.pPlusTemp || 'P+温度',
+      5: temperatureLabels.pMinusTemp || 'P-温度',
+      6: temperatureLabels.fuse1Temp || '熔断器1温度',
+      7: temperatureLabels.fuse2Temp || '熔断器2温度'
     }
 
-    const ORDER = ['B+温度', 'B-温度', 'P+温度', 'P-温度', 'BCU温度']
+    const ORDER = [
+      temperatureLabels.bPlusTemp || 'B+温度',
+      temperatureLabels.bMinusTemp || 'B-温度', 
+      temperatureLabels.pPlusTemp || 'P+温度',
+      temperatureLabels.pMinusTemp || 'P-温度',
+      temperatureLabels.bcuTemp || 'BCU温度'
+    ]
 
     // 收集设备上报的 nameCode -> temperature
     const codeToTemp = {}
@@ -154,7 +163,7 @@ export function useDiDoStatus() {
     }
 
     // 3. 处理RT温度数据（固定顺序，缺失显示为占位）
-    const rtData = parseRTData(data)
+    const rtData = parseRTData(data, temperatureLabels.value)
     if (rtData.length > 0) {
       grouped.rtData = rtData
     }

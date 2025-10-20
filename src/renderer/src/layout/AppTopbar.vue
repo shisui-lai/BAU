@@ -7,7 +7,9 @@ import { useDataReceptionStore } from '@/stores/communication/dataReceptionStore
 import { useMqttStore } from '@/stores/communication/mqttStore'
 import  Dropdown  from 'primevue/dropdown'
 import  MultiSelect  from 'primevue/multiselect'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const { onMenuToggle, onTopBarMenuButton } = useLayout()
 
 // 获取簇选择store
@@ -24,16 +26,41 @@ const dataReceptionStore = useDataReceptionStore()
 const mqttStore = useMqttStore()
 
 // 版本信息
-const version = 'test-v0.2.0 10.15'
+const version = 'test-v0.2.1 10.17'
 
 
+
+// 【格式化选项】在组件层面处理翻译
+const formattedClusterOptions = computed(() => {
+  return clusterStore.availableClusters.map(option => ({
+    ...option,
+    label: t('cluster.blockCluster', [option.block, option.cluster])
+  }))
+})
+
+const formattedBlockOptions = computed(() => {
+  return blockStore.availableBlocks.map(option => ({
+    ...option,
+    label: t('cluster.block', [option.block])
+  }))
+})
 
 // 【合并显示】合并状态和速率的计算属性
 const combinedDisplayText = computed(() => {
   if (!mqttStore.isConnected) {
-    return '未连接 | 0 KB/s'
+    return `${t('topBar.disconnected')} | 0 ${t('topBar.dataRate')}`
   }
-  return dataReceptionStore.combinedStatusText
+  
+  // 在组件层面处理翻译
+  const statusMap = {
+    'waiting': t('topBar.status.disconnected'),
+    'receiving': t('topBar.status.normal'),
+    'timeout': t('topBar.status.timeout'),
+    'unknown': t('topBar.status.unknown')
+  }
+  
+  const status = statusMap[dataReceptionStore.receptionStatus] || t('topBar.status.unknown')
+  return `${status} | ${dataReceptionStore.dataRate} ${t('topBar.dataRate')}`
 })
 
 const combinedDisplayIcon = computed(() => {
@@ -48,6 +75,20 @@ const combinedDisplayClass = computed(() => {
     return 'combined-status-disconnected'
   }
   return dataReceptionStore.combinedStatusClass
+})
+
+// 多选框选中项标签模板 - 为簇选择器
+const clusterSelectedItemsLabel = computed(() => {
+  const count = clusterStore.selectedClustersForWrite?.length || 0
+  if (count === 0) return ''
+  return t('topBar.selectedItems', [count])
+})
+
+// 多选框选中项标签模板 - 为堆选择器
+const blockSelectedItemsLabel = computed(() => {
+  const count = blockStore.selectedBlocksForWrite?.length || 0
+  if (count === 0) return ''
+  return t('topBar.selectedItems', [count])
 })
 
 
@@ -67,10 +108,10 @@ const combinedDisplayClass = computed(() => {
         <div class="cluster-view-selector">
           <Dropdown
             v-model="clusterStore.selectedClusterForView"
-            :options="clusterStore.availableClusters"
+            :options="formattedClusterOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="选择查看簇"
+            :placeholder="t('topBar.selectClusterView')"
             class="cluster-view-dropdown"
             :disabled="clusterStore.availableClusters.length === 0"
           />
@@ -80,13 +121,13 @@ const combinedDisplayClass = computed(() => {
         <div class="cluster-write-selector" v-if="clusterStore.showWriteSelector">
           <MultiSelect
             v-model="clusterStore.selectedClustersForWrite"
-            :options="clusterStore.availableClusters"
+            :options="formattedClusterOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="选择下发目标"
+            :placeholder="t('topBar.selectClusterWrite')"
             class="cluster-write-multiselect"
             :disabled="clusterStore.availableClusters.length === 0"
-            :selectedItemsLabel="`{0} items selected`"
+            :selectedItemsLabel="clusterSelectedItemsLabel"
             :maxSelectedLabels="0"
           />
         </div>
@@ -98,10 +139,10 @@ const combinedDisplayClass = computed(() => {
         <div class="block-view-selector">
           <Dropdown
             v-model="blockStore.selectedBlockForView"
-            :options="blockStore.availableBlocks"
+            :options="formattedBlockOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="选择查看堆"
+            :placeholder="t('topBar.selectBlockView')"
             class="block-view-dropdown"
             :disabled="blockStore.availableBlocks.length === 0"
           />
@@ -111,13 +152,13 @@ const combinedDisplayClass = computed(() => {
         <div class="block-write-selector" v-if="blockStore.showWriteSelector">
           <MultiSelect
             v-model="blockStore.selectedBlocksForWrite"
-            :options="blockStore.availableBlocks"
+            :options="formattedBlockOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="选择下发目标"
+            :placeholder="t('topBar.selectBlockWrite')"
             class="block-write-multiselect"
             :disabled="blockStore.availableBlocks.length === 0"
-            :selectedItemsLabel="`{0} items selected`"
+            :selectedItemsLabel="blockSelectedItemsLabel"
             :maxSelectedLabels="0"
           />
         </div>
@@ -191,6 +232,7 @@ const combinedDisplayClass = computed(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0;
+  flex-wrap: wrap;
 }
 
 /* 堆选择器区域 */
@@ -199,16 +241,19 @@ const combinedDisplayClass = computed(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0;
+  flex-wrap: wrap;
 }
 
 /* 查看簇选择器 */
 .cluster-view-selector {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
 }
 
 .cluster-view-dropdown {
-  width: 10rem;
+  min-width: 8rem;
+  width: auto;
   font-size: 1rem;
 }
 
@@ -216,10 +261,12 @@ const combinedDisplayClass = computed(() => {
 .block-view-selector {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
 }
 
 .block-view-dropdown {
-  width: 10rem;
+  min-width: 8rem;
+  width: auto;
   font-size: 1rem;
 }
 
@@ -227,10 +274,12 @@ const combinedDisplayClass = computed(() => {
 .cluster-write-selector {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
 }
 
 .cluster-write-multiselect {
-  width: 12rem;
+  min-width: 10rem;
+  width: auto;
   font-size: 1rem;
 }
 
@@ -238,10 +287,12 @@ const combinedDisplayClass = computed(() => {
 .block-write-selector {
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
 }
 
 .block-write-multiselect {
-  width: 10rem;
+  min-width: 8rem;
+  width: auto;
   font-size: 1rem;
 }
 
@@ -311,6 +362,16 @@ const combinedDisplayClass = computed(() => {
 :deep(.p-dropdown),
 :deep(.p-multiselect) {
   font-size: 1rem;
+  width: 100%;
+  min-width: fit-content;
+}
+
+/* 确保下拉框和多选框内容自适应 */
+:deep(.p-dropdown .p-dropdown-label),
+:deep(.p-multiselect .p-multiselect-label) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 :deep(.p-multiselect-panel) {
@@ -402,7 +463,16 @@ const combinedDisplayClass = computed(() => {
     font-size: 0.8rem;
   }
 
+  /* 小屏幕时调整选择器最小宽度 */
+  .cluster-view-dropdown,
+  .block-view-dropdown {
+    min-width: 6rem;
+  }
 
+  .cluster-write-multiselect,
+  .block-write-multiselect {
+    min-width: 8rem;
+  }
 
   .combined-status-indicator {
     padding: 0.2rem 0.4rem;

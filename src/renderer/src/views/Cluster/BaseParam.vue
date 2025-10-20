@@ -2,6 +2,9 @@
 // 系统基本配置参数页面 - 支持参数分类切换和分组下发
 import { useToast } from 'primevue/usetoast'
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, watch, nextTick, markRaw } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { createParameterTranslator, createRemarksTranslator } from '@/utils/parameterTranslation'
+import { translateDropdownOptions } from '@/configs/ui/dropdownConfigs'
 import { scheduleAutoRead, cancelAutoRead, registerAutoReadFunction } from '@/composables/utils/useAutoReadScheduler'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { SYS_BASE_PARAM_R, FACTORY_CALIB_PARAM_R } from '../../../../main/table.js'
@@ -19,6 +22,13 @@ import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+
+const { t } = useI18n()
+
+// 创建参数翻译器
+const translateParameterData = createParameterTranslator()
+const translateRemarks = createRemarksTranslator('clusterConfigParam')
+const translateFactoryRemarks = createRemarksTranslator('factoryCalibParam')
 
 const toastService = useToast()
 
@@ -50,47 +60,56 @@ const systemBaseParamConfig = {
     parameterClasses: [                                                 // 参数分类配置
       {
         name: 'BMU配置',
+        nameKey: 'clusterConfigParam.parameterClasses.bmuConfig',
         byteOffset: 0,      // 起始字节偏移：寄存器0开始
         byteLength: 132,    // 字节长度：BMU配置 + 虚拟电池位移，总共66个u16寄存器 = 132字节
       },
       {
         name: '类型选择',
+        nameKey: 'clusterConfigParam.parameterClasses.typeSelection',
         byteOffset: 164,    // 起始字节偏移：跳过32字节预留 = 寄存器82开始
         byteLength: 20,     // 字节长度：10个类型选择参数，每个u16 = 20字节
         hiddenFields: ['SpecialFuncEnable']  // 隐藏特殊功能使能位配置寄存器，只显示解析出的bit位字段
       },
       {
         name: '基础设置',
+        nameKey: 'clusterConfigParam.parameterClasses.basicSettings',
         byteOffset: 186,    // 起始字节偏移：跳过4字节预留 = 寄存器93开始
         byteLength: 16      // 字节长度：8个基础设置参数，每个u16 = 16字节
       },
       {
         name: '空调阈值',
+        nameKey: 'clusterConfigParam.parameterClasses.airConditioningThreshold',
         byteOffset: 210,    // 起始字节偏移：跳过8字节预留 = 寄存器105开始
         byteLength: 12      // 字节长度：6个温度阈值参数，每个s16 = 12字节
       },
       {
         name: '通信设置',
+        nameKey: 'clusterConfigParam.parameterClasses.communicationSettings',
         byteOffset: 230,    // 起始字节偏移：跳过8字节预留 = 寄存器115开始
         byteLength: 18      // 字节长度：9个通信参数，每个u16 = 18字节
       },
       {
         name: '电流传感器',
+        nameKey: 'clusterConfigParam.parameterClasses.currentSensor',
         byteOffset: 256,    // 起始字节偏移：跳过8字节预留 = 寄存器128开始
         byteLength: 8       // 字节长度：4个传感器参数，每个u16 = 8字节
       },
       {
         name: '电池信息',
+        nameKey: 'clusterConfigParam.parameterClasses.batteryInfo',
         byteOffset: 268,    // 起始字节偏移：跳过4字节预留 = 寄存器134开始
         byteLength: 6       // 字节长度：3个电池信息参数，每个u16 = 6字节
       },
       {
         name: '簇额定参数',
+        nameKey: 'clusterConfigParam.parameterClasses.clusterRatedParams',
         byteOffset: 274,    // 起始字节偏移：紧接电池信息，寄存器137开始
         byteLength: 16      // 字节长度：1个u16 + 3个u32 = 2+12 = 14字节
       },
       {
         name: '均衡参数',
+        nameKey: 'clusterConfigParam.parameterClasses.balanceParams',
         byteOffset: 296,    // 起始字节偏移：跳过8字节预留 = 寄存器148开始
         byteLength: 22      // 字节长度：11个均衡参数，包含s16和u16 = 22字节
       }
@@ -109,7 +128,8 @@ const factoryCalibParamConfig = {
     parameterSerializer: factoryCalibParamHandler.serializeFactoryCalibParamData,
     parameterClasses: [
       {
-        name: '设备出厂信息',  
+        name: '设备出厂信息',
+        nameKey: 'clusterConfigParam.parameterClasses.deviceFactoryInfo',
         byteOffset: 38,       // 设备出厂信息从第38字节开始
         byteLength: 56        // 28个字段 * 2字节 = 56字节
       }
@@ -234,7 +254,10 @@ function switchToSystemMode() {
 //协议修改新增 - 扩展的参数分类列表（包含出厂校正参数）
 const allAvailableClasses = computed(() => {
   const systemClasses = systemAllAvailableClasses.value
-  const factoryClass = { name: '设备出厂信息' }
+  const factoryClass = { 
+    name: '设备出厂信息',
+    nameKey: 'clusterConfigParam.parameterClasses.deviceFactoryInfo'
+  }
   return [...systemClasses, factoryClass]
 })
 
@@ -272,8 +295,10 @@ const currentSelectedClass = computed(() => {
 
 // 统一的增强参数列表（包含下拉框信息）
 const enhancedParameterList = computed(() => {
+  let baseList
+  
   if (isFactoryCalibMode.value) {
-    const baseList = factoryCalibEnhancedParameterList.value
+    baseList = factoryCalibEnhancedParameterList.value
     // 查找本机ID字段并打印其值
     const localIdField = baseList.find(item => item.key === 'localId')
     // 过滤掉4个原始生产编码字段
@@ -300,7 +325,7 @@ const enhancedParameterList = computed(() => {
       // 在第一个位置插入合并的生产编码字段
       filteredList.unshift({
         key: 'productionCode',
-        label: '生产编码',  
+        label: t('clusterConfigParam.productionCode.label'),  
         unit: '',
         scale: 1,
         type: 'string',  
@@ -311,13 +336,17 @@ const enhancedParameterList = computed(() => {
         isDropdown: false,
         options: null,
         displayValue: productionCode,
-        remarks: '格式：YYYYMMDDNNNN（12位数字）'  
+        remarks: t('clusterConfigParam.productionCode.format')  
       })
     }
 
-    return filteredList
+    baseList = filteredList
+  } else {
+    baseList = systemEnhancedParameterList.value
   }
-  return systemEnhancedParameterList.value
+  
+  // 应用参数翻译
+  return translateParameterData(baseList, 'clusterConfigParam')
 })
 
 // 统一的读取状态
@@ -353,8 +382,8 @@ const sendCurrentClassParameters = () => {
   if (ipv4Errors.length > 0) {
     toastService.add({
       severity: 'error',
-      summary: 'IP地址格式错误',
-      detail: `以下IP地址格式不正确，请修正后再下发：\n${ipv4Errors.join('\n')}`,
+      summary: t('clusterConfigParam.errors.ipFormatError'),
+      detail: `${t('clusterConfigParam.errors.ipFormatErrorDetail')}\n${ipv4Errors.join('\n')}`,
       life: 8000
     })
     return
@@ -378,12 +407,13 @@ const stopParameterReading = () => {
 }
 
 //协议修改新增 - 统一的下拉框判断函数
-const isParameterDropdown = (parameterLabel) => {
+const isParameterDropdown = (parameter) => {
+  // 优先使用原始标签进行下拉框检测，确保与配置键一致
+  const labelToCheck = parameter?.originalLabel || parameter?.label || parameter
+  
   const result = isFactoryCalibMode.value
-    ? factoryCalibIsParameterDropdown(parameterLabel)
-    : systemIsParameterDropdown(parameterLabel)
-
-
+    ? factoryCalibIsParameterDropdown(labelToCheck)
+    : systemIsParameterDropdown(labelToCheck)
 
   return result
 }
@@ -451,14 +481,16 @@ const getParameterDecimalPlaces = (param) => {
 }
 
 //协议修改新增 - 统一的下拉框选项获取函数
-const getParameterDropdownOptions = (parameterLabel) => {
+const getParameterDropdownOptions = (parameter) => {
+  // 优先使用原始标签获取选项，确保与配置键一致
+  const labelToCheck = parameter?.originalLabel || parameter?.label || parameter
+  
   const options = isFactoryCalibMode.value
-    ? factoryCalibGetParameterDropdownOptions(parameterLabel)
-    : systemGetParameterDropdownOptions(parameterLabel)
+    ? factoryCalibGetParameterDropdownOptions(labelToCheck)
+    : systemGetParameterDropdownOptions(labelToCheck)
 
-
-
-  return options
+  // 应用下拉框选项翻译
+  return translateDropdownOptions(options, labelToCheck, t)
 }
 
 //协议修改新增 - 统一的下拉框参数更新函数
@@ -472,10 +504,15 @@ const updateDropdownParameterValue = (param, value) => {
 
 //协议修改新增 - 统一的参数备注函数
 const getParameterRemarkText = (parameterKey) => {
+  let remarks = ''
   if (isFactoryCalibMode.value) {
-    return FACTORY_CALIB_PARAM_REMARKS[parameterKey] || ''
+    remarks = FACTORY_CALIB_PARAM_REMARKS[parameterKey] || ''
+    // 出厂校正参数使用专门的翻译器
+    return translateFactoryRemarks(remarks)
   } else {
-    return BASE_PARAM_REMARKS[parameterKey] || ''
+    remarks = BASE_PARAM_REMARKS[parameterKey] || ''
+    // 系统基本参数使用默认翻译器
+    return translateRemarks(remarks)
   }
 }
 
@@ -632,7 +669,7 @@ onUnmounted(() => {
         <div class="control-left">
           <div class="button-group">
             <Button
-              :label="isCurrentlyReading ? '停止读取' : '开始读取'"
+              :label="isCurrentlyReading ? t('clusterConfigParam.buttons.stopReading') : t('clusterConfigParam.buttons.startReading')"
               @click="() => {
                 if (isCurrentlyReading) {
                   stopParameterReading()
@@ -644,7 +681,7 @@ onUnmounted(() => {
               size="small"
             />
             <Button
-              label="下发参数"
+              :label="t('clusterConfigParam.buttons.sendParameters')"
               @click="sendCurrentClassParameters"
               :disabled="isCurrentlyReading || !currentSelectedClass"
               severity="warning"
@@ -659,7 +696,7 @@ onUnmounted(() => {
         <Button
           v-for="parameterClass in allAvailableClasses"
           :key="parameterClass.name"
-          :label="parameterClass.name"
+          :label="parameterClass.nameKey ? t(parameterClass.nameKey) : parameterClass.name"
           @click="switchToParameterClass(parameterClass.name)"
           :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
           :outlined="currentSelectedClass?.name !== parameterClass.name"
@@ -677,19 +714,19 @@ onUnmounted(() => {
       tableStyle="min-width: 50rem"
     >
       <!-- 参数名称列 -->
-      <Column header="参数名称" style="width: 250px">
+      <Column :header="t('clusterConfigParam.table.parameterName')" style="width: 250px">
         <template #body="slotProps">
           <div class="font-medium">{{ slotProps.data.label }}</div>
         </template>
       </Column>
 
       <!-- 参数值编辑列 -->
-      <Column header="参数值" style="width: 200px">
+      <Column :header="t('clusterConfigParam.table.parameterValue')" style="width: 200px">
         <template #body="slotProps">
           <!-- 下拉框参数 -->
           <Dropdown
-            v-if="isParameterDropdown(slotProps.data.label)"
-            :options="getParameterDropdownOptions(slotProps.data.label)"
+            v-if="isParameterDropdown(slotProps.data)"
+            :options="getParameterDropdownOptions(slotProps.data)"
             optionLabel="label"
             optionValue="value"
             :model-value="slotProps.data.selectedOption?.value"
@@ -728,7 +765,7 @@ onUnmounted(() => {
             :disabled="isCurrentlyReading"
             size="small"
             class="w-full"
-            :placeholder="slotProps.data.key === 'productionCode' ? 'YYYYMMDDNNNN' : ''"
+            :placeholder="slotProps.data.key === 'productionCode' ? t('clusterConfigParam.productionCode.placeholder') : ''"
           />
 
           <!-- 普通数字输入框参数 -->
@@ -747,7 +784,7 @@ onUnmounted(() => {
       </Column>
 
       <!-- 参数单位列 -->
-      <Column header="单位" style="width: 80px">
+      <Column :header="t('clusterConfigParam.table.unit')" style="width: 80px">
         <template #body="slotProps">
           <div>
             {{ slotProps.data.unit || '-' }}
@@ -756,7 +793,7 @@ onUnmounted(() => {
       </Column>
 
       <!-- 参数备注列 -->
-      <Column header="备注说明">
+      <Column :header="t('clusterConfigParam.table.remarks')">
         <template #body="slotProps">
           <div class="text-sm whitespace-pre-line">
             {{ getParameterRemarkText(slotProps.data.key) }}

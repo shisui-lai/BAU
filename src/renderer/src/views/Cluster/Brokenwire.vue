@@ -1,5 +1,6 @@
 <script setup>
 import { computed,onMounted,onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Dropdown             from 'primevue/dropdown'
 import Tag                  from 'primevue/tag'
 import { useClusterSelect }     from '@/composables/core/device-selection/useClusterSelect'
@@ -34,6 +35,7 @@ onUnmounted(() => {
 })
 
 const { clusterOptions, selectedCluster } = useClusterSelect()
+const { t, te, locale } = useI18n()
 
 /* —— 掉线信息状态转换函数 —— */
 function getBrokenwireDisplayValue(label, value, originalClass) {
@@ -50,11 +52,11 @@ function getBrokenwireDisplayValue(label, value, originalClass) {
     originalClass.includes(field) || label.includes(field)
   )
   if (isCollectionOffline) {
-    return value === false ? '正常' : '失联'  // 反转逻辑：0正常 1失联
+    return value === false ? t('disconnect.normal') : t('disconnect.disconnect')  // 反转逻辑：0正常 1失联
   }
 
   // 其他类型：使用原有逻辑（1正常 0失联）
-  return value === true ? '正常' : '失联'
+  return value === true ? t('disconnect.normal') : t('disconnect.disconnect')
 }
 
 /* —— 2. 分类常量 —— */
@@ -72,6 +74,24 @@ const CLASS_ORDER = [
   '温度采集状态',
 ]
 
+// 分类标题翻译函数
+function getClassificationTranslation(classification) {
+  // 检查是否有翻译
+  if (te(`disconnect.classification.${classification}`)) {
+    return t(`disconnect.classification.${classification}`)
+  }
+  return classification
+}
+
+// 标签翻译函数
+function getLabelTranslation(label) {
+  // 检查是否有翻译
+  if (te(`disconnect.label.${label}`)) {
+    return t(`disconnect.label.${label}`)
+  }
+  return label
+}
+
 const CLASS_TITLE_REMAP = {
   '插件1温度掉线': '动力接插件1温度掉线',
   '插件2温度掉线': '动力接插件2温度掉线',
@@ -81,27 +101,30 @@ const CLASS_TITLE_REMAP = {
 
 /* —— 3. label 替换 —— */
 function renameLabel (label, cls) {
+  let processedLabel = label
+  
   if (cls === 'BMU失联状态')
-    return label.replace(/失联[:：]?\s*$/, '')
+    processedLabel = label.replace(/失联[:：]?\s*$/, '')
 
   if (cls === '电压一级掉线')
-    return label.replace(/ 电压一级掉线[:：]?\s*$/, ' 电压')
+    processedLabel = label.replace(/ 电压一级掉线[:：]?\s*$/, ' 电压')
   if (cls === '温度一级掉线')
-    return label.replace(/ 温度一级掉线[:：]?\s*$/, ' 温度')
+    processedLabel = label.replace(/ 温度一级掉线[:：]?\s*$/, ' 温度')
 
   if (cls.includes('二级掉线'))
-    return label
+    processedLabel = label
       .replace(/ 电压二级掉线[:：]?/, '')
       .replace(/ 温度二级掉线[:：]?/, '')
       .replace(/\s+Cell(\d+)/, '-#$1')
 
   if (cls.includes('AFE失联'))
-    return label.replace(/ 失联[:：]?\s*$/, '')
+    processedLabel = label.replace(/ 失联[:：]?\s*$/, '')
 
   if (cls === '插件1温度掉线' || cls === '插件2温度掉线')
-    return label.replace(/ 插件\d温度掉线[:：]?\s*$/, '')
+    processedLabel = label.replace(/ 插件\d温度掉线[:：]?\s*$/, '')
 
-  return label
+  // 对处理后的标签进行翻译
+  return getLabelTranslation(processedLabel)
 }
 
 /* —— 4. 组装卡片 —— */
@@ -144,9 +167,10 @@ const tableRows = computed(() => {
 
       /* 每个 BMU 单独一张 card */
       Array.from(map.keys()).sort((a,b)=>a-b).forEach(bmuNo => {
+        const classificationKey = `${aliasTitle} BMU${bmuNo}`
         rows.push({
           id           : rowId++,
-          classification: `${aliasTitle} BMU${bmuNo}`,
+          classification: getClassificationTranslation(classificationKey),
           element      : map.get(bmuNo)
         })
       })
@@ -160,22 +184,22 @@ const tableRows = computed(() => {
       }))
       rows.push({
         id           : rowId++,
-        classification: aliasTitle,
+        classification: getClassificationTranslation(aliasTitle),
         element      : ele
       })
     }
   }
 
-  /* 4-3 pack 端“失联信息”统计卡片，放最前 */
+  /* 4-3 pack 端"失联信息"统计卡片，放最前 */
   const statSrc = packFrame['失联信息']
   if (statSrc && statSrc.length) {
     const statBlock = statSrc.map(e => ({
-      label : e.label.replace(/数量$/, ''),
+      label : getLabelTranslation(e.label.replace(/数量$/, '')),
       value : e.value ?? 0
     }))
     rows.unshift({
       id           : -1,
-      classification: '失联信息',
+      classification: getClassificationTranslation('失联信息'),
       element      : statBlock
     })
   }
@@ -187,11 +211,11 @@ const tableRows = computed(() => {
 /* —— 5. tag 颜色 / 文案 —— */
 function getSeverity(arr) {
   if (arr.some(e => typeof e.value !== 'string')) return ''
-  return arr.every(e => e.value === '正常') ? 'success' : 'danger'
+  return arr.every(e => e.value === t('disconnect.normal')) ? 'success' : 'danger'
 }
 function getStatusText(arr) {
   if (arr.some(e => typeof e.value !== 'string')) return ''
-  return arr.every(e => e.value === '正常') ? '正常' : '失联'
+  return arr.every(e => e.value === t('disconnect.normal')) ? t('disconnect.normal') : t('disconnect.disconnect')
 }
 </script>
 <template>
@@ -207,7 +231,7 @@ function getStatusText(arr) {
     <div v-else class="bmu-grid">
       <div v-for="row in tableRows" :key="row.id" class="bmu-card">
         <div class="card-header">
-          <strong>{{ row.classification }}</strong>
+          <strong>{{ getClassificationTranslation(row.classification) }}</strong>
           <Tag v-if="getStatusText(row.element)"
               :severity="getSeverity(row.element)">
             {{ getStatusText(row.element) }}
@@ -218,8 +242,8 @@ function getStatusText(arr) {
           <div v-for="item in row.element"
               :key="item.label"
               class="data-item">
-            <span>{{ item.label }}：</span>
-            <span :class="{ 'text-red-600 font-bold': item.value === '失联' }">
+            <span>{{ getLabelTranslation(item.label) }}：</span>
+            <span :class="{ 'text-red-600 font-bold': item.value === t('disconnect.disconnect') }">
               {{ item.value }}
             </span>
           </div>

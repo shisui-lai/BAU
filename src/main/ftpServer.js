@@ -6,8 +6,15 @@ const net = require('net')
 const { ipcMain } = require('electron')
 
 let ftpServer = null
-let FTP_ROOT = path.join(process.cwd(), 'upgrade-files')
+// 基于应用路径的FTP根目录隔离
+// 使用process.execPath获取exe文件路径，确保每个上位机实例都有独立的目录
+const appPath = path.dirname(process.execPath)
+let FTP_ROOT = path.join(appPath, 'upgrade-files')
 let mainWindow = null
+
+// 添加日志确认路径
+console.log(`[FTP] 应用路径: ${appPath}`)
+console.log(`[FTP] FTP根目录: ${FTP_ROOT}`)
 
 // 检查端口是否被占用
 function checkPortInUse(port) {
@@ -33,6 +40,11 @@ if (!fs.existsSync(FTP_ROOT)) {
 // 设置主窗口引用
 function setMainWindow(window) {
   mainWindow = window
+}
+
+// 获取FTP根目录
+function getFtpRoot() {
+  return FTP_ROOT
 }
 
 // 通知前端文件事件
@@ -295,7 +307,8 @@ ipcMain.handle('choose-default-FTP-dir', async () => {
   
   const result = await dialog.showOpenDialog({
     title: '选择FTP根目录',
-    properties: ['openDirectory']
+    properties: ['openDirectory'],
+    defaultPath: FTP_ROOT  // 使用当前FTP根目录作为默认路径
   })
   
   if (!result.canceled && result.filePaths.length > 0) {
@@ -364,7 +377,7 @@ ipcMain.handle('ftp-validate-file', async (_, fileName) => {
 
 export {
   ftpServer as getFtpServer,
-  FTP_ROOT as getFtpRoot,
+  getFtpRoot,
   setMainWindow
 }
 

@@ -25,9 +25,13 @@ console.log('[Main] 准备使用进程管理器管理MQTT子进程...')
 
 // 文件选择对话框
 ipcMain.handle('show-open-dialog', async () => {
+  // 获取FTP根目录作为默认路径
+  const ftpRoot = ftpServerModule.getFtpRoot()
+  
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: '选择升级文件',
-    properties: ['openFile']
+    properties: ['openFile'],
+    defaultPath: ftpRoot  // 使用FTP根目录作为默认路径
   })
 
   if (!canceled && filePaths.length > 0) {
@@ -44,8 +48,26 @@ ipcMain.handle('show-open-dialog', async () => {
 
 // 升级功能已简化，复用现有的mqttPublish接口，无需专门的IPC处理器
 
+// IPC 通道：前端调用获取当前语言
+ipcMain.handle('get-locale', () => {
+  return store.get('locale')
+})
+
+// IPC 通道：前端调用设置新语言
+ipcMain.handle('set-locale', (_event, locale) => {
+  store.set('locale', locale)
+})
+
 // 引入FTP服务器模块 - 在MQTT初始化之后
 import * as ftpServerModule from './ftpServer.js'
+
+// ------------ 多语言偏好存储 ------------
+let store
+async function initStore() {
+  const mod = await import('electron-store')
+  const Store = mod.default
+  store = new Store({ defaults: { locale: 'zh' } })
+}
 
 
 process.on('uncaughtException', (err) => {
@@ -58,6 +80,9 @@ process.on('uncaughtException', (err) => {
 // })
 
 app.whenReady().then(async () => {
+  // 初始化多语言存储
+  await initStore()
+  
   try {                                   // ★改
     const devtoolsPath = join(process.resourcesPath, 'extensions', 'vue-devtools'); // ★示例
     await session.defaultSession.loadExtension(devtoolsPath, { allowFileAccess: true });
@@ -140,20 +165,46 @@ function createWindow() {
 
   const menu = Menu.buildFromTemplate([
     {
-      label: app.name,
+      label: 'Language',
       submenu: [
         {
-          click: () => mainWindow.webContents.send('from-main', modbusClient),
-          label: 'Increment'
+          label: '中文',
+          click: () => {
+            mainWindow.webContents.send('set-locale', 'zh')
+          }
         },
         {
-          click: () => mainWindow.webContents.send('from-main', data),
-          label: 'Decrement'
+          label: 'English',
+          click: () => {
+            mainWindow.webContents.send('set-locale', 'en')
+          }
+        }
+      ]
+    },
+    {
+      label: 'Help',
+      submenu: [
+        {
+          label: 'Console',
+          click: () => {
+            mainWindow.webContents.openDevTools()
+          }
+        }
+      ]
+    },
+    {
+      label: 'Info',
+      submenu: [
+        {
+          label: 'About',
+          click: () => {
+            mainWindow.webContents.send('show-about-dialog')
+          }
         }
       ]
     }
   ])
-  /*   Menu.setApplicationMenu(menu) */
+  Menu.setApplicationMenu(menu)
 
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.

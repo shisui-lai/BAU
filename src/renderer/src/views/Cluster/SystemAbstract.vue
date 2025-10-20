@@ -1,6 +1,9 @@
 // 单体信息系统概要组件 - 显示最大最小电压、温度等概要信息及对应电池编号
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   activeView: { type: String, required: true },
@@ -35,9 +38,9 @@ const DECIMAL_CONFIG = {
   BMU_PLUGIN_TEMP: 1   // 动力接插件温度：1位小数
 }
 
-// 扩展PICK_MAP支持所有概要数据类型
-const PICK_MAP = {
-    CELL_VOLT: [
+// 服务器发送的原始中文标签（用于数据匹配）
+const ORIGINAL_PICK_MAP = {
+  CELL_VOLT: [
     '单体最大电压1(V)','单体最大电压2(V)','单体最大电压3(V)',
     '平均电压(V)','单体最小电压1(V)','单体最小电压2(V)',
     '单体最小电压3(V)','电压极差(V)'
@@ -73,6 +76,63 @@ const PICK_MAP = {
     '极柱最小温度3(℃)','温度极差(℃)'
   ]
 }
+
+// 翻译后的标签（用于显示）
+const PICK_MAP = computed(() => ({
+  CELL_VOLT: [
+    `${t('batteryInfo.summary.cellVolt.maxVolt1')}(V)`, `${t('batteryInfo.summary.cellVolt.maxVolt2')}(V)`, `${t('batteryInfo.summary.cellVolt.maxVolt3')}(V)`,
+    `${t('batteryInfo.summary.cellVolt.avgVolt')}(V)`, `${t('batteryInfo.summary.cellVolt.minVolt1')}(V)`, `${t('batteryInfo.summary.cellVolt.minVolt2')}(V)`,
+    `${t('batteryInfo.summary.cellVolt.minVolt3')}(V)`, `${t('batteryInfo.summary.cellVolt.voltDiff')}(V)`
+  ],
+  CELL_TEMP: [
+    `${t('batteryInfo.summary.cellTemp.maxTemp1')}(℃)`, `${t('batteryInfo.summary.cellTemp.maxTemp2')}(℃)`, `${t('batteryInfo.summary.cellTemp.maxTemp3')}(℃)`,
+    `${t('batteryInfo.summary.cellTemp.avgTemp')}(℃)`, `${t('batteryInfo.summary.cellTemp.minTemp1')}(℃)`, `${t('batteryInfo.summary.cellTemp.minTemp2')}(℃)`,
+    `${t('batteryInfo.summary.cellTemp.minTemp3')}(℃)`, `${t('batteryInfo.summary.cellTemp.tempDiff')}(℃)`
+  ],
+  CELL_SOC: [
+    `${t('batteryInfo.summary.cellSOC.maxSOC1')}(%)`, `${t('batteryInfo.summary.cellSOC.maxSOC2')}(%)`, `${t('batteryInfo.summary.cellSOC.maxSOC3')}(%)`,
+    `${t('batteryInfo.summary.cellSOC.avgSOC')}(%)`, `${t('batteryInfo.summary.cellSOC.minSOC1')}(%)`, `${t('batteryInfo.summary.cellSOC.minSOC2')}(%)`,
+    `${t('batteryInfo.summary.cellSOC.minSOC3')}(%)`, `${t('batteryInfo.summary.cellSOC.socDiff')}(%)`
+  ],
+  CELL_SOH: [
+    `${t('batteryInfo.summary.cellSOH.maxSOH1')}(%)`, `${t('batteryInfo.summary.cellSOH.maxSOH2')}(%)`, `${t('batteryInfo.summary.cellSOH.maxSOH3')}(%)`,
+    `${t('batteryInfo.summary.cellSOH.avgSOH')}(%)`, `${t('batteryInfo.summary.cellSOH.minSOH1')}(%)`, `${t('batteryInfo.summary.cellSOH.minSOH2')}(%)`,
+    `${t('batteryInfo.summary.cellSOH.minSOH3')}(%)`, `${t('batteryInfo.summary.cellSOH.sohDiff')}(%)`
+  ],
+  BMU_VOLT: [
+    `${t('batteryInfo.summary.bmuVolt.maxVolt1')}(V)`, `${t('batteryInfo.summary.bmuVolt.maxVolt2')}(V)`, `${t('batteryInfo.summary.bmuVolt.maxVolt3')}(V)`,
+    `${t('batteryInfo.summary.bmuVolt.avgVolt')}(V)`, `${t('batteryInfo.summary.bmuVolt.minVolt1')}(V)`, `${t('batteryInfo.summary.bmuVolt.minVolt2')}(V)`,
+    `${t('batteryInfo.summary.bmuVolt.minVolt3')}(V)`, `${t('batteryInfo.summary.bmuVolt.voltDiff')}(V)`
+  ],
+  BMU_TEMP: [
+    `${t('batteryInfo.summary.bmuTemp.maxTemp1')}(℃)`, `${t('batteryInfo.summary.bmuTemp.maxTemp2')}(℃)`, `${t('batteryInfo.summary.bmuTemp.maxTemp3')}(℃)`,
+    `${t('batteryInfo.summary.bmuTemp.avgTemp')}(℃)`, `${t('batteryInfo.summary.bmuTemp.minTemp1')}(℃)`, `${t('batteryInfo.summary.bmuTemp.minTemp2')}(℃)`,
+    `${t('batteryInfo.summary.bmuTemp.minTemp3')}(℃)`, `${t('batteryInfo.summary.bmuTemp.tempDiff')}(℃)`
+  ],
+  BMU_PLUGIN_TEMP: [
+    `${t('batteryInfo.summary.bmuPluginTemp.maxTemp1')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.maxTemp2')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.maxTemp3')}(℃)`,
+    `${t('batteryInfo.summary.bmuPluginTemp.avgTemp')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.minTemp1')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.minTemp2')}(℃)`,
+    `${t('batteryInfo.summary.bmuPluginTemp.minTemp3')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.tempDiff')}(℃)`
+  ]
+}))
+
+// 创建标签映射：原始中文标签 -> 翻译后标签
+const LABEL_MAP = computed(() => {
+  const map = {}
+  const originalLabels = ORIGINAL_PICK_MAP[props.activeView] || []
+  const translatedLabels = PICK_MAP.value[props.activeView] || []
+  
+  // 确保两个数组长度一致
+  if (originalLabels.length !== translatedLabels.length) {
+    console.warn(`[LABEL_MAP] 标签数量不匹配: 原始=${originalLabels.length}, 翻译=${translatedLabels.length}`)
+  }
+  
+  originalLabels.forEach((original, index) => {
+    map[original] = translatedLabels[index] || original
+  })
+  
+  return map
+})
 
 const cache = ref({})
 const clusterOptions = ref([])
@@ -132,15 +192,16 @@ const viewData = computed(() => {
   // console.log('[viewData] looking for class:', cls)
   const found = list.find(d => d.class === cls)
   // console.log('[viewData] found:', found)
-  const pick = PICK_MAP[props.activeView] || []
+  const originalPick = ORIGINAL_PICK_MAP[props.activeView] || []
+  const translatedPick = PICK_MAP.value[props.activeView] || []
 
   /* 若还没收到概要帧 → 生成占位 "–" */
   if (!found) {
-   return pick.map(label => ({ label, value: '–' }))
+   return translatedPick.map(label => ({ label, value: '–' }))
   }
 
   /* 正常过滤已到达的概要帧，并添加编号信息 */
-  const filtered = found.element.filter(e => pick.includes(e.label))
+  const filtered = found.element.filter(e => originalPick.includes(e.label))
   
   // 添加编号信息的逻辑
   return filtered.map(item => {
@@ -155,8 +216,16 @@ const viewData = computed(() => {
       }
     }
     
+    // 使用翻译后的标签进行显示
+    const translatedLabel = LABEL_MAP.value[item.label] || item.label
+    
+    // 调试信息
+    if (!LABEL_MAP.value[item.label]) {
+      console.warn(`[viewData] 标签映射失败: ${item.label} -> 使用原始标签`)
+    }
+    
     return {
-      label: item.label,
+      label: translatedLabel,
       value: formattedValue
     }
   })

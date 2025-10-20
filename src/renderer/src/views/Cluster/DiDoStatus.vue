@@ -1,9 +1,59 @@
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDiDoStatus } from '@/composables/core/data-processing/cluster/useDiDoStatus'
 
+const { t } = useI18n()
+
+// 温度标签翻译
+const temperatureLabels = computed(() => ({
+  bcuTemp: t('didoStatus.temperatureLabels.bcuTemp'),
+  bPlusTemp: t('didoStatus.temperatureLabels.bPlusTemp'),
+  bMinusTemp: t('didoStatus.temperatureLabels.bMinusTemp'),
+  pPlusTemp: t('didoStatus.temperatureLabels.pPlusTemp'),
+  pMinusTemp: t('didoStatus.temperatureLabels.pMinusTemp'),
+  fuse1Temp: t('didoStatus.temperatureLabels.fuse1Temp'),
+  fuse2Temp: t('didoStatus.temperatureLabels.fuse2Temp')
+}))
+
+// 信号名称翻译
+const signalNames = computed(() => ({
+  '主正接触器反馈': t('didoStatus.signalNames.主正接触器反馈'),
+  '主负接触器反馈': t('didoStatus.signalNames.主负接触器反馈'),
+  '预充接触器反馈': t('didoStatus.signalNames.预充接触器反馈'),
+  '隔离开关反馈': t('didoStatus.signalNames.隔离开关反馈'),
+  '断路器反馈': t('didoStatus.signalNames.断路器反馈'),
+  '风扇反馈': t('didoStatus.signalNames.风扇反馈'),
+  '直流供电KM反馈': t('didoStatus.signalNames.直流供电KM反馈'),
+  '门禁反馈': t('didoStatus.signalNames.门禁反馈'),
+  'SPD反馈': t('didoStatus.signalNames.SPD反馈'),
+  '交流电压反馈': t('didoStatus.signalNames.交流电压反馈'),
+  '烟感反馈': t('didoStatus.signalNames.烟感反馈'),
+  '消防反馈': t('didoStatus.signalNames.消防反馈'),
+  '温感反馈': t('didoStatus.signalNames.温感反馈'),
+  '排风系统反馈': t('didoStatus.signalNames.排风系统反馈'),
+  '辅助断路器反馈': t('didoStatus.signalNames.辅助断路器反馈'),
+  '氢气探测器反馈': t('didoStatus.signalNames.氢气探测器反馈'),
+  'MSD反馈': t('didoStatus.signalNames.MSD反馈'),
+  '急停反馈': t('didoStatus.signalNames.急停反馈'),
+  '柜体风机反馈': t('didoStatus.signalNames.柜体风机反馈'),
+  '主正接触器高边驱动反馈': t('didoStatus.signalNames.主正接触器高边驱动反馈'),
+  '主负接触器高边驱动反馈': t('didoStatus.signalNames.主负接触器高边驱动反馈'),
+  '预充接触器高边驱动反馈': t('didoStatus.signalNames.预充接触器高边驱动反馈'),
+  '绿灯高边驱动反馈': t('didoStatus.signalNames.绿灯高边驱动反馈'),
+  '黄灯高边驱动反馈': t('didoStatus.signalNames.黄灯高边驱动反馈'),
+  '红灯高边驱动反馈': t('didoStatus.signalNames.红灯高边驱动反馈'),
+  '风扇高边驱动反馈': t('didoStatus.signalNames.风扇高边驱动反馈'),
+  '主断分励脱扣高边驱动反馈故障': t('didoStatus.signalNames.主断分励脱扣高边驱动反馈故障'),
+  '直流供电KM高边驱动反馈': t('didoStatus.signalNames.直流供电KM高边驱动反馈'),
+  'pcs封波高边驱动反馈': t('didoStatus.signalNames.pcs封波高边驱动反馈'),
+  '辅助断路器高边驱动反馈': t('didoStatus.signalNames.辅助断路器高边驱动反馈'),
+  '排风系统高边驱动反馈': t('didoStatus.signalNames.排风系统高边驱动反馈'),
+  '柜体风机高边驱动反馈': t('didoStatus.signalNames.柜体风机高边驱动反馈')
+}))
+
 // 使用composable获取数据
-const { groupedDiDoStatus } = useDiDoStatus()
+const { groupedDiDoStatus } = useDiDoStatus(temperatureLabels, signalNames)
 
 /**
  * 获取状态样式类
@@ -16,13 +66,13 @@ const getStatusClass = (value) => {
 
 /**
  * 获取分类显示名称
- * 根据数据分类key返回友好的中文显示名称
+ * 根据数据分类key返回友好的显示名称
  */
 const getCategoryTitle = (category) => {
   const titleMap = {
-    diSignal: 'DI信号状态',
-    doDriveFeedback: 'DO反馈状态',
-    rtData: 'RT数据状态'
+    diSignal: t('didoStatus.categories.diSignal'),
+    doDriveFeedback: t('didoStatus.categories.doDriveFeedback'),
+    rtData: t('didoStatus.categories.rtData')
   }
   return titleMap[category] || category
 }
@@ -42,7 +92,7 @@ const hasData = computed(() => {
       <!-- 无数据提示 -->
       <div v-if="!hasData" class="no-data-message">
         <i class="pi pi-info-circle"></i>
-        <span>暂无数据，请检查设备连接</span>
+        <span>{{ t('didoStatus.noDataMessage') }}</span>
       </div>
 
       <!-- 数据表格容器 -->
@@ -65,12 +115,12 @@ const hasData = computed(() => {
             </template>
 
             <!-- 信号名称列 -->
-            <Column field="label" header="信号名称">
+            <Column field="label" :header="t('didoStatus.signalName')">
               <template #body="{ data }">{{ data.label }}</template>
             </Column>
 
             <!-- 状态/温度值列 -->
-            <Column field="value" header="状态/值" sortable>
+            <Column field="value" :header="t('didoStatus.statusValue')" sortable>
               <template #body="{ data }">
                 <span v-if="category === 'rtData'">{{ data.value }}</span>
                 <span v-else :class="getStatusClass(data.value)" class="status-badge">{{ data.value }}</span>
@@ -79,7 +129,7 @@ const hasData = computed(() => {
 
             <!-- 空数据提示 -->
             <template #empty>
-              <div class="p-4 text-center text-gray-500">该类别暂无数据</div>
+              <div class="p-4 text-center text-gray-500">{{ t('didoStatus.noDataForCategory') }}</div>
             </template>
           </DataTable>
         </div>

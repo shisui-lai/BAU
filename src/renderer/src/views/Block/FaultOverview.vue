@@ -4,13 +4,13 @@
   <div class="fault-overview">
     <div class="loading-indicator" v-if="isLoading">
       <i class="pi pi-spin pi-spinner"></i>
-      <span>正在加载故障数据...</span>
+      <span>{{ t('faultOverview.loading') }}</span>
     </div>
     
     <div v-else>
         <Accordion class="fault-accordion" multiple :activeIndex="[0]">
         <!-- 堆级故障面板 -->
-          <AccordionTab header="堆故障总览" class="block-fault-panel">
+          <AccordionTab :header="t('faultOverview.blockFaultOverview')" class="block-fault-panel">
           <div class="fault-cards">
               <!-- Card: 故障最高等级总览 -->
             <div class="fault-card level-overview">
@@ -19,19 +19,19 @@
                   <div class="indicator-legend">
                     <div class="legend-item">
                       <div class="indicator-light severe"></div>
-                      <span>严重</span>
+                      <span>{{ t('faultOverview.indicatorLegend.severe') }}</span>
               </div>
                     <div class="legend-item">
                       <div class="indicator-light general"></div>
-                      <span>一般</span>
+                      <span>{{ t('faultOverview.indicatorLegend.general') }}</span>
                 </div>
                     <div class="legend-item">
                       <div class="indicator-light minor"></div>
-                      <span>轻微</span>
+                      <span>{{ t('faultOverview.indicatorLegend.minor') }}</span>
                 </div>
                     <div class="legend-item">
                       <div class="indicator-light normal"></div>
-                      <span>正常</span>
+                      <span>{{ t('faultOverview.indicatorLegend.normal') }}</span>
               </div>
             </div>
             
@@ -52,7 +52,7 @@
         <AccordionTab 
           v-for="cluster in clusterData" 
           :key="cluster.id"
-            :header="`簇${cluster.id}故障总览`"
+            :header="t('faultOverview.clusterFaultOverview', [cluster.id])"
           class="cluster-fault-panel"
         >
           <div class="fault-cards">
@@ -63,19 +63,19 @@
                   <div class="indicator-legend">
                     <div class="legend-item">
                       <div class="indicator-light severe"></div>
-                      <span>严重</span>
+                      <span>{{ t('faultOverview.indicatorLegend.severe') }}</span>
               </div>
                     <div class="legend-item">
                       <div class="indicator-light general"></div>
-                      <span>一般</span>
+                      <span>{{ t('faultOverview.indicatorLegend.general') }}</span>
                 </div>
                     <div class="legend-item">
                       <div class="indicator-light minor"></div>
-                      <span>轻微</span>
+                      <span>{{ t('faultOverview.indicatorLegend.minor') }}</span>
                 </div>
                     <div class="legend-item">
                       <div class="indicator-light normal"></div>
-                      <span>正常</span>
+                      <span>{{ t('faultOverview.indicatorLegend.normal') }}</span>
               </div>
             </div>
             
@@ -99,12 +99,49 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useFaultOverview } from '../../composables/core/data-processing/common/useFaultOverview'
 import { useBlockSelect } from '../../composables/core/device-selection/useBlockSelect'
 import { useBlockStore } from '../../stores/device/blockStore'
 import Accordion from 'primevue/accordion'
 import AccordionTab from 'primevue/accordiontab'
 
+const { t } = useI18n()
+
+// 故障名称翻译映射 - 按照其他页面的模式
+const FAULT_NAMES_MAP = computed(() => ({
+    'ClusterInterVoltageDiffFaultGrade': t('faultOverview.faultNames.clusterInterVoltageDiffFaultGrade'),
+    'ClusterInterCurrentDiffFaultGrade': t('faultOverview.faultNames.clusterInterCurrentDiffFaultGrade'),
+    'CellVoltageDiffFaultGrade': t('faultOverview.faultNames.cellVoltageDiffFaultGrade'),
+    'CellTempDiffFaultGrade': t('faultOverview.faultNames.cellTempDiffFaultGrade'),
+    'CellSocDiffFaultGrade': t('faultOverview.faultNames.cellSocDiffFaultGrade'),
+    'PackVoltageDiffFaultGrade': t('faultOverview.faultNames.packVoltageDiffFaultGrade'),
+    'ClusterVoltageOverFaultGrade': t('faultOverview.faultNames.clusterVoltageOverFaultGrade'),
+    'ClusterVoltageUnderFaultGrade': t('faultOverview.faultNames.clusterVoltageUnderFaultGrade'),
+    'InsulationResistancePosFaultGrade': t('faultOverview.faultNames.insulationResistancePosFaultGrade'),
+    'InsulationResistanceNegFaultGrade': t('faultOverview.faultNames.insulationResistanceNegFaultGrade'),
+    'ChargeOvercurrentFaultGrade': t('faultOverview.faultNames.chargeOvercurrentFaultGrade'),
+    'DischargeOvercurrentFaultGrade': t('faultOverview.faultNames.dischargeOvercurrentFaultGrade'),
+    'BcuRt1OvertempFaultGrade': t('faultOverview.faultNames.bcuRt1OvertempFaultGrade'),
+    'BcuRt2OvertempFaultGrade': t('faultOverview.faultNames.bcuRt2OvertempFaultGrade'),
+    'BcuRt3OvertempFaultGrade': t('faultOverview.faultNames.bcuRt3OvertempFaultGrade'),
+    'BcuRt4OvertempFaultGrade': t('faultOverview.faultNames.bcuRt4OvertempFaultGrade'),
+    'BcuRt5OvertempFaultGrade': t('faultOverview.faultNames.bcuRt5OvertempFaultGrade'),
+    'PackOvervoltageFaultGrade': t('faultOverview.faultNames.packOvervoltageFaultGrade'),
+    'PackUndervoltageFaultGrade': t('faultOverview.faultNames.packUndervoltageFaultGrade'),
+    'PackOvertempFaultGrade': t('faultOverview.faultNames.packOvertempFaultGrade'),
+    'PackUndertempFaultGrade': t('faultOverview.faultNames.packUndertempFaultGrade'),
+    'PackPowerConnectorPosOvertempFaultGrade': t('faultOverview.faultNames.packPowerConnectorPosOvertempFaultGrade'),
+    'PackPowerConnectorNegOvertempFaultGrade': t('faultOverview.faultNames.packPowerConnectorNegOvertempFaultGrade'),
+    'CellOvervoltageFaultGrade': t('faultOverview.faultNames.cellOvervoltageFaultGrade'),
+    'CellUndervoltageFaultGrade': t('faultOverview.faultNames.cellUndervoltageFaultGrade'),
+    'CellChargeOvertempFaultGrade': t('faultOverview.faultNames.cellChargeOvertempFaultGrade'),
+    'CellChargeUndertempFaultGrade': t('faultOverview.faultNames.cellChargeUndertempFaultGrade'),
+    'CellDischargeOvertempFaultGrade': t('faultOverview.faultNames.cellDischargeOvertempFaultGrade'),
+    'CellDischargeUndertempFaultGrade': t('faultOverview.faultNames.cellDischargeUndertempFaultGrade'),
+    'CellSocTooHighFaultGrade': t('faultOverview.faultNames.cellSocTooHighFaultGrade'),
+    'CellSocTooLowFaultGrade': t('faultOverview.faultNames.cellSocTooLowFaultGrade')
+  }))
 
 // 使用堆选择composable
 const { blockOptions, selectedBlock } = useBlockSelect()
@@ -115,9 +152,27 @@ const blockStore = useBlockStore()
 const {
   blockGradeData,
   clusterGradeData,
-  processedBlockGradeOverview: blockGradeOverview,
-  processedClusterData: clusterData
+  processedBlockGradeOverview: rawBlockGradeOverview,
+  processedClusterData: rawClusterData
 } = useFaultOverview()
+
+// 处理后的数据 - 应用翻译
+const blockGradeOverview = computed(() => {
+  return rawBlockGradeOverview.value.map(fault => ({
+    ...fault,
+    name: FAULT_NAMES_MAP.value[fault.name] || fault.name
+  }))
+})
+
+const clusterData = computed(() => {
+  return rawClusterData.value.map(cluster => ({
+    ...cluster,
+    overview: cluster.overview.map(fault => ({
+      ...fault,
+      name: FAULT_NAMES_MAP.value[fault.name] || fault.name
+    }))
+  }))
+})
 
 // 加载状态
 const isLoading = computed(() => {

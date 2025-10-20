@@ -63,7 +63,6 @@ export const useBlockStore = defineStore('block', () => {
     const blockNum = blockKey.replace('block', '')
     
     const newOption = {
-      label: `堆${blockNum}`,
       value: blockKey,
       block: parseInt(blockNum)
     }
@@ -102,7 +101,6 @@ export const useBlockStore = defineStore('block', () => {
     
     const validOptions = newOptions.filter(option => {
       const isValid = option && 
-                     typeof option.label === 'string' && 
                      typeof option.value === 'string' &&
                      isValidBlockKey(option.value)
       
@@ -116,9 +114,10 @@ export const useBlockStore = defineStore('block', () => {
     // 为每个选项添加解析后的block信息
     const enrichedOptions = validOptions.map(option => {
       const blockNum = option.value.replace('block', '')
+      const block = parseInt(blockNum)
       return {
         ...option,
-        block: parseInt(blockNum)
+        block: block
       }
     })
     
@@ -295,9 +294,9 @@ export const useBlockStore = defineStore('block', () => {
     
     for (let block = 1; block <= BlockCount; block++) {
       newOptions.push({
-        label: `堆${block}`,
         value: `block${block}`,
-        block: block
+        block: block,
+        label: `堆${block}`
       })
     }
     

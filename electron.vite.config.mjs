@@ -2,6 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 
 export default defineConfig({
   build: {
@@ -44,6 +45,12 @@ export default defineConfig({
         '@': fileURLToPath(new URL('./src/renderer/src', import.meta.url))
       }
     },
-    plugins: [vue()]
+    plugins: [
+      vue(),
+      // 新增 i18n 插件
+      VueI18nPlugin({
+        include: [resolve(__dirname, './src/renderer/src/locales/**')]
+      })
+    ]
   }
 })

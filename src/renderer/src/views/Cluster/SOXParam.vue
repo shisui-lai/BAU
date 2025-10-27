@@ -1,6 +1,6 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
-import { onMounted, onUnmounted, onActivated, onDeactivated } from 'vue'
+import { onMounted, onUnmounted, onActivated, onDeactivated, computed } from 'vue'
 import { scheduleAutoRead, cancelAutoRead } from '@/composables/utils/useAutoReadScheduler'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
@@ -11,9 +11,28 @@ import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputNumber from 'primevue/inputnumber'
+import { useI18n } from 'vue-i18n'
 
 const toastService = useToast()
 const soxParamHandler = useSOXParam()
+const { t, locale, te } = useI18n()
+
+// 直接使用label翻译函数
+const getLabelTranslation = (label) => {
+  if (locale.value === 'zh') return label
+  return te(`config.soxParam.label.${label}`) 
+    ? t(`config.soxParam.label.${label}`) 
+    : label
+}
+
+// 翻译后的参数列表
+const translatedParameterList = computed(() => {
+  const parameters = currentClassParameterList.value || []
+  return parameters.map(param => ({
+    ...param,
+    label: getLabelTranslation(param.label || param.originalLabel)
+  }))
+})
 
 // 页面类型检测 - 设置为cluster类型以显示下发多选框
 const { addPageTypeMapping } = usePageTypeDetection()
@@ -376,7 +395,7 @@ function getParameterRemarkText(parameterKey) {
         <div class="control-left">
           <div class="button-group">
             <Button
-              :label="isCurrentlyReading ? '停止读取' : '开始读取'"
+              :label="isCurrentlyReading ? t('soxParam.buttons.stopReading') : t('soxParam.buttons.startReading')"
               @click="() => {
                 if (isCurrentlyReading) {
                   stopParameterReading()
@@ -388,7 +407,7 @@ function getParameterRemarkText(parameterKey) {
               size="small"
             />
             <Button
-              label="下发参数"
+              :label="t('soxParam.buttons.sendParameters')"
               @click="sendCurrentClassParameters"
               :disabled="isCurrentlyReading || !currentSelectedClass"
               severity="warning"
@@ -403,7 +422,7 @@ function getParameterRemarkText(parameterKey) {
         <Button
           v-for="parameterClass in allAvailableClasses"
           :key="parameterClass.name"
-          :label="parameterClass.name"
+          :label="t('soxParam.parameterClasses.' + parameterClass.name)"
           @click="switchToParameterClass(parameterClass.name)"
           :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
           :outlined="currentSelectedClass?.name !== parameterClass.name"
@@ -415,21 +434,21 @@ function getParameterRemarkText(parameterKey) {
 
     <!-- 当前分类的参数数据表格 - 直接渲染 -->
     <DataTable
-      :value="currentClassParameterList"
+      :value="translatedParameterList"
       class="p-datatable-sm"
       :show-gridlines="true"
       scrollable
       tableStyle="min-width: 50rem"
     >
       <!-- 参数名称列 -->
-      <Column header="参数名称" style="width: 250px" :frozen="true">
+      <Column :header="t('soxParam.table.parameterName')" style="width: 250px" :frozen="true">
         <template #body="slotProps">
           <div class="font-medium">{{ slotProps.data.label }}</div>
         </template>
       </Column>
 
       <!-- 参数值编辑列 -->
-      <Column header="参数值" style="width: 150px">
+      <Column :header="t('soxParam.table.parameterValue')" style="width: 150px">
         <template #body="slotProps">
           <InputNumber
             :model-value="getParameterInputValue(slotProps.data, slotProps.data.currentValue)"
@@ -445,7 +464,7 @@ function getParameterRemarkText(parameterKey) {
       </Column>
 
       <!-- 参数单位列 -->
-      <Column header="单位" style="width: 80px">
+      <Column :header="t('soxParam.table.unit')" style="width: 80px">
         <template #body="slotProps">
           <div>
             {{ slotProps.data.unit || '-' }}
@@ -454,7 +473,7 @@ function getParameterRemarkText(parameterKey) {
       </Column>
 
       <!-- 参数备注列 -->
-      <Column header="备注说明" style="width: 300px">
+      <Column :header="t('soxParam.table.remarks')" style="width: 300px">
         <template #body="slotProps">
           <div class="text-sm whitespace-pre-line">
             {{ getParameterRemarkText(slotProps.data.key) }}

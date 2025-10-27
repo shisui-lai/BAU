@@ -5,10 +5,12 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import { useBlockStore } from '@/stores/device/blockStore'
-import { ERROR_CODES } from '../../../../../main/table.js'
+// import { ERROR_CODES } from '../../../../../main/table.js' // 已移除硬编码错误代码
+import { useI18n } from 'vue-i18n'
 
 const toast = useToast()
 const blockStore = useBlockStore()
+const { t, te, locale } = useI18n()
 
 // BCU参数
 const bcuParams = ref({
@@ -23,10 +25,10 @@ const bmuParams = ref({
 })
 
 // 簇选择相关 - 动态生成选项
-const clusterOptions = ref([
-  { label: '全部簇（广播）', value: '0xFF' },
+const clusterOptions = computed(() => [
+  { label: t('addressAdaptive.options.clusters.allClusters'), value: '0xFF' },
   ...Array.from({ length: 20 }, (_, i) => ({
-    label: `簇${i + 1}`,
+    label: t('addressAdaptive.options.clusters.cluster', [i + 1]),
     value: `0x${(i + 1).toString(16).padStart(2, '0').toUpperCase()}`
   }))
 ])
@@ -37,17 +39,17 @@ const selectedCluster = ref('0xFF') // 默认选择全部簇
 const lastSentCluster = ref(null)
 
 // 结果显示字段配置
-const bcuResultFields = [
-  { key: 'bcuAddr', label: 'BCU地址', alwaysShow: true },
-  { key: 'errorContent', label: '错误内容', showOnError: true },
-  { key: 'errorDetail', label: '错误详情', showOnError: true }
-]
+const bcuResultFields = computed(() => [
+  { key: 'bcuAddr', label: t('addressAdaptive.labels.bcuAddress'), alwaysShow: true },
+  { key: 'errorContent', label: t('addressAdaptive.labels.errorContent'), showOnError: true },
+  { key: 'errorDetail', label: t('addressAdaptive.labels.errorDetail'), showOnError: true }
+])
 
-const bmuResultFields = [
-  { key: 'bmuAddr', label: 'BMU地址', showOnError: true },
-  { key: 'errorContent', label: '错误内容', showOnError: true },
-  { key: 'errorDetail', label: '错误详情', showOnError: true }
-]
+const bmuResultFields = computed(() => [
+  { key: 'bmuAddr', label: t('addressAdaptive.labels.bmuAddress'), showOnError: true },
+  { key: 'errorContent', label: t('addressAdaptive.labels.errorContent'), showOnError: true },
+  { key: 'errorDetail', label: t('addressAdaptive.labels.errorDetail'), showOnError: true }
+])
 
 // 状态管理
 const bcuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 30, queryTimer: null })
@@ -93,7 +95,7 @@ const getCurrentBlockInfo = () => {
 const buildTopic = (template) => {
   const blockInfo = getCurrentBlockInfo()
   if (!blockInfo) {
-    throw new Error('请先选择要操作的堆')
+    throw new Error(t('addressAdaptive.messages.selectBlockFirst'))
   }
 
   // 替换堆号占位符
@@ -178,12 +180,12 @@ function handleRemoteCommandResponseWithToast(msg) {
   const commandType = dataType ? dataType.toLowerCase() : 'unknown'
 
   // 获取设备显示名称
-  const deviceName = `堆${blockId}`
+  const deviceName = t('toast.remoteControl.deviceName.block', { blockId })
 
   // 获取命令显示名称
   const commandNameMap = {
-    'bcu_adaptive_addr': 'BCU地址自适应',
-    'bmu_adaptive_addr': 'BMU地址自适应'
+    'bcu_adaptive_addr': t('toast.bauAddressDetection.bcuAdaptive'),
+    'bmu_adaptive_addr': t('toast.bauAddressDetection.bmuAdaptive')
   }
 
   const commandName = commandNameMap[commandType] || commandType
@@ -192,8 +194,8 @@ function handleRemoteCommandResponseWithToast(msg) {
   if (data.error) {
     toast.add({
       severity: 'error',
-      summary: '遥控命令执行失败',
-      detail: `${deviceName}: ${commandName} 执行失败 - ${data.message || '未知错误'}`,
+      summary: t('toast.bauAddressDetection.remoteCommandFailed'),
+      detail: `${deviceName}: ${commandName} ${t('toast.bauAddressDetection.executionFailed')} - ${data.message || t('toast.bauAddressDetection.unknownError')}`,
       life: 6000
     })
     return
@@ -203,14 +205,14 @@ function handleRemoteCommandResponseWithToast(msg) {
   if (data.code !== undefined) {
     const isSuccess = data.code === 0xE0
 
-    const statusText = ERROR_CODES[data.code] || '未知状态'
+    const statusText = t(`toast.errorCodes.0x${data.code.toString(16).toUpperCase()}`) || t('toast.bauAddressDetection.unknownStatus')
     const errorCodeHex = `0x${data.code.toString(16).toUpperCase()}`
 
     if (isSuccess) {
       toast.add({
         severity: 'success',
-        summary: '遥控命令执行成功',
-        detail: `${deviceName}: ${commandName} 已成功下设 (应答码: ${errorCodeHex})`,
+      summary: t('toast.bauAddressDetection.remoteCommandSuccess'),
+      detail: `${deviceName}: ${commandName} ${t('toast.bauAddressDetection.successfullySet')} (${t('toast.bauAddressDetection.responseCode')}: ${errorCodeHex})`,
         life: 4000
       })
 
@@ -228,8 +230,8 @@ function handleRemoteCommandResponseWithToast(msg) {
     } else {
       toast.add({
         severity: 'error',
-        summary: '遥控命令执行失败',
-        detail: `${deviceName}: ${commandName} ${statusText} (应答码: ${errorCodeHex})`,
+      summary: t('toast.bauAddressDetection.remoteCommandFailed'),
+      detail: `${deviceName}: ${commandName} ${statusText} (${t('toast.bauAddressDetection.responseCode')}: ${errorCodeHex})`,
         life: 6000
       })
 
@@ -246,6 +248,59 @@ function handleRemoteCommandResponseWithToast(msg) {
 }
 
 /**
+ * 获取状态文本的翻译
+ */
+const getStatusText = (status) => {
+  // 确保翻译函数可用
+  if (typeof t !== 'function') {
+    console.warn('[AddressAdaptive] Translation function not available')
+    return t('toast.bauAddressDetection.translationError', 'Translation Error')
+  }
+  
+  switch (status) {
+    case 0x00:
+      return t('addressAdaptive.statuses.notStarted')
+    case 0xC1:
+      return t('addressAdaptive.statuses.executing')
+    case 0xC2:
+      return t('addressAdaptive.statuses.success')
+    case 0xC3:
+      return t('addressAdaptive.statuses.failed')
+    default:
+      return `${t('addressAdaptive.statuses.unknown')}(0x${status.toString(16).toUpperCase()})`
+  }
+}
+
+/**
+ * 动态获取状态文本的翻译（响应语言变化）
+ */
+const getDynamicStatusText = (result) => {
+  if (!result) {
+    return t('addressAdaptive.statuses.waiting')
+  }
+  
+  // 确保翻译函数可用
+  if (typeof t !== 'function') {
+    console.warn('[AddressAdaptive] Translation function not available')
+    return t('toast.bauAddressDetection.translationError', 'Translation Error')
+  }
+  
+  // 根据状态码动态获取翻译
+  switch (result.status) {
+    case 0x00:
+      return t('addressAdaptive.statuses.notStarted')
+    case 0xC1:
+      return t('addressAdaptive.statuses.executing')
+    case 0xC2:
+      return t('addressAdaptive.statuses.success')
+    case 0xC3:
+      return t('addressAdaptive.statuses.failed')
+    default:
+      return `${t('addressAdaptive.statuses.unknown')}(0x${result.status.toString(16).toUpperCase()})`
+  }
+}
+
+/**
  * 专门解析地址自适应结果
  * 支持BCU（4寄存器）和BMU（5寄存器）两种格式
  */
@@ -254,7 +309,8 @@ const parseAdaptive4Registers = (data, type) => {
 
   const status = data.register1 || data.status || 0x00
   // BMU类型使用新的currentCluster字段，BCU类型不需要解析簇号信息
-  const currentCluster = type === 'bmu' ? (data.currentCluster || 0) : null
+  // 簇号0是无效的，应该过滤掉
+  const currentCluster = type === 'bmu' ? (data.currentCluster && data.currentCluster > 0 ? data.currentCluster : null) : null
 
   let success = false
   let statusText = ''
@@ -267,35 +323,43 @@ const parseAdaptive4Registers = (data, type) => {
 
   switch (status) {
     case 0x00:
-      statusText = '未启动'
+      statusText = getStatusText(status)
       break
     case 0xC1:
-      statusText = `${deviceType}自适应地址已启动（执行中）`
+      statusText = getStatusText(status)
       showDetails = true
       // 执行中时，寄存器2-4都是0且无意义
       break
     case 0xC2:
       success = true
-      statusText = `${deviceType}自适应地址成功`
+      statusText = getStatusText(status)
       showDetails = true
       // 成功时，寄存器2-4都是0且无意义
       // 成功时不显示具体的地址信息，因为寄存器2-4无意义
       break
     case 0xC3:
       success = false
-      statusText = `${deviceType}自适应地址失败`
+      statusText = getStatusText(status)
       showDetails = true
 
       // 只有失败时，寄存器2-4才有意义
       // 寄存器2：错误内容码
       if (data.register2 !== undefined) {
-        const errorContentMap = {
-          0x0000: '未启动',
-          0xA11A: '地址自适应启动失败',
-          0xC11C: '地址分配准备失败',
-          0xC22C: '地址分配失败'
+        const getErrorContentText = (code) => {
+          switch (code) {
+            case 0x0000:
+              return t('addressAdaptive.errorCodes.notStarted')
+            case 0xA11A:
+              return t('addressAdaptive.errorCodes.startFailed')
+            case 0xC11C:
+              return t('addressAdaptive.errorCodes.prepareFailed')
+            case 0xC22C:
+              return t('addressAdaptive.errorCodes.allocationFailed')
+            default:
+              return `${t('toast.bauAddressDetection.unknownError')}(0x${code.toString(16).toUpperCase()})`
+          }
         }
-        errorContent = errorContentMap[data.register2] || `未知错误(0x${data.register2.toString(16).toUpperCase()})`
+        errorContent = getErrorContentText(data.register2)
       }
 
       // 寄存器3：设备地址（BCU地址或BMU地址）
@@ -305,22 +369,30 @@ const parseAdaptive4Registers = (data, type) => {
 
       // 寄存器4：错误详情码
       if (data.register4 !== undefined) {
-        const errorDetailMap = {
-          0x00: '未启动',
-          0xC1: '应答超时',
-          0xC2: '应答帧过多',
-          0xC3: '地址分配超限'
+        const getErrorDetailText = (code) => {
+          switch (code) {
+            case 0x00:
+              return t('addressAdaptive.errorCodes.notStarted')
+            case 0xC1:
+              return t('addressAdaptive.errorCodes.timeout')
+            case 0xC2:
+              return t('addressAdaptive.errorCodes.tooManyFrames')
+            case 0xC3:
+              return t('addressAdaptive.errorCodes.allocationLimit')
+            default:
+              return `${t('toast.bauAddressDetection.unknownError')}(0x${code.toString(16).toUpperCase()})`
+          }
         }
-        errorDetail = errorDetailMap[data.register4] || `未知详情(0x${data.register4.toString(16).toUpperCase()})`
+        errorDetail = getErrorDetailText(data.register4)
       }
       break
     default:
-      statusText = `未知状态(0x${status.toString(16).toUpperCase()})`
+      statusText = `${t('addressAdaptive.statuses.unknown')}(0x${status.toString(16).toUpperCase()})`
   }
 
   const result = {
     success,
-    statusText,
+    statusText, // 保留原始状态文本，用于调试
     errorContent,
     errorDetail,
     showDetails,
@@ -350,7 +422,7 @@ const startBcuAdaptive = async () => {
     // 获取当前选中的堆信息
     const blockInfo = getCurrentBlockInfo()
     if (!blockInfo) {
-      throw new Error('请先选择要操作的堆')
+      throw new Error(t('addressAdaptive.messages.selectBlockFirst'))
     }
 
     // 序列化参数
@@ -364,8 +436,8 @@ const startBcuAdaptive = async () => {
     // 立即显示下发toast
     toast.add({
       severity: 'info',
-      summary: 'BCU地址自适应',
-      detail: `指令已下发到堆${blockInfo.blockNumber}，等待设备应答...`,
+      summary: t('toast.bauAddressDetection.bcuAdaptive'),
+      detail: t('toast.bauAddressDetection.commandSent', [blockInfo.blockNumber]),
       life: 3000
     })
 
@@ -376,8 +448,8 @@ const startBcuAdaptive = async () => {
     bcuStatus.value.isExecuting = false
     toast.add({
       severity: 'error',
-      summary: '下发失败',
-      detail: error.message || '指令下发失败',
+      summary: t('toast.bauAddressDetection.sendFailed'),
+      detail: error.message || t('toast.bauAddressDetection.commandSendFailed'),
       life: 5000
     })
   }
@@ -394,7 +466,7 @@ const startBmuAdaptive = async () => {
     // 获取当前选中的堆信息
     const blockInfo = getCurrentBlockInfo()
     if (!blockInfo) {
-      throw new Error('请先选择要操作的堆')
+      throw new Error(t('addressAdaptive.messages.selectBlockFirst'))
     }
 
     // 记录发送的簇值，用于后续读取
@@ -415,8 +487,8 @@ const startBmuAdaptive = async () => {
     // 立即显示下发toast
     toast.add({
       severity: 'info',
-      summary: 'BMU地址自适应',
-      detail: `${clusterText}指令已下发到堆${blockInfo.blockNumber}，等待设备应答...`,
+      summary: t('toast.bauAddressDetection.bmuAdaptive'),
+      detail: t('toast.bauAddressDetection.commandSent', [blockInfo.blockNumber]),
       life: 3000
     })
 
@@ -427,8 +499,8 @@ const startBmuAdaptive = async () => {
     bmuStatus.value.isExecuting = false
     toast.add({
       severity: 'error',
-      summary: '下发失败',
-      detail: error.message || '指令下发失败',
+      summary: t('toast.bauAddressDetection.sendFailed'),
+      detail: error.message || t('toast.bauAddressDetection.commandSendFailed'),
       life: 5000
     })
   }
@@ -583,6 +655,7 @@ const handleBmuQueryResult = (_e, msg) => {
     if (data.register1 !== undefined) {
       const adaptiveResult = parseAdaptive4Registers(data, 'bmu')
       if (adaptiveResult) {
+        console.log('[AddressAdaptive] 主进程解析失败，使用原始数据解析结果:', adaptiveResult)
         updateBmuResults(adaptiveResult)
       }
     }
@@ -639,9 +712,13 @@ const handleBmuQueryResult = (_e, msg) => {
  * 更新BMU结果 - 支持多簇结果管理
  */
 const updateBmuResults = (newResult) => {
-  if (!newResult || !newResult.currentCluster) {
-    // 如果没有簇信息，直接替换整个结果数组
-    bmuResults.value = [newResult]
+  if (!newResult) {
+    return
+  }
+  
+  // 如果没有有效的簇信息或簇号为0，不添加到结果中
+  if (newResult.currentCluster === undefined || newResult.currentCluster === null || newResult.currentCluster === 0) {
+    // console.warn('[AddressAdaptive] BMU结果缺少有效簇信息，跳过添加:', newResult)
     return
   }
 
@@ -718,27 +795,27 @@ onUnmounted(() => {
         <div class="adaptive-card">
           <h2 class="adaptive-title">
             <i class="pi pi-cog"></i>
-            <span>BCU地址自适应</span>
+            <span>{{ t('addressAdaptive.sections.bcuTitle') }}</span>
           </h2>
           <div class="adaptive-content">
             <div class="config-section">
               <div class="form-row">
-                <label>起始地址：</label>
+                <label>{{ t('addressAdaptive.labels.startAddress') }}：</label>
                 <InputText
                   v-model="bcuParams.bcuStartAddr"
-                  placeholder="D0"
+                  :placeholder="t('addressAdaptive.placeholders.startAddress')"
                 />
               </div>
               <div class="form-row">
-                <label>设备数量：</label>
+                <label>{{ t('addressAdaptive.labels.deviceCount') }}：</label>
                 <InputText
                   v-model="bcuParams.bcuTotalAddrCount"
-                  
+                  :placeholder="t('addressAdaptive.placeholders.deviceCount')"
                 />
               </div>
               <div class="button-row">
                 <Button
-                  label="启动BCU地址自适应"
+                  :label="t('addressAdaptive.labels.startBcuAdaptive')"
                   @click="startBcuAdaptive"
                   :disabled="!canExecuteBcu"
                   :loading="bcuStatus.isExecuting"
@@ -752,12 +829,12 @@ onUnmounted(() => {
             <div class="result-section">
               <div class="result-header">
                 <i class="pi pi-info-circle"></i>
-                <span class="result-title">执行结果</span>
+                <span class="result-title">{{ t('addressAdaptive.labels.executionResult') }}</span>
               </div>
               <div class="result-content">
                 <div class="status-row">
                   <i :class="getStatusIcon(bcuResult)"></i>
-                  <span class="status-text">{{ bcuResult?.statusText || '等待执行...' }}</span>
+                  <span class="status-text">{{ getDynamicStatusText(bcuResult) }}</span>
                 </div>
                 <div class="result-details">
                   <div
@@ -779,38 +856,38 @@ onUnmounted(() => {
         <div class="adaptive-card">
           <h2 class="adaptive-title">
             <i class="pi pi-sitemap"></i>
-            <span>BMU地址自适应</span>
+            <span>{{ t('addressAdaptive.sections.bmuTitle') }}</span>
           </h2>
           <div class="adaptive-content">
             <div class="config-section">
               <div class="form-row">
-                <label>选择簇：</label>
+                <label>{{ t('addressAdaptive.labels.selectCluster') }}：</label>
                 <Dropdown
                   v-model="selectedCluster"
                   :options="clusterOptions"
                   optionLabel="label"
                   optionValue="value"
-                  placeholder="请选择簇"
+                  :placeholder="t('addressAdaptive.placeholders.selectCluster')"
                   class="cluster-dropdown"
                 />
               </div>
               <div class="form-row">
-                <label>起始地址：</label>
+                <label>{{ t('addressAdaptive.labels.startAddress') }}：</label>
                 <InputText
                   v-model="bmuParams.bmuStartAddr"
-                  placeholder="B0"
+                  :placeholder="t('addressAdaptive.placeholders.bmuStartAddress')"
                 />
               </div>
               <div class="form-row">
-                <label>设备数量：</label>
+                <label>{{ t('addressAdaptive.labels.deviceCount') }}：</label>
                 <InputText
                   v-model="bmuParams.bmuTotalAddrCount"
-                  placeholder="1"
+                  :placeholder="t('addressAdaptive.placeholders.deviceCount')"
                 />
               </div>
               <div class="button-row">
                 <Button
-                  label="启动BMU地址自适应"
+                  :label="t('addressAdaptive.labels.startBmuAdaptive')"
                   @click="startBmuAdaptive"
                   :disabled="!canExecuteBmu"
                   :loading="bmuStatus.isExecuting"
@@ -824,14 +901,14 @@ onUnmounted(() => {
             <div class="result-section">
               <div class="result-header">
                 <i class="pi pi-info-circle"></i>
-                <span class="result-title">执行结果</span>
+                <span class="result-title">{{ t('addressAdaptive.labels.executionResult') }}</span>
               </div>
               <div class="result-content">
                 <!-- 无结果时的占位显示 -->
                 <div v-if="bmuResults.length === 0" class="no-results">
                   <div class="status-row">
                     <i class="pi pi-times-circle text-gray-400"></i>
-                    <span class="status-text">等待执行...</span>
+                    <span class="status-text">{{ t('addressAdaptive.statuses.waiting') }}</span>
                   </div>
                   <div class="result-details">
                     <div
@@ -849,14 +926,14 @@ onUnmounted(() => {
                 <div v-else class="multiple-results">
                   <div
                     v-for="result in bmuResults"
-                    :key="result.currentCluster || 'unknown'"
+                    :key="result.currentCluster || t('toast.bauAddressDetection.unknown', 'unknown')"
                     class="cluster-result"
                   >
                     <div class="cluster-result-header">
-                      <span class="cluster-number">簇{{ result.currentCluster || '?' }}</span>
+                      <span class="cluster-number">{{ t('addressAdaptive.options.clusters.cluster', [result.currentCluster !== undefined ? result.currentCluster : '?']) }}</span>
                       <div class="status-row">
                         <i :class="getStatusIcon(result)"></i>
-                        <span class="status-text">{{ result.statusText }}</span>
+                        <span class="status-text">{{ getDynamicStatusText(result) }}</span>
                       </div>
                     </div>
                     <div v-if="result.showDetails" class="result-details">

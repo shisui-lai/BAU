@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from 'vue-i18n'
 import { useUpgradeStore } from '@/stores/upgradeStore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { PAGE_PASSWORDS } from '@/configs/passwords'
@@ -16,6 +17,34 @@ import { useFtpFileManager } from '@/composables/core/data-processing/upgrade/us
 
 const toast = useToast()
 const router = useRouter()
+const { t, te, locale } = useI18n()
+
+// 翻译函数 - 参考Order.vue的实现方式
+// 中文环境 (locale.value === 'zh')
+// translateUpgradeType('BAU升级')  // 返回: 'BAU升级'
+// translateUpgradeType('BCU升级')  // 
+const translateUpgradeType = (type) => {
+  return locale.value === 'zh' 
+    ? type 
+    : te(`deviceUpgrade.options.upgradeTypes.${type}`) 
+      ? t(`deviceUpgrade.options.upgradeTypes.${type}`) 
+      : type
+}
+
+const translateBmuUpgradeType = (type) => {
+  return locale.value === 'zh' 
+    ? type 
+    : te(`deviceUpgrade.options.bmuUpgradeTypes.${type}`) 
+      ? t(`deviceUpgrade.options.bmuUpgradeTypes.${type}`) 
+      : type
+}
+
+const translateStatus = (status) => {
+  const translationKey = `deviceUpgrade.status.${status}`
+  return te(translationKey) 
+    ? t(translationKey) 
+    : status
+}
 
 // 密码保护相关
 const showPasswordDialog = ref(false)
@@ -75,7 +104,7 @@ const selectedFileStatus = computed(() => {
   if (!updateFile.value) {
     return {
       exists: false,
-      message: '未选择升级文件',
+      message: t('deviceUpgrade.messages.noFileSelected'),
       isValid: false,
       fileInfo: null
     }
@@ -86,7 +115,7 @@ const selectedFileStatus = computed(() => {
   if (!fileInfo) {
     return {
       exists: false,
-      message: `文件 "${updateFile.value}" 不存在于FTP服务器`,
+      message: t('deviceUpgrade.messages.fileNotExists', [updateFile.value]),
       isValid: false,
       fileInfo: null
     }
@@ -94,7 +123,7 @@ const selectedFileStatus = computed(() => {
 
   return {
     exists: true,
-    message: `文件 "${updateFile.value}" 已就绪 (${fileInfo.sizeFormatted})`,
+    message: t('deviceUpgrade.messages.fileReady', [updateFile.value, fileInfo.sizeFormatted]),
     isValid: fileInfo.isValid,
     fileInfo
   }
@@ -163,6 +192,41 @@ const bmuUpgradeOptions = [
   { label: '广播强制升级', value: '0xC0B2' }
 ]
 
+// 翻译后的选项配置
+const translatedUpgradeOptions = computed(() => {
+  return upgradeOptions.map(option => ({
+    ...option,
+    label: translateUpgradeType(option.label)
+  }))
+})
+
+const translatedBmuUpgradeOptions = computed(() => {
+  return bmuUpgradeOptions.map(option => ({
+    ...option,
+    label: translateBmuUpgradeType(option.label)
+  }))
+})
+
+// 翻译后的升级状态文本
+const translatedUpgradeStatusText = computed(() => {
+  const status = upgradeStore.upgradeStatus.status
+  if (!status) {
+    return translateStatus('notStarted')
+  }
+  
+  // 根据状态映射到翻译键
+  const statusMap = {
+    'sending': 'upgrading',
+    'sent': 'upgrading', 
+    'success': 'success',
+    'error': 'error',
+    'stopped': 'stopped'
+  }
+  
+  const statusKey = statusMap[status] || status
+  return translateStatus(statusKey)
+})
+
 // 计算属性
 const canStartUpgrade = computed(() => upgradeStore.canStartUpgrade)
 
@@ -185,21 +249,21 @@ const chooseFtpDir = async () => {
       ftpRoot.value = result.path
       toast.add({
         severity: 'success',
-        summary: '目录选择成功',
+        summary: t('toast.deviceUpgrade.directorySelected'),
         detail: result.path,
         life: 3000
       })
     } else {
       toast.add({
         severity: 'warn',
-        summary: '未选择目录',
+        summary: t('toast.deviceUpgrade.noDirectorySelected'),
         life: 2000
       })
     }
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '目录选择失败',
+      summary: t('toast.deviceUpgrade.directorySelectionFailed'),
       detail: error.message,
       life: 5000
     })
@@ -214,7 +278,7 @@ const chooseFile = async () => {
       updateFile.value = result.fileName
       toast.add({
         severity: 'success',
-        summary: '文件选择成功',
+        summary: t('toast.deviceUpgrade.fileSelected'),
         detail: result.fileName,
         life: 3000
       })
@@ -223,7 +287,7 @@ const chooseFile = async () => {
     console.error('选择文件失败:', error)
     toast.add({
       severity: 'error',
-      summary: '文件选择失败',
+      summary: t('toast.deviceUpgrade.fileSelectionFailed'),
       detail: error.message,
       life: 5000
     })
@@ -238,14 +302,14 @@ const toggleFtpServer = async () => {
         upgradeStore.setFtpServerRunning(false)
         toast.add({
           severity: 'info',
-          summary: 'FTP服务器已停止',
-          detail: 'FTP文件传输服务已关闭',
+          summary: t('toast.deviceUpgrade.ftpServerStopped'),
+          detail: t('toast.deviceUpgrade.ftpServerStopped'),
           life: 3000
         })
       } else {
         toast.add({
           severity: 'error',
-          summary: '停止失败',
+          summary: t('toast.deviceUpgrade.ftpStopFailed'),
           detail: result.message,
           life: 5000
         })
@@ -261,8 +325,8 @@ const toggleFtpServer = async () => {
         upgradeStore.setFtpServerRunning(true)
         toast.add({
           severity: 'success',
-          summary: 'FTP服务器已启动',
-          detail: `服务器地址: ${ftpHost.value}:${ftpPort.value}`,
+          summary: t('toast.deviceUpgrade.ftpServerStarted'),
+          detail: t('toast.deviceUpgrade.serverAddress', { address: `${ftpHost.value}:${ftpPort.value}` }),
           life: 4000
         })
         // 🔥 FTP服务器启动后，刷新文件列表
@@ -270,7 +334,7 @@ const toggleFtpServer = async () => {
       } else {
         toast.add({
           severity: 'error',
-          summary: '启动失败',
+          summary: t('toast.deviceUpgrade.ftpStartFailed'),
           detail: result.message,
           life: 6000
         })
@@ -279,7 +343,7 @@ const toggleFtpServer = async () => {
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '操作失败',
+      summary: t('toast.deviceUpgrade.operationFailed'),
       detail: error.message,
       life: 5000
     })
@@ -348,14 +412,14 @@ const startUpgrade = async () => {
     await upgradeStore.startUpgrade()
     toast.add({
       severity: 'success',
-      summary: '升级指令下发成功',
-      detail: '升级指令已发送到设备，请等待设备响应',
+      summary: t('toast.deviceUpgrade.upgradeStarted'),
+      detail: t('toast.deviceUpgrade.upgradeInstructionSent'),
       life: 4000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '升级失败',
+      summary: t('toast.deviceUpgrade.upgradeFailed'),
       detail: error.message,
       life: 6000
     })
@@ -367,14 +431,14 @@ const stopUpgrade = async () => {
     await upgradeStore.stopUpgrade()
     toast.add({
       severity: 'info',
-      summary: '升级已停止',
-      detail: '升级操作已取消',
+      summary: t('toast.deviceUpgrade.upgradeStopped'),
+      detail: t('toast.deviceUpgrade.upgradeOperationCancelled'),
       life: 3000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '停止失败',
+      summary: t('toast.deviceUpgrade.operationFailed'),
       detail: error.message,
       life: 5000
     })
@@ -394,29 +458,31 @@ const handleUpgradeResponse = (_, mqttMessage) => {
     console.log('[Upgrade] 升级应答解析结果:', { success, message, code, topic: mqttMessage.topic })
 
     if (success) {
-      upgradeStore.setUpgradeStatus('success', message)
+      upgradeStore.setUpgradeStatus('success', t('deviceUpgrade.status.success'))
       toast.add({
         severity: 'success',
-        summary: '升级成功',
-        detail: message,
+        summary: t('toast.deviceUpgrade.upgradeSuccess'),
+        detail: t('deviceUpgrade.status.success'),
         life: 5000
       })
     } else {
-      upgradeStore.setUpgradeStatus('error', message)
+      // 翻译错误消息
+      const translatedMessage = code ? t(`toast.errorCodes.0x${code.toString(16).toUpperCase()}`) || message : message
+      upgradeStore.setUpgradeStatus('error', translatedMessage)
       toast.add({
         severity: 'error',
-        summary: '升级失败',
-        detail: message,
+        summary: t('toast.deviceUpgrade.upgradeFailed'),
+        detail: translatedMessage,
         life: 8000
       })
     }
   } else {
     console.warn('[Upgrade] 升级应答数据格式异常:', mqttMessage)
-    upgradeStore.setUpgradeStatus('error', '升级应答数据格式异常')
+    upgradeStore.setUpgradeStatus('error', t('toast.deviceUpgrade.upgradeResponseDataError'))
     toast.add({
       severity: 'error',
-      summary: '升级失败',
-      detail: '升级应答数据格式异常',
+      summary: t('toast.deviceUpgrade.upgradeFailed'),
+      detail: t('toast.deviceUpgrade.upgradeResponseDataError'),
       life: 8000
     })
   }
@@ -520,34 +586,34 @@ onUnmounted(() => {
         <div class="col-7">
           <!-- FTP服务器配置卡片 -->
           <div class="content-card">
-            <h3>FTP服务器</h3>
+            <h3>{{ t('deviceUpgrade.sections.ftpServer') }}</h3>
             <div class="card-content">
               <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">服务器IP:</label>
-                <InputText v-model="ftpHost" placeholder="192.168.11.200" class="flex-1" />
+                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.serverIP') }}</label>
+                <InputText v-model="ftpHost" :placeholder="t('deviceUpgrade.placeholders.serverIP')" class="flex-1" />
               </div>
               <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">端口:</label>
-                <InputText v-model="ftpPort" placeholder="21" class="flex-1" />
+                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.port') }}</label>
+                <InputText v-model="ftpPort" :placeholder="t('deviceUpgrade.placeholders.port')" class="flex-1" />
               </div>
               <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">用户名:</label>
-                <InputText v-model="ftpUser" placeholder="admin" class="flex-1" />
+                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.username') }}</label>
+                <InputText v-model="ftpUser" :placeholder="t('deviceUpgrade.placeholders.username')" class="flex-1" />
               </div>
               <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">密码:</label>
-                <InputText v-model="ftpPassword" type="password" placeholder="admin" class="flex-1" />
+                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.password') }}</label>
+                <InputText v-model="ftpPassword" type="password" :placeholder="t('deviceUpgrade.placeholders.password')" class="flex-1" />
               </div>
               <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">根目录:</label>
+                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.rootDirectory') }}</label>
                 <div class="flex gap-2 flex-1">
                   <InputText v-model="ftpRoot" readonly class="flex-1" />
-                  <Button label="选择目录" @click="chooseFtpDir" />
+                  <Button :label="t('deviceUpgrade.buttons.selectDirectory')" @click="chooseFtpDir" />
                 </div>
               </div>
               <div class="flex justify-content-end mb-1">
                 <Button
-                  :label="ftpServerRunning ? '停止FTP' : '启动FTP'"
+                  :label="ftpServerRunning ? t('deviceUpgrade.buttons.stopFTP') : t('deviceUpgrade.buttons.startFTP')"
                   :severity="ftpServerRunning ? 'danger' : 'success'"
                   @click="toggleFtpServer"
                 />
@@ -555,17 +621,17 @@ onUnmounted(() => {
 
               <!-- 文件升级状态 -->
               <div class="cluster-selection-section">
-                <h4>文件升级状态</h4>
+                <h4>{{ t('deviceUpgrade.sections.fileUpgradeStatus') }}</h4>
                 <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">文件名:</label>
+                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.fileName') }}</label>
                   <div class="flex-1 p-2 border-1 border-round" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
                     <span class="text-sm">
-                      {{ !ftpServerRunning ? '请先启动FTP服务器' : (updateFile || '未选择文件') }}
+                      {{ !ftpServerRunning ? t('deviceUpgrade.messages.pleaseStartFTP') : (updateFile || t('deviceUpgrade.messages.noFileSelected')) }}
                     </span>
                   </div>
                 </div>
                 <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">状态:</label>
+                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.status') }}</label>
                   <div class="flex-1 p-2 border-1 border-round flex align-items-center gap-2" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
                     <template v-if="!ftpServerRunning">
                       <span class="text-sm">-</span>
@@ -573,11 +639,11 @@ onUnmounted(() => {
                     <template v-else>
                       <i :class="selectedFileStatus.exists ? 'pi pi-check-circle text-green-600' : 'pi pi-exclamation-triangle text-orange-600'"></i>
                       <span class="text-sm" :class="selectedFileStatus.exists ? 'text-green-700' : 'text-orange-700'">
-                        {{ selectedFileStatus.exists ? '已就绪' : '未找到' }}
+                        {{ selectedFileStatus.exists ? translateStatus('ready') : translateStatus('notFound') }}
                       </span>
                       <Tag
                         v-if="selectedFileStatus.exists && selectedFileStatus.fileInfo"
-                        :value="selectedFileStatus.isValid ? '有效' : '无效'"
+                        :value="selectedFileStatus.isValid ? translateStatus('valid') : translateStatus('invalid')"
                         :severity="selectedFileStatus.isValid ? 'success' : 'warning'"
                         class="text-xs"
                       />
@@ -585,7 +651,7 @@ onUnmounted(() => {
                   </div>
                 </div>
                 <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">大小:</label>
+                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.size') }}</label>
                   <div class="flex-1 p-2 border-1 border-round" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
                     <span class="text-sm">
                       {{ !ftpServerRunning ? '-' : (selectedFileStatus.exists && selectedFileStatus.fileInfo ? selectedFileStatus.fileInfo.sizeFormatted : '-') }}
@@ -602,38 +668,38 @@ onUnmounted(() => {
         <!-- 右侧：设备升级 -->
         <div class="col-5">
           <div class="content-card">
-            <h3>设备升级</h3>
+            <h3>{{ t('deviceUpgrade.sections.deviceUpgrade') }}</h3>
             <div class="card-content">
               <!-- 升级文件选择 -->
               <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">升级文件:</label>
+                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.upgradeFile') }}</label>
                 <div class="flex gap-2 flex-1">
-                  <InputText v-model="updateFile" readonly placeholder="请选择升级文件" class="flex-1" />
-                  <Button label="选择文件" @click="chooseFile" />
+                  <InputText v-model="updateFile" readonly :placeholder="t('deviceUpgrade.placeholders.selectUpgradeFile')" class="flex-1" />
+                  <Button :label="t('deviceUpgrade.buttons.selectFile')" @click="chooseFile" />
                 </div>
               </div>
 
               <!-- 升级类型 -->
               <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">升级类型:</label>
+                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.upgradeType') }}</label>
                 <Dropdown
                   v-model="selectedUpgrade"
-                  :options="upgradeOptions"
+                  :options="translatedUpgradeOptions"
                   optionLabel="label"
                   optionValue="value"
-                  placeholder="选择升级类型"
+                  :placeholder="t('deviceUpgrade.placeholders.selectUpgradeType')"
                   class="flex-1"
                 />
               </div>
 
               <!-- 簇选择 - 始终显示，但根据升级类型控制是否可选 -->
               <div class="cluster-selection-section">
-                <h4>簇选择</h4>
+                <h4>{{ t('deviceUpgrade.sections.clusterSelection') }}</h4>
                 <div class="cluster-selection-compact">
                   <!-- 第1-10簇 -->
                   <div class="cluster-row">
                     <div class="cluster-label-column">
-                      <span class="cluster-row-label">第1-10簇:</span>
+                      <span class="cluster-row-label">{{ t('deviceUpgrade.cluster.cluster1to10') }}</span>
                       <!-- 全选按钮 -->
                       <div class="cluster-checkbox-compact">
                         <Checkbox
@@ -642,7 +708,7 @@ onUnmounted(() => {
                           :binary="true"
                           :disabled="selectedUpgrade === '0xA000'"
                         />
-                        <label>全选</label>
+                        <label>{{ t('deviceUpgrade.buttons.selectAll') }}</label>
                       </div>
                     </div>
                     <div class="cluster-checkboxes-compact">
@@ -660,7 +726,7 @@ onUnmounted(() => {
                   <!-- 第11-20簇 -->
                   <div class="cluster-row">
                     <div class="cluster-label-column">
-                      <span class="cluster-row-label">第11-20簇:</span>
+                      <span class="cluster-row-label">{{ t('deviceUpgrade.cluster.cluster11to20') }}</span>
                       <!-- 全选按钮 -->
                       <div class="cluster-checkbox-compact">
                         <Checkbox
@@ -669,7 +735,7 @@ onUnmounted(() => {
                           :binary="true"
                           :disabled="selectedUpgrade === '0xA000'"
                         />
-                        <label>全选</label>
+                        <label>{{ t('deviceUpgrade.buttons.selectAll') }}</label>
                       </div>
                     </div>
                     <div class="cluster-checkboxes-compact">
@@ -689,31 +755,31 @@ onUnmounted(() => {
 
               <!-- BMU升级参数 - 始终显示，但根据升级类型控制是否可选 -->
               <div class="bmu-params-section">
-                <h4>BMU升级参数</h4>
+                <h4>{{ t('deviceUpgrade.sections.bmuUpgradeParams') }}</h4>
                 <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">BMU升级类型:</label>
+                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.bmuUpgradeType') }}</label>
                   <Dropdown
                     v-model="bmuUpdateStyle"
-                    :options="bmuUpgradeOptions"
+                    :options="translatedBmuUpgradeOptions"
                     optionLabel="label"
                     optionValue="value"
-                    placeholder="选择BMU升级类型"
+                    :placeholder="t('deviceUpgrade.placeholders.selectBMUUpgradeType')"
                     class="flex-1"
                     :disabled="selectedUpgrade !== '0xA002'"
                   />
                 </div>
                 <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">BMU起始地址:</label>
+                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.bmuStartAddress') }}</label>
                   <InputText
                     v-model="bmuStartAddressHex"
-                    placeholder="0xB0"
+                    :placeholder="t('deviceUpgrade.placeholders.bmuStartAddress')"
                     @input="validateHexAddress"
                     class="flex-1"
                     :disabled="selectedUpgrade !== '0xA002'"
                   />
                 </div>
                 <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">BMU设备数量:</label>
+                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.bmuDeviceCount') }}</label>
                   <InputNumber
                     v-model="bmuDeviceCount"
                     :min="1"
@@ -728,14 +794,14 @@ onUnmounted(() => {
               <div class="section-divider"></div>
               <div class="flex gap-2 mb-3">
                 <Button
-                  label="开始升级"
+                  :label="t('deviceUpgrade.buttons.startUpgrade')"
                   severity="success"
                   @click="startUpgrade"
                   :disabled="!canStartUpgrade"
                   size="small"
                 />
                 <Button
-                  label="停止升级"
+                  :label="t('deviceUpgrade.buttons.stopUpgrade')"
                   severity="danger"
                   @click="stopUpgrade"
                   :disabled="!upgradeStore.upgradeStatus.isUpgrading"
@@ -745,9 +811,9 @@ onUnmounted(() => {
 
               <!-- 升级状态 -->
               <div class="upgrade-status">
-                <p>状态: {{ upgradeStore.upgradeStatusText }}</p>
+                <p>{{ t('deviceUpgrade.labels.status') }} {{ translatedUpgradeStatusText }}</p>
                 <p v-if="upgradeStore.upgradeStatus.lastUpdate">
-                  最后更新: {{ upgradeStore.upgradeStatus.lastUpdate.toLocaleString() }}
+                  {{ t('deviceUpgrade.messages.lastUpdate') }} {{ upgradeStore.upgradeStatus.lastUpdate.toLocaleString() }}
                 </p>
               </div>
             </div>
@@ -762,20 +828,20 @@ onUnmounted(() => {
     v-model:visible="showPasswordDialog"
     :closable="false"
     :modal="true"
-    header="请输入密码"
+    :header="t('password.header')"
     :style="{ width: '25rem' }"
   >
     <div class="flex flex-column gap-3">
       <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
-      <Button label="确认" @click="checkPwd" style="margin-right: 0.5rem" />
-      <Button label="取消" severity="secondary" @click="cancelPwd" />
-      <div v-if="pwdError" style="color: red; margin-top: 0.5rem">密码错误</div>
+      <Button :label="t('password.confirm')" @click="checkPwd" style="margin-right: 0.5rem" />
+      <Button :label="t('password.cancel')" severity="secondary" @click="cancelPwd" />
+      <div v-if="pwdError" style="color: red; margin-top: 0.5rem">{{ t('deviceUpgrade.messages.passwordError') }}</div>
     </div>
   </Dialog>
 
   <!-- 取消提示 -->
   <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
-    <span>已取消操作，未进入升级页面</span>
+    <span>{{ t('deviceUpgrade.messages.operationCancelled') }}</span>
   </Dialog>
 </template>
 

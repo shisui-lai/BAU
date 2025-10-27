@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 const { fork } = require('child_process')
 import { processManager } from './handlers/processManager.js'
+import crashLogger from './crashLogger.js'
 // FTP服务器功能将在下面通过require导入
 import {
   // 网卡选择功能相关处理器 - 统一BAU操作方式
@@ -60,6 +61,51 @@ ipcMain.handle('set-locale', (_event, locale) => {
 
 // 引入FTP服务器模块 - 在MQTT初始化之后
 import * as ftpServerModule from './ftpServer.js'
+
+
+// ==================== 崩溃错误捕获 ====================
+// 捕获未捕获的异常
+process.on('uncaughtException', (err) => {
+  // 静默处理某些已知的无害错误
+  if (err?.message?.includes('Object has been destroyed')) {
+    console.warn('[UNCAUGHT] Object已销毁错误（已忽略）:', err.message)
+    return
+  }
+
+  // 记录崩溃日志
+  console.error('[UNCAUGHT EXCEPTION] 捕获到未处理的异常:', err)
+  crashLogger.logCrash(err, 'uncaughtException')
+
+  // 对于严重错误，可以选择退出应用
+  // 注意：某些错误可能不需要退出，需要根据实际情况判断
+  if (err?.code === 'ERR_ASSERTION' || err?.name === 'Error') {
+    console.error('[UNCAUGHT EXCEPTION] 严重错误，应用将在3秒后退出...')
+    setTimeout(() => {
+      app.exit(1)
+    }, 3000)
+  }
+})
+
+// 捕获未处理的Promise拒绝
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[UNHANDLED REJECTION] 捕获到未处理的Promise拒绝:', reason)
+
+  // 将Promise拒绝转换为Error对象以便记录
+  const error = reason instanceof Error ? reason : new Error(String(reason))
+  crashLogger.logCrash(error, 'unhandledRejection')
+})
+
+// 捕获多重Promise拒绝（已处理但又被拒绝的Promise）
+process.on('rejectionHandled', (promise) => {
+  console.warn('[REJECTION HANDLED] Promise拒绝已被延迟处理')
+})
+
+// 监听进程警告
+process.on('warning', (warning) => {
+  console.warn('[PROCESS WARNING]', warning.name, warning.message)
+  console.warn('[PROCESS WARNING] Stack:', warning.stack)
+})
+// ======================================================
 
 // ------------ 多语言偏好存储 ------------
 let store
@@ -128,12 +174,12 @@ function createWindow() {
 
     // 用户确认退出
     if (result === 0) {
-      // 执行清理操作
-
-      // 如果是最后一个窗口则退出应用
-      if (BrowserWindow.getAllWindows().length === 1) {
-        app.exit(0) // 立即退出
-      }
+      // 设置退出标志，避免重复弹窗
+      quitting = true
+      
+      // 使用 app.quit() 触发 before-quit 事件，以便记录退出日志
+      // 不要使用 app.exit(0)，那会跳过 before-quit 事件
+      app.quit()
     }
   })
   // 打开开发者工具
@@ -478,6 +524,11 @@ function createWindow() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  // 日志系统自检
+  console.log('[Main] 崩溃日志系统已启动')
+  console.log('[Main] 日志目录:', crashLogger.getLogDirectory())
+  console.log('[Main] 系统资源监控已启动（每5秒采集一次）')
+  
   createWindow()
   /*   createPopupWindow() */
   // Set app user model id for windows
@@ -503,11 +554,35 @@ app.whenReady().then(() => {
   })
 })
 
+    
+    let exitLogRecorded = false;
 app.on('before-quit', async (e) => {
-  quitting = true;
-  if (processManager.isRunning()) {
+  // 只记录一次退出日志
+  if (!exitLogRecorded) {
+    exitLogRecorded = true;
+    
+    console.log('[Main] 正在记录退出日志...')
+    
+    // 记录退出日志（同步写入，确保退出前完成）
+    const logPath = crashLogger.logExit('用户手动退出应用')
+    if (logPath) {
+      console.log('[Main] ✅ 退出日志已保存:', logPath)
+    }
+    
+    // 停止资源监控
+    crashLogger.stopResourceMonitoring()
+    console.log('[Main] 已停止系统资源监控')
+  }
+  
+  // 处理子进程清理
+  if (processManager.isRunning() && !quitting) {
+    quitting = true;
     e.preventDefault();                   // 等子进程退出再 quit
-    processManager.cleanupAsync().then(() => app.quit());
+    console.log('[Main] 等待子进程清理完成...')
+    processManager.cleanupAsync().then(() => {
+      console.log('[Main] 子进程清理完成，应用即将退出')
+      app.quit();
+    });
   }
 });
 
@@ -529,6 +604,38 @@ ipcMain.handle('bau-set-ip-with-interface', handleSetIpWithInterface)
 ipcMain.handle('bau-set-mqtt-with-interface', handleSetMqttWithInterface)
 ipcMain.handle('bau-reset-default-with-interface', handleResetDefaultWithInterface)
 ipcMain.handle('bau-reset-device-with-interface', handleResetDeviceWithInterface)
+
+
+// 系统资源和崩溃日志相关IPC事件注册
+// 获取当前系统资源占用情况
+ipcMain.handle('get-system-resource', async () => {
+  return crashLogger.getCurrentResourceInfo()
+})
+
+// 获取崩溃日志目录
+ipcMain.handle('get-crash-log-directory', async () => {
+  return crashLogger.getLogDirectory()
+})
+
+// 打开崩溃日志目录
+ipcMain.handle('open-crash-log-directory', async () => {
+  const logDir = crashLogger.getLogDirectory()
+  shell.openPath(logDir)
+  return { success: true, path: logDir }
+})
+
+// 手动触发测试崩溃日志（仅用于测试）
+ipcMain.handle('test-crash-log', async (_e, testType = 'test') => {
+  try {
+    const testError = new Error(`这是一个测试崩溃日志 - 类型: ${testType}`)
+    testError.code = 'TEST_ERROR'
+    const logPath = crashLogger.logCrash(testError, `test-${testType}`)
+    return { success: true, logPath, message: '测试日志已生成' }
+  } catch (error) {
+    return { success: false, error: error.message }
+  }
+})
+
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.

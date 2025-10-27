@@ -2,54 +2,54 @@
   <div class="card">
     <Accordion :activeIndex="0">
       <!-- 堆汇总信息面板 -->
-      <AccordionTab header="堆汇总信息">
+      <AccordionTab :header="t('config.blockInfoPage.sections.summaryInfo')">
         <DataTable 
           :value="blockSummaryData" 
           stripedRows
           showGridlines
           responsiveLayout="scroll"
           class="block-summary-table"
-          :emptyMessage="selectedBlock ? '暂无数据' : '请选择堆'"
+          :emptyMessage="selectedBlock ? t('config.blockInfoPage.messages.noData') : t('config.blockInfoPage.messages.selectBlock')"
         >
 
           
           <!-- 左侧参数名称列 -->
-          <Column field="leftLabel" header="参数名称" style="min-width:200px">
+          <Column field="leftLabel" :header="t('config.blockInfoPage.table.parameterName')" style="min-width:200px">
             <template #body="{ data }">
-              <span class="font-medium">{{ data.leftLabel }}</span>
+              <span class="font-medium">{{ translateParameterName(data.leftLabel) }}</span>
             </template>
           </Column>
           
           <!-- 左侧实际值列 -->
-          <Column field="leftValue" header="实际值" style="min-width:120px">
+          <Column field="leftValue" :header="t('config.blockInfoPage.table.actualValue')" style="min-width:120px">
             <template #body="{ data }">
               <span>{{ formatValue(data.leftValue, data.leftScale, data.leftLabel) }}</span>
             </template>
           </Column>
           
           <!-- 左侧单位列 -->
-          <Column field="leftUnit" header="单位" style="min-width:80px">
+          <Column field="leftUnit" :header="t('config.blockInfoPage.table.unit')" style="min-width:80px">
             <template #body="{ data }">
               <span>{{ getFieldUnit(data.leftLabel) || '-' }}</span>
             </template>
           </Column>
           
           <!-- 右侧参数名称列 -->
-          <Column field="rightLabel" header="参数名称" style="min-width:200px">
+          <Column field="rightLabel" :header="t('config.blockInfoPage.table.parameterName')" style="min-width:200px">
             <template #body="{ data }">
-              <span class="font-medium">{{ data.rightLabel }}</span>
+              <span class="font-medium">{{ translateParameterName(data.rightLabel) }}</span>
             </template>
           </Column>
           
           <!-- 右侧实际值列 -->
-          <Column field="rightValue" header="实际值" style="min-width:120px">
+          <Column field="rightValue" :header="t('config.blockInfoPage.table.actualValue')" style="min-width:120px">
             <template #body="{ data }">
               <span>{{ formatValue(data.rightValue, data.rightScale, data.rightLabel) }}</span>
             </template>
           </Column>
           
           <!-- 右侧单位列 -->
-          <Column field="rightUnit" header="单位" style="min-width:80px">
+          <Column field="rightUnit" :header="t('config.blockInfoPage.table.unit')" style="min-width:80px">
             <template #body="{ data }">
               <span>{{ getFieldUnit(data.rightLabel) || '-' }}</span>
             </template>
@@ -58,26 +58,26 @@
       </AccordionTab>
       
       <!-- 堆系统概要信息面板 -->
-      <AccordionTab header="堆系统概要信息">
+      <AccordionTab :header="t('config.blockInfoPage.sections.systemAbstract')">
         <DataTable 
           :value="blockSysAbstractData" 
           :paginator="false"
           :rows="100"
           class="sys-abstract-data-table"
         >
-          <Column field="label" header="参数名称" style="width: 200px">
+          <Column field="label" :header="t('config.blockInfoPage.table.parameterName')" style="width: 200px">
             <template #body="{ data }">
-              <span>{{ data.label }}</span>
+              <span>{{ translateParameterName(data.label) }}</span>
             </template>
           </Column>
           
-          <Column field="value" header="实际值" style="width: 150px">
+          <Column field="value" :header="t('config.blockInfoPage.table.actualValue')" style="width: 150px">
             <template #body="{ data }">
               <span>{{ formatValue(data.value, data.scale, data.label) }}</span>
             </template>
           </Column>
           
-          <Column field="unit" header="单位" style="width: 80px">
+          <Column field="unit" :header="t('config.blockInfoPage.table.unit')" style="width: 80px">
             <template #body="{ data }">
               <span>{{ getFieldUnit(data.label) || '-' }}</span>
             </template>
@@ -90,6 +90,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import { pickBlockSummary, parseBlockSummary } from '@/composables/core/data-processing/block/parseBlockSummary'
 import { pickBlockSysAbstract, parseBlockSysAbstract } from '@/composables/core/data-processing/block/parseBlockSysAbstract'
@@ -99,6 +100,8 @@ import Column from 'primevue/column'
 import Accordion from 'primevue/accordion'
 import AccordionTab from 'primevue/accordiontab'
 import { BLOCK_SUMMARY, BLOCK_SYS_ABSTRACT } from '../../../../main/table.js'
+
+const { t, te, locale } = useI18n()
 
 // 使用堆选择composable
 const { blockOptions, selectedBlock } = useBlockSelect()
@@ -120,6 +123,19 @@ const getFieldUnit = (label) => {
   return ''
 }
 
+// 直接使用label翻译函数
+const getLabelTranslation = (label) => {
+  if (locale.value === 'zh') return label
+  return te(`config.blockInfoPage.parameters.${label}`) 
+    ? t(`config.blockInfoPage.parameters.${label}`) 
+    : label
+}
+
+// 翻译参数名称 - 使用直接label翻译方式
+const translateParameterName = (name) => {
+  return getLabelTranslation(name)
+}
+
 // 使用堆store
 const blockStore = useBlockStore()
 
@@ -135,46 +151,46 @@ const getBlockDisplayName = (blockKey) => {
   return option ? option.label : blockKey
 }
 
-// 状态字段映射
-const STATUS_MAPPINGS = {
+// 状态字段映射 - 使用翻译函数
+const STATUS_MAPPINGS = computed(() => ({
   '堆故障状态': {
-    0: '无故障',
-    1: '轻微故障',
-    2: '一般故障',
-    3: '严重故障'
+    0: t('config.blockInfoPage.status.faultState.0'),
+    1: t('config.blockInfoPage.status.faultState.1'),
+    2: t('config.blockInfoPage.status.faultState.2'),
+    3: t('config.blockInfoPage.status.faultState.3')
   },
   'BAU工作模式': {
-    0: '静置',
-    1: '充电',
-    2: '放电',
-    3: '开路',
-    4: '接触器自检',
-    65535: '各簇状态不一致'
+    0: t('config.blockInfoPage.status.bauWorkMode.0'),
+    1: t('config.blockInfoPage.status.bauWorkMode.1'),
+    2: t('config.blockInfoPage.status.bauWorkMode.2'),
+    3: t('config.blockInfoPage.status.bauWorkMode.3'),
+    4: t('config.blockInfoPage.status.bauWorkMode.4'),
+    65535: t('config.blockInfoPage.status.bauWorkMode.65535')
   },
   '设备系统状态': {
-    0: '运行监测',
-    1: '绝缘检测状态',
-    2: '接触器自检状态',
-    3: '系统初始化',
-    4: 'BCU升级状态',
-    5: '---',
-    6: 'BCU自适应地址状态',
-    7: 'BMU自适应地址状态',
-    8: 'BMU升级状态',
-    65535: '其他'
+    0: t('config.blockInfoPage.status.deviceSystemState.0'),
+    1: t('config.blockInfoPage.status.deviceSystemState.1'),
+    2: t('config.blockInfoPage.status.deviceSystemState.2'),
+    3: t('config.blockInfoPage.status.deviceSystemState.3'),
+    4: t('config.blockInfoPage.status.deviceSystemState.4'),
+    5: t('config.blockInfoPage.status.deviceSystemState.5'),
+    6: t('config.blockInfoPage.status.deviceSystemState.6'),
+    7: t('config.blockInfoPage.status.deviceSystemState.7'),
+    8: t('config.blockInfoPage.status.deviceSystemState.8'),
+    65535: t('config.blockInfoPage.status.deviceSystemState.65535')
   },
   '电池堆禁充禁放状态': {
-    0: '可充可放',
-    1: '可充禁放',
-    2: '可放禁充',
-    3: '禁充禁放'
+    0: t('config.blockInfoPage.status.chargeDischargeState.0'),
+    1: t('config.blockInfoPage.status.chargeDischargeState.1'),
+    2: t('config.blockInfoPage.status.chargeDischargeState.2'),
+    3: t('config.blockInfoPage.status.chargeDischargeState.3')
   },
   '电池堆的充放电状态': {
-    0: '其他',
-    1: '充电',
-    2: '放电'
+    0: t('config.blockInfoPage.status.batteryChargeDischargeState.0'),
+    1: t('config.blockInfoPage.status.batteryChargeDischargeState.1'),
+    2: t('config.blockInfoPage.status.batteryChargeDischargeState.2')
   }
-}
+}))
 
 // 格式化数值显示
 const formatValue = (value, scale = 1, label = '') => {
@@ -183,8 +199,8 @@ const formatValue = (value, scale = 1, label = '') => {
   }
   
   // 检查是否是状态字段，如果是则返回对应的文本描述
-  if (label && STATUS_MAPPINGS[label]) {
-    const statusMapping = STATUS_MAPPINGS[label]
+  if (label && STATUS_MAPPINGS.value[label]) {
+    const statusMapping = STATUS_MAPPINGS.value[label]
     if (statusMapping.hasOwnProperty(value)) {
       return statusMapping[value]
     }

@@ -1,11 +1,13 @@
 //状态管理、ipc调用
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useToast } from 'primevue/usetoast'
 
 /**
  * BAU地址探测功能 Composable
  */
 export function useBauAddressDetection() {
+  const { t } = useI18n()
   const toastService = useToast()
   // 响应式数据
   // 分别为每种查询类型创建独立的状态
@@ -121,7 +123,7 @@ export function useBauAddressDetection() {
     } catch (error) {
       // 错误处理：网络接口获取失败时的用户提示
       console.error('[BAU] 加载网络接口失败:', error)
-      showError('加载网络接口失败')
+      showError('toast.bauAddressDetection.loadNetworkInterfacesFailed')
     } finally {
       // 无论成功失败，都要清除加载状态
       isLoadingInterfaces.value = false
@@ -156,7 +158,7 @@ export function useBauAddressDetection() {
   async function performQuery(functionCode, deviceType, queryState) {
     // 第1步：检查是否有其他查询在进行
     if (isAnyQueryActive.value) {
-      showWarning('请等待当前查询完成')
+      showWarning('toast.bauAddressDetection.waitForCurrentQuery')
       return
     }
 
@@ -186,14 +188,14 @@ export function useBauAddressDetection() {
                 data: deviceData,
                 functionCode: functionCode
               }
-              showSuccess(`${deviceType}设备查询成功`)
+              showSuccess('toast.bauAddressDetection.deviceQuerySuccess', [deviceType])
             } else {
               // 数据解析失败：显示错误信息
-              showError(deviceData?.error || `${deviceType}设备响应错误`)
+              showError(deviceData?.error || 'toast.bauAddressDetection.deviceQueryFailed', [deviceType])
             }
           } else {
             // 查询失败：未找到设备或通信失败
-            showWarning(`未找到${deviceType}设备，请检查设备是否开机并连接到网络`)
+            showWarning('toast.bauAddressDetection.deviceNotFound', [deviceType])
           }
         } finally {
           // 第6步：确保清理工作总是执行
@@ -250,7 +252,7 @@ export function useBauAddressDetection() {
   function modifyIpConfig(configData = null) {
     // 数据验证：确保有可用的配置数据
     if (!configData && !ip1Query.value.result && !ip2Query.value.result) {
-      showError('请先查询IP设备配置')
+      showError('toast.bauAddressDetection.queryIpConfigFirst')
       return
     }
 
@@ -261,13 +263,13 @@ export function useBauAddressDetection() {
     // 操作模式判断：
     if (configData) {
       // 直接设置模式：使用传入的配置数据
-      showPasswordConfirm(`设置${deviceType}地址`, 'modifyIpConfig', {
+      showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setIpTitle', [deviceType]), 'modifyIpConfig', {
         deviceType,
         configData
       })
     } else {
       // 修改模式：基于查询结果进行修改
-      showPasswordConfirm(`修改${deviceType}地址`, 'modifyIpConfig', { deviceType })
+      showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setIpTitle', [deviceType]), 'modifyIpConfig', { deviceType })
     }
   }
 
@@ -285,14 +287,14 @@ export function useBauAddressDetection() {
     // 操作模式判断：
     if (configData) {
       // 直接设置模式：使用传入的MQTT配置数据
-      showPasswordConfirm('设置MQTT配置', 'modifyMqttConfig', { configData })
+      showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setMqttTitle'), 'modifyMqttConfig', { configData })
     } else {
       // 修改模式：基于查询结果进行修改
       if (!mqttQuery.value.result) {
-        showError('请先查询MQTT配置')
+        showError('toast.bauAddressDetection.queryMqttConfigFirst')
         return
       }
-      showPasswordConfirm('修改MQTT配置', 'modifyMqttConfig', {})
+      showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setMqttTitle'), 'modifyMqttConfig', {})
     }
   }
 
@@ -303,7 +305,7 @@ export function useBauAddressDetection() {
    * 恢复出厂网络配置，但不重启设备
    */
   function resetToDefault() {
-    showPasswordConfirm('复位默认参数', 'resetToDefault', {})
+    showPasswordConfirm(t('bauAddressDetectionPage.dialogs.resetDefaultTitle'), 'resetToDefault', {})
   }
 
   /**
@@ -311,7 +313,7 @@ export function useBauAddressDetection() {
    * 设备将重新启动，应用当前配置
    */
   function resetDevice() {
-    showPasswordConfirm('复位BAU设备', 'resetDevice', {})
+    showPasswordConfirm(t('bauAddressDetectionPage.dialogs.resetDeviceTitle'), 'resetDevice', {})
   }
 
   // ==================== 密码确认机制 ====================
@@ -328,7 +330,7 @@ export function useBauAddressDetection() {
    */
   function showPasswordConfirm(title, operation, params) {
     passwordDialog.title = title
-    passwordDialog.message = `此操作需要密码确认，请输入管理员密码。`
+    passwordDialog.message = t('bauAddressDetectionPage.messages.passwordDialogMessage')
     passwordDialog.operation = operation
     passwordDialog.params = params
     passwordInput.value = ''  // 清空密码输入框
@@ -337,7 +339,7 @@ export function useBauAddressDetection() {
 
   async function confirmPassword() {
     if (passwordInput.value !== ADMIN_PASSWORD) {
-      showError('密码错误，请重新输入')
+      showError('toast.bauAddressDetection.passwordError')
       passwordInput.value = ''
       return
     }
@@ -353,7 +355,7 @@ export function useBauAddressDetection() {
           const functionCode = params.deviceType === 'IP2' ? FUNCTION_CODES.SET_IP2 : FUNCTION_CODES.SET_IP1
           console.log('confirmPassword: 准备调用executeSetOperation')
           try {
-            await executeSetOperation(functionCode, params.configData, `设置${params.deviceType}配置`)
+            await executeSetOperation(functionCode, params.configData, t(`toast.bauAddressDetection.${params.deviceType.toLowerCase()}Config`))
             console.log('confirmPassword: executeSetOperation完成')
           } catch (error) {
             console.error('confirmPassword: executeSetOperation失败:', error)
@@ -368,7 +370,7 @@ export function useBauAddressDetection() {
           // 直接设置MQTT配置
           console.log('confirmPassword: 准备调用executeSetOperation (MQTT)')
           try {
-            await executeSetOperation(FUNCTION_CODES.SET_MQTT, params.configData, '设置MQTT配置')
+            await executeSetOperation(FUNCTION_CODES.SET_MQTT, params.configData, t('toast.bauAddressDetection.setMqttConfig', '设置MQTT配置'))
             console.log('confirmPassword: executeSetOperation (MQTT)完成')
           } catch (error) {
             console.error('confirmPassword: executeSetOperation (MQTT)失败:', error)
@@ -379,10 +381,10 @@ export function useBauAddressDetection() {
         }
         break
       case 'resetToDefault':
-        executeResetOperation(FUNCTION_CODES.RESET_DEFAULT, '复位默认参数')
+        executeResetOperation(FUNCTION_CODES.RESET_DEFAULT, t('toast.bauAddressDetection.resetDefaultParams', '复位默认参数'))
         break
       case 'resetDevice':
-        executeResetOperation(FUNCTION_CODES.RESET_DEVICE, '复位设备')
+        executeResetOperation(FUNCTION_CODES.RESET_DEVICE, t('toast.bauAddressDetection.resetDevice', '复位设备'))
         break
     }
   }
@@ -397,9 +399,9 @@ export function useBauAddressDetection() {
       if (result.success) {
         operationResult.value = {
           type: 'success',
-          message: `${operationName}成功`
+          message: t('toast.bauAddressDetection.deviceResetSuccess')
         }
-        showSuccess(`${operationName}成功`)
+        showSuccess('toast.bauAddressDetection.deviceResetSuccess')
 
         // 如果是设备复位，清空所有查询结果
         if (functionCode === FUNCTION_CODES.RESET_DEVICE) {
@@ -410,7 +412,7 @@ export function useBauAddressDetection() {
           }, 1000)
         }
       } else {
-        showError(result.error || `${operationName}失败`)
+        showError(result.error || 'toast.bauAddressDetection.deviceResetFailed')
       }
       window.electronAPI.ipc.unregisterListener(listenerId)
     })
@@ -423,7 +425,7 @@ export function useBauAddressDetection() {
       interfaceAddress: selectedInterface.value?.address || '0.0.0.0'
     }).catch(error => {
       console.error(`${operationName}失败:`, error)
-      showError(`${operationName}失败，请检查网络连接`)
+      showError('toast.bauAddressDetection.deviceResetFailed')
       window.electronAPI.ipc.unregisterListener(listenerId)
     })
   }
@@ -464,12 +466,12 @@ export function useBauAddressDetection() {
             type: 'success',
             message: `${operationName}成功`
           }
-          showSuccess(`${operationName}成功`)
+          showSuccess('toast.bauAddressDetection.deviceConfigSuccess', [operationName])
         } else {
-          showError(device.parsedData?.error || `${operationName}失败`)
+          showError(device.parsedData?.error || 'toast.bauAddressDetection.deviceConfigFailed', [operationName])
         }
       } else {
-        showError(result.error || `${operationName}失败`)
+        showError(result.error || 'toast.bauAddressDetection.deviceResetFailed')
       }
       window.electronAPI.ipc.unregisterListener(listenerId)
     })
@@ -494,27 +496,39 @@ export function useBauAddressDetection() {
     } catch (error) {
       console.error('IPC调用失败:', error)
       console.error('错误详情:', error.message, error.stack)
-      showError(`${operationName}失败，请检查网络连接`)
+      showError('toast.bauAddressDetection.deviceResetFailed')
       window.electronAPI.ipc.unregisterListener(listenerId)
     }
   }
 
 
   // 消息提示
-  function showSuccess(message) {
-    toastService.add({ severity: 'success', summary: '成功', detail: message, life: 3000 })
+  function showSuccess(messageKey, params = []) {
+    const message = typeof messageKey === 'string' && messageKey.startsWith('toast.') 
+      ? t(messageKey, params) 
+      : messageKey
+    toastService.add({ severity: 'success', summary: t('toast.bauAddressDetection.success'), detail: message, life: 3000 })
   }
 
-  function showError(message) {
-    toastService.add({ severity: 'error', summary: '错误', detail: message, life: 5000 })
+  function showError(messageKey, params = []) {
+    const message = typeof messageKey === 'string' && messageKey.startsWith('toast.') 
+      ? t(messageKey, params) 
+      : messageKey
+    toastService.add({ severity: 'error', summary: t('toast.bauAddressDetection.error'), detail: message, life: 5000 })
   }
 
-  function showWarning(message) {
-    toastService.add({ severity: 'warn', summary: '警告', detail: message, life: 4000 })
+  function showWarning(messageKey, params = []) {
+    const message = typeof messageKey === 'string' && messageKey.startsWith('toast.') 
+      ? t(messageKey, params) 
+      : messageKey
+    toastService.add({ severity: 'warn', summary: t('toast.bauAddressDetection.warning'), detail: message, life: 4000 })
   }
 
-  function showInfo(message) {
-    toastService.add({ severity: 'info', summary: '信息', detail: message, life: 3000 })
+  function showInfo(messageKey, params = []) {
+    const message = typeof messageKey === 'string' && messageKey.startsWith('toast.') 
+      ? t(messageKey, params) 
+      : messageKey
+    toastService.add({ severity: 'info', summary: t('toast.bauAddressDetection.info'), detail: message, life: 3000 })
   }
 
   // 生命周期

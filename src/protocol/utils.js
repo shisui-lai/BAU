@@ -342,34 +342,34 @@
     return { baseConfig: base, nextOffset: off }
   }
 
-  export function groupByClass(schema, flat) {
-    const sections = {}
+export function groupByClass(schema, flat) {
+  const sections = {}
 
-    for (const field of schema) {
-      if (!field.label || (typeof field.type === 'string' && field.type.startsWith('skip'))) {
-        continue
-      }
-      const cls = field.class || '配置'
-      if (!sections[cls]) sections[cls] = []
+  for (const field of schema) {
+    if (!field.label || (typeof field.type === 'string' && field.type.startsWith('skip'))) {
+      continue
+    }
+    const cls = field.class || '配置'
+    if (!sections[cls]) sections[cls] = []
 
-      const rawValue = flat[field.key]
+    const rawValue = flat[field.key]
 
-      if (rawValue === undefined || rawValue === null) {
-        continue
-      }
-
-      const value = field.map && field.map[rawValue] !== undefined
-        ? field.map[rawValue]
-        : rawValue
-
-      sections[cls].push({ label: field.label, value })
+    if (rawValue === undefined || rawValue === null) {
+      continue
     }
 
-    return Object.entries(sections).map(([cls, elems]) => ({
-      class: cls,
-      element: elems
-    }))
+    const value = field.map && field.map[rawValue] !== undefined
+      ? field.map[rawValue]
+      : rawValue
+
+    sections[cls].push({ label: field.label, value })
   }
+
+  return Object.entries(sections).map(([cls, elems]) => ({
+    class: cls,
+    element: elems
+  }))
+}
 
   export function serialize(schema, dataObj, offset, length) {
 

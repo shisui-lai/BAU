@@ -3,7 +3,6 @@
 import { useToast } from 'primevue/usetoast'
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated, watch, nextTick, markRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { createParameterTranslator, createRemarksTranslator } from '@/utils/parameterTranslation'
 import { translateDropdownOptions } from '@/configs/ui/dropdownConfigs'
 import { scheduleAutoRead, cancelAutoRead, registerAutoReadFunction } from '@/composables/utils/useAutoReadScheduler'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
@@ -23,12 +22,31 @@ import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 
-const { t } = useI18n()
+const { t, locale, te } = useI18n()
 
-// 创建参数翻译器
-const translateParameterData = createParameterTranslator()
-const translateRemarks = createRemarksTranslator('clusterConfigParam')
-const translateFactoryRemarks = createRemarksTranslator('factoryCalibParam')
+// 直接使用label翻译函数
+const getLabelTranslation = (label) => {
+  if (locale.value === 'zh') return label
+  return te(`config.clusterConfigParam.label.${label}`) 
+    ? t(`config.clusterConfigParam.label.${label}`) 
+    : label
+}
+
+// 备注翻译函数
+const getRemarksTranslation = (remarks) => {
+  if (locale.value === 'zh') return remarks
+  return te(`config.clusterConfigParam.remarks.${remarks}`) 
+    ? t(`config.clusterConfigParam.remarks.${remarks}`) 
+    : remarks
+}
+
+// 出厂校正参数备注翻译函数
+const getFactoryRemarksTranslation = (remarks) => {
+  if (locale.value === 'zh') return remarks
+  return te(`config.factoryCalibParam.remarks.${remarks}`) 
+    ? t(`config.factoryCalibParam.remarks.${remarks}`) 
+    : remarks
+}
 
 const toastService = useToast()
 
@@ -345,8 +363,44 @@ const enhancedParameterList = computed(() => {
     baseList = systemEnhancedParameterList.value
   }
   
-  // 应用参数翻译
-  return translateParameterData(baseList, 'clusterConfigParam')
+  // 应用参数翻译和下拉框选项翻译
+  return baseList.map(param => {
+    // 保存原始标签用于下拉框检测
+    const originalLabel = param.originalLabel || param.label
+    
+    // 检查是否为下拉框参数（使用原始标签）
+    const isDropdown = isParameterDropdown({ originalLabel, label: originalLabel })
+    
+    const translatedParam = {
+      ...param,
+      label: getLabelTranslation(param.label || param.originalLabel),
+      originalLabel: originalLabel // 确保originalLabel存在
+    }
+    
+    // 如果是下拉框参数，需要翻译选项
+    if (isDropdown) {
+      const options = getParameterDropdownOptions({ originalLabel, label: originalLabel })
+      if (options && Array.isArray(options)) {
+        translatedParam.inputType = 'dropdown'
+        
+        translatedParam.options = translateDropdownOptions(options, originalLabel, t, te, locale.value)
+        
+        // 更新selectedOption的label为翻译后的标签
+        if (translatedParam.selectedOption) {
+          const translatedSelectedOption = translatedParam.options.find(opt => opt.value === translatedParam.selectedOption.value)
+          if (translatedSelectedOption) {
+            translatedParam.selectedOption = {
+              ...translatedParam.selectedOption,
+              label: translatedSelectedOption.label
+            }
+          }
+        }
+        
+      }
+    }
+    
+    return translatedParam
+  })
 })
 
 // 统一的读取状态
@@ -489,8 +543,8 @@ const getParameterDropdownOptions = (parameter) => {
     ? factoryCalibGetParameterDropdownOptions(labelToCheck)
     : systemGetParameterDropdownOptions(labelToCheck)
 
-  // 应用下拉框选项翻译
-  return translateDropdownOptions(options, labelToCheck, t)
+  // 直接返回原始选项，避免重复翻译
+  return options
 }
 
 //协议修改新增 - 统一的下拉框参数更新函数
@@ -508,11 +562,11 @@ const getParameterRemarkText = (parameterKey) => {
   if (isFactoryCalibMode.value) {
     remarks = FACTORY_CALIB_PARAM_REMARKS[parameterKey] || ''
     // 出厂校正参数使用专门的翻译器
-    return translateFactoryRemarks(remarks)
+    return getFactoryRemarksTranslation(remarks)
   } else {
     remarks = BASE_PARAM_REMARKS[parameterKey] || ''
     // 系统基本参数使用默认翻译器
-    return translateRemarks(remarks)
+    return getRemarksTranslation(remarks)
   }
 }
 
@@ -726,7 +780,7 @@ onUnmounted(() => {
           <!-- 下拉框参数 -->
           <Dropdown
             v-if="isParameterDropdown(slotProps.data)"
-            :options="getParameterDropdownOptions(slotProps.data)"
+            :options="slotProps.data.options"
             optionLabel="label"
             optionValue="value"
             :model-value="slotProps.data.selectedOption?.value"

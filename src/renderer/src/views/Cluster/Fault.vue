@@ -3,6 +3,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { parseFault, sortedAllFaults } from '../../composables/core/data-processing/common/parseFault'
 import { useClusterStore } from '../../stores/device/clusterStore'
+import { useI18n } from 'vue-i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -24,6 +25,9 @@ declare global {
 
 // 使用 clusterStore 管理筛选状态
 const clusterStore = useClusterStore()
+
+// 使用国际化
+const { t, te, locale } = useI18n()
 
 /* ---------- 分页状态 ---------- */
 const first = ref(0)      // 当前偏移量
@@ -209,6 +213,131 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   clusterStore.setFaultFilterMode(mode)
 }
 
+/* ---------- 掉线信息动态翻译函数 ---------- */
+/**
+ * 掉线信息动态翻译函数
+ * 用于处理包含序号的掉线信息翻译，避免在JSON中预定义大量翻译条目
+ * @param {string} desc - 原始掉线信息描述
+ * @param {string} locale - 当前语言设置
+ * @returns {string} 翻译后的描述
+ */
+function translateBrokenwireFault(desc: string, locale: string): string {
+  // 中文环境直接返回原始描述
+  if (locale === 'zh') return desc
+  
+  // 解析掉线信息中的参数（BMU编号、AFE编号、Cell编号、Temp编号、插件编号）
+  const bmuMatch = desc.match(/BMU(\d+)/)
+  const afeMatch = desc.match(/AFE(\d+)/)
+  const cellMatch = desc.match(/Cell(\d+)/)
+  const tempMatch = desc.match(/Temp(\d+)/)
+  const plugMatch = desc.match(/插件(\d+)/)
+  
+  // 根据掉线信息类型和参数生成英文翻译
+  if (desc.includes('失联') && bmuMatch && afeMatch) {
+    // BMU AFE失联模式：BMU1 AFE1 失联 → BMU1 AFE1 Disconnect
+    return `BMU${bmuMatch[1]} AFE${afeMatch[1]} Disconnect`
+  } else if (desc.includes('失联') && bmuMatch) {
+    // BMU失联模式：BMU1 失联 → BMU1 Disconnect
+    return `BMU${bmuMatch[1]} Disconnect`
+  } else if (desc.includes('电压二级掉线') && bmuMatch && cellMatch) {
+    // 电压二级掉线模式：BMU1 Cell1 电压二级掉线 → BMU1 Cell1 Voltage Secondary Disconnect
+    return `BMU${bmuMatch[1]} Cell${cellMatch[1]} Voltage Secondary Disconnect`
+  } else if (desc.includes('温度二级掉线') && bmuMatch && tempMatch) {
+    // 温度二级掉线模式：BMU1 Temp1 温度二级掉线 → BMU1 Temp1 Temperature Secondary Disconnect
+    return `BMU${bmuMatch[1]} Temp${tempMatch[1]} Temperature Secondary Disconnect`
+  } else if (desc.includes('插件') && plugMatch) {
+    // 插件温度掉线模式：BMU1 插件1温度掉线 → BMU1 Connector1 Temperature Disconnect
+    if (bmuMatch) {
+      return `BMU${bmuMatch[1]} Connector${plugMatch[1]} Temperature Disconnect`
+    } else {
+      return `Connector${plugMatch[1]} Temperature Disconnect`
+    }
+  } else if (desc === 'AFE失联') {
+    // 简化的AFE失联：AFE失联 → AFE Disconnect
+    return 'AFE Disconnect'
+  } else if (desc === '电压掉线') {
+    // 简化的电压掉线：电压掉线 → Voltage Disconnect
+    return 'Voltage Disconnect'
+  } else if (desc === '温度掉线') {
+    // 简化的温度掉线：温度掉线 → Temperature Disconnect
+    return 'Temperature Disconnect'
+  } else if (desc === '插件温度掉线') {
+    // 简化的插件温度掉线：插件温度掉线 → Connector Temperature Disconnect
+    return 'Connector Temperature Disconnect'
+  }
+  
+  // 如果无法识别模式，返回原始描述
+  return desc
+}
+
+
+/* ---------- 故障翻译方法 ---------- */
+function getFaultTranslation(data: any): string {
+  if (!data || !data.desc) return data?.desc || ''
+  
+  const { desc, dataType } = data
+  
+  // 根据dataType确定翻译对象
+  let topicKey = ''
+  
+  switch (dataType) {
+    case 'TOTAL_FAULT':
+      topicKey = 'totalFaults'
+      break
+    case 'OUTPUT_FAULT_MAP':
+      topicKey = 'outputFaultMap'
+      break
+    case 'SAVED_FAULT_MAP':
+      topicKey = 'savedFaultMap'
+      break
+    case 'FAULT_LEVEL1':
+      topicKey = 'faultLevel1'
+      break
+    case 'FAULT_LEVEL2':
+      topicKey = 'faultLevel2'
+      break
+    // 三级故障精准匹配
+    case 'CELL_OV_FAULT_LEVEL3':
+    case 'CELL_UV_FAULT_LEVEL3':
+    case 'CHG_OT_FAULT_LEVEL3':
+    case 'CHG_UT_FAULT_LEVEL3':
+    case 'DSG_OT_FAULT_LEVEL3':
+    case 'DSG_UT_FAULT_LEVEL3':
+    case 'SOC_OVER_FAULT_LEVEL3':
+    case 'SOC_UNDER_FAULT_LEVEL3':
+      topicKey = 'faultLevel3'
+      break
+    case 'BLOCK_HARDWARE_FAULT':
+      topicKey = 'blockHardwareFault'
+      break
+    case 'BLOCK_TOTAL_FAULT':
+      topicKey = 'blockTotalFault'
+      break
+    case 'BLOCK_ANALOG_FAULT_GRADE':
+      topicKey = 'blockAnalogFaultGrade'
+      break
+    case 'BLOCK_COMM_LOST':
+      topicKey = 'blockCommLost'
+      break
+    case 'BROKENWIRE':
+      // 掉线信息使用动态翻译，避免在JSON中预定义大量翻译条目
+      return translateBrokenwireFault(desc, locale.value)
+    default:
+      // 未知故障类型，返回原始描述
+      return desc
+  }
+  
+  // 尝试获取翻译
+  const translationKey = `alarmInfoPage.${topicKey}.${desc}`
+  if (te(translationKey)) {
+    return t(translationKey)
+  }
+  
+  // 如果没有找到翻译，返回原始描述
+  return desc
+}
+
+
 </script>
 <template>
   <div class="card">
@@ -225,7 +354,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
         @page="onPageChange"
         :dataKey="(item: any) => `${item.cluster}-${item.label}-${item.ts}`"
         class="fault-table-unified"
-        :emptyMessage="total === 0 ? '暂无符合条件的故障' : '暂无故障'"
+        :emptyMessage="total === 0 ? t('alarmInfoPage.messages.noFilteredFaults') : t('alarmInfoPage.messages.noFaults')"
         stripedRows
         responsiveLayout="scroll"
       >
@@ -234,7 +363,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
           <div class="unified-header">
             <!-- 蓝色标题区域 -->
             <div class="header-title-blue">
-              <h3 class="title-text">故障筛选与统计</h3>
+              <h3 class="title-text">{{ t('alarmInfoPage.sections.title') }}</h3>
             </div>
 
             <!-- 白色筛选控制区域 -->
@@ -245,21 +374,21 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
                 <div class="flex align-items-center gap-3 mr-auto">
                   <div class="flex gap-2">
                     <Button
-                      label="全部故障"
+                      :label="t('alarmInfoPage.buttons.allFaults')"
                       :severity="clusterStore.faultFilterMode === 'all' ? 'primary' : 'secondary'"
                       :outlined="clusterStore.faultFilterMode !== 'all'"
                       @click="setFilterMode('all')"
                       class="filter-button-small"
                     />
                     <Button
-                      label="按堆筛选"
+                      :label="t('alarmInfoPage.buttons.filterByBlock')"
                       :severity="clusterStore.faultFilterMode === 'block' ? 'primary' : 'secondary'"
                       :outlined="clusterStore.faultFilterMode !== 'block'"
                       @click="setFilterMode('block')"
                       class="filter-button-small"
                     />
                     <Button
-                      label="按簇筛选"
+                      :label="t('alarmInfoPage.buttons.filterByCluster')"
                       :severity="clusterStore.faultFilterMode === 'cluster' ? 'primary' : 'secondary'"
                       :outlined="clusterStore.faultFilterMode !== 'cluster'"
                       @click="setFilterMode('cluster')"
@@ -276,7 +405,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
                       :options="clusterStore.availableBlocks"
                       optionLabel="label"
                       optionValue="value"
-                      placeholder="请选择要查看的堆"
+                      :placeholder="t('alarmInfoPage.placeholders.selectBlocks')"
                       class="filter-multiselect-compact"
                     />
 
@@ -287,7 +416,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
                       :options="clusterStore.availableFaultClusters"
                       optionLabel="label"
                       optionValue="value"
-                      placeholder="请选择要查看的簇"
+                      :placeholder="t('alarmInfoPage.placeholders.selectClusters')"
                       class="filter-multiselect-compact"
                     />
                   </div>
@@ -296,7 +425,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
                 <!-- 右侧：故障统计信息 -->
                 <div class="fault-count-badge">
                   <i class="pi pi-info-circle mr-1"></i>
-                  <span>当前共 {{ total }} 条故障</span>
+                  <span>{{ t('alarmInfoPage.sections.faultStatistics', { total }) }}</span>
                 </div>
               </div>
             </div>
@@ -306,29 +435,35 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
 
 
         <!-- 序号列 -->
-        <Column header="序号" headerClass="text-center" bodyClass="text-center" style="width:80px">
+        <Column :header="t('alarmInfoPage.table.headers.sequence')" headerClass="text-center" bodyClass="text-center" style="width:80px">
           <template #body="{ index }">
             {{ first + index + 1 }}
           </template>
         </Column>
-        <Column field="time" header="发生时间" style="min-width:160px" />
-        <Column field="desc" header="故障" style="min-width:260px" />
-      <Column header="堆/簇号" headerClass="text-center" bodyClass="text-center" style="width:110px">
+        <Column field="time" :header="t('alarmInfoPage.table.headers.occurrenceTime')" style="min-width:160px" />
+        <Column :header="t('alarmInfoPage.table.headers.faultDescription')" style="min-width:260px">
+          <template #body="{ data }">
+            {{
+              getFaultTranslation(data)
+            }}
+          </template>
+        </Column>
+      <Column :header="t('alarmInfoPage.table.headers.blockClusterNumber')" headerClass="text-center" bodyClass="text-center" style="width:110px">
         <template #body="{ data }">
           {{ data.cluster.endsWith('-0') ? data.cluster.split('-')[0] : data.cluster }}
         </template>
       </Column>
-        <Column field="bmu" header="BMU 编号" headerClass="text-center" bodyClass="text-center" style="width:120px" >
+        <Column field="bmu" :header="t('alarmInfoPage.table.headers.bmuNumber')" headerClass="text-center" bodyClass="text-center" style="width:120px" >
           <template #body="{ data }">
             {{ data.bmu === null || data.bmu === 0 ? '-' : data.bmu }}
           </template>
         </Column>
-      <Column header="Cell" headerClass="text-center" bodyClass="text-center" style="width:100px">
+      <Column :header="t('alarmInfoPage.table.headers.cell')" headerClass="text-center" bodyClass="text-center" style="width:100px">
         <template #body="{ data }">
           {{ data.cell === null || data.cell === 0 ? '-' : data.cell }}
         </template>
       </Column>
-      <Column header="全局序号" headerClass="text-center" bodyClass="text-center" style="width:120px">
+      <Column :header="t('alarmInfoPage.table.headers.globalSequence')" headerClass="text-center" bodyClass="text-center" style="width:120px">
         <template #body="{ data }">
           {{
             data.globalTemp !== null && data.globalTemp !== 0 ? data.globalTemp :
@@ -340,7 +475,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
       <Column headerClass="text-center" bodyClass="p-0" style="width:120px">
         <template #header>
           <div class="flex align-items-center justify-content-center gap-1 cursor-pointer" @click="toggleSort">
-            <span>故障等级</span>
+            <span>{{ t('alarmInfoPage.table.headers.faultLevel') }}</span>
             <i
               :class="{
                 'pi pi-sort': sortOrder === 'none',
@@ -354,7 +489,7 @@ function setFilterMode(mode: 'all' | 'block' | 'cluster') {
         <template #body="{ data }">
           <div class="cell-center">
             <Tag
-              :value="data.levelTxt"
+              :value="t(data.levelTxt)"
               :severity="getSeverityColor(data.levelTag)"
             />
           </div>

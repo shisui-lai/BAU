@@ -10,21 +10,21 @@
         <template #header>
           <div class="card-header">
             <i class="pi pi-sd-card card-icon"></i>
-            <span class="card-title">SD卡信息</span>
+            <span class="card-title">{{ t('blockVersionPage.cards.sdCardInfo') }}</span>
           </div>
         </template>
         <template #content>
           <div class="card-content">
             <div class="info-item">
-              <span class="info-label">总容量</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.totalCapacity') }}</span>
               <span class="info-value">{{ getVersionValue('SD卡总容量') }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">剩余容量</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.remainingCapacity') }}</span>
               <span class="info-value">{{ getVersionValue('SD卡剩余容量') }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">状态</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.status') }}</span>
               <div class="info-value">
                 <Tag :value="sdCardStatusText" :severity="getSdCardStatusSeverity()" />
               </div>
@@ -38,25 +38,25 @@
         <template #header>
           <div class="card-header">
             <i class="pi pi-cog card-icon"></i>
-            <span class="card-title">BAU版本信息</span>
+            <span class="card-title">{{ t('blockVersionPage.cards.bauVersionInfo') }}</span>
           </div>
         </template>
         <template #content>
           <div class="card-content">
             <div class="info-item">
-              <span class="info-label">产品编码</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.productCode') }}</span>
               <span class="info-value">{{ getVersionValue('BAU产品编码') }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">硬件版本</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.hardwareVersion') }}</span>
               <span class="info-value">{{ getVersionValue('BAU硬件版本号') }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">软件版本</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.softwareVersion') }}</span>
               <span class="info-value version-highlight">{{ getVersionValue('BAU软件版本号') }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">BOOT版本</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.bootVersion') }}</span>
               <span class="info-value">{{ getVersionValue('BAU-BOOT版本号') }}</span>
             </div>
           </div>
@@ -68,25 +68,25 @@
         <template #header>
           <div class="card-header">
             <i class="pi pi-link card-icon"></i>
-            <span class="card-title">协议版本信息</span>
+            <span class="card-title">{{ t('blockVersionPage.cards.protocolVersionInfo') }}</span>
           </div>
         </template>
         <template #content>
           <div class="card-content">
             <div class="info-item">
-              <span class="info-label">上位机协议</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.hostProtocol') }}</span>
               <span class="info-value">{{ getVersionValue('BAU-上位机协议版本号') }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">BCU协议</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.bcuProtocol') }}</span>
               <span class="info-value">{{ getVersionValue('BAU-BCU协议版本号') }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">事件记录版本</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.eventRecordVersion') }}</span>
               <span class="info-value">{{ getVersionValue('BAU事件记录版本号') }}</span>
             </div>
             <div class="info-item">
-              <span class="info-label">SOX算法版本</span>
+              <span class="info-label">{{ t('blockVersionPage.labels.soxAlgorithmVersion') }}</span>
               <span class="info-value">{{ getVersionValue('BAU-SOX算法版本号') }}</span>
             </div>
           </div>
@@ -98,11 +98,14 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import { parseBlockVersion, pickBlockVersion } from '@/composables/core/data-processing/block/parseBlockVersion'
 
-// 版本信息字段模板
+const { t } = useI18n()
+
+// 版本信息字段模板 - 使用原始的中文label
 const FIELD_TEMPLATES = {
   '版本信息': [
     'SD卡总容量',
@@ -127,6 +130,7 @@ const versionData = computed(() => {
     // 有数据时，使用实际数据
     const dataMap = {}
     data['版本信息'].forEach(item => {
+      // 使用原始的label作为键，因为数据存储时使用的是原始label
       dataMap[item.label] = {
         value: formatValue(item.value, item.scale),
         unit: item.unit || ''
@@ -146,9 +150,9 @@ const versionData = computed(() => {
   }
 })
 
-// 获取版本值
-const getVersionValue = (label) => {
-  const data = versionData.value[label]
+// 获取版本值 - 直接使用原始label
+const getVersionValue = (originalLabel) => {
+  const data = versionData.value[originalLabel]
   if (!data) return '–'
   
   const value = data.value
@@ -159,7 +163,7 @@ const getVersionValue = (label) => {
   }
   
   // 特殊处理SD卡状态，不添加单位
-  if (label === 'SD卡状态') {
+  if (originalLabel === 'SD卡状态') {
     return value.toString()
   }
   
@@ -173,15 +177,16 @@ const sdCardStatusText = computed(() => {
   // 处理可能的单位后缀
   const cleanStatus = status.replace(/\s*GB$/, '').replace(/\s*MB$/, '').replace(/\s*KB$/, '')
   
+  // 根据状态值返回翻译后的文本
   switch (cleanStatus) {
     case '0':
-      return 'SD卡路径不存在'
+      return t('blockVersionPage.status.sdCardPathNotExists')
     case '1':
-      return '写成功'
+      return t('blockVersionPage.status.writeSuccess')
     case '2':
-      return '写失败'
+      return t('blockVersionPage.status.writeFailed')
     case '3':
-      return '未知状态'
+      return t('blockVersionPage.status.unknownStatus')
     default:
       return cleanStatus || '–'
   }

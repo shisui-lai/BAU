@@ -965,8 +965,8 @@ const FAULT_LEVEL3_types = {
   chg_ut  : { prefix: 'ChgUT' , label: '充电单体欠温'   },
   dsg_ot  : { prefix: 'DsgOT' , label: '放电单体过温'   },
   dsg_ut  : { prefix: 'DsgUT' , label: '放电单体欠温'   },
-  soc_over: { prefix: 'SocHi' , label: '单体 SOC 过高' },
-  soc_under:{prefix: 'SocLo' , label: '单体 SOC 过低' }
+  soc_over: { prefix: 'SocHi' , label: '单体SOC过高' },
+  soc_under:{prefix: 'SocLo' , label: '单体SOC过低' }
 } as const
 
 const TEMP_KINDS = new Set<FaultKey>([

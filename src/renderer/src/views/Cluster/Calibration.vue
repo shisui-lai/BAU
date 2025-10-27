@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from 'vue-i18n'
 import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
 import { pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
 import { parseClusterSummary } from '@/composables/core/data-processing/cluster/parseClusterSummary'
@@ -18,6 +19,7 @@ import Password from 'primevue/password'
 
 const toast = useToast()
 const router = useRouter()
+const { t } = useI18n()
 
 // 密码保护相关
 const showPasswordDialog = ref(false)
@@ -42,17 +44,17 @@ const calY1 = ref('') // 第一个实测值
 const calY2 = ref('') // 第二个实测值
 
 // 校准类型选项 - 固定选项，不依赖数据
-const kbOptions = ref([
-  { label: '电流充电小量程校准', k: 1, b: 0, raw: 'currentChargeSmall' },
-  { label: '电流放电小量程校准', k: 1, b: 0, raw: 'currentDischargeSmall' },
-  { label: '电流充电大量程校准', k: 1, b: 0, raw: 'currentChargeLarge' },
-  { label: '电流放电大量程校准', k: 1, b: 0, raw: 'currentDischargeLarge' },
-  { label: '预充电压校准', k: 1, b: 0, raw: 'preChargeVoltage' },
-  { label: '组端电压校准', k: 1, b: 0, raw: 'clusterVoltage' }
+const kbOptions = computed(() => [
+  { label: t('analogCalibration.kb.currentChargeSmall'), k: 1, b: 0, raw: 'currentChargeSmall' },
+  { label: t('analogCalibration.kb.currentDischargeSmall'), k: 1, b: 0, raw: 'currentDischargeSmall' },
+  { label: t('analogCalibration.kb.currentChargeLarge'), k: 1, b: 0, raw: 'currentChargeLarge' },
+  { label: t('analogCalibration.kb.currentDischargeLarge'), k: 1, b: 0, raw: 'currentDischargeLarge' },
+  { label: t('analogCalibration.kb.prechargeVoltage'), k: 1, b: 0, raw: 'preChargeVoltage' },
+  { label: t('analogCalibration.kb.clusterVoltage'), k: 1, b: 0, raw: 'clusterVoltage' }
 ])
 
 // 下拉框选中的校准类型（默认选择第一个）
-const selectedKBLabel = ref(kbOptions.value[0].label)
+const selectedKBLabel = ref('')
 
 // 根据下拉框选项获得对应的 kb 对象
 const selectedKB = computed(() =>
@@ -163,13 +165,15 @@ const canCalculate = computed(() => {
 // 根据选中的校准类型获取对应的实时数据字段名
 const selectedIVKey = computed(() => {
   if (!selectedKB.value) return null
-  const label = selectedKB.value.label
+  const raw = selectedKB.value.raw
 
-  if (label.includes('电流')) {
+  // 直接使用raw字段进行匹配，避免语言依赖
+  if (raw === 'currentChargeSmall' || raw === 'currentDischargeSmall' || 
+      raw === 'currentChargeLarge' || raw === 'currentDischargeLarge') {
     return 'current'
-  } else if (label.includes('组端电压')) {
+  } else if (raw === 'clusterVoltage') {
     return 'clusterVoltage'
-  } else if (label.includes('预充电压')) {
+  } else if (raw === 'preChargeVoltage') {
     return 'preChargeVoltage'
   }
   return null
@@ -180,13 +184,13 @@ const currentIVValue = computed(() => {
   const realData = currentRealTimeData.value
   const key = selectedIVKey.value
 
-  if (!realData || !key) return '-'
+  if (!realData || !key) return null
 
   const value = realData[key]
 
-  if (value === null || value === undefined) return '-'
+  if (value === null || value === undefined) return null
 
-  // 根据类型添加单位
+  // 根据类型添加单位，确保返回带单位的字符串
   if (key === 'current') {
     return value.toFixed(2) + 'A'
   } else if (key === 'clusterVoltage' || key === 'preChargeVoltage') {
@@ -208,8 +212,8 @@ const captureX1 = () => {
   storedX1.value = getCurrentRealTimeValue()
   toast.add({
     severity: 'success',
-    summary: '捕获成功',
-    detail: '已捕获显示值1',
+    summary: t('analogCalibration.toasts.capture1Success'),
+    detail: t('analogCalibration.toasts.capture1Success'),
     life: 2000
   })
 }
@@ -220,8 +224,8 @@ const captureX2 = () => {
   storedX2.value = getCurrentRealTimeValue()
   toast.add({
     severity: 'success',
-    summary: '捕获成功',
-    detail: '已捕获显示值2',
+    summary: t('analogCalibration.toasts.capture2Success'),
+    detail: t('analogCalibration.toasts.capture2Success'),
     life: 2000
   })
 }
@@ -297,14 +301,14 @@ const calculateNewKB = () => {
 
     toast.add({
       severity: 'success',
-      summary: '计算完成',
+      summary: t('analogCalibration.toasts.calculateSuccess'),
       detail: `K=${inputK.value}, B=${inputB.value}`,
       life: 3000
     })
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: '计算错误',
+      summary: t('analogCalibration.toasts.calculateError'),
       detail: error.message,
       life: 3000
     })
@@ -315,8 +319,8 @@ const sendCalibration = async () => {
   if (!isValidKB.value) {
     toast.add({
       severity: 'warn',
-      summary: '数据无效',
-      detail: '请先计算有效的KB值',
+      summary: t('analogCalibration.errors.needCalculateKB'),
+      detail: t('analogCalibration.errors.needCalculateKB'),
       life: 3000
     })
     return
@@ -339,7 +343,7 @@ const sendCalibration = async () => {
     // 获取当前选中的校准类型
     const currentCalibType = selectedKB.value
     if (!currentCalibType) {
-      throw new Error('未选择校准类型')
+      throw new Error(t('analogCalibration.errors.noCalibType'))
     }
 
     // 验证输入值
@@ -347,7 +351,7 @@ const sendCalibration = async () => {
     const bValue = parseFloat(inputB.value)
 
     if (isNaN(kValue) || isNaN(bValue)) {
-      throw new Error('K值和B值必须为有效数字')
+      throw new Error(t('analogCalibration.errors.invalidKB'))
     }
 
     // 检查数据是否就绪
@@ -355,7 +359,7 @@ const sendCalibration = async () => {
       toast.add({
         severity: 'warn',
         summary: '数据未就绪',
-        detail: '未读取到设备原始K/B值，请等待数据加载完成',
+        detail: t('analogCalibration.errors.noOriginalKB'),
         life: 3000
       })
       return
@@ -421,7 +425,7 @@ const sendCalibration = async () => {
         calibrationData.clusterVoltageB = bValue
         break
       default:
-        throw new Error('未知的校准类型')
+        throw new Error(t('analogCalibration.errors.unknownCalibType'))
     }
 
     console.log(`[IvCalibration] 下设数据构造完成:`)
@@ -469,8 +473,8 @@ const sendCalibration = async () => {
 
     toast.add({
       severity: 'success',
-      summary: '下设成功',
-      detail: `${currentCalibType.label} KB值已下设`,
+      summary: t('analogCalibration.toasts.sendSuccess'),
+      detail: `${currentCalibType.label} ${t('analogCalibration.toasts.sendSuccess')}`,
       life: 3000
     })
 
@@ -568,13 +572,24 @@ const currentRealTimeData = computed(() => {
   // 查找簇电流、簇电压、预充电压
   let current = null, clusterVoltage = null, preChargeVoltage = null
 
+  // 中文标签到字段名的映射（数据解析层始终使用中文标签）
+  const LABEL_TO_FIELD_MAP = {
+    '簇电流(A)': 'current',
+    '簇电压(V)': 'clusterVoltage', 
+    '预充电压(V)': 'preChargeVoltage'
+  }
+
   systemInfo.element.forEach(item => {
-    if (item.label === '簇电流(A)' && item.value !== '-') {
-      current = parseFloat(item.value)
-    } else if (item.label === '簇电压(V)' && item.value !== '-') {
-      clusterVoltage = parseFloat(item.value)
-    } else if (item.label === '预充电压(V)' && item.value !== '-') {
-      preChargeVoltage = parseFloat(item.value)
+    const fieldName = LABEL_TO_FIELD_MAP[item.label]
+    if (fieldName && item.value !== '-') {
+      const value = parseFloat(item.value)
+      if (fieldName === 'current') {
+        current = value
+      } else if (fieldName === 'clusterVoltage') {
+        clusterVoltage = value
+      } else if (fieldName === 'preChargeVoltage') {
+        preChargeVoltage = value
+      }
     }
   })
 
@@ -588,16 +603,24 @@ const onClusterSummary = (_e, msg) => {
 
 // 读取出厂校正参数
 const readFactoryCalibParam = () => {
+  console.log('[Calibration Debug] readFactoryCalibParam 开始执行')
+  console.log('[Calibration Debug] selectedCluster.value:', selectedCluster.value)
+  
   if (!selectedCluster.value) {
+    console.log('[Calibration Debug] selectedCluster.value 为空，无法发送MQTT请求')
     return
   }
 
   const [blockId, clusterId] = selectedCluster.value.split('-')
+  const mqttTopic = `bms/host/s2d/b${blockId}/c${clusterId}/factory_calib_param_r`
+  
+  console.log('[Calibration Debug] 准备发送MQTT请求')
+  console.log('[Calibration Debug] MQTT Topic:', mqttTopic)
+  console.log('[Calibration Debug] MQTT Payload:', 'ff')
 
-  window.electronAPI.mqttPublish(
-    `bms/host/s2d/b${blockId}/c${clusterId}/factory_calib_param_r`,
-    'ff'
-  )
+  window.electronAPI.mqttPublish(mqttTopic, 'ff')
+  
+  console.log('[Calibration Debug] MQTT请求已发送')
 }
 
 // 定时器管理
@@ -605,11 +628,15 @@ let readingTimer = null
 
 // 启动周期读取
 const startPeriodicReading = () => {
+  console.log('[Calibration Debug] startPeriodicReading 开始执行')
+  console.log('[Calibration Debug] selectedCluster.value:', selectedCluster.value)
+  
   // 立即读取一次
   readFactoryCalibParam()
 
   // 启动5秒周期读取
   readingTimer = setInterval(() => {
+    console.log('[Calibration Debug] 定时器触发，准备读取')
     readFactoryCalibParam()
   }, 5000)
 }
@@ -630,9 +657,29 @@ const checkPwd = () => {
     showPasswordDialog.value = false
     sessionStorage.setItem('calibrationPagePassword', 'ok')
     pwdError.value = false
+    
+    // 密码验证成功后，执行初始化逻辑
+    console.log('[Calibration Debug] 密码验证成功，开始执行初始化逻辑')
+    initializePage()
   } else {
     pwdError.value = true
   }
+}
+
+// 页面初始化逻辑（从onMounted中提取出来）
+const initializePage = () => {
+  // console.log('[Calibration Debug] initializePage 开始执行')
+  
+  // 监听出厂校正参数数据
+  window.electron.ipcRenderer.on('FACTORY_CALIB_PARAM_R', handleFactoryCalibUpdate)
+
+  // 监听CLUSTER_SUMMARY数据（用于实时数据更新）
+  window.electron.ipcRenderer.on('CLUSTER_SUMMARY', onClusterSummary)
+
+  // 直接启动读取
+  isDataReady.value = false
+  // console.log('[Calibration Debug] 准备启动周期读取')
+  startPeriodicReading()
 }
 
 // 取消密码输入
@@ -646,21 +693,24 @@ const cancelPwd = () => {
 }
 
 onMounted(() => {
+  // console.log('[Calibration Debug] onMounted 开始执行')
+  
+  // 初始化选中的校准类型
+  selectedKBLabel.value = kbOptions.value[0].label
+  console.log('[Calibration Debug] 初始化选中类型:', selectedKBLabel.value)
+  
   // 密码保护检查
-  if (sessionStorage.getItem('calibrationPagePassword') !== 'ok') {
+  const passwordStatus = sessionStorage.getItem('calibrationPagePassword')
+  // console.log('[Calibration Debug] 密码状态:', passwordStatus)
+  
+  if (passwordStatus !== 'ok') {
+    // console.log('[Calibration Debug] 密码验证未通过，显示密码对话框')
     showPasswordDialog.value = true
     return
   }
 
-  // 监听出厂校正参数数据
-  window.electron.ipcRenderer.on('FACTORY_CALIB_PARAM_R', handleFactoryCalibUpdate)
-
-  // 监听CLUSTER_SUMMARY数据（用于实时数据更新）
-  window.electron.ipcRenderer.on('CLUSTER_SUMMARY', onClusterSummary)
-
-  // 直接启动读取
-  isDataReady.value = false
-  startPeriodicReading()
+  // console.log('[Calibration Debug] 密码验证通过，继续执行')
+  initializePage()
 })
 
 // keep-alive 激活时的处理
@@ -689,13 +739,13 @@ onUnmounted(() => {
   <div class="card">
     <!-- 校准类型选择区 -->
     <div class="mb-4">
-      <label for="kb-select" class="form-label">选择校准量：</label>
+      <label for="kb-select" class="form-label">{{ t('analogCalibration.selectLabel') }}</label>
       <Dropdown
         v-model="selectedKBLabel"
         :options="kbOptions"
         optionLabel="label"
         optionValue="label"
-        placeholder="请选择校准类型"
+        :placeholder="t('analogCalibration.placeholder.selectType')"
         inputId="kb-select"
         class="w-100"
         :showClear="false"
@@ -710,34 +760,34 @@ onUnmounted(() => {
         class="p-datatable-sm"
       >
         <!-- 校准量类型列 -->
-        <Column field="type" header="校准量" :style="{ width: '15%' }">
+        <Column field="type" :header="t('analogCalibration.table.col.type')" :style="{ width: '15%' }">
           <template #body="{ data }">
             <span class="font-semibold">{{ data.label }}</span>
           </template>
         </Column>
 
         <!-- 实时显示值列 -->
-        <Column field="current" header="实时显示值" :style="{ width: '12%' }">
+        <Column field="current" :header="t('analogCalibration.table.col.current')" :style="{ width: '12%' }">
           <template #body>
             <span class="font-semibold text-primary">
-              {{ currentIVValue || '-' }}
+              {{ currentIVValue ?? '-' }}
             </span>
           </template>
         </Column>
 
         <!-- 实测值输入列 -->
-        <Column header="点1点2实测值" :style="{ width: '18%' }">
+        <Column :header="t('analogCalibration.table.col.measured')" :style="{ width: '18%' }">
           <template #body>
             <div class="captured-values">
               <!-- 实测值1输入 -->
               <div class="input-item">
-                <label for="calY1">实测值1：</label>
+                <label for="calY1">{{ t('analogCalibration.table.measured1') }}</label>
                 <InputText v-model="calY1" style="width: 7rem" />
               </div>
 
               <!-- 实测值2输入 -->
               <div class="input-item">
-                <label for="calY2">实测值2：</label>
+                <label for="calY2">{{ t('analogCalibration.table.measured2') }}</label>
                 <InputText v-model="calY2" style="width: 7rem" />
               </div>
             </div>
@@ -745,25 +795,25 @@ onUnmounted(() => {
         </Column>
 
         <!-- 捕获值显示列 -->
-        <Column header="点1点2显示值" :style="{ width: '18%' }">
+        <Column :header="t('analogCalibration.table.col.displayed')" :style="{ width: '18%' }">
           <template #body>
             <div class="captured-values">
               <div class="input-item">
-                <label for="storedX1">显示值1</label>
+                <label for="storedX1">{{ t('analogCalibration.table.display1') }}</label>
                 <InputText v-model="storedX1" disabled style="width: 7rem" />
                 <Button
                   @click="captureX1"
                   :disabled="!currentIVValid"
-                  label="捕获"
+                  :label="t('analogCalibration.table.capture')"
                 />
               </div>
               <div class="input-item">
-                <label for="storedX2">显示值2</label>
+                <label for="storedX2">{{ t('analogCalibration.table.display2') }}</label>
                 <InputText v-model="storedX2" disabled style="width: 7rem" />
                 <Button
                   @click="captureX2"
                   :disabled="!currentIVValid"
-                  label="捕获"
+                  :label="t('analogCalibration.table.capture')"
                 />
               </div>
             </div>
@@ -771,13 +821,13 @@ onUnmounted(() => {
         </Column>
 
         <!-- 原始KB值列 -->
-        <Column header="原始KB值" :style="{ width: '15%' }">
+        <Column :header="t('analogCalibration.table.col.original')" :style="{ width: '15%' }">
           <template #body="{ data }">
             <div class="captured-values">
               <div class="input-item">
-                <label for="originalK">K：</label>
+                <label for="originalK">{{ t('analogCalibration.table.k') }}</label>
                 <InputText
-                  :value="isDataReady ? getActualKBValues(data.raw).k : '加载中...'"
+                  :value="isDataReady ? getActualKBValues(data.raw).k : t('analogCalibration.loading')"
                   readonly
                   class="p-inputtext-sm"
                   style="width: 7rem"
@@ -785,9 +835,9 @@ onUnmounted(() => {
                 />
               </div>
               <div class="input-item">
-                <label for="originalB">B：</label>
+                <label for="originalB">{{ t('analogCalibration.table.b') }}</label>
                 <InputText
-                  :value="isDataReady ? getActualKBValues(data.raw).b : '加载中...'"
+                  :value="isDataReady ? getActualKBValues(data.raw).b : t('analogCalibration.loading')"
                   readonly
                   class="p-inputtext-sm"
                   style="width: 7rem"
@@ -799,22 +849,22 @@ onUnmounted(() => {
         </Column>
 
         <!-- 新KB值列 -->
-        <Column header="新KB值" :style="{ width: '18%' }">
+        <Column :header="t('analogCalibration.table.col.new')" :style="{ width: '18%' }">
           <template #body>
             <div style="display: flex; align-items: center">
               <div class="captured-values">
                 <div class="input-item">
-                  <label for="inputK">K：</label>
+                  <label for="inputK">{{ t('analogCalibration.table.k') }}</label>
                   <InputText v-model="inputK" style="width: 7rem" />
                 </div>
                 <div class="input-item">
-                  <label for="inputB">B：</label>
+                  <label for="inputB">{{ t('analogCalibration.table.b') }}</label>
                   <InputText v-model="inputB" style="width: 7rem" />
                 </div>
               </div>
               <Button
                 @click="calculateNewKB"
-                label="计算新值"
+                :label="t('analogCalibration.table.calculateNew')"
                 :disabled="!canCalculate"
                 class="calculate-btn"
               />
@@ -823,7 +873,7 @@ onUnmounted(() => {
         </Column>
 
         <!-- 操作列 -->
-        <Column header="操作" :style="{ width: '10%' }">
+        <Column :header="t('analogCalibration.table.col.actions')" :style="{ width: '10%' }">
           <template #body>
             <Button
               @click="sendCalibration"
@@ -833,7 +883,7 @@ onUnmounted(() => {
               class="p-button-sm"
               :title="!isDataReady ? '等待设备数据加载中...' : ''"
             >
-              下设
+              {{ t('analogCalibration.table.send') }}
             </Button>
           </template>
         </Column>
@@ -845,20 +895,20 @@ onUnmounted(() => {
     v-model:visible="showPasswordDialog"
     :closable="false"
     :modal="true"
-    header="请输入密码"
+    :header="t('analogCalibration.password.title')"
     :style="{ width: '25rem' }"
   >
     <div class="flex flex-column gap-3">
       <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
-      <Button label="确认" @click="checkPwd" style="margin-right: 0.5rem" />
-      <Button label="取消" severity="secondary" @click="cancelPwd" />
-      <div v-if="pwdError" style="color: red; margin-top: 0.5rem">密码错误</div>
+      <Button :label="t('analogCalibration.password.confirm')" @click="checkPwd" style="margin-right: 0.5rem" />
+      <Button :label="t('analogCalibration.password.cancel')" severity="secondary" @click="cancelPwd" />
+      <div v-if="pwdError" style="color: red; margin-top: 0.5rem">{{ t('analogCalibration.password.error') }}</div>
     </div>
   </Dialog>
 
   <!-- 取消提示 -->
   <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
-    <span>已取消操作，未进入校准页面</span>
+    <span>{{ t('analogCalibration.password.cancelTip') }}</span>
   </Dialog>
 </template>
 

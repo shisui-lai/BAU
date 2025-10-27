@@ -26,7 +26,7 @@ const dataReceptionStore = useDataReceptionStore()
 const mqttStore = useMqttStore()
 
 // 版本信息
-const version = 'test-v0.2.1 10.17'
+const version = 'test-v0.2.2 10.21'
 
 
 
@@ -41,7 +41,7 @@ const formattedClusterOptions = computed(() => {
 const formattedBlockOptions = computed(() => {
   return blockStore.availableBlocks.map(option => ({
     ...option,
-    label: t('cluster.block', [option.block])
+    label: `${t('cluster.block')}${option.block}`
   }))
 })
 

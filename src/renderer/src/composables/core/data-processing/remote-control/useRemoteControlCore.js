@@ -1,5 +1,6 @@
 // 通用遥调核心逻辑文件 - 提供遥调的通用功能（同时支持簇/堆两种模式）
 import { ref, computed, markRaw, shallowRef, nextTick, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import { useClusterStore } from '@/stores/device/clusterStore'
@@ -510,6 +511,39 @@ export function parseParameterWriteResponse(mqttMessage, logPrefix, dataTypeName
 export function useRemoteControlCore(remoteControlConfig, toastService, options = {}) {
   // 解构选项配置，保持向后兼容
   const { selectorMode = 'cluster', defaultData = null } = options
+  
+  // 添加翻译功能
+  const { t, te } = useI18n()
+  
+  // 翻译参数分类名称的函数
+  function translateParameterClassName(className, classConfiguration = null) {
+    if (!className) return className
+    
+    // 如果提供了classConfiguration且有nameKey，直接使用nameKey翻译
+    if (classConfiguration && classConfiguration.nameKey) {
+      return t(classConfiguration.nameKey)
+    }
+    
+    // 尝试从各个页面的parameterClasses中查找翻译
+    const possiblePaths = [
+      'clusterConfigParam.parameterClasses',
+      'clusterAlarmThreshold.parameterClasses', 
+      'clusterSOXParam.parameterClasses',
+      'clusterCalibration.parameterClasses',
+      'blockConfigParam.parameterClasses',
+      'blockAlarmThresholdPage.parameterClasses'
+    ]
+    
+    for (const path of possiblePaths) {
+      const fullPath = `${path}.${className}`
+      if (te(fullPath)) {
+        return t(fullPath)
+      }
+    }
+    
+    // 如果找不到翻译，返回原始名称
+    return className
+  }
 
   // ========== 方案一：参数表预分组优化 ==========
   // 在函数初始化时就对参数表进行预分组，避免运行时重复filter操作
@@ -822,10 +856,11 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (needDevice && !ids) {
       toastService.add({
         severity: 'warn',
-        summary: '未检测到设备',
-        detail: '请先选择设备，或配置默认地址',
+        summary: t('toast.remoteControl.noDeviceDetected'),
+        detail: t('toast.remoteControl.selectDeviceFirst'),
         life: 3000
       })
+     
       return
     }
     isCurrentlyReading.value = true // 设置读取状态为true，按钮变为"停止读取"
@@ -901,8 +936,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (!ids) {
       toastService.add({
         severity: 'warn',
-        summary: '请选择设备',
-        detail: '请先选择要读取的设备',
+        summary: t('toast.remoteControl.selectDevice'),
+        detail: t('toast.remoteControl.selectDeviceToRead'),
         life: 3000
       })
       return
@@ -1169,8 +1204,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (!currentSelectedClass.value) {
       toastService.add({
         severity: 'warn',
-        summary: '请选择参数分类',
-        detail: '请先选择要下发的参数分类',
+        summary: t('toast.remoteControl.selectParameterClass'),
+        detail: t('toast.remoteControl.selectParameterClassFirst'),
         life: 3000
       })
       return
@@ -1180,8 +1215,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (isCurrentlyReading.value) {
       toastService.add({ 
         severity: 'warn', 
-        summary: '正在读取中，无法下发', 
-        detail: '请先停止数据读取再进行参数下发',
+        summary: t('toast.remoteControl.readingInProgress'), 
+        detail: t('toast.remoteControl.stopReadingFirst'),
         life: 3000 
       })
       return
@@ -1199,8 +1234,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (needDeviceForWrite && targetKeys.length === 0) {
       toastService.add({
         severity: 'warn',
-        summary: '请选择下发目标',
-        detail: selectorMode === 'cluster' ? '请选择需要下发参数的目标簇' : '请选择需要下发参数的目标堆',
+        summary: t('toast.remoteControl.selectTarget'),
+        detail: selectorMode === 'cluster' ? t('toast.remoteControl.selectTargetCluster') : t('toast.remoteControl.selectTargetBlock'),
         life: 3000
       })
       return
@@ -1213,8 +1248,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       // 显示正在下发状态
       toastService.add({
         severity: 'info',
-        summary: '正在批量下发参数',
-        detail: `${classConfiguration.name} 正在下发到 ${targetKeys.length} 个目标，请等待设备应答...`,
+        summary: t('toast.remoteControl.batchSendingParameters'),
+        detail: t('toast.remoteControl.sendingToTargets', { className: translateParameterClassName(classConfiguration.name, classConfiguration), count: targetKeys.length }),
         life: 3000
       })
       
@@ -1381,12 +1416,18 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
           
           // 立即显示发送失败的错误
           const displayName = selectorMode === 'cluster'
-            ? clusterStore.getClusterDisplayName(deviceKey)
-            : getDisplayNameFunc(deviceKey)
+            ? (() => {
+                const [b, c] = String(deviceKey).split('-').map(n => Number(n))
+                return t('toast.remoteControl.deviceName.cluster', { blockId: b, clusterId: c })
+              })()
+            : (() => {
+                const b = Number(deviceKey)
+                return t('toast.remoteControl.deviceName.block', { blockId: b })
+              })()
           toastService.add({
             severity: 'error',
-            summary: '下设失败',
-            detail: `${displayName}: 下设失败 - ${error.message}`,
+            summary: t('toast.remoteControl.sendFailed'),
+            detail: t('toast.remoteControl.sendFailedDetail', { device: displayName, error: error.message }),
             life: 5000
           })
           
@@ -1411,8 +1452,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       if (failedSends.length > 0 && successfulSends.length === 0) {
         toastService.add({
           severity: 'error',
-          summary: '批量下发失败',
-          detail: `所有 ${targetKeys.length} 个目标的MQTT下设失败`,
+          summary: t('toast.remoteControl.batchSendFailed'),
+          detail: t('toast.remoteControl.allTargetsFailed', { count: targetKeys.length }),
           life: 5000
         })
       }
@@ -1423,7 +1464,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       console.error('[RemoteControlCore] 批量下发失败:', error)
       toastService.add({
         severity: 'error',
-        summary: '批量下发失败',
+        summary: t('toast.remoteControl.batchSendFailed'),
         detail: error.message,
         life: 5000
       })
@@ -1503,15 +1544,15 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (isFirstReadAfterStart) {
       isFirstReadAfterStart = false  // 重置标记，后续读取不再弹窗
       const clusterStore = useClusterStore()
-      // 优化显示：簇模式使用 “堆X/簇Y”，堆模式使用 “堆X”
+      // 优化显示：簇模式使用 "堆X/簇Y"，堆模式使用 "堆X"
       const displayName = selectorMode === 'cluster'
         ? (() => {
             const [b, c] = String(frameKey).split('-').map(n => Number(n))
-            return `堆${b}/簇${c}`
+            return t('toast.remoteControl.deviceName.cluster', { blockId: b, clusterId: c })
           })()
         : (() => {
             const b = Number(frameKey)
-            return `堆${b}`
+            return t('toast.remoteControl.deviceName.block', { blockId: b })
           })()
       // 计算实际参数数量：如果data是数组（分类结构），则统计所有分类中的参数总数
       // 对于出厂校正参数，排除"预留"分类的参数
@@ -1525,8 +1566,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
 
       toastService.add({
         severity: 'success',
-        summary: '开始读取参数',
-        detail: `${displayName}: 已成功读取 ${paramCount} 个参数`,
+        summary: t('toast.remoteControl.startReadingParameters'),
+        detail: t('toast.remoteControl.readSuccessDetail', { device: displayName, count: paramCount }),
         life: 4000
       })
     }
@@ -1553,6 +1594,11 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
         : undefined
     )
     const actualClassName = responseData.className || responseData.dataType || '未知分类'
+    
+    // 尝试从当前配置中查找对应的classConfiguration
+    const classConfiguration = remoteControlConfig.dataSource.parameterClasses?.find(
+      cls => cls.name === actualClassName || cls.nameKey?.includes(actualClassName)
+    )
     const resultType = responseData.result?.success ? 'success' : 'error'
     const resultCode = responseData.result?.code || 'unknown'
 
@@ -1582,8 +1628,14 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     // ================== 原有簇级处理逻辑 ==================
     const clusterStore = useClusterStore()
     const clusterDisplayName = selectorMode === 'cluster'
-      ? clusterStore.getClusterDisplayName(deviceFrameKey)
-      : getDisplayNameFunc(`block${responseData.blockId}`)
+      ? (() => {
+          const [b, c] = String(deviceFrameKey).split('-').map(n => Number(n))
+          return t('toast.remoteControl.deviceName.cluster', { blockId: b, clusterId: c })
+        })()
+      : (() => {
+          const b = Number(responseData.blockId)
+          return t('toast.remoteControl.deviceName.block', { blockId: b })
+        })()
 
     console.log(`[事件处理] 处理写入响应事件: ${eventId}`)
 
@@ -1591,25 +1643,25 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (responseData.result?.success) {
       toastService.add({
         severity: 'success',
-        summary: '参数下发成功',
-        detail: `${clusterDisplayName}: ${actualClassName} 参数已成功写入设备 (应答码: 0xE0)`,
+        summary: t('toast.remoteControl.parameterSendSuccess'),
+        detail: t('toast.remoteControl.parameterWriteSuccess', { device: clusterDisplayName, className: translateParameterClassName(actualClassName, classConfiguration), code: `0x${responseData.result.code.toString(16).toUpperCase()}` }),
         life: 4000
       })
     } else if (responseData.result?.error) {
       const errorCodeMap = {
-        0xE1: '写入失败',       // 通用失败
-        0xE2: '写入超时',       // 设备响应超时
-        0xE3: '设备繁忙',       // 设备正在处理其他请求
-        0xE4: '参数错误',        // 参数格式或数值错误
-        0xE5: '当前模式不可配置',
-        0xE6: '最小并簇数必须小于当前使能簇',
+        0xE1: t('toast.errorCodes.0xE1'),       // 通用失败
+        0xE2: t('toast.errorCodes.0xE2'),       // 设备响应超时
+        0xE3: t('toast.errorCodes.0xE3'),       // 设备正在处理其他请求
+        0xE4: t('toast.errorCodes.0xE4'),        // 参数格式或数值错误
+        0xE5: t('toast.errorCodes.0xE5'),
+        0xE6: t('toast.errorCodes.0xE6'),
       }
       const errorCode = Number(responseData.result.code)
-      const errorDescription = responseData.result.message || ERROR_CODES[errorCode] || '未知错误'
+      const errorDescription = responseData.result.message || ERROR_CODES[errorCode] || t('toast.common.unknownError')
       toastService.add({
         severity: 'error',
-        summary: '参数下发失败',
-        detail: `${clusterDisplayName}: ${errorDescription} (应答码: 0x${errorCode?.toString(16).toUpperCase() || 'Unknown'})`,
+        summary: t('toast.remoteControl.parameterSendFailed'),
+        detail: t('toast.remoteControl.parameterWriteFailed', { device: clusterDisplayName, error: errorDescription, code: errorCode?.toString(16).toUpperCase() || 'Unknown' }),
         life: 6000
       })
     }
@@ -1638,8 +1690,8 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       isFirstErrorAfterStart = false  // 重置标记，后续错误不再弹窗
       toastService.add({
         severity: 'error',
-        summary: '操作失败',
-        detail: `${dataSourceName}: ${errorDescription} (错误代码: 0x${errorCode?.toString(16).toUpperCase() || 'Unknown'})`,
+        summary: t('toast.remoteControl.operationFailed'),
+        detail: t('toast.remoteControl.operationFailedDetail', { source: dataSourceName, error: errorDescription, code: errorCode?.toString(16).toUpperCase() || 'Unknown' }),
         life: 5000
       })
     } else {

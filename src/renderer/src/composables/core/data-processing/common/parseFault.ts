@@ -52,6 +52,143 @@ function calculateGlobalTemp(bmu: number, tempInBmu: number, cfg: any = {}) {
   return tempsPerBmu > 0 ? (bmu - 1) * tempsPerBmu + tempInBmu : null;
 }
 
+/* ---------- FAULT_LEVEL2动态翻译处理函数 ---------- */
+function normalizeFaultLevel2Label(label: string): string {
+  // 处理BMU相关故障标签，保留所有定位信息，只翻译故障类型
+  if (label.startsWith('BMU') && !label.includes('第') && !label.includes('节')) {
+    if (label.includes('插件') && label.includes('过温')) {
+      // 插件过温故障：保留BMU编号和插件编号，只翻译故障类型
+      // BMU1 插件1过温 -> BMU1 Plug1 Overtemperature
+      // BMU5 插件2过温 -> BMU5 Plug2 Overtemperature
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      const plugMatch = label.match(/插件(\d+)/)
+      if (bmuMatch && plugMatch) {
+        return `BMU${bmuMatch[1]} Plug${plugMatch[1]} Overtemperature`
+      }
+    } else if (label.includes('单体电池过压')) {
+      // 单体电池过压：保留BMU编号，翻译故障类型
+      // BMU1 单体电池过压 -> BMU1 Cell Overvoltage
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      if (bmuMatch) {
+        return `BMU${bmuMatch[1]} Cell Overvoltage`
+      }
+    } else if (label.includes('单体电池欠压')) {
+      // 单体电池欠压：保留BMU编号，翻译故障类型
+      // BMU1 单体电池欠压 -> BMU1 Cell Undervoltage
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      if (bmuMatch) {
+        return `BMU${bmuMatch[1]} Cell Undervoltage`
+      }
+    } else if (label.includes('单体SOC过高')) {
+      // 单体SOC过高：保留BMU编号，翻译故障类型
+      // BMU1 单体SOC过高 -> BMU1 High Cell SOC
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      if (bmuMatch) {
+        return `BMU${bmuMatch[1]} High Cell SOC`
+      }
+    } else if (label.includes('单体SOC过低')) {
+      // 单体SOC过低：保留BMU编号，翻译故障类型
+      // BMU1 单体SOC过低 -> BMU1 Low Cell SOC
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      if (bmuMatch) {
+        return `BMU${bmuMatch[1]} Low Cell SOC`
+      }
+    } else if (label.includes('BMU欠压')) {
+      // BMU欠压：保留BMU编号，翻译故障类型
+      // BMU1 BMU欠压 -> BMU1 BMU Undervoltage
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      if (bmuMatch) {
+        return `BMU${bmuMatch[1]} BMU Undervoltage`
+      }
+    } else if (label.includes('BMU过温')) {
+      // BMU过温：保留BMU编号，翻译故障类型
+      // BMU1 BMU过温 -> BMU1 BMU Overtemperature
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      if (bmuMatch) {
+        return `BMU${bmuMatch[1]} BMU Overtemperature`
+      }
+    } else if (label.includes('BMU过压')) {
+      // BMU过压：保留BMU编号，翻译故障类型
+      // BMU4 BMU过压 -> BMU4 BMU Overvoltage
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      if (bmuMatch) {
+        return `BMU${bmuMatch[1]} BMU Overvoltage`
+      }
+    } else if (label.includes('BMU欠温')) {
+      // BMU欠温：保留BMU编号，翻译故障类型
+      // BMU4 BMU欠温 -> BMU4 BMU Undertemperature
+      const bmuMatch = label.match(/^BMU(\d+)/)
+      if (bmuMatch) {
+        return `BMU${bmuMatch[1]} BMU Undertemperature`
+      }
+    }
+  }
+  
+  // 处理非BMU相关的故障（这些故障直接使用翻译文件中的键）
+  if (label === '单体压差过大') {
+    return '单体压差过大'
+  }
+  if (label === '单体温差过大') {
+    return '单体温差过大'
+  }
+  if (label === 'SOC差异过大') {
+    return 'SOC差异过大'
+  }
+  if (label === 'BMU压差') {
+    return 'BMU压差'
+  }
+  if (label === '簇端过压') {
+    return '簇端过压'
+  }
+  if (label === '簇端欠压') {
+    return '簇端欠压'
+  }
+  if (label === '绝缘正对地') {
+    return '绝缘正对地'
+  }
+  if (label === '绝缘负对地') {
+    return '绝缘负对地'
+  }
+  if (label === '充电过流') {
+    return '充电过流'
+  }
+  if (label === '放电过流') {
+    return '放电过流'
+  }
+  if (label === 'RT1过温') {
+    return 'RT1过温'
+  }
+  if (label === 'RT2过温') {
+    return 'RT2过温'
+  }
+  if (label === 'RT3过温') {
+    return 'RT3过温'
+  }
+  if (label === 'RT4过温') {
+    return 'RT4过温'
+  }
+  if (label === 'RT5过温') {
+    return 'RT5过温'
+  }
+  
+  // 处理英文标签的情况
+  if (label === 'BMU Undertemperature') {
+    return 'BMU Undertemperature'
+  }
+  if (label === 'BMU Overtemperature') {
+    return 'BMU Overtemperature'
+  }
+  if (label === 'BMU Overvoltage') {
+    return 'BMU Overvoltage'
+  }
+  if (label === 'BMU Undervoltage') {
+    return 'BMU Undervoltage'
+  }
+  
+  // 其他情况保持原样
+  return label
+}
+
 /* ---------- 掉线信息故障状态判断函数 ---------- */
 function getBrokenwireFaultStatus(label: string, value: boolean, dataType: string): boolean {
   // 非掉线信息类型，使用原有逻辑
@@ -103,9 +240,9 @@ type PerformanceMemory = {
 
 /* ---------- 统一告警等级配置 ---------- */
 const LEVEL_CONFIG = {
-  SEVERE: { txt: '严重', tag: 'severe' },
-  MEDIUM: { txt: '一般', tag: 'medium' },
-  MILD: { txt: '轻微', tag: 'mild' },
+  SEVERE: { txt: 'batteryInfo.faultLevel.critical', tag: 'severe' },  // 使用完整翻译键路径
+  MEDIUM: { txt: 'batteryInfo.faultLevel.general', tag: 'medium' },  // 使用完整翻译键路径
+  MILD: { txt: 'batteryInfo.faultLevel.minor', tag: 'mild' },         // 使用完整翻译键路径
   NONE: { txt: '-', tag: 'none' }
 }
 
@@ -179,6 +316,7 @@ export interface FaultRecord {
   cell     : number | null
   globalCell: number | null  // 全局电芯序号
   globalTemp: number | null  // 全局温度序号
+  dataType : string          // MQTT频道类型，用于确定翻译对象
 }
 
 /* ---------- 非响应式主仓库 ---------- */
@@ -479,6 +617,11 @@ export function parseFault (msg: any) {
             // 其他故障类型保持原有逻辑
             desc = label.replace(/^BMU\d+\s*第\s*\d+\s*节\s*/, '')
           }
+          
+          // 针对FAULT_LEVEL2进行动态翻译处理
+          if (dataType === 'FAULT_LEVEL2') {
+            desc = normalizeFaultLevel2Label(desc)
+          }
 
           // 检查故障是否已存在，保持首次发生时间
           const existingRecord = map.get(label)
@@ -506,7 +649,8 @@ export function parseFault (msg: any) {
               levelTag: faultLevel.tag as FaultLevelTag,
               bmu, afe, cell: cellInBmu,
               globalCell,  // 全局电芯序号
-              globalTemp   // 全局温度序号
+              globalTemp,  // 全局温度序号
+              dataType     // MQTT频道类型
             })
           }
         } else {
@@ -611,6 +755,11 @@ export function parseFault (msg: any) {
           // 其他故障类型保持原有逻辑
           desc = label.replace(/^BMU\d+\s*第\s*\d+\s*节\s*/, '')
         }
+        
+        // 针对FAULT_LEVEL2进行动态翻译处理
+        if (dataType === 'FAULT_LEVEL2') {
+          desc = normalizeFaultLevel2Label(desc)
+        }
 
         //检查故障是否已存在，保持首次发生时间
         const existingRecord = map.get(label)
@@ -641,7 +790,8 @@ export function parseFault (msg: any) {
             levelTag: level.tag as FaultLevelTag,
             bmu, afe, cell: cellInBmu,
             globalCell,  // 全局电芯序号
-            globalTemp   // 全局温度序号
+            globalTemp,  // 全局温度序号
+            dataType     // MQTT频道类型
           })
         }
       }

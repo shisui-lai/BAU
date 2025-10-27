@@ -236,7 +236,7 @@ const handleFaultData = (_e, msg) => {
   // 只处理当前选中堆的数据
   const currentBlockId = selectedBlock.value ? parseInt(selectedBlock.value.replace('block', '')) : null
   if (currentBlockId && msg.blockId && msg.blockId !== currentBlockId) {
-    console.log(`[FaultOverview] 忽略非当前堆的数据: 当前堆${currentBlockId}, 数据堆${msg.blockId}`)
+    // console.log(`[FaultOverview] 忽略非当前堆的数据: 当前堆${currentBlockId}, 数据堆${msg.blockId}`)
     return
   }
   

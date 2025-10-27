@@ -15,6 +15,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useBauAddressDetection } from '@/composables/device/useBauAddressDetection'
+import { useI18n } from 'vue-i18n'
 
 // PrimeVue 组件导入
 import Button from 'primevue/button'
@@ -25,6 +26,7 @@ import InputNumber from 'primevue/inputnumber'
 
 
 // 使用 BAU 地址探测 composable - 提供所有业务逻辑和状态管理
+const { t } = useI18n()
 const {
   // 查询相关 - 独立的查询状态
   ip1Query,
@@ -56,6 +58,21 @@ const {
   // Toast消息函数
   showWarning
 } = useBauAddressDetection()
+
+// 本地化网卡选项（以太网/WLAN 等）
+const localizedInterfaces = computed(() => {
+  const list = networkInterfaces?.value || []
+  return list.map(nic => {
+    const raw = String(nic?.name || '')
+    const lower = raw.toLowerCase()
+    let kindKey = 'unknown'
+    if (/(^|\b)(以太网|ethernet)($|\b)/i.test(raw)) kindKey = 'ethernet'
+    else if (/(^|\b)(wifi|wi-?fi|wlan)($|\b)/i.test(lower)) kindKey = 'wifi'
+    const kindText = t(`bauAddressDetectionPage.networkKinds.${kindKey}`)
+    const displayName = `${kindText} (${nic.address || '-'})`
+    return { ...nic, displayName }
+  })
+})
 
 // ==================== 本地配置数据管理 ====================
 // 这些配置数据用于右侧配置表单，会自动从查询结果中填充
@@ -165,7 +182,7 @@ watch(mqttQuery, () => {
 function applyIp1Config() {
   // 表单验证：检查必填字段
   if (!isIp1ConfigValid.value) {
-    showWarning('请填写完整的IP1配置信息')
+    showWarning(t('bauAddressDetectionPage.messages.fillIp1'))
     return
   }
 
@@ -180,7 +197,7 @@ function applyIp1Config() {
 function applyIp2Config() {
   // 表单验证：检查必填字段
   if (!isIp2ConfigValid.value) {
-    showWarning('请填写完整的IP2配置信息')
+    showWarning(t('bauAddressDetectionPage.messages.fillIp2'))
     return
   }
 
@@ -196,7 +213,7 @@ function applyIp2Config() {
  */
 function modifyIpConfigWithType(configData, deviceType) {
   // 直接调用密码确认对话框，传递设备类型和配置数据
-  showPasswordConfirm(`设置${deviceType}地址`, 'modifyIpConfig', {
+  showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setIpTitle', [deviceType]), 'modifyIpConfig', {
     deviceType,
     configData
   })
@@ -209,7 +226,7 @@ function modifyIpConfigWithType(configData, deviceType) {
 function applyMqttConfig() {
   // 表单验证：检查IP地址和端口范围
   if (!isMqttConfigValid.value) {
-    showWarning('请填写正确的MQTT配置信息')
+    showWarning(t('bauAddressDetectionPage.messages.fillMqtt'))
     return
   }
 
@@ -232,28 +249,28 @@ function applyMqttConfig() {
 
         <!-- BAU设备查询结果总览 -->
         <div class="table-container order-like-card basic-card">
-          <h2 class="table-title">BAU设备查询结果</h2>
+          <h2 class="table-title">{{ t('bauAddressDetectionPage.sections.queryResults') }}</h2>
           <div class="table-content">
 
             <!-- 网卡选择 -->
             <div class="config-section">
               <div class="section-header">
-                <h3 class="section-title">网卡选择</h3>
+                <h3 class="section-title">{{ t('bauAddressDetectionPage.sections.networkInterface') }}</h3>
               </div>
               <div class="network-selector-content">
                 <div class="network-selector-wrapper">
                   <i class="pi pi-wifi network-icon"></i>
                   <Dropdown
                     v-model="selectedInterface"
-                    :options="networkInterfaces"
+                    :options="localizedInterfaces"
                     optionLabel="displayName"
-                    placeholder="选择网络接口 (默认全网广播)"
+                    :placeholder="t('bauAddressDetectionPage.placeholders.selectNetworkInterface')"
                     class="network-dropdown"
                     :loading="isLoadingInterfaces"
                   />
                   <i class="pi pi-refresh refresh-icon"
                      @click="loadNetworkInterfaces"
-                     v-tooltip="'刷新网卡列表'"></i>
+                     v-tooltip="t('bauAddressDetectionPage.tooltips.refreshInterfaces')"></i>
                 </div>
               </div>
             </div>
@@ -261,10 +278,10 @@ function applyMqttConfig() {
             <!-- IP1设备查询 -->
             <div class="config-section">
               <div class="section-header">
-                <h3 class="section-title">IP1设备查询</h3>
+                <h3 class="section-title">{{ t('bauAddressDetectionPage.sections.ip1Query') }}</h3>
                 <div class="header-controls">
                   <Button
-                    label="查询"
+                    :label="t('bauAddressDetectionPage.buttons.query')"
                     :loading="ip1Query.isQuerying"
                     @click="queryIp1Device"
                     size="small"
@@ -275,27 +292,27 @@ function applyMqttConfig() {
               </div>
               <div class="query-info-grid">
                 <div class="info-field">
-                  <label>配置IP:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.ipAddress') }}</label>
                   <div class="info-input">{{ ip1Query.result?.data?.ipAddress || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>子网掩码:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.subnetMask') }}</label>
                   <div class="info-input">{{ ip1Query.result?.data?.subnetMask || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>默认网关:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.gateway') }}</label>
                   <div class="info-input">{{ ip1Query.result?.data?.gateway || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>首选DNS:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.primaryDns') }}</label>
                   <div class="info-input">{{ ip1Query.result?.data?.primaryDns || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>备用DNS:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.secondaryDns') }}</label>
                   <div class="info-input">{{ ip1Query.result?.data?.secondaryDns || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>MAC地址:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.macAddress') }}</label>
                   <div class="info-input">{{ ip1Query.result?.data?.macAddress || '-' }}</div>
                 </div>
               </div>
@@ -304,11 +321,11 @@ function applyMqttConfig() {
             <!-- IP2设备查询 -->
             <div class="config-section">
               <div class="section-header">
-                <h3 class="section-title">IP2设备查询</h3>
+                <h3 class="section-title">{{ t('bauAddressDetectionPage.sections.ip2Query') }}</h3>
                 <div class="header-controls">
 
                   <Button
-                    label="查询"
+                    :label="t('bauAddressDetectionPage.buttons.query')"
                     :loading="ip2Query.isQuerying"
                     @click="queryIp2Device"
                     size="small"
@@ -319,27 +336,27 @@ function applyMqttConfig() {
               </div>
               <div class="query-info-grid">
                 <div class="info-field">
-                  <label>配置IP:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.ipAddress') }}</label>
                   <div class="info-input">{{ ip2Query.result?.data?.ipAddress || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>子网掩码:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.subnetMask') }}</label>
                   <div class="info-input">{{ ip2Query.result?.data?.subnetMask || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>默认网关:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.gateway') }}</label>
                   <div class="info-input">{{ ip2Query.result?.data?.gateway || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>首选DNS:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.primaryDns') }}</label>
                   <div class="info-input">{{ ip2Query.result?.data?.primaryDns || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>备用DNS:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.secondaryDns') }}</label>
                   <div class="info-input">{{ ip2Query.result?.data?.secondaryDns || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>MAC地址:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.macAddress') }}</label>
                   <div class="info-input">{{ ip2Query.result?.data?.macAddress || '-' }}</div>
                 </div>
               </div>
@@ -348,10 +365,10 @@ function applyMqttConfig() {
             <!-- MQTT配置查询 -->
             <div class="config-section">
               <div class="section-header">
-                <h3 class="section-title">MQTT配置查询</h3>
+                <h3 class="section-title">{{ t('bauAddressDetectionPage.sections.mqttQuery') }}</h3>
                 <div class="header-controls">
                   <Button
-                    label="查询"
+                    :label="t('bauAddressDetectionPage.buttons.query')"
                     :loading="mqttQuery.isQuerying"
                     @click="queryMqttConfig"
                     size="small"
@@ -362,15 +379,15 @@ function applyMqttConfig() {
               </div>
               <div class="query-info-grid">
                 <div class="info-field">
-                  <label>MQTT服务器:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.mqttServer') }}</label>
                   <div class="info-input">{{ mqttQuery.result?.data?.serverIp || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>MQTT端口:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.mqttPort') }}</label>
                   <div class="info-input">{{ mqttQuery.result?.data?.port || '-' }}</div>
                 </div>
                 <div class="info-field">
-                  <label>MAC地址:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.macAddress') }}</label>
                   <div class="info-input">{{ mqttQuery.result?.data?.macAddress || '-' }}</div>
                 </div>
               </div>
@@ -383,65 +400,65 @@ function applyMqttConfig() {
       <!-- 右列：配置操作 -->
       <div class="right-col">
         <div class="table-container order-like-card config-card">
-          <h2 class="table-title">设备配置操作</h2>
+          <h2 class="table-title">{{ t('bauAddressDetectionPage.sections.deviceConfigOps') }}</h2>
           <div class="table-content">
 
             <!-- IP网络配置 - 并排布局 -->
             <div class="config-section">
               <div class="section-header">
-                <h3 class="section-title">IP网络配置</h3>
+                <h3 class="section-title">{{ t('bauAddressDetectionPage.sections.ipNetworkConfig') }}</h3>
               </div>
               <div class="ip-config-container">
                 <!-- IP1配置 -->
                 <div class="ip-config-item">
                   <div class="ip-config-header">
-                    <h4 class="ip-config-title">IP1配置</h4>
+                    <h4 class="ip-config-title">{{ t('bauAddressDetectionPage.sections.ip1Config') }}</h4>
                   </div>
                   <div class="form-grid">
                     <div class="form-row">
-                      <label>IP地址:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.ipAddress') }}</label>
                       <InputText
                         v-model="ip1Config.ipAddress"
-                        placeholder="192.168.1.100"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.ip')"
                         class="w-full"
                       />
                     </div>
                     <div class="form-row">
-                      <label>子网掩码:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.subnetMask') }}</label>
                       <InputText
                         v-model="ip1Config.subnetMask"
-                        placeholder="255.255.255.0"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.subnet')"
                         class="w-full"
                       />
                     </div>
                     <div class="form-row">
-                      <label>默认网关:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.gateway') }}</label>
                       <InputText
                         v-model="ip1Config.gateway"
-                        placeholder="192.168.1.1"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.gateway')"
                         class="w-full"
                       />
                     </div>
                     <div class="form-row">
-                      <label>首选DNS:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.primaryDns') }}</label>
                       <InputText
                         v-model="ip1Config.primaryDns"
-                        placeholder="8.8.8.8"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.dns1')"
                         class="w-full"
                       />
                     </div>
                     <div class="form-row">
-                      <label>备用DNS:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.secondaryDns') }}</label>
                       <InputText
                         v-model="ip1Config.secondaryDns"
-                        placeholder="8.8.4.4"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.dns2')"
                         class="w-full"
                       />
                     </div>
                   </div>
                   <div class="button-row">
                     <Button
-                      label="应用IP1配置"
+                      :label="t('bauAddressDetectionPage.buttons.applyIp1Config')"
                       icon="pi pi-check"
                       severity="primary"
                       :disabled="!isIp1ConfigValid"
@@ -454,53 +471,53 @@ function applyMqttConfig() {
                 <!-- IP2配置 -->
                 <div class="ip-config-item">
                   <div class="ip-config-header">
-                    <h4 class="ip-config-title">IP2配置</h4>
+                    <h4 class="ip-config-title">{{ t('bauAddressDetectionPage.sections.ip2Config') }}</h4>
                   </div>
                   <div class="form-grid">
                     <div class="form-row">
-                      <label>IP地址:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.ipAddress') }}</label>
                       <InputText
                         v-model="ip2Config.ipAddress"
-                        placeholder="192.168.2.100"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.ip')"
                         class="w-full"
                       />
                     </div>
                     <div class="form-row">
-                      <label>子网掩码:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.subnetMask') }}</label>
                       <InputText
                         v-model="ip2Config.subnetMask"
-                        placeholder="255.255.255.0"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.subnet')"
                         class="w-full"
                       />
                     </div>
                     <div class="form-row">
-                      <label>默认网关:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.gateway') }}</label>
                       <InputText
                         v-model="ip2Config.gateway"
-                        placeholder="192.168.2.1"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.gateway')"
                         class="w-full"
                       />
                     </div>
                     <div class="form-row">
-                      <label>首选DNS:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.primaryDns') }}</label>
                       <InputText
                         v-model="ip2Config.primaryDns"
-                        placeholder="8.8.8.8"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.dns1')"
                         class="w-full"
                       />
                     </div>
                     <div class="form-row">
-                      <label>备用DNS:</label>
+                      <label>{{ t('bauAddressDetectionPage.labels.secondaryDns') }}</label>
                       <InputText
                         v-model="ip2Config.secondaryDns"
-                        placeholder="8.8.4.4"
+                        :placeholder="t('bauAddressDetectionPage.placeholders.dns2')"
                         class="w-full"
                       />
                     </div>
                   </div>
                   <div class="button-row">
                     <Button
-                      label="应用IP2配置"
+                      :label="t('bauAddressDetectionPage.buttons.applyIp2Config')"
                       icon="pi pi-check"
                       severity="primary"
                       :disabled="!isIp2ConfigValid"
@@ -515,31 +532,31 @@ function applyMqttConfig() {
             <!-- MQTT配置修改 -->
             <div class="config-section">
               <div class="section-header">
-                <h3 class="section-title">MQTT服务器配置</h3>
+                <h3 class="section-title">{{ t('bauAddressDetectionPage.sections.mqttServerConfig') }}</h3>
               </div>
               <div class="form-grid">
                 <div class="form-row">
-                  <label>服务器IP:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.mqttServer') }}</label>
                   <InputText
                     v-model="mqttConfig.serverIp"
-                    placeholder="192.168.11.200"
+                    :placeholder="t('bauAddressDetectionPage.placeholders.mqttIp')"
                     class="w-full"
                   />
                 </div>
                 <div class="form-row">
-                  <label>端口号:</label>
+                  <label>{{ t('bauAddressDetectionPage.labels.mqttPort') }}</label>
                   <InputNumber
                     v-model="mqttConfig.port"
                     :min="1"
                     :max="65535"
-                    placeholder="1883"
+                    :placeholder="t('bauAddressDetectionPage.placeholders.mqttPort')"
                     class="w-full"
                   />
                 </div>
               </div>
               <div class="button-row">
                 <Button
-                  label="应用MQTT配置"
+                  :label="t('bauAddressDetectionPage.buttons.applyMqttConfig')"
                   icon="pi pi-check"
                   severity="primary"
                   :disabled="!isMqttConfigValid"
@@ -551,17 +568,17 @@ function applyMqttConfig() {
 
             <!-- 设备复位操作 -->
             <div class="config-section">
-              <h3 class="section-title">设备复位操作</h3>
+              <h3 class="section-title">{{ t('bauAddressDetectionPage.sections.deviceResetOps') }}</h3>
               <div class="reset-buttons">
                 <Button
-                  label="复位参数"
+                  :label="t('bauAddressDetectionPage.buttons.resetParams')"
                   icon="pi pi-refresh"
                   severity="warning"
                   @click="resetToDefault"
                   class="reset-btn"
                 />
                 <Button
-                  label="重启设备"
+                  :label="t('bauAddressDetectionPage.buttons.rebootDevice')"
                   icon="pi pi-power-off"
                   severity="danger"
                   @click="resetDevice"
@@ -590,28 +607,28 @@ function applyMqttConfig() {
       <div class="password-form">
         <p class="mb-4">{{ passwordDialog.message }}</p>
         <div class="field">
-          <label for="password">请输入密码：</label>
+          <label for="password">{{ t('bauAddressDetectionPage.labels.password') }}</label>
           <Password
             id="password"
             v-model="passwordInput"
             :feedback="false"
             toggle-mask
             class="w-full"
-            placeholder="请输入密码"
+            :placeholder="t('bauAddressDetectionPage.placeholders.password')"
             @keyup.enter="confirmPassword"
           />
         </div>
       </div>
       <template #footer>
         <Button
-          label="取消"
+          :label="t('bauAddressDetectionPage.buttons.cancel')"
           icon="pi pi-times"
           severity="secondary"
           outlined
           @click="cancelPassword"
         />
         <Button
-          label="确认"
+          :label="t('bauAddressDetectionPage.buttons.confirm')"
           icon="pi pi-check"
           @click="confirmPassword"
         />

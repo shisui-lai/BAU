@@ -1,6 +1,7 @@
 <script setup>
 // DI/DO反馈页面：直接监听IO状态消息，无需pinia store
 import { computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import Dropdown from 'primevue/dropdown'
 import MultiSelect from 'primevue/multiselect'
 import DataTable from 'primevue/datatable'
@@ -20,6 +21,40 @@ import { ERROR_CODES } from '../../../../main/table.js'
 
 const { selectedCluster } = useClusterSelect()
 const toast = useToast()
+const { t, te, locale } = useI18n()
+
+// 翻译函数 - 参考didoControl.vue的实现方式
+const translateCommandName = (name) => {
+  return locale.value === 'zh' 
+    ? name 
+    : te(`commandIssue.commands.${name}`) 
+      ? t(`commandIssue.commands.${name}`) 
+      : name
+}
+
+const translateCommandOption = (option) => {
+  return locale.value === 'zh' 
+    ? option 
+    : te(`commandIssue.commandOptions.${option}`) 
+      ? t(`commandIssue.commandOptions.${option}`) 
+      : option
+}
+
+const translateConfirmMessage = (message) => {
+  return locale.value === 'zh' 
+    ? message 
+    : te(`commandIssue.confirmations.${message}`) 
+      ? t(`commandIssue.confirmations.${message}`) 
+      : message
+}
+
+const translateBitFieldName = (name) => {
+  return locale.value === 'zh' 
+    ? name 
+    : te(`commandIssue.commandOptions.${name}`) 
+      ? t(`commandIssue.commandOptions.${name}`) 
+      : name
+}
 
 // 使用遥控命令服务
 const {
@@ -65,10 +100,45 @@ const {
   handleFeedbackQueryResponse
 } = useRemoteCommand()
 
+// 翻译后的控制信息表格数据
+const translatedControlCommandTableData = computed(() => {
+  return controlCommandTableData.value.map(cmd => ({
+    ...cmd,
+    name: translateCommandName(cmd.name),
+    options: cmd.options ? cmd.options.map(option => ({
+      ...option,
+      label: translateCommandOption(option.label)
+    })) : cmd.options
+  }))
+})
+
+// 翻译后的测试模式数据
+const translatedTestModeContactorData = computed(() => {
+  return testModeContactorData.value.map(cmd => ({
+    ...cmd,
+    name: translateCommandName(cmd.name),
+    options: cmd.options ? cmd.options.map(option => ({
+      ...option,
+      label: translateCommandOption(option.label)
+    })) : cmd.options
+  }))
+})
+
+const translatedTestModeOtherData = computed(() => {
+  return testModeOtherData.value.map(cmd => ({
+    ...cmd,
+    name: translateCommandName(cmd.name),
+    options: cmd.options ? cmd.options.map(option => ({
+      ...option,
+      label: translateCommandOption(option.label)
+    })) : cmd.options
+  }))
+})
+
 // 合并测试模式数据
 const testModeAllData = computed(() => [
-  ...testModeContactorData.value,
-  ...testModeOtherData.value
+  ...translatedTestModeContactorData.value,
+  ...translatedTestModeOtherData.value
 ])
 
 /**
@@ -84,9 +154,12 @@ const contactorIndependentRowData = computed(() => {
         rows.push({
           rowId: `${command.id}_${dropdown.name}`,
           commandId: command.id,
-          name: dropdown.name,
+          name: translateCommandOption(dropdown.name),
           stateKey: `${command.id}_${dropdown.name}`,
-          options: dropdown.options,
+          options: dropdown.options ? dropdown.options.map(option => ({
+            ...option,
+            label: translateCommandOption(option.label)
+          })) : dropdown.options,
           bitStart: dropdown.bitStart,
           bitEnd: dropdown.bitEnd
         })
@@ -110,6 +183,11 @@ const hasValidContactorOperations = computed(() => {
 // 页面类型检测 - 设置为cluster类型以显示多选框
 const { addPageTypeMapping } = usePageTypeDetection()
 addPageTypeMapping('/Cluster/Order', 'cluster')
+
+// 生成选中项目标签的计算属性
+const getSelectedItemsLabel = (selectedCount) => {
+  return t('commandIssue.buttons.selectedItems', [selectedCount])
+}
 
 // ========== IO状态相关 ==========
 
@@ -176,22 +254,22 @@ function handleRemoteCommandResponseWithToast(commandType, data, blockId, cluste
   }
 
   // 获取设备显示名称
-  const deviceName = `堆${blockId}/簇${clusterId}`
+  const deviceName = t('toast.remoteControl.deviceName.cluster', { blockId, clusterId })
 
   // 获取命令显示名称
   const commandNameMap = {
-    'contactor_ctrl': '接触器执行策略',
-    'contactor_ctrl_indep': '接触器独立执行',
-    'insulation_detect_ctrl': '绝缘电阻检测',
-    'sys_mode_ctrl': '系统模式控制',
-    'brokenwire_detect_en': '断线检测使能',
-    'hsd_lsd_ctrl_test': '高低边控制',
-    'force_clear_bcu_fault': '强制清除BCU故障',
-    'reset_record_flash': '重置记录Flash',
-    'force_ocv_calib': '强制OCV校准',
-    'weight_calib': '权重校准',
-    'force_soh_calib': '强制SOH校准',
-    'restore_ctrl_param': '参数复位'
+    'contactor_ctrl': t('commandIssue.commands.下设接触器执行策略'),
+    'contactor_ctrl_indep': t('commandIssue.commands.接触器独立执行'),
+    'insulation_detect_ctrl': t('commandIssue.commands.下设绝缘电阻检测指令'),
+    'sys_mode_ctrl': t('commandIssue.commands.设置系统运行模式'),
+    'brokenwire_detect_en': t('commandIssue.commands.掉线检测功能使能'),
+    'hsd_lsd_ctrl_test': t('commandIssue.commands.高边控制'),
+    'force_clear_bcu_fault': t('commandIssue.commands.强制清除BCU故障'),
+    'reset_record_flash': t('commandIssue.commands.重置记录Flash'),
+    'force_ocv_calib': t('commandIssue.commands.强制OCV校准'),
+    'weight_calib': t('commandIssue.commands.权重校准'),
+    'force_soh_calib': t('commandIssue.commands.强制SOH校准'),
+    'restore_ctrl_param': t('commandIssue.commands.参数复位')
   }
 
   const commandName = commandNameMap[commandType] || commandType
@@ -200,8 +278,8 @@ function handleRemoteCommandResponseWithToast(commandType, data, blockId, cluste
   if (data.error) {
     toast.add({
       severity: 'error',
-      summary: '遥控命令执行失败',
-      detail: `${deviceName}: ${commandName} 执行失败 - ${data.message || '未知错误'}`,
+      summary: t('toast.commandIssue.remoteCommandFailed'),
+      detail: `${deviceName}: ${commandName} ${t('toast.commandIssue.executionFailed')} - ${data.message || t('toast.common.unknownError')}`,
       life: 6000
     })
     return
@@ -211,21 +289,21 @@ function handleRemoteCommandResponseWithToast(commandType, data, blockId, cluste
   if (data.code !== undefined) {
     const isSuccess = data.code === 0xE0
 
-    const statusText = ERROR_CODES[data.code] || '未知状态'
+    const statusText = t(`toast.errorCodes.0x${data.code.toString(16).toUpperCase()}`) || t('toast.commandIssue.unknownStatus')
     const errorCodeHex = `0x${data.code.toString(16).toUpperCase()}`
 
     if (isSuccess) {
       toast.add({
         severity: 'success',
-        summary: '遥控命令执行成功',
-        detail: `${deviceName}: ${commandName} 已成功执行 (应答码: ${errorCodeHex})`,
+        summary: t('toast.commandIssue.remoteCommandSuccess'),
+        detail: `${deviceName}: ${commandName} ${t('toast.commandIssue.executionSuccess')} (${t('toast.commandIssue.responseCode')}: ${errorCodeHex})`,
         life: 4000
       })
     } else {
       toast.add({
         severity: 'error',
-        summary: '遥控命令执行失败',
-        detail: `${deviceName}: ${commandName} ${statusText} (应答码: ${errorCodeHex})`,
+        summary: t('toast.commandIssue.remoteCommandFailed'),
+        detail: `${deviceName}: ${commandName} ${statusText} (${t('toast.commandIssue.responseCode')}: ${errorCodeHex})`,
         life: 6000
       })
     }
@@ -274,16 +352,18 @@ const tableRows = computed(() => {
 
     if (matchedRow) {
       // 更新已有行
-      matchedRow.doParam = doItem?.label?.replace('反馈', '') || `DO${i+1}`
+      const doParam = doItem?.label?.replace('反馈', '') || `DO${i+1}`
+      matchedRow.doParam = doParam === '地址自适应' ? t('commandIssue.commandOptions.地址自适应输出') : doParam
       matchedRow.doValue = doItem?.value ?? false
     } else {
       // 创建新行
+      const doParam = doItem?.label?.replace('反馈', '') || `DO${i+1}`
       rows.push({
         id: `sys-do-${i}`,
         type: '系统',
         diParam: '',
         diValue: null,
-        doParam: doItem?.label?.replace('反馈', '') || `DO${i+1}`,
+        doParam: doParam === '地址自适应' ? t('commandIssue.commandOptions.地址自适应输出') : doParam,
         doValue: doItem?.value ?? false
       })
     }
@@ -326,15 +406,19 @@ async function handleCheckboxGroupCommandWithToast(commandId, selectedOptions) {
       if (result.successCount !== undefined) {
         toast.add({
           severity: 'info',
-          summary: '命令已发送',
-          detail: `${result.commandName} 已发送到 ${result.successCount} 个设备${result.failCount > 0 ? `，${result.failCount} 个失败` : ''}`,
+          summary: t('toast.commandIssue.commandSent'),
+          detail: t('toast.commandIssue.sentToCount', { 
+            commandName: translateCommandName(result.commandName), 
+            count: String(result.successCount), 
+            failInfo: result.failCount > 0 ? t('toast.commandIssue.someFailed', { count: String(result.failCount) }) : ''
+          }),
           life: 3000
         })
       }
     } else {
       toast.add({
         severity: result.error === '请至少选择一个控制项' ? 'warn' : 'error',
-        summary: result.error === '请至少选择一个控制项' ? '请选择控制项' : '控制失败',
+        summary: result.error === '请至少选择一个控制项' ? t('toast.commandIssue.selectControlItems') : t('toast.commandIssue.executeFailed'),
         detail: result.error,
         life: result.error === '请至少选择一个控制项' ? 3000 : 5000
       })
@@ -358,15 +442,19 @@ async function handleCommandExecutionWithToast(commandId, value = null) {
       if (result.successCount !== undefined) {
         toast.add({
           severity: 'info',
-          summary: '命令已发送',
-          detail: `${result.commandName} 已发送到 ${result.successCount} 个设备${result.failCount > 0 ? `，${result.failCount} 个失败` : ''}`,
+          summary: t('toast.commandIssue.commandSent'),
+          detail: t('toast.commandIssue.sentToCount', { 
+            commandName: translateCommandName(result.commandName), 
+            count: String(result.successCount), 
+            failInfo: result.failCount > 0 ? t('toast.commandIssue.someFailed', { count: String(result.failCount) }) : ''
+          }),
           life: 3000
         })
       }
     } else {
       toast.add({
         severity: 'error',
-        summary: '命令执行失败',
+        summary: t('toast.commandIssue.executeFailed'),
         detail: result.error,
         life: 5000
       })
@@ -385,15 +473,19 @@ async function handleCheckboxBitFieldControlWithToast(commandId, command) {
       if (result.successCount !== undefined) {
         toast.add({
           severity: 'info',
-          summary: '命令已发送',
-          detail: `${command.name} 已发送到 ${result.successCount} 个设备${result.failCount > 0 ? `，${result.failCount} 个失败` : ''}`,
+          summary: t('toast.commandIssue.commandSent'),
+          detail: t('toast.commandIssue.sentToCount', { 
+            commandName: translateCommandName(command.name), 
+            count: String(result.successCount), 
+            failInfo: result.failCount > 0 ? t('toast.commandIssue.someFailed', { count: String(result.failCount) }) : ''
+          }),
           life: 3000
         })
       }
     } else {
       toast.add({
         severity: result.error === '请至少选择一个控制项' ? 'warn' : 'error',
-        summary: result.error === '请至少选择一个控制项' ? '请选择控制项' : '控制失败',
+        summary: result.error === '请至少选择一个控制项' ? t('toast.commandIssue.selectControlItems') : t('toast.commandIssue.controlFailed'),
         detail: result.error,
         life: result.error === '请至少选择一个控制项' ? 3000 : 5000
       })
@@ -414,8 +506,8 @@ async function handleBatchSend() {
   if (activeRows.length === 0) {
     toast.add({
       severity: 'warn',
-      summary: '无有效操作',
-      detail: '请至少选择一个非"无效"的接触器操作',
+      summary: t('toast.commandIssue.noValidOperation'),
+      detail: t('toast.commandIssue.selectValidContactorOperation'),
       life: 3000
     })
     return
@@ -428,15 +520,15 @@ async function handleBatchSend() {
       if (result && result.success) {
         toast.add({
           severity: 'info',
-          summary: '命令已发送',
-          detail: `${command.name || '接触器独立控制'} 命令已发送`,
+          summary: t('toast.commandIssue.commandSent'),
+          detail: t('toast.commandIssue.commandSentWithName', { commandName: translateCommandName(command.name || t('commandIssue.commands.接触器独立控制')) }),
           life: 3000
         })
       } else {
         toast.add({
           severity: 'error',
-          summary: '命令发送失败',
-          detail: result?.error || '未知错误',
+          summary: t('toast.commandIssue.commandSendFailed'),
+          detail: result?.error || t('toast.commandIssue.unknownError'),
           life: 5000
         })
       }
@@ -444,8 +536,8 @@ async function handleBatchSend() {
       console.error(`批量下发命令失败:`, error)
       toast.add({
         severity: 'error',
-        summary: '命令发送失败',
-        detail: error.message || '未知错误',
+        summary: t('toast.commandIssue.commandSendFailed'),
+        detail: error.message || t('toast.commandIssue.unknownError'),
         life: 5000
       })
     }
@@ -463,15 +555,19 @@ async function executeConfirmedCommandWithToast() {
       if (result.successCount !== undefined) {
         toast.add({
           severity: 'info',
-          summary: '命令已发送',
-          detail: `${result.commandName} 已发送到 ${result.successCount} 个设备${result.failCount > 0 ? `，${result.failCount} 个失败` : ''}`,
+          summary: t('toast.commandIssue.commandSent'),
+          detail: t('toast.commandIssue.sentToCount', { 
+            commandName: translateCommandName(result.commandName), 
+            count: String(result.successCount), 
+            failInfo: result.failCount > 0 ? t('toast.commandIssue.someFailed', { count: String(result.failCount) }) : ''
+          }),
           life: 3000
         })
       }
     } else {
       toast.add({
         severity: 'error',
-        summary: '命令执行失败',
+        summary: t('toast.commandIssue.executeFailed'),
         detail: result.error,
         life: 5000
       })
@@ -522,7 +618,7 @@ onMounted(() => {
   // 确保下拉框默认值初始化
   nextTick(() => {
     // 初始化控制信息表格中的下拉框默认值
-    controlCommandTableData.value.forEach(command => {
+    translatedControlCommandTableData.value.forEach(command => {
       if (command.type === 'dropdown' && command.options && command.options.length > 0) {
         if (selectedValues[command.id] === undefined) {
           selectedValues[command.id] = command.options[0].value
@@ -587,10 +683,10 @@ onUnmounted(() => {
           <!-- 左侧：控制信息表格 -->
           <div class="control-info-area">
             <div class="table-container">
-              <h2 class="table-title">控制信息</h2>
-              <DataTable :value="controlCommandTableData" dataKey="id" showGridlines scrollable class="control-info-table">
+              <h2 class="table-title">{{ t('commandIssue.sections.controlInfo') }}</h2>
+              <DataTable :value="translatedControlCommandTableData" dataKey="id" showGridlines scrollable class="control-info-table">
                 <!-- 命令名称列 -->
-                <Column header="命令名称" style="min-width:300px">
+                <Column :header="t('commandIssue.table.commandName')" style="min-width:300px">
                   <template #body="{ data }">
                     <div class="command-row">
                       <div class="command-name-wrapper">
@@ -598,7 +694,7 @@ onUnmounted(() => {
                         <!-- 执行状态标签 -->
                         <Tag
                           v-if="executingCommands.has(data.id)"
-                          value="执行中"
+                          :value="t('commandIssue.buttons.executing')"
                           severity="info"
                           class="command-status"
                         />
@@ -610,7 +706,7 @@ onUnmounted(() => {
                         :options="data.options"
                         option-label="label"
                         option-value="value"
-                        placeholder="选择操作"
+                        :placeholder="t('commandIssue.buttons.selectOperation')"
                         class="command-dropdown-inline"
                         :disabled="executingCommands.has(data.id)"
                       />
@@ -621,10 +717,10 @@ onUnmounted(() => {
                         :options="data.options"
                         option-label="label"
                         option-value="value"
-                        placeholder="选择控制项"
+                        :placeholder="t('commandIssue.buttons.selectControlItems')"
                         class="command-multiselect-inline"
                         :disabled="executingCommands.has(data.id)"
-                        :selected-items-label="`已选{0}项`"
+                        :selected-items-label="getSelectedItemsLabel(selectedValues[data.id]?.length || 0)"
                         :max-selected-labels="0"
                       />
                     </div>
@@ -632,12 +728,12 @@ onUnmounted(() => {
                 </Column>
 
                 <!-- 操作列 -->
-                <Column header="操作" style="width:80px">
+                <Column :header="t('commandIssue.table.operation')" style="width:80px">
                   <template #body="{ data }">
                     <!-- 下拉选择类型命令 -->
                     <Button
                       v-if="data.type === 'dropdown'"
-                      label="发送"
+                      :label="t('commandIssue.buttons.send')"
                       class="command-send-btn"
                       :disabled="executingCommands.has(data.id) || selectedValues[data.id] == null"
                       :loading="executingCommands.has(data.id)"
@@ -647,7 +743,7 @@ onUnmounted(() => {
                     <!-- 多选框类型命令 -->
                     <Button
                       v-else-if="data.type === 'checkbox_group'"
-                      label="发送"
+                      :label="t('commandIssue.buttons.send')"
                       class="command-send-btn"
                       :disabled="
                         executingCommands.has(data.id) ||
@@ -682,11 +778,11 @@ onUnmounted(() => {
           <!-- 中间：测试模式下DO控制 -->
           <div class="test-mode-area">
             <div class="table-container">
-              <h2 class="table-title">测试模式下DO控制</h2>
+              <h2 class="table-title">{{ t('commandIssue.sections.testModeDO') }}</h2>
 
               <DataTable :value="testModeAllData" dataKey="id" showGridlines scrollable class="test-mode-table">
                 <!-- 命令名称列 -->
-                <Column header="命令名称" style="min-width:300px">
+                <Column :header="t('commandIssue.table.commandName')" style="min-width:300px">
                   <template #body="{ data }">
                     <div class="command-row">
                       <div class="command-name-wrapper">
@@ -694,7 +790,7 @@ onUnmounted(() => {
                         <!-- 执行状态标签 -->
                         <Tag
                           v-if="executingCommands.has(data.id)"
-                          value="执行中"
+                          :value="t('commandIssue.buttons.executing')"
                           severity="info"
                           class="command-status"
                         />
@@ -705,10 +801,10 @@ onUnmounted(() => {
                         :options="data.options"
                         option-label="label"
                         option-value="value"
-                        placeholder="选择控制项"
+                        :placeholder="t('commandIssue.buttons.selectControlItems')"
                         class="command-multiselect-inline"
                         :disabled="executingCommands.has(data.id)"
-                        :selected-items-label="`已选{0}项`"
+                        :selected-items-label="getSelectedItemsLabel(selectedValues[data.id]?.length || 0)"
                         :max-selected-labels="0"
                       />
                     </div>
@@ -716,10 +812,10 @@ onUnmounted(() => {
                 </Column>
 
                 <!-- 操作列 -->
-                <Column header="操作" style="width:80px">
+                <Column :header="t('commandIssue.table.operation')" style="width:80px">
                   <template #body="{ data }">
                     <Button
-                      label="发送"
+                      :label="t('commandIssue.buttons.send')"
                       class="command-send-btn"
                       :disabled="
                         executingCommands.has(data.id) ||
@@ -742,24 +838,24 @@ onUnmounted(() => {
               <!-- 反馈区域 -->
               <div class="feedback-section">
                 <div class="section-header">
-                  <span class="section-title">控制量</span>
-                  <span class="section-title">反馈值</span>
+                  <span class="section-title">{{ t('commandIssue.feedback.controlQuantity') }}</span>
+                  <span class="section-title">{{ t('commandIssue.feedback.feedbackValue') }}</span>
                 </div>
 
                 <!-- 反馈状态显示 -->
                 <div class="feedback-control-row">
-                  <span class="control-label">接触器执行策略结果</span>
-                  <span class="feedback-value">{{ feedbackStatus.contactor_ctrl_result }}</span>
+                  <span class="control-label">{{ t('commandIssue.feedback.contactorResult') }}</span>
+                  <span class="feedback-value">{{ feedbackStatus.contactor_ctrl_result === '-' ? '-' : t(`commandIssue.feedback.values.${feedbackStatus.contactor_ctrl_result}`) }}</span>
                 </div>
 
                 <div class="feedback-control-row">
-                  <span class="control-label">绝缘电阻检测执行结果</span>
-                  <span class="feedback-value">{{ feedbackStatus.insulation_detect_result }}</span>
+                  <span class="control-label">{{ t('commandIssue.feedback.insulationResult') }}</span>
+                  <span class="feedback-value">{{ feedbackStatus.insulation_detect_result === '-' ? '-' : t(`commandIssue.feedback.values.${feedbackStatus.insulation_detect_result}`) }}</span>
                 </div>
 
                 <div class="feedback-control-row">
-                  <span class="control-label">系统运行模式</span>
-                  <span class="feedback-value">{{ feedbackStatus.sys_run_mode }}</span>
+                  <span class="control-label">{{ t('commandIssue.feedback.systemMode') }}</span>
+                  <span class="feedback-value">{{ feedbackStatus.sys_run_mode === '-' ? '-' : t(`commandIssue.feedback.values.${feedbackStatus.sys_run_mode}`) }}</span>
                 </div>
               </div>
             </div>
@@ -768,17 +864,17 @@ onUnmounted(() => {
           <!-- 右侧：下设接触器独立执行表格 -->
           <div class="contactor-control-area">
             <div class="table-container">
-              <h2 class="table-title">下设接触器独立执行</h2>
+              <h2 class="table-title">{{ t('commandIssue.sections.independentContactor') }}</h2>
               <DataTable :value="contactorIndependentRowData" dataKey="rowId" showGridlines scrollable class="contactor-independent-table">
                 <!-- 接触器列 -->
-                <Column header="接触器" style="min-width:200px">
+                <Column :header="t('commandIssue.table.contactor')" style="min-width:200px">
                   <template #body="{ data }">
                     <div class="contactor-name-wrapper">
                       <span class="contactor-name">{{ data.name }}</span>
                       <!-- 执行状态标签 - 只有非"无效"选项才显示 -->
                       <Tag
                         v-if="executingCommands.has(data.commandId) && selectedValues[data.stateKey] != null && selectedValues[data.stateKey] !== 0"
-                        value="执行中"
+                        :value="t('commandIssue.buttons.executing')"
                         severity="info"
                         class="command-status"
                       />
@@ -787,7 +883,7 @@ onUnmounted(() => {
                 </Column>
 
                 <!-- 操作列 -->
-                <Column header="操作" style="min-width:200px">
+                <Column :header="t('commandIssue.table.operation')" style="min-width:200px">
                   <template #body="{ data }">
                     <div class="operation-wrapper">
                       <Dropdown
@@ -795,7 +891,7 @@ onUnmounted(() => {
                         :options="data.options"
                         option-label="label"
                         option-value="value"
-                        placeholder="选择状态"
+                        :placeholder="t('commandIssue.buttons.selectOperation')"
                         class="dropdown-control"
                         :disabled="executingCommands.has(data.commandId)"
                       />
@@ -807,7 +903,7 @@ onUnmounted(() => {
               <!-- 下发按钮 - 放在表格右下方 -->
               <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; padding: 0 0.75rem;">
                 <Button
-                  label="发送"
+                  :label="t('commandIssue.buttons.send')"
                   class="command-send-btn"
                   :disabled="contactorIndependentData.some(cmd => executingCommands.has(cmd.id)) || !hasValidContactorOperations"
                   @click="handleBatchSend"
@@ -822,18 +918,18 @@ onUnmounted(() => {
         <div class="bottom-row">
           <div class="dido-table-area">
             <div class="table-container">
-              <h2 class="table-title">DI/DO反馈</h2>
+              <h2 class="table-title">{{ t('commandIssue.sections.didoFeedback') }}</h2>
               <!-- 单表布局（4列） -->
               <DataTable :value="tableRows" dataKey="id" showGridlines scrollable>
                 <!-- DI参数 列 -->
-                <Column header="DI参数" style="min-width:80px">
+                <Column :header="t('commandIssue.table.diParam')" style="min-width:80px">
                   <template #body="{ data }">
                     <span>{{ data.diParam }}</span>
                   </template>
                 </Column>
 
                 <!-- DI状态 列 -->
-                <Column header="DI状态" style="width:80px">
+                <Column :header="t('commandIssue.table.diStatus')" style="width:80px">
                   <template #body="{ data }">
                     <Tag
                       :value="data.diValue ? '1' : '0'"
@@ -843,14 +939,14 @@ onUnmounted(() => {
                 </Column>
 
                 <!-- DO参数 列 -->
-                <Column header="DO参数" style="min-width:80px">
+                <Column :header="t('commandIssue.table.doParam')" style="min-width:80px">
                   <template #body="{ data }">
                     <span>{{ data.doParam }}</span>
                   </template>
                 </Column>
 
                 <!-- DO状态 列 -->
-                <Column header="DO状态" style="width:80px">
+                <Column :header="t('commandIssue.table.doStatus')" style="width:80px">
                   <template #body="{ data }">
                     <Tag
                       :value="data.doValue ? '1' : '0'"
@@ -867,7 +963,7 @@ onUnmounted(() => {
       <!-- bit位控制弹窗 -->
       <Dialog
         v-model:visible="showBitFieldDialog"
-        :header="currentBitFieldCommand?.name || 'bit位控制'"
+        :header="currentBitFieldCommand?.name || t('commandIssue.dialogs.bitControl')"
         modal
         :style="{ width: '600px' }"
         class="bitfield-dialog"
@@ -878,7 +974,7 @@ onUnmounted(() => {
             :key="field.name"
             class="bitfield-item"
           >
-            <label class="bitfield-label">{{ field.name }}:</label>
+            <label class="bitfield-label">{{ translateBitFieldName(field.name) }}:</label>
             <!-- 如果有options，显示下拉框 -->
             <Dropdown
               v-if="field.options"
@@ -887,7 +983,7 @@ onUnmounted(() => {
               :options="field.options"
               option-label="label"
               option-value="value"
-              placeholder="选择"
+              :placeholder="t('commandIssue.buttons.selectOperation')"
               class="bitfield-dropdown"
             />
             <!-- 如果没有options，显示复选框 -->
@@ -902,9 +998,9 @@ onUnmounted(() => {
         </div>
 
         <template #footer>
-          <Button label="取消" icon="pi pi-times" @click="showBitFieldDialog = false" class="p-button-text" />
+          <Button :label="t('commandIssue.buttons.cancel')" icon="pi pi-times" @click="showBitFieldDialog = false" class="p-button-text" />
           <Button
-            label="发送"
+            :label="t('commandIssue.buttons.send')"
             icon="pi pi-check"
             @click="confirmBitFieldCommand"
             :disabled="!currentBitFieldCommand || !hasBitFieldValue(currentBitFieldCommand.id)"
@@ -915,25 +1011,25 @@ onUnmounted(() => {
       <!-- 确认对话框 -->
       <Dialog
         v-model:visible="showConfirmDialog"
-        header="操作确认"
+        :header="t('commandIssue.dialogs.operationConfirmation')"
         :modal="true"
         :closable="true"
         :style="{ width: '400px' }"
       >
         <div class="confirm-content">
           <i class="pi pi-exclamation-triangle confirm-icon"></i>
-          <span>{{ confirmMessage }}</span>
+          <span>{{ translateConfirmMessage(confirmMessage) }}</span>
         </div>
 
         <template #footer>
           <Button
-            label="取消"
+            :label="t('commandIssue.buttons.cancel')"
             icon="pi pi-times"
             class="p-button-text"
             @click="showConfirmDialog = false"
           />
           <Button
-            label="确认"
+            :label="t('commandIssue.buttons.confirm')"
             icon="pi pi-check"
             class="p-button-danger"
             @click="executeConfirmedCommandWithToast"

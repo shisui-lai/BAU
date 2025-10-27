@@ -1,10 +1,14 @@
 // 升级状态管理Store
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { serializeParameterData } from '../composables/core/data-processing/remote-control/useRemoteControlCore.js'
 import { UPGRADE_PARAM_FIELDS } from '../../../main/table.js'
 
 export const useUpgradeStore = defineStore('upgrade', () => {
+  // 国际化
+  const { t } = useI18n()
+  
   // 状态
   const ftpServerRunning = ref(false)
   const ftpConfig = ref({
@@ -78,7 +82,7 @@ export const useUpgradeStore = defineStore('upgrade', () => {
   
   const startUpgrade = async () => {
     try {
-      setUpgradeStatus('sending', '正在下发升级指令...')
+      setUpgradeStatus('sending', t('toast.deviceUpgrade.sendingUpgradeInstruction'))
 
       // 构建升级参数对象
       const upgradeParamData = buildUpgradeParamData()
@@ -87,7 +91,7 @@ export const useUpgradeStore = defineStore('upgrade', () => {
       const payloadHex = serializeUpgradeParams(upgradeParamData)
 
       if (!payloadHex) {
-        throw new Error('升级参数序列化失败')
+        throw new Error(t('toast.deviceUpgrade.upgradeParameterSerializationFailed'))
       }
 
       // 获取目标设备列表 - 暂时默认为设备1，后续可扩展为用户选择
@@ -108,11 +112,11 @@ export const useUpgradeStore = defineStore('upgrade', () => {
       // 等待所有发送完成
       await Promise.all(sendPromises)
 
-      setUpgradeStatus('sent', '升级指令下发成功，等待设备响应...')
+      setUpgradeStatus('sent', t('toast.deviceUpgrade.upgradeInstructionSentSuccess'))
 
       return {
         success: true,
-        message: `升级指令发送成功，共${targetDevices.length}个设备`
+        message: t('toast.deviceUpgrade.upgradeInstructionSentSuccessWithCount', { count: targetDevices.length })
       }
 
     } catch (error) {
@@ -125,8 +129,8 @@ export const useUpgradeStore = defineStore('upgrade', () => {
   const stopUpgrade = async () => {
     try {
       // 停止升级，直接重置状态以允许重新开始
-      setUpgradeStatus('stopped', '升级已中断')
-      return { success: true, message: '升级已中断' }
+      setUpgradeStatus('stopped', t('toast.deviceUpgrade.upgradeInterrupted'))
+      return { success: true, message: t('toast.deviceUpgrade.upgradeInterrupted') }
     } catch (error) {
       setUpgradeStatus('error', error.message)
       throw error

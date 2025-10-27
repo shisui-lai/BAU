@@ -1,0 +1,1023 @@
+文件分类	中文部分	英文部分	备注
+			注意：此文档根据langEn和langZh生成
+AdpatAddress.js文件			
+	第一堆	Onw_Block	One_Block
+	第二堆	Two_Block	
+	地址自适应	Address adaptive	
+	BCU起始地址	BCU Start address	
+	地址自适应的数量	Number of addresses adaptive	
+	备注:BCU数量同电池簇数	Note: The number of BCU is the same as the number of battery clusters	可以同义替换Rack
+	Bcu地址	Bcu address	BCU address
+	Bmu起始地址	Bmu start address	BMU start address
+	备注:BMU分配数量同BMU个数	Note: The number of BMUs allocated is the same as the number of BMUs	
+	开始	Begin	
+			
+AirConditionPara.js文件			
+	空调信息	Air Conditioning info	
+	小型英维克	Small-ENVICOOL	大型BAU控制  小型BCU控制，可以解析详细一些
+	小型柯诺威	Small-KELVIN	
+	电芯最大温度	CellsMax Temp	
+	电芯最小温度	CellsMin Temp	
+	电芯平均温度	Cells Average Temp	
+	制冷点	Cooling Point	
+	加热点	Heating Point	
+	制冷回差	Cooling Return Difference	
+	加热回差	Heating Return Difference	
+	出水温度	OutWater Temp	Outlet Water Temp
+	回水温度	BackWater Temp	Return Water Temp
+	排气温度	Emission gas Temp	
+	环境温度	Environment Temp	Ambient Temp
+	进水压力	EnterWater Pressure	Inlet Water Pressure
+	出水压力	OutWater Pressure	Outlet Water Pressure
+	水泵当前转速	Water Pump Speed	
+	水泵状态	WaterPump	WaterPump State
+	心跳	Heartbeat	
+	压缩机状态	Compressor	Compressor State
+	当前系统模式	NowSystem	System Mode
+	系统开关机	SystemPower	SystemPower ON/OFF
+	出水高温	OutWaterHighTemp	Outlet Water High Temp
+	出水低温	OutWaterLowTemp	Outlet Water Low Temp
+	出水温感故障	OutWater Temperature Sensor Failure	Outlet Water Temp Sensor Failure
+	回水温感故障	BackWater Temperature Sensor Failure	Outlet Water Temp Sensor Failure
+	变频器通讯故障	Variable-frequency Communication Drive Fault	Variable-frequency Drive Comm Fault
+	系统高压锁定	System High voltage Lock	System High Presure Lock
+	系统低压锁定	System Low voltage Lock	System Low Presure Lock
+	排气温度过高锁定	ExhaustHight	重新翻译--Exhaust Temp too High Lock,温度用缩写
+	变频器过流锁定	Variable-frequency Drive OverCurrent Lock	
+	变频器过温锁定	Variable-frequency Drive OverTemp Lock	
+	变频器过压锁定	Variable-frequency Drive OverVoltage Lock	
+	变频器欠压锁定	Variable-frequency Drive LowVoltage Lock	
+	变频器缺相锁定	Frequency Phase Loss Lock	
+	变频器其他故障锁定	Variable-frequency Drive Other FaultLock	Variable-frequency Drive Other Fault Lock
+	补水告警	HydrationAlarms	
+	系统压力过高告警	High System Voltage Alarms	High System Pressure Alarms
+	出水压力过高告警	High OutWater Voltage Alarms	High Outlet Water Voltage Alarms
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	备注: 0-正常; 1-告警; 255-告警未使能	Note: 0- Normal 1- Alarm 255- Alarm is not enabled	Note: 0- Normal 1- Alarm 255- Alarm disabled
+	模式	Mode	
+	设定温度	SetTemperature	Set Temp
+	进水温度	Inlet Water Temper	Inlet Water Temp
+	出水温度	Outlet Water Temper	Outlet Water Temp
+	环境温度	Temperature	Ambient Temp
+	排气温度	ExhaustTemper	ExhaustTemp
+	进水压力	InletPressure	
+	出水压力	OutletPressure	
+	吸气压力	SuctionPressure	
+	排气压力	ExhaustPressure	
+	水泵转速	WaterPumpSpeed	
+	风机转速	FanSpeed	
+	压缩机转速	CompressorSpeed	
+	心跳	HeartBeat	
+	软件版本	SoftwareVersion	
+	故障等级	Failure_Level	
+	高压压力过高	Over Pressure too high	
+	低压压力过低	Low Pressure too low	
+	水泵故障	WaterPumpFault	
+	PTC过温故障	PTCHigh TempFault	PTC OverTemp Fault
+	风扇故障	FanFault	
+	出水温度传感器故障	Out Water temperature sensor Fault	Outlet Water Temp Sensor Fault
+	进水温度传感器故障	Enter Water temperature sensor Fault	Inlet Water Temp Sensor Fault
+	环境温度传感器故障	Envrion temperature sensor Fault	Ambient Temp Sensor Fault
+	高压压力开关故障	High Press Switch Fault	High Pressure Switch Fault
+	进水压力传感器故障	Enlet Water Press sensor Fault	Inlet Water Pressure Sensor Fault
+	出水压力传感器故障	OutWater Press sensor Fault	Outlet Water Pressure Sensor Fault
+	高压压力传感器故障	High Press sensor Fault	High Pressure Sensor Fault
+	低压压力传感器故障	Low Press sensor Fault	Low Pressure Sensor Fault
+	压缩机通信故障	Compressor Commnicate Fault	Compressor Comm Fault
+	压缩机控制器故障	Compressor Control Fault	
+	BMS通信丢失故障	BMS CommunLose Fault	BMS Comm Lose Fault
+	进水压力过低故障	EnterWater Pressure Low Fault	Inlet Water Pressure Low Fault
+	出水压力过高故障	OutWater Pressure High Fault	Outlet Water Pressure High Fault
+	高压继电器1故障	High Pressure Relay1 Fault	
+	高压继电器2故障	High Pressure Relay2 Fault	
+	ACDC1过压故障	ADC1 High Press Fault	电压：ADC1 OverVoltage Fault
+	ACDC1欠压故障	ADC1 Low Press Fault	ADC1 UnderVoltage Fault
+	ACDC2欠压故障	ADC2 Low Press Fault	ADC2 UnderVoltage Fault
+	ACDC2过压故障	ADC2 High Press Fault	ADC2 OverVoltage  Fault
+	水阀故障	Water Valve Fault	
+	排气温度传感器故障	Venting Temp sensor Fault	 Exhaust Temp Sensor Fault
+	水压差过低故障	Water PressLow Fault	Water Pressure Difference Low Fault
+	水压差过高故障	Water Press Difference High Fault	Water Pressure Difference High Fault
+	水阀通讯故障	Water Valve CommunFault	Water Valve Comm Fault
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	备注: 0-无故障; 1-1级故障(最高) 水冷机整机停机; 2-2级故障 制冷系统停机(压缩机、冷凝风机停止) ; 3-3级故障(最低) 水冷机继续运行;	Note: 0- No fault Level 1-1 fault (highest) The water cooler stops the whole machine Level 2-2 fault The cooling system stops (the compressor and condensate fan stop) Level 3-3 fault (lowest) The water cooler continues to run.	Note: 0- No fault; Level 1-1 fault (highest) The Liquid-cooling Unit shutdown; Level 2-2 fault The cooling system shutdown(the compressor and condensate fan stop); Level 3-3 fault (lowest) The Liquid-cooling Unit continues running.
+	实际值	Actual_value	Actual Value
+	备注	Notes	
+	下发参数	SetPara	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+	上一台	lastCooler	last Cooling Unit
+	下一台	nextCooler	next Cooling Unit
+	空调参数	Air Conditioning parameter	
+	大型柯诺威	Large-KELVIN	
+	大型英维克	Large-Envicool	
+	可设	settable	
+	模式	Mode	
+	待机	standby mode	
+	制冷	Cool	Cooling
+	加热	Hot	Heating
+	自循环	self-loop	Self-Circulation
+	设定温度	SetTemperature	SetTemp
+	进水温度	InletTemper	InletTemp
+	出水温度	OutletTemper	OutletTemp
+	环境温度	EnvironmentTemper	Ambient Temp
+	排气温度	ExhaustTemper1	ExhaustTemp
+	进水压力	InletPressure	
+	出水压力	OutletPressure	
+	吸气压力	SuctionPressure1	SuctionPressure
+	排气压力	ExhaustPressure1	ExhaustPressure
+	水泵转速	WaterPumpSpeed	
+	风机转速	FanSpeed	
+	压缩机转速	CompressorSpeed1	CompressorSpeed
+	心跳	HeartBeat	
+	软件版本	SoftwareVersion	
+	故障等级	ErrorLevel	FaultLevel
+	吸气温度1	SuctionTemper1	SuctionTemp1
+	吸气温度2	SuctionTemper2	SuctionTemp2
+	排气温度2	ExhaustTemper2	ExhaustTemp2
+	吸气压力2	SuctionPressure2	
+	排气压力2	ExhaustPressurer2	ExhaustPressure2
+	压缩机转速2	CompressorSpeed2	
+	运行制冷温度	RunCoolTemperature	Operating Cooling Temp
+	运行制热温度	RunHighTemperature	Operating Heating Temp
+	非运行制冷温度	SuspendCoolTemperature	Non-Operating Cooling Temp
+	非运行制热温度	SuspendHeighTemperature	Non-Operating Heating Temp
+	下发参数	SetPara	
+	读取参数	GetPara	
+	水泵运行状态	Pump operating condition	Pump Operating State
+	1#压缩机运行状态	1#Compressor operating condition	1#Compressor Operating State
+	2#压缩机运行状态	2#Compressor operating condition	2#Compressor Operating State
+	出水温度	OutWaterTemper	Outlet Water Temp
+	回水温度	BackWaterTempr	Return Water Temp
+	出水压力	OutWater pressure	Outlet Water pressure
+	回水压力	return water pressure	Return Water pressure
+	电加热运行状态	Running status of the electric heater	Operation status of the electric heater
+	1#系统故障	1#system failure	1#System Fault
+	1#总告警	1#common alarm	
+	系统缺水告警	System water shortage alarm	
+	1#冷凝压力过高告警	1#The condensate pressure is too high	1#Condensate Pressure High Alarm
+	2#冷凝压力过高告警	2#The condensate pressure is too high	2#Condensate Pressure High Alarm
+	出水压力过高告警	The water pressure is too high alarm	Outlet Water Pressure High Alarm
+	进水压力过低告警	The water inlet pressure is too low alarm	Inlet Water Pressure LowAlarm
+	电源故障告警	Power failure alarm	Power Fault Alarm
+	2#系统故障	2#system failure	2#System Fault 
+	2#总告警	2#common alarm	
+	制冷点	cool point	Cooling point
+	加热点	hot point	Heating point
+	运行时制冷模式制冷点	Runcoolmode_coolpoint	Operating Cooling Mode_Cooling point
+	运行时制热模式制冷点	Runheatmode_coolpoint	Operating Heating Mode_Cooling point
+	非运行时制冷模式制冷点	NoRuncoolmode_coolpoint	Non-Operation Cooling Mode_Cooling point 
+	非运行时制热模式制冷点	NoRunheatmode_coolpoint	Non-Operation Heating Mode_Cooling point 
+	运行时制冷模式制热点	Runcoolmode_hotpoint	Operating Cooling Mode_Heating point
+	运行时制热模式制热点	Runheatmode_hotpoint	Operating Heating Mode_Heating point
+	非运行时制冷模式制热点	NoRuncoolmode_hotpoint	Non-Operation Cooling Mode_Heating point 
+	非运行时制热模式制热点	NoRunheatmode_hotpoint	Non-Operation Heating Mode_Heating point 
+	水泵手动需求使能	waterpump_enflag	Pump manual demand enable
+	运行时控制模式	run_ctrlmode	Operating_CtrlMode
+	出水压力过高设定点	outwaterp_up	Outlet Water High Pressure Set point
+	进水压力过低设定点	inwaterp_dn	Outlet Water Low Pressure Set point
+	水泵转速需求	waterpump_speed	
+	BMS模式控制	bms_ctrlmode	
+	监控下发最大温度	monitor_max_tmp	
+	监控下发最小温度	monitor_min_tmp	
+	监控开关机	monitor_switchs	monitor_ON/OFF
+	启用电加热	heater_start	
+			
+AlarmConfigPage1.js			
+	运行参数1	Operation parameter 1	
+	实际值	Actual_value	
+	实际值	Actual_value	
+	备注	Notes	
+	备注	Notes	
+	簇电压上限值轻微报警值(V)	Cluster voltage upper limit slight alarm value(V)	ClusterVolt Over Voltage Minor alarm Threshold(V)
+	簇电压下限轻微报警值(V)	Cluster voltage lower limit slight alarm value(V)	ClusterVolt Under Voltage Minor alarm Threshold(V)
+	簇电压上限一般报警值(V)	Cluster voltage upper limit general alarm value(V)	ClusterVolt Over Voltage General alarm Threshold(V)
+	簇电压下限一般报警值(V)	Cluster voltage lower limit general alarm value(V)	ClusterVolt  Under Voltage General alarm Threshold(V)
+	簇电压上限严重报警值(V)	Cluster voltage upper limit serious alarm value(V)	ClusterVolt  Over Voltage Critical alarm Threshold(V)
+	簇电压下限严重报警值(V)	Cluster voltage lower limit serious alarm value(V)	ClusterVolt Under Voltage Critical alarm Threshold(V)
+	簇电压上限回差值(V)	Upper return difference of cluster voltage(V)	Return Difference of ClusterVolt Over Voltage(V)
+	簇电压下限回差值(V)	Lower return difference of Cluster voltage(V)	Return Difference of ClusterVolt  Under Voltage(V)
+	电池包电压上限值轻微报警值(V)	Battery pack voltage upper limit slight alarm value(V)	PackVolt Over Voltage Minor alarm Threshold(V)
+	电池包电压下限值轻微报警值(V)	Battery pack voltage lower limit slight alarm value(V)	PackVolt Under Voltage Minor alarm Threshold(V)
+	电池包电压上限值一般报警值(V)	Battery pack voltage upper limit general alarm value(V)	PackVolt Over Voltage General alarm Threshold(V)
+	电池包电压下限值一般报警值(V)	Battery pack voltage lower limit general alarm value(V)	PackVolt  Under Voltage General alarm Threshold(V)
+	电池包电压上限值严重报警值(V)	Battery pack voltage upper limit serious alarm value(V)	PackVolt  Over Voltage Critical alarm Threshold(V)
+	电池包电压下限值严重报警值(V)	Battery pack voltage lower limit serious alarm value(V)	PackVolt Under Voltage Critical alarm Threshold(V)
+	电池包电压上限值回差值(V)	Upper Return difference of battery pack voltage(V)	Return Difference of PackVolt Over Voltage(V)
+	电池包电压下限值回差值(V)	Lower Return difference of battery pack voltage(V)	Return Difference of PackVolt Under Voltage(V)
+	电池包压差上限轻微报警值(V)	Upper limit of battery pack voltage difference slight alarm value(V)	Pack Voltage Difference Minor alarm Threshold(V)
+	单体电池压差上限轻微报警值(V)	Upper limit of battery voltage difference slight alarm value(V)	Cell Voltage Difference Minor alarm Threshold(V)
+	电池包压差上限一般报警值(V)	Upper limit of battery pack voltage difference general alarm value(V)	Pack Voltage Difference General alarm Threshold(V)
+	单体电池压差上限一般报警值(V)	Upper limit of battery voltage difference general alarm value(V)	Cell Voltage Difference General alarm Threshold(V)
+	电池包压差上限严重报警值(V)	Upper limit of battery pack voltage difference serious alarm value(V)	Pack Voltage Difference Critical alarm Threshold(V)
+	单体电池压差上限严重报警值(V)	Upper limit of serious alarm for battery voltage difference(V)	Cell Voltage Difference Critical alarm Threshold(V)
+	电池包压差上限回差值(V)	Upper return difference of battery pack voltage difference(V)	Return Difference of Pack Voltage Difference(V)
+	单体电池压差上限回差值(V)	Upper return difference of battery voltage difference(V)	Return Difference of Cell Voltage Difference(V)
+	单体电池电压上限轻微报警值(V)	Battery voltage Upper limit slight alarm value(V)	CellVolt Over Voltage Minor alarm Threshold(V)
+	单体电池电压下限轻微报警值(V)	Battery voltage lower limit slight alarm value(V)	CellVoltUnder Voltage Minor alarm Threshold(V)
+	单体电池电压上限一般报警值(V)	Battery voltage Upper limit general alarm value(V)	CellVoltOver Voltage General alarm Threshold(V)
+	单体电池电压下限一般报警值(V)	Battery voltage lower limit general alarm value(V)	CellVolt Under Voltage General alarm Threshold(V)
+	单体电池电压上限严重报警值(V)	Battery voltage Upper limit serious alarm value(V)	CellVolt Over Voltage Critical alarm Threshold(V)
+	单体电池电压下限严重报警值(V)	Battery voltage lower limit serious alarm value(V)	CellVolt Under Voltage Critical alarm Threshold(V)
+	单体电池电压上限回差值(V)	Upper return difference of battery voltage(V)	Return Difference of CellVolt Over Voltage(V)
+	单体电池电压下限回差值(V)	Lower return difference of battery voltage(V)	Return Difference of CellVolt Under Voltage(V)
+	供电电压上限报警值(V)	Upper alarm value of the supply voltage(V)	
+	绝缘电阻下限轻微报警值(KΩ)	Lower insulation resistance slight alarm value(KΩ)	Low insulation resistance Minor alarm value(KΩ)
+	供电电压上限回差值(V)	Upper return difference of power supply voltage(V)	
+	绝缘电阻下限一般报警值(KΩ)	Lower insulation resistance general alarm value(KΩ)	Low insulation resistance General alarm value(KΩ)
+	供电电压下限报警值(V)	Lower alarm value of the supply voltage(V)	
+	绝缘电阻下限严重报警值(KΩ)	Lower insulation resistance serious alarm value(KΩ)	Low insulation resistance Critical alarm value(KΩ)
+	供电电压下限回差值(V)	Lower return difference of power supply voltage(V)	
+	绝缘电阻下限回差值(KΩ)	Lower return difference of insulation resistance(KΩ)	 Return Difference of Low insulation resistance(KΩ)
+	下发参数	SetPara	
+	读取参数	ReadPara	GetPara
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	轻微值小于一般值小于严重值！	The slight value is less than the general value that is less than the serious value!	minor value < general value < critical value
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+AlarmConfigPage2.js			
+	运行参数2	Operation parameter 2	
+	充电电流上限轻微报警值(A)	Upper limit of charging current slight alarm value(A)	Charge Overcurrent Minor alarm Threshold(V)
+	放电电流上限轻微报警值(A)	Upper limit of discharge current slight alarm value(A)	DisCharge Overcurrent  Minor alarm Threshold(V)
+	充电电流上限一般报警值(A)	Upper limit of charging current general alarm value(A)	Charge Overcurrent General alarm Threshold(V)
+	放电电流上限一般报警值(A)	Upper limit of discharge current general alarm value(A)	DisCharge Overcurrent General alarm Threshold(V)
+	充电电流上限严重报警值(A)	Upper limit of charging current serious alarm value(A)	Charge Overcurrent Critical alarm Threshold(V)
+	放电电流上限严重报警值(A)	Upper limit of discharge current serious alarm value(A)	DisCharge Overcurrent Critical alarm Threshold(V)
+	充电电流上限回差值(A)	Upper return difference of charging current(A)	Return Difference of Charge Overcurrent(V)
+	放电电流上限回差值(A)	Upper return difference of discharge current(A)	Return Difference of DisCharge Overcurrent(V)
+	单体SOC上限轻微报警值(%)	Upper limit of single SOC Slight alarm value(%)	Cell High SOC Minor alarm Threshold(V)
+	单体SOC下限值轻微报警值(%)	Lower limit of single SOC Slight alarm value(%)	Cell Low SOC  Minor alarm Threshold(V)
+	单体SOC上限值一般报警值(%)	Upper limit of single SOC general alarm value(%)	Cell High SOC General alarm Threshold(V)
+	单体SOC下限值一般报警值(%)	Lower limit of single SOC general alarm value(%)	Cell Low SOCGeneral alarm Threshold(V)
+	单体SOC上限值严重报警值(%)	Upper limit of single SOC serious alarm value(%)	Cell High SOC Critical alarm Threshold(V)
+	单体SOC下限值严重报警值(%)	Lower limit of single SOC serious alarm value(%)	Cell Low SOC Critical alarm Threshold(V)
+	单体SOC上限回差值(%)	Upper return difference of single SOC(%)	Return Difference of Cell High SOC(V)
+	单体SOC下限值回差值(%)	Lower return difference of single SOC(%)	Return Difference of Cell Low SOC(V)
+	单体SOC差异值上限轻微报警值(%)	Upper limit of SOC difference Slight alarm value(%)	Cell SOC Difference Minor alarm Threshold(%)
+	单体温差上限轻微报警值(℃)	Upper limit of temperature difference of single unit slight alarm value(℃)	Cell Temp Difference Minor alarm Threshold(℃)
+	单体SOC差异值上限一般报警值(%)	Upper limit of SOC difference general alarm value(%)	Cell SOC Difference General alarm Threshold(%)
+	单体温差上限一般报警值(℃)	Upper limit of temperature difference of single unit general alarm value(℃)	Cell Temp Difference General alarm Threshold(℃)
+	单体SOC差异值上限严重报警值(%)	Upper limit of SOC difference serious alarm value(%)	Cell SOC Difference Critical alarm Threshold(%)
+	单体温差上限严重报警值(℃)	Upper limit of temperature difference of single unit serious alarm value(℃)	Cell Temp Difference Critical alarm Threshold(℃)
+	单体SOC差异值上限回差值(%)	Upper return difference of SOC difference(%)	Return Difference of Cell SOC Difference(%)
+	单体温差上限回差值(℃)	Upper return difference of temperature difference of single unit(℃)	Return Difference of Cell Temp Difference(℃)
+	充电温度上限轻微报警值(℃)	Upper limit of charging temperature Slight alarm value(℃)	Charge OverTemp Minor alarm Threshold(℃)
+	充电温度下限轻微报警值(℃)	Lower limit of charging temperature Slight alarm value(℃)	Charge UnderTemp Minor alarm Threshold(℃)
+	充电温度上限一般报警值(℃)	Upper limit of charging temperature general alarm value(℃)	Charge OverTemp General alarm Threshold(℃)
+	充电温度下限一般报警值(℃)	Lower limit of charging temperature general alarm value(℃)	Charge UnderTemp General alarm Threshold(℃)
+	充电温度上限严重报警值(℃)	Upper limit of charging temperature serious alarm value(℃)	Charge OverTemp Critical alarm Threshold(℃)
+	充电温度下限严重报警值(℃)	Lower limit of charging temperature serious alarm value(℃)	Charge UnderTemp Critical alarm Threshold(℃)
+	充电温度上限回差值(℃)	Upper return difference of charging temperature(℃)	Return Difference of Charge OverTemp(℃)
+	充电温度下限回差值(℃)	Lower return difference of charging temperature(℃)	Return Difference of Charge UnderTemp(℃)
+	放电温度上限轻微报警值(℃)	Upper limit of discharge temperature Slight alarm value(℃)	Discharge OverTemp Minor alarm Threshold(℃)
+	放电温度下限轻微报警值(℃)	Lower limit of discharge temperature Slight alarm value(℃)	Discharge UnderTemp Minor alarm Threshold(℃)
+	放电温度上限一般报警值(℃)	Upper limit of discharge temperature general alarm value(℃)	Discharge OverTemp General alarm Threshold(℃)
+	放电温度下限一般报警值(℃)	Lower limit of discharge temperature general alarm value(℃)	Discharge UnderTemp General alarm Threshold(℃)
+	放电温度上限严重报警值(℃)	Upper limit of discharge temperature serious alarm value(℃)	Discharge OverTemp Critical alarm Threshold(℃)
+	放电温度下限严重报警值(℃)	Lower limit of discharge temperature serious alarm value(℃)	Discharge UnderTemp Critical alarm Threshold(℃)
+	放电温度上限回差值(℃)	Upper return difference of discharge temperature(℃)	Return Difference of Discharge OverTemp(℃)
+	放电温度下限回差值(℃)	Lower return difference of discharge temperature(℃)	Return Difference of Discharge UnderTemp(℃)
+	实际值	Actual_value	
+	实际值	Actual_value	
+	备注	Notes	
+	备注	Notes	
+	*轻微值小于一般值小于严重值！	The slight value is less than the general value that is less than the serious value!	minor value < general value < critical value
+	下发参数	SetPara	
+	读取参数	ReadPara	GetPara
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+AlarmConfigPage3.js			
+	运行参数3	Operation parameter 3	
+	BCU环境温度上限值轻微报警值(℃)	BCU Ambient temperature Upper limit Slight alarm value(℃)	BCU_High Ambient temp Minor alarm Threshold(℃)
+	BCU环境温度下限轻微报警值(℃)	BCU Ambient temperature Lower limit Slight alarm value(℃)	BCU_Low Ambient temp Minor alarm Threshold(℃)
+	BCU环境温度上限一般报警值(℃)	BCU Ambient temperature Upper limit general alarm value(℃)	BCU_High Ambient temp General alarm Threshold(℃)
+	BCU环境温度下限一般报警值(℃)	BCU Ambient temperature Lower limit general alarm value(℃)	BCU_Low Ambient temp General alarm Threshold(℃)
+	BCU环境温度上限严重报警值(℃)	BCU Ambient temperature Upper limit serious alarm value(℃)	BCU_High Ambient temp Critical alarm Threshold(℃)
+	BCU环境温度下限严重报警值(℃)	BCU Ambient temperature Lower limit serious alarm value(℃)	BCU_Low Ambient temp Critical alarm Threshold(℃)
+	BCU环境温度上限回差值(℃)	Upper return difference of the BCU ambient temperature(℃)	Return Difference of BCU_High Ambient temp(℃)
+	BCU环境温度下限回差值(℃)	Lower return difference of the BCU ambient temperature(℃)	Return Difference of BCU_Low Ambient temp(℃)
+	BMU电路板温度上限值轻微报警值(℃)	BMU circuit board temperature Upper limit Slight alarm value(℃)	BMU-PCB OverTemp Minor alarm Threshold(℃)
+	BMU电路板温度下限值轻微报警值(℃)	BMU circuit board temperature Lower limit Slight alarm value(℃)	BMU-PCB UnderTemp Minor alarm Threshold(℃)
+	BMU电路板温度上限值一般报警值(℃)	BMU circuit board temperature Upper limit general alarm value(℃)	BMU-PCB OverTemp General alarm Threshold(℃)
+	BMU电路板温度下限值一般报警值(℃)	BMU circuit board temperature Lower limit general alarm value(℃)	BMU-PCB UnderTemp General alarm Threshold(℃)
+	BMU电路板温度上限值严重报警值(℃)	BMU circuit board temperature Upper limit serious alarm value(℃)	BMU-PCB OverTemp Critical alarm Threshold(℃)
+	BMU电路板温度下限值严重报警值(℃)	BMU circuit board temperature Lower limit serious alarm value(℃)	BMU-PCB UnderTemp Critical alarm Threshold(℃)
+	BMU电路板温度上限值回差值(℃)	Return difference of the BMU circuit board temperature upper limit(℃)	Return Difference of BMU-PCB OverTemp(℃)
+	BMU电路板温度下限值回差值(℃)	Return difference of the BMU circuit board temperature Lower limit(℃)	Return Difference of BMU-PCB UnderTemp(℃)
+	BMU风扇温度上限轻微报警值(℃)	BMU fan temperature upper limit Slight alarm value(℃)	BMU-Fan OverTemp Minor alarm Threshold(℃)
+	BMU风扇温度上限一般报警值(℃)	BMU fan temperature upper limit general alarm value(℃)	BMU-Fan OverTemp General alarm Threshold(℃)
+	BMU风扇温度上限严重报警值(℃)	BMU fan temperature upper limit serious alarm value(℃)	BMU-Fan OverTemp Critical alarm Threshold(℃)
+	BMU风扇温度上限回差报警值(℃)	Alarm value of the upper return difference of the BMU fan temperature(℃)	Return Difference of BMU-Fan OverTemp(℃)
+	主正接触器温度上限值轻微报警值(℃)	Main positive contactor temperature upper limit Slight alarm value(℃)	Main Positive Contactor OverTemp Minor alarm Threshold(℃)
+	主负接触器温度上限值轻微报警值(℃)	Main negative contactor temperature upper limit Slight alarm value(℃)	Main Negative Contactor OverTemp Minor alarm Threshold(℃)
+	主正接触器温度上限值一般报警值(℃)	Main positive contactor temperature upper limit general alarm value(℃)	Main Positive Contactor OverTemp General alarm Threshold(℃)
+	主负接触器温度上限值一般报警值(℃)	Main negative contactor temperature upper limit general alarm value(℃)	Main Negative Contactor OverTemp General alarm Threshold(℃)
+	主正接触器温度上限值严重报警值(℃)	Main positive contactor temperature upper limit serious alarm value(℃)	Main Positive Contactor OverTemp Critical alarm Threshold(℃)
+	主负接触器温度上限值严重报警值(℃)	Main negative contactor temperature upper limit serious alarm value(℃)	Main Negative Contactor OverTemp Critical alarm Threshold(℃)
+	主正接触器温度上限值回差值(℃)	Main positive contactor temperature upper limit return difference(℃)	Return Difference of Main Positive Contactor OverTemp(℃)
+	主负接触器温度上限值回差值(℃)	Main negative contactor temperature upper limit return difference(℃)	Return Difference of Main Negative Contactor OverTemp(℃)
+	预充接触器温度上限轻微报警值(℃)	Upper limit of temperature of precharged contactor slight alarm value(℃)	Precharge Contactor OverTemp Minor alarm Threshold(℃)
+	Pack接插件温度上限轻微报警值(℃)	Pack connector temperature upper limit slight alarm value(℃)	Pack Connector OverTemp Minor alarm Threshold(℃)
+	预充接触器温度上限一般报警值(℃)	Upper limit of temperature of precharged contactor general alarm value(℃)	Precharge Contactor OverTemp General alarm Threshold(℃)
+	Pack接插件温度上限一般报警值(℃)	Pack connector temperature upper limit general alarm value(℃)	Pack Connector OverTemp General alarm Threshold(℃)
+	预充接触器温度上限严重报警值(℃)	Upper limit of temperature of precharged contactor serious alarm value(℃)	Precharge Contactor OverTemp Critical alarm Threshold(℃)
+	Pack接插件温度上限严重报警值(℃)	Pack connector temperature upper limit serious alarm value(℃)	Pack Connector OverTemp Critical alarm Threshold(℃)
+	预充接触器温度上限回差值(℃)	Upper temperature return difference of precharged contactor(℃)	Return Difference of Precharge Contactor OverTemp(℃)
+	Pack接插件温度上限回差值(℃)	Pack connector temperature upper limit return difference(℃)	Return Difference of Pack Connector OverTemp(℃)
+	实际值	Actual_value	
+	实际值	Actual_value	
+	备注	Notes	
+	备注	Notes	
+	*轻微值小于一般值小于严重值！	The slight value is less than the general value that is less than the serious value!	minor value < general value < critical value
+	下发参数	SetPara	
+	读取参数	ReadPara	GetPara
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+Block.js			
+	堆信息	Stack information	Block information
+	实际值	Actual_value	
+	备注	Notes	
+	实际值	Actual_value	
+	备注	Notes	
+	堆电压(V)	Stack Voltage(V)	Block Voltage(V)
+	堆电流(A)	Stack Current(A)	Block Current(A)
+	堆功率(kW)	Stack Power(kW)	Block Power(kW)
+	堆SOC(%)	Stack SOC(%)	Block SOC(%)
+	堆SOH(%)	Stack SOH(%)	Block SOH(%)
+	堆绝缘电阻(kΩ)	Stack insulation resistance(kΩ)	Block insulation resistance(kΩ)
+	电池堆额定容量(Ah)	Rated capacity of battery stacks(Ah)	Nominal capacity of battery block (Ah)
+	电池系统循环次数	Number of battery system cycles	
+	电池堆当前允许最大充电功率(kW)	Stack Max charge power(kW)	Block Max charge power(kW)
+	电池堆当前允许最大放电功率(kW)	Stack Max discharge power(kW)	Block Max discharge power(kW)
+	电池堆当前允许最大充电电流(A)	Stack Max charge current(A)	Block Max charge current(A)
+	电池堆当前允许最大放电电流(A)	Stack Max discharge current(A)	Block Max discharge current(A)
+	电池堆充电量累加值(Kwh)	Cumulative value of battery stack charge(Kwh)	Cumulative value of battery block charge(Kwh)
+	电池堆放电量累加值(Kwh)	Cumulative value of battery stack discharge(Kwh)	Cumulative value of battery block discharge(Kwh)
+	电池堆的充放电状态	Stack charge or discharge state	Block charge or discharge state
+	设备系统状态	Stack Baustate	Block Baustate
+	电池堆运行状态	Stack Runstate	Block Runstate
+	电池堆禁充禁放状态	Stack Enablestate	Block Enablestate
+	电池堆故障状态	Battery Stack Fault State	Battery Block Fault State
+	系统的心跳	Stack Heartbeat	Block Heartbeat
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+BlockConfigPage1.js			
+	堆运行参数	Stack Running parameter	Block Operation parameter
+	电池簇间压差上限轻度报警值(V)	Upper limit of voltage difference between battery clusters slight alarm value(V)	Voltage Difference between battery clusters Minor alarm Threshold(V)
+	电池簇间环流越限轻度报警值(A)	Cell cluster circulation exceeded the limit slight alarm value(A)	Current Flow between battery clusters Minor alarm Threshold(A)
+	电池簇间压差上限一般报警值(V)	Upper limit of voltage difference between battery clusters general alarm value(V)	Voltage Difference between battery clusters General alarm Threshold(V)
+	电池簇间环流越限一般报警值(A)	Cell cluster circulation exceeded the limit general alarm value(A)	Current Flow between battery clusters General alarm Threshold(A)
+	电池簇间压差上限严重报警值(V)	Upper limit of voltage difference between battery clusters serious alarm value(V)	Voltage Difference between battery clusters Critical alarm Threshold(V)
+	电池簇间环流越限严重报警值(A)	Cell cluster circulation exceeded the limit serious alarm value(A)	Current Flow between battery clusters Critical alarm Threshold(A)
+	电池簇间压差上限回差值(V)	Upper return difference of pressure difference between battery clusters (V)	Return Difference of Voltage Difference between battery clusters(V)
+	电池簇间环流越限回差值(A)	The difference between cell cluster circulation over limit return(A)	Return Difference of Current Flow between battery clusters(A)
+	实际值	Actual_value	
+	实际值	Actual_value	
+	备注	Notes	
+	备注	Notes	
+	*轻微值小于一般值小于严重值！	The slight value is less than the general value that is less than the serious value!	minor value < general value < critical value
+	下发参数	SetPara	
+	读取参数	ReadPara	GetPara
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+Cluster.js			
+	簇信息	Cluster Information	
+	簇电压(V)	Cluster Voltage(V)	
+	充电簇SOP(%)	Cluster FullSOP(%)	Cluster Charge SOP(%)
+	绝缘电阻R+(kΩ)	Insulation resistance R+(kΩ)	
+	簇电流(A)	Cluster Current(A)	
+	放电簇SOP(%)	Cluster PutSOP(%)	Cluster Discharge SOP(%)
+	绝缘电阻R-(kΩ)	Insulation resistance R-(kΩ)	
+	簇SOC(%)	Cluster SOC(%)	
+	主正接触器温度(℃)	Main positive contactor temperature(℃)	Main positive contactor temp(℃)
+	簇允许最大充电功率(kW)	Cluster Max FullPower(kW)	Cluster Max Charge Power(kW)
+	簇SOH(%)	Cluster SOH(%)	
+	主负接触器温度(℃)	Main negative contactor temperature(℃)	Main negative contactor temp(℃)
+	簇允许最大放电功率(kW)	Cluster Max PutPower(kW)	Cluster Max Discharge Power(kW)
+	簇SOE(%)	Cluster SOE(%)	
+	预充电压(V)	Precharge voltage(V)	
+	主正接触器	Main positive contactor state	
+	电压最大值(V)	Max Voltage num(V)	Max Voltage(V)
+	温度最大值(℃)	Max Temperature num(℃)	Max Temp(℃)
+	主负接触器	Main negative contactor State	
+	电压最小值(V)	Min Voltage num(V)	Min Voltage(V)
+	温度最小值(℃)	Min Temperature num(℃)	Min Temp(℃)
+	预充接触器	Prefilled contactor State	Precharge contactor State
+	电压平均值(V)	Average Voltage value(V)	
+	温度平均值(℃)	Average Temperature value(℃)	
+	支路状态	Branch condition	
+	电压极差值(V)	Voltage differential(V)	Voltage Difference value(V)
+	温度极差值(℃)	Temperature differential(℃)	Temp Difference value(℃)
+	充放电状态	Charge and discharge state	
+	簇温度(℃)	Cluster Temper(℃)	Cluster Temp(℃)
+	风扇反馈	Fan Feedback	
+	隔离开关	Insulated Switch State	
+	门禁反馈	Access Control Feedback	
+	电池柜风扇反馈	Battery cabinet fan Feedback	
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+ClusterError.js			
+	簇告警信息	Cluster alarm message	Cluster alarm info
+	簇过压	Cluster Over Vol	
+	充电过流	Charge Over Current	
+	单体过压	Single Over Vol	Cell Over Vol
+	单体过温	Single Over Temp	Cell Over Temp
+	充电过温	Charge Over Temp	
+	放电过温	DisCharge Over Temp	
+	簇欠压	Cluster Under Vol	
+	放电过流	DisCharge Over Current	
+	单体欠压	Single UnderVol	Cell UnderVol
+	单体欠温	Single Under Temp	Cell Under Temp
+	充电欠温	Charge Under Temp	
+	放电欠温	DisCharge Under Temp	
+	SOC过高	High SOC	
+	压差过大	Excessive voltage difference	
+	CT故障	CT Error	CT Fault
+	BCU故障	BCU Error	BCU Fault
+	断路器故障	Circuit breaker fault	Circuit breaker Fault
+	SOC过低	Under Soc	
+	温差过大	Excessive Temp difference	
+	绝缘值过低	insulation value is too low	Low insulation resistance
+	BMU故障	Bmu Error	BMU Fault
+	接触器故障	Contactor fault	Contactor Fault
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+	备注：红-三级告警 橙-二级告警 黄-一级告警 绿-无告警	Note: Red - Third-level alarm Orange - second-level alarm yellow - first-level alarm Green - No alarm	
+			
+ConfigPage1.js			
+	参数配置界面1	Parameter_config1	
+	安装参数一	Install_Para1	
+	实际值	Actual_value	
+	备注	Notes	
+	实际值	Actual_value	
+	备注	Notes	
+	BCU硬件版本号	BCU hardware version	
+	BCU软件版本号	BCU software version	
+	只读	OnlyRead	
+	只读	OnlyRead	
+	只读	OnlyRead	
+	接触器检测压差范围	Contactor detects differential Voltage range	
+	接触器检测延时时间	Contactor detection delay time	
+	BCU_CAN地址	BCU_CAN_ADD	
+	BCU_CAN1波特率	BCU_CAN1_Baud rate	
+	BCU_CAN2波特率	BCU_CAN2_Baud rate	
+	BCU_CAN3波特率	BCU_CAN3_Baud rate	
+	下发参数	SetPara	
+	读取参数	ReadPara	GetPara
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+ConfigPage2.js			
+	参数配置界面2	Parameter configuration page 2	
+	实际值	Actual_value	
+	备注	Notes	
+	实际值	Actual_value	
+	备注	Notes	
+	采集设备总数	BMUNum	SelectDeviceNum
+	簇电池节数	ClusterCellnum	
+	簇温度个数	ClustertemperNum	ClustertempNum
+	包电池节数	PackCellNum	
+	包温度个数	PackTemperNum	PackTempNum
+	采集设备类型	SelectDeviceType	SelectDeviceType
+	电池类型	CellType	
+	L—磷酸铁锂电池	L—LFP battery	
+	N—钛酸锂电池	N—Lithium-titanate battery	
+	T—锰酸锂电池	T—Lithium-manganate battery	
+	S—三元锂电池	S—Ternary lithium battery	
+	电池标称容量	Nominal battery capacity	
+	电池厂家	CellFactory	Manufacturer   
+	宁德时代	CATL	
+	海辰	Heichen	Hithium
+	比亚迪	BYD	
+	投运日期	commissioning time	
+	电流传感器类型	Current sensor type	
+	电流传感器1量程	Current sensor 1 range	
+	电流传感器2量程	Current sensor 2 range	
+	电流传感器3量程	Current sensor 3 range	
+	PACK_AFE数量	Pack_Afe_Num	
+	簇额定功率(kw)	Cluster rating(kw)	Cluster rated power(kw)
+	Pack-afe1电池数量	Pack-afe1BatteryNum	Pack-afe1CellNum
+	Pack-afe1温度数量	Pack-afe1TemperNum	Pack-afe1TempNum
+	Pack-afe2电池数量	Pack-afe2BatteryNum	Pack-afe2CellNum
+	Pack-afe2温度数量	Pack-afe2TemperNum	Pack-afe2TempNum
+	Pack-afe3电池数量	Pack-afe3BatteryNum	Pack-afe3CellNum
+	Pack-afe3温度数量	Pack-afe3TemperNum	Pack-afe3TempNum
+	Pack-afe4电池数量	Pack-afe4BatteryNum	Pack-afe4CellNum
+	Pack-afe4温度数量	Pack-afe4TemperNum	Pack-afe4TempNum
+	Pack-afe5电池数量	Pack-afe5BatteryNum	Pack-afe5CellNum
+	Pack-afe5温度数量	Pack-afe5TemperNum	Pack-afe5TempNum
+	Pack-afe6电池数量	Pack-afe6BatteryNum	Pack-afe6CellNum
+	Pack-afe6温度数量	Pack-afe6TemperNum	Pack-afe6TempNum
+	Pack-afe7电池数量	Pack-afe7BatteryNum	Pack-afe7CellNum
+	Pack-afe7温度数量	Pack-afe7TemperNum	Pack-afe7TempNum
+	Pack-afe8电池数量	Pack-afe8BatteryNum	Pack-afe8CellNum
+	Pack-afe8温度数量	Pack-afe8TemperNum	Pack-afe8TempNum
+	Pack-afe9电池数量	Pack-afe9BatteryNum	Pack-afe9CellNum
+	Pack-afe9温度数量	Pack-afe9TemperNum	Pack-afe9TempNum
+	Pack-afe10电池数量	Pack-afe10BatteryNum	Pack-afe10CellNum
+	Pack-afe10温度数量	Pack-afe10TemperNum	Pack-afe10TempNum
+	Pack-afe11电池数量	Pack-afe11BatteryNum	Pack-afe11CellNum
+	Pack-afe11温度数量	Pack-afe11TemperNum	Pack-afe11TempNum
+	Pack-afe12电池数量	Pack-afe12BatteryNum	Pack-afe12CellNum
+	Pack-afe12温度数量	Pack-afe12TemperNum	Pack-afe12TempNum
+	制冷机类型	CoolType	CoolingType
+	无制冷机	CoolType_No	CoolingType_N/A
+	柯诺威制冷机	CoolType_knv	CoolingType_KELVIN
+	英维克EMW50HFNC1A	CoolType_YWK_EMW50HFNC1A	CoolingType_ENVICOOL_EMW50HFNC1A
+	英维克EMW75HFNC1A	CoolType_YWK_EMW75HFNC1A	CoolingType_ENVICOOL_EMW75HFNC1A
+	下发参数	SetPara	
+	读取参数	ReadPara	GetPara
+	上一簇	LastCluster	
+	下一簇	NextCluster	
+	只读	OnlyRead	
+	只读	OnlyRead	
+	只读	OnlyRead	
+	只读	OnlyRead	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+	内测模式类型	InnerTestType	InternalTestType
+	关闭内测模式	CloseInnerTest	CloseInternalTestMode
+	内测模式1(V、T)	InnerTestType1(V、T)	InternalTestMode1(V、T)
+	内测模式2(IACP)	InnerTestType2(IACP)	InternalTestMode2(IACP)
+	内测模式3(DO)	InnerTestType3(DO)	InternalTestMode3(DO)
+	内测模式4(DISABLE)	InnerTestType4(DISABLE)	InternalTestMode4(DISABLE)
+	有效电芯数量	SOX_CellValidNum	
+	电芯实际容量	SOX_ReadRealCapacity	SOX_ActualCapacity
+	电芯额定容量	SOX_ReadRatedCapacity	SOX_NominalCapacity
+	满电电压值	SOX_FullChgVol	
+	放空电压值	SOX_EmptyDisChgVol	SOX_FullDisChgVol
+	电芯电流上限值	SOX_CurrentUpper1	SOX_CurrentMax
+			
+			
+			
+			
+			
+			
+			
+			
+			
+ConfigPage3.js			
+	参数配置界面3	Parameter configuration page 3	
+	实际值	Actual_value	
+	备注	Notes	
+	实际值	Actual_value	
+	备注	Notes	
+	电流1充电1区间K值	Interval K value of Charge 1 Current 1	
+	电流1充电1区间B值	Interval B value of Charge 1 Current 1	
+	电流1放电1区间K值	Interval K value of DisCharge 1 Current 1	
+	电流1放电1区间B值	Interval B value of DisCharge 1 Current 1	
+	电流1充电2区间K值	Interval K value of Charge 2 Current 1	
+	电流1充电2区间B值	Interval B value of Charge 2 Current 1	
+	电流1放电2区间K值	Interval K value of DisCharge 2 Current 1	
+	电流1放电2区间B值	Interval B value of DisCharge 2 Current 1	
+	簇电压K值	ClusterVol K value	
+	簇电压B值	ClusterVol B value	
+	预充电压K值	Precharge voltage K value	
+	预充电压B值	Precharge voltage B value	
+	均衡模式	Balanced mode	Balance mode
+	均衡开启时间	Balanced start time	Balance start time
+	均衡停止时间	Balanced stop time	Balance stop time
+	均衡启动单体电压上限	BalanceCellVolUpperLimit	
+	均衡启动单体电压下限	BalanceCellVolLowerLimit	
+	均衡启动单体温度上限	BalanceCellTemperUpperLimit	BalanceCellTempUpperLimit
+	均衡启动单体温度下限	BalanceCellTemperLowerLimit	BalanceCellTempLowerLimit
+	下发参数	SetPara	
+	读取参数	ReadPara	GetPara
+	上一簇	LastCluster	lastCluster
+	下一簇	NextCluster	nextCluster
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+	均衡备注:0、1:不允许均衡 ; 2、3允许在开路状态下开启均衡 ; 4、5:放电 ; 6、7: 放电、开路 ;  8、9:充电 ; 10、11:充电、开路 ; 12、13:充电、放电 ; 14、15:充电、放电、开路	Balance Note :0, 1: Disallow balance 2, 3 Enable balance in open state 4, 5: discharge 6, 7: discharge, open 8, 9: charging 10, 11: charge, open 12, 13: charge, discharge 14, 15: charge, discharge, open	Balance Note :0, 1: balance Disable 2, 3 Enable balance in open state 4, 5: discharge 6, 7: discharge, open 8, 9: charging 10, 11: charge, open 12, 13: charge, discharge 14, 15: charge, discharge, open
+			
+ConfigPage5.js			
+	数据存储参数	Data storage parameter	
+	实际值	Actual_value	
+	备注	Notes	
+	实际值	Actual_value	
+	备注	Notes	
+	堆电压(V)	StackVoltage(V)	BlockVoltage(V)
+	堆电流(A)	StackCurrent(A)	BlockCurrent(A)
+	堆SOC(%)	StackSOC(%)	BlockSOC(%)
+	堆SOH(%)	StackSOH(%)	BlockSOH(%)
+	簇电压(V)	ClusterVoltage(V)	
+	簇电流(A)	ClusterCurrent(A)	
+	簇SOC(%)	ClusterSOC(%)	
+	簇SOH(%)	ClusterSOH(%)	
+	簇间压差极差值(V)	Cluster voltage difference range(A)	
+	簇电流差极差值(A)	Cluster current difference range(A)	
+	单体电压极差值(mv)	Cell voltage range(mv)	Cell voltage difference range(mv)
+	单体温度极差值(℃)	Cell Temper range(℃)	Cell Temp range(℃)
+	单体电压(mv)	Cell voltage(mv)	
+	单体温度(℃)	Cell Temper(℃)	Cell Temp(℃)
+	单体SOC(%)	Cell SOC(%)	
+	单体SOH(%)	Cell SOH(%)	
+	数据保存-变存使能	Data save-change enable	
+	是	Yes	
+	否	No	
+	是	Yes	
+	否	No	
+	数据保存使能	Data saving enabled	
+	保存频率(s)	Retention frequency(s)	
+	帧间隔(ms)	FrameInterval(ms)	
+	只读	OnlyRead	
+	设置	Set	
+	读取	Get	
+	SD卡	SD_Card	
+	SD卡挂载	SetSDcard	
+	读取SD卡状态	ReadSDcard	
+			
+default.js			
+	第一堆故障状态	StackFault	BlockFaultState
+	堆硬件故障	Heap hardware Failure	BlockHardWareFault
+	簇间电流差	Cluster Current Diffenrence	
+	簇间压差	Cluster Voltage Diffference 	
+	预充电压偏大	Precharge voltage too high	PreVolLarge
+	系统运行时间	Runtime	
+	第一堆	FirstBlock	
+	第二堆	SecondBlock	
+	第一簇	1	
+	第二簇	2	
+	第三簇	3	
+	第四簇	4	
+	第五簇	5	
+	第六簇	6	
+	第七簇	7	
+	第八簇	8	
+	第九簇	9	
+	第十簇	10	
+	第十一簇	11	
+	第十二簇	12	
+	第十三簇	13	
+	第十四簇	14	
+	第十五簇	15	
+	第十六簇	16	
+	第十七簇	17	
+	第十八簇	18	
+	第十九簇	19	
+	第二十簇	20	
+	第一堆电池簇状态:	Cluster_state:	
+	EMS通讯故障	EMSConnectErr	EMSCommFault
+			
+	第二堆故障状态	StackFault	BlockFaultState
+	堆硬件故障	Heap hardware Failure	BlockHardWareFault
+	簇间电流差	Cluster Current Diffenrence	
+	簇间压差	Cluster Voltage Diffference	
+	第一簇	1	
+	第二簇	2	
+	第三簇	3	
+	第四簇	4	
+	第五簇	5	
+	第六簇	6	
+	第七簇	7	
+	第八簇	8	
+	第九簇	9	
+	第十簇	10	
+	第十一簇	11	
+	第十二簇	12	
+	第十三簇	13	
+	第十四簇	14	
+	第十五簇	15	
+	第十六簇	16	
+	第十七簇	17	
+	第十八簇	18	
+	第十九簇	19	
+	第二十簇	20	
+	第二堆电池簇状态:	Cluster_state:	
+			
+DehumidifierData.js			
+	雾化模块状态	AtomizationModuleStatus	
+	雾化工作状态	AtomizationWorkingStatus	
+	故障回路状态	FaultLoopStatus	
+	控湿回路状态	HumidityControlLoopStatus	
+	控温回路状态	TemperatureControlLoopStatus	
+	控温方式	TemperatureControlMode	
+	风机模块回路状态	FanModuleLoopStatus	
+	除湿模块回路状态	ModuleLoopStatus	DehumModuleLoopStatus
+	湿度传感器状态	HumiditySensorStatus	
+	外部温度传感器状态	ExternalTempSensorStatus	
+	内部温度传感器状态	InternalTempSensorStatus	
+	化霜状态	DefrostStatus	
+	控湿手动开关	HumidityControlManualSwitch	
+	控温手动开关	TempControlManualSwitch	
+	高温告警	HighTempAlert	HighTempAlarm
+	露点温度回路工作状态	DewPointTempCirOperStatus	DewPointTempLoopOperStatus
+	内部温度值	InternalTempValue	
+	环境温度值	AmbientTempValue	
+	环境湿度值	AmbientHumidityValue	
+	内部温度值2	InternalTempValue2	
+	露点温度	DewPointTemp	
+	控温开启值	TempControlOnValue	
+	控温停止值	TempControlOffValue	
+	控湿开启值	HumidityControlOnValue	
+	控湿停止值	HumidityControlOffValue	
+	温度报警上限值	TempAlarmUpperLimit	
+	温度报警下限值	TempAlarmLowerLimit	
+	露点温度启动值	DewPointTempActivationValue	
+	露点温度回差值	DewPointTempHysteresis	
+	预留	Reserved	
+	除湿机参数	Dehumidifier Parameter	
+	除湿机	Dehumidifier	
+	实际值	Actual_value	
+	备注	Notes	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	读取参数	GetPara	
+			
+FacilityManage.js			
+	设备管理	Equipment_control	
+	网口1	Network1	
+	网口2	Network2	
+	掩码	Subnet Mask	
+	掩码	Subnet Mask	
+	网关	GateWay	
+	网关	GateWay	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	读取	Get	
+	读取	Get	
+	读取	Get	
+	读取	Get	
+	读取	Get	
+	Can通讯参数	Can communication parameters	
+	Can类别	Can_Type	
+	Can波特率	Can_Baud Rate	
+	是否使用	YESorNO	
+	是否使用	YESorNO	
+	是	YES	
+	是	YES	
+	否	NO	
+	否	NO	
+	COM通讯参数	COM communication parameters	
+	COM口	COM	
+	波特率	Baud_Rate	
+	停止位	Stop_Bit	
+	校验位	Parity_bit	
+	n-无校验	no-check	
+	o-奇校验	odd-check	
+	e-偶校验	even-check	
+	数据位	Data_bit	
+	运行模式	Run_Mode	Operation_Mode
+	自动	Auto	
+	手动	Manual	
+	获取当前模式	Get_Now Mode	Get Current Mode
+	主从机模式	Masterslave	
+	从机	Master	
+	主机	Slave	
+	获取主从模式	GetMasterslave_mode	
+	远方就地	Far_away	Local_Remote
+	就地	away	本地 Local
+	远方	Far	远方 Remote
+	获取远方就地模式	GetFar_away_mode	GetLocal_Remote_mode
+	风冷液冷	Air/Liquid	
+	风冷	Aircooled	
+	液冷	liquidcooled	
+	获取风冷液冷	GetCoolingAir/Liquid	
+	重启	reboot	
+	CPU占用率：	Cpu_employ:	CPU_Usagerate:
+	内存占用率：	Memory_employ:	Memory_Usagerate:
+	年	year	
+	月	month	
+	日	day	
+	时	hour	
+	分	min	
+	秒	sec	
+	点击校准	Tocalibrate	Calibration
+	备份配置文件	BackupsFile	
+	恢复配置文件	RestoreFile	
+			
+FireFightingData.js			
+	消防信息	FireInformation	
+	报警	Alarm	
+	故障	Error	Fault
+	消音	Mute	
+	自检	Checkself	
+	主电	MainEle	
+	备电	BackupEle	
+	备电欠压	Backup Power Low Vol	
+	自动模式	Auto Mode	
+	手动模式	Manual Mode	
+	手动启动	Manual Start	
+	手动急停	Manual Stop	
+	启动控制	Start Control	
+	延时	Delay	
+	启动喷洒	Start Spray	
+	喷洒	Spray	
+	声光报警状态	SLAlarm State	
+	放气勿入状态	Do not enter while deflating State	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+history.js			
+	历史故障	Historyfault	
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	刷新历史数据	RefreshHistory	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+layout.js			
+	堆信息	StackInfo	BlockInfo
+	簇信息	ClusterInfo	
+	簇端采集信息	ClusterGatherInfo	ClusterInfoCollection
+	簇端故障信息	ClusterErrInfo	ClusterFaultInfo
+	实时运行数据	RunData	
+	实时单体数据	SingleData	CellData
+	实时包数据	PackData	
+	电池安装参数	Cell install parameter	
+	堆配置参数	StackConfigDat	BlockConfigData
+	数据存储配置参数	DataStorage parameter	
+	簇安装参数1	ClusterConfigPage1	
+	簇安装参数2	ClusterConfigPage2	
+	簇安装参数3	ClusterConfigPage3	
+	电池运行参数	CellRunData	
+	簇告警参数1	ClusterAlarmpage1	
+	簇告警参数2	ClusterAlarmpage2	
+	簇告警参数3	ClusterAlarmpage3	
+	堆运行参数	StackRunPage	BlockRunPage
+	动环参数	Moving ring parameter	Dynamical Environment Parameter
+	制冷机状态	Chiller statu	
+	除湿机状态	Dehumidifier statu	
+	消防状态	Fire status	
+	动环状态	Moving-ring state	Dynamical Environment State
+	操作维护	operation maintenance	
+	操作维护页面	operation maintenance page	
+	实时故障信息	RunErrorPage	Real-time Fault Page
+	历史故障信息	HistoryAlarmInfo	HistoryFaultInfo
+	升级功能	Upgrade function	
+	地址自适应功能	AdaptAddress function	
+	设备管理	equipment management	
+			
+OperatorProtect.js			
+	控制策略	Control_Strategy	
+	上一簇	lastCluster	
+	下一簇	nextcluster	
+	全部簇	SingleorAll	AllCluster
+	模式设置	Mode_Set	
+	正常模式	NomalMode	
+	测试模式	TestMode	
+	读取	Get	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	设置	Set	
+	接触器控制	contactor control	
+	设置BCU充电操作	BCURecharge	BCUCharge
+	设置BCU放电操作	BCUDisrecharge	BCUDischarge
+	设置BCU脱离母线	BCUbreak	BCU_Contactor Open
+	设置接触器自检	self-test	
+	主正接触器	Main positive contactor	
+	闭合	close	
+	预充接触器	Precharge contactor	
+	闭合	close	
+	主负接触器	Main negative contactor	
+	闭合	close	
+	风扇	Fan	
+	闭合	close	
+	继电器1	relay1	
+	闭合	close	
+	继电器2	relay2	
+	闭合	close	
+	闭合	close	
+	闭合	close	
+	保留故障	Retained_fault	
+	充电过流严重告警	OverChargeSeriousAlarm	OverChargeCriticalAlarm
+	放电过流严重告警	OverDisChargeSeriousAlarm	OverDisChargeCriticalAlarm
+	绝缘电阻严重告警	InsulationResistanceSeriousAlarm	InsulationResistanceCriticalAlarm
+	接触器黏连(氧化)	Contactor bonding	
+	消除所有	Eliminate all	Clear all
+	确认消除	Confirmation elimination	Confirm elimination
+	参数复位	Parameter reset	
+	复位系统配置参数	Reset system configuration parameters	
+	复位系统故障检测参数	Reset system fault detection parameters	
+	复位SOC参数(默认60)	ResetSoc	
+	复位SOH参数(默认100)	ResetSoh	
+	复位确认	Reset affirm	Reset Confirm
+	绝缘电阻	IR	
+	绝缘电阻检测启动	StartInsuResis	
+	绝缘电阻检测停止	StopInsuResis	
+	绝缘电阻检测状态	IRState	
+	接触器自检状态	contactor_State	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+	复位簇端参数	ResetClusterPara	
+	设置簇显示soc	SetClusterSoc	
+	设置单体最大soc	SetCellMaxSoc	
+	设置单体最小soc	SetCellMinSoc	
+			
+			
+			
+			
+			
+			
+			
+PackData.js			
+	包数据	Pack Message	Pack info
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+ReflectInfo.js			
+	反馈信号	feedback signal	
+	SPD反馈	SPD feedback	
+	Fss释放	Fss Release	
+	Ups状态	UpsState	
+	变压器报警	TransformerAlarm	
+	Fss报警	FssAlarm	
+	Fss故障	FssFault	
+	XC1	XC1	
+	门禁反馈	Access control feedback	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+			
+RunErrorInfo.js			
+	实时故障信息	Real-time fault information	
+	查询当前簇	Query current cluster	Check current cluster
+	备注：当输入为0时显示所有簇	Note: All clusters are displayed if the input is 0	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+SingleData.js			
+	单体数据	Signal Message	Cell info
+	上一簇	lastCluster	
+	下一簇	nextCluster	
+	上一BMU	lastBMU	
+	下一BMU	nextBMU	
+	上一堆	lastBlock	
+	下一堆	nextBlock	
+			
+StackConfigData.js			
+	堆配置参数	StackconfigPara	BlockconfigPara
+	电池堆总数	CellBlockNum	BlockNum
+	堆1总簇数	Cluster1Num	Block1 ClusterNum
+	堆2总簇数	Cluster2Num	Block2 ClusterNum
+	空调(TMS)总数	Air_Machine(TMS)Num	Air_Conditioner(TMS)Num
+	PCS总数	PCSNum	
+	系统热管理类型	Thermal management type	
+	读取	Read	
+	设置堆和簇总数	Set BlockorCluster Num	
+	设置	Set	
+	设置(0:液冷1:风冷)	Settings (0: liquid cooling 1: air cooling)	
+	单堆	one	
+	双堆	two	
+	第一堆	First_Block	
+	第二堆	Second_Block	
+	最小并簇数	Minimum number of clusters	Minimum number of parallel clusters
+	当前切出簇01~10	Now out the cluster 01~10	Current Quit-out cluster 01~10
+	当前切出簇11~20	Now out the cluster 11~20	Current Quit-out cluster 11~20
+	当前可用簇的使能01~10簇:	Enables the currently available cluster01~10:	
+	当前可用簇的使能11~20簇:	Enables the currently available cluster11~20:	
+	备注:最小并簇数 ≤ 使能簇，否则无法闭合接触器！！！	Note: The minimum number of parallel clusters ≤ enable clusters, otherwise the contactor cannot be closed！！！	
+	01~10全部簇	01~10All Cluster	
+	11~20全部簇	11~20All Cluster	
+			
+Update.js			
+	升级功能	Updatafunction	Upgradefunction
+	文件名称	FileName	
+	上传文件	Upload files	
+	PS:两次不能选择同一个文件	PS: The same file cannot be selected twice	
+	BCU广播升级	BroadUpdate	Upgrade All BCU
+	BCU单台升级	Single BCU upgrade	Upgrade One BCU
+	升级开始地址	Upgrade start address	
+	升级台数	Upgrade number	
+	BCU地址	BCU_ADD	
+	BMU地址	BMU_ADD	
+	升级台数	Upgrade number	
+	立即提交	Submit now	
+	开始升级	BeginUpdate	BeginUpgrade
+	获取Web版本号	Get_Webversion	
+	获取BAU版本号	Get_BAUverison	
+	获取版本号	Get_Verison	
+	当前簇数	NowCluster	CurrentCluster
+	全部簇数	AllCluster	
+	第一堆	First_Block	
+	第二堆	Second_Block	

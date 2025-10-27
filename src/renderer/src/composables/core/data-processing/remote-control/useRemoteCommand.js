@@ -3,6 +3,7 @@
  * 包含所有遥控命令相关的业务逻辑和Vue组合式API
  */
 import { ref, reactive, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useClusterStore } from '@/stores/device/clusterStore'
 import { useBlockStore } from '@/stores/device/blockStore'
 import { getCommandConfig, getAllCommands } from '@/configs/commands/cluster/remoteCommandConfig'
@@ -252,9 +253,10 @@ async function executePreConditionCommand(preCondition, selectedClusters) {
  * @param {string} selectorMode - 选择器模式 ('cluster' | 'block')
  * @param {Object} store - 对应的store实例
  * @param {Function} getCommandConfigFunc - 获取命令配置的函数
+ * @param {Function} t - 翻译函数
  * @returns {Function} 执行遥控命令的函数
  */
-function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc) {
+function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t) {
   return async function executeRemoteCommand(commandId, value = null) {
     try {
       const config = getCommandConfigFunc(commandId)
@@ -270,7 +272,7 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc) {
       if (!selectedDevices || selectedDevices.length === 0) {
         return {
           success: false,
-          error: '请先在导航栏选择要下发的目标设备'
+          error: t('toast.commandIssue.selectTargetDevice')
         }
       }
 
@@ -408,17 +410,19 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc) {
  * 处理多选下拉框命令
  * @param {string} commandId - 命令ID
  * @param {Array} selectedOptions - 选中的选项值数组
+ * @param {Function} t - 翻译函数
+ * @param {Function} executeRemoteCommand - 执行遥控命令的函数
  */
-async function handleMultiselectCommand(commandId, selectedOptions) {
+async function handleMultiselectCommand(commandId, selectedOptions, t, executeRemoteCommand) {
   if (!selectedOptions || selectedOptions.length === 0) {
     return {
       success: false,
-      error: '请至少选择一个控制项'
+      error: t('toast.commandIssue.selectAtLeastOne')
     }
   }
 
   const config = getCommandConfig(commandId)
-  if (!config) return { success: false, error: '未找到命令配置' }
+  if (!config) return { success: false, error: t('toast.commandIssue.commandConfigNotFound') }
 
   try {
     // 添加到执行中状态
@@ -435,7 +439,8 @@ async function handleMultiselectCommand(commandId, selectedOptions) {
 
     // 如果需要确认，显示确认对话框
     if (config.confirmRequired) {
-      confirmMessage.value = config.confirmMessage || '确定要执行此操作吗？'
+      // 使用翻译函数翻译确认消息
+      confirmMessage.value = config.confirmMessage ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage) : t('toast.commandIssue.confirmOperation')
       pendingCommand.value = { commandId, value: combinedValue }
       showConfirmDialog.value = true
       return { success: true, showDialog: true }
@@ -461,10 +466,12 @@ async function handleMultiselectCommand(commandId, selectedOptions) {
  * 处理复选框组命令
  * @param {string} commandId - 命令ID
  * @param {Array} selectedOptions - 选中的选项值数组
+ * @param {Function} t - 翻译函数
+ * @param {Function} executeRemoteCommand - 执行遥控命令的函数
  */
-async function handleCheckboxGroupCommand(commandId, selectedOptions) {
+async function handleCheckboxGroupCommand(commandId, selectedOptions, t, executeRemoteCommand) {
   const config = getCommandConfig(commandId)
-  if (!config) return { success: false, error: '未找到命令配置' }
+  if (!config) return { success: false, error: t('toast.commandIssue.commandConfigNotFound') }
 
   // 空选择检查已移至前端模板中处理，这里不再检查
   // 前端会根据命令类型决定是否允许空选择：
@@ -489,7 +496,8 @@ async function handleCheckboxGroupCommand(commandId, selectedOptions) {
 
     // 如果需要确认，显示确认对话框
     if (config.confirmRequired) {
-      confirmMessage.value = config.confirmMessage || '确定要执行此操作吗？'
+      // 使用翻译函数翻译确认消息
+      confirmMessage.value = config.confirmMessage ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage) : t('toast.commandIssue.confirmOperation')
       pendingCommand.value = { commandId, value: combinedValue }
       showConfirmDialog.value = true
       return { success: true, showDialog: true }
@@ -612,10 +620,12 @@ function getBitFieldCombinedValue(commandId, commandConfig) {
  * 处理命令执行（带确认对话框）
  * @param {string} commandId - 命令ID
  * @param {*} value - 命令值
+ * @param {Function} t - 翻译函数
+ * @param {Function} executeRemoteCommand - 执行遥控命令的函数
  */
-async function handleCommandExecution(commandId, value = null) {
+async function handleCommandExecution(commandId, value = null, t, executeRemoteCommand) {
   const config = getCommandConfig(commandId)
-  if (!config) return { success: false, error: '未找到命令配置' }
+  if (!config) return { success: false, error: t('toast.commandIssue.commandConfigNotFound') }
 
   // 如果是bitfield类型，显示bit位控制弹窗
   if (config.type === 'bitfield') {
@@ -625,8 +635,9 @@ async function handleCommandExecution(commandId, value = null) {
   }
 
   // 如果需要确认，显示确认对话框
-  if (config.confirmRequired) {
-    confirmMessage.value = config.confirmMessage || '确定要执行此命令吗？'
+  if (config.needConfirm) {
+    // 使用翻译函数翻译确认消息
+    confirmMessage.value = config.confirmMessage ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage) : t('toast.commandIssue.confirmCommand')
     pendingCommand.value = { commandId, value }
     showConfirmDialog.value = true
     return { success: true, showDialog: true }
@@ -639,8 +650,10 @@ async function handleCommandExecution(commandId, value = null) {
 
 /**
  * 确认bit位控制命令
+ * @param {Function} t - 翻译函数
+ * @param {Function} executeRemoteCommand - 执行遥控命令的函数
  */
-function confirmBitFieldCommand() {
+function confirmBitFieldCommand(t, executeRemoteCommand) {
   if (!currentBitFieldCommand.value) return
 
   const commandId = currentBitFieldCommand.value.id
@@ -649,8 +662,9 @@ function confirmBitFieldCommand() {
   showBitFieldDialog.value = false
 
   // 如果需要确认，显示确认对话框
-  if (currentBitFieldCommand.value.confirmRequired) {
-    confirmMessage.value = currentBitFieldCommand.value.confirmMessage || '确定要执行此命令吗？'
+  if (currentBitFieldCommand.value.needConfirm) {
+    // 使用翻译函数翻译确认消息
+    confirmMessage.value = currentBitFieldCommand.value.confirmMessage ? t(`commandIssue.confirmations.${currentBitFieldCommand.value.confirmMessage}`, currentBitFieldCommand.value.confirmMessage) : t('toast.commandIssue.confirmCommand')
     pendingCommand.value = { commandId, value }
     showConfirmDialog.value = true
   } else {
@@ -660,8 +674,9 @@ function confirmBitFieldCommand() {
 
 /**
  * 确认执行命令
+ * @param {Function} executeRemoteCommand - 执行遥控命令的函数
  */
-async function executeConfirmedCommand() {
+async function executeConfirmedCommand(executeRemoteCommand) {
   if (!pendingCommand.value) return
 
   const { commandId, value } = pendingCommand.value
@@ -676,8 +691,10 @@ async function executeConfirmedCommand() {
  * 处理复选框bit位控制
  * @param {string} commandId - 命令ID
  * @param {Object} commandConfig - 命令配置
+ * @param {Function} t - 翻译函数
+ * @param {Function} executeRemoteCommand - 执行遥控命令的函数
  */
-async function handleCheckboxBitFieldControl(commandId, commandConfig) {
+async function handleCheckboxBitFieldControl(commandId, commandConfig, t, executeRemoteCommand) {
   try {
     let combinedValue = 0
 
@@ -731,12 +748,13 @@ async function handleCheckboxBitFieldControl(commandId, commandConfig) {
         value: combinedValue,
         commandConfig
       }
-      confirmMessage.value = commandConfig.confirmMessage || `确定要执行 ${commandConfig.name} 吗？`
+      // 使用翻译函数翻译确认消息
+      confirmMessage.value = commandConfig.confirmMessage ? t(`commandIssue.confirmations.${commandConfig.confirmMessage}`, commandConfig.confirmMessage) : t('toast.commandIssue.confirmCommandWithName', [commandConfig.name])
       showConfirmDialog.value = true
       
       return {
         success: true,
-        message: '等待用户确认'
+        message: t('toast.commandIssue.waitingForConfirmation')
       }
     }
 
@@ -1159,6 +1177,9 @@ export function useRemoteCommand(options = {}) {
   // 选择模式：cluster | block（默认 cluster，兼容旧页面）
   const selectorMode = options.selectorMode === 'block' ? 'block' : 'cluster'
   
+  // 获取翻译函数
+  const { t } = useI18n()
+  
   // 根据模式选择对应的store和配置函数
   let store, getCommandConfigFunc, getAllCommandsFunc
   if (selectorMode === 'cluster') {
@@ -1172,7 +1193,7 @@ export function useRemoteCommand(options = {}) {
   }
   
   // 创建对应模式的executeRemoteCommand函数
-  const executeRemoteCommand = createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc)
+  const executeRemoteCommand = createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t)
   
   // 创建对应模式的计算属性
   const computedProps = selectorMode === 'cluster' 
@@ -1285,7 +1306,7 @@ export function useRemoteCommand(options = {}) {
   // 创建适配当前模式的命令执行函数
   const adaptedHandleCommandExecution = async (commandId, value = null) => {
     const config = getCommandConfigFunc(commandId)
-    if (!config) return { success: false, error: '未找到命令配置' }
+    if (!config) return { success: false, error: t('toast.commandIssue.commandConfigNotFound') }
 
     // 如果是checkbox_group类型，显示bit位控制弹窗
     if (config.uiType === 'checkbox_group') {
@@ -1297,7 +1318,8 @@ export function useRemoteCommand(options = {}) {
     // 检查是否需要确认（适配不同的属性名）
     const needsConfirm = config.needConfirm || config.confirmRequired
     if (needsConfirm) {
-      confirmMessage.value = config.confirmMessage || '确定要执行此命令吗？'
+      // 使用翻译函数翻译确认消息
+      confirmMessage.value = config.confirmMessage ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage) : t('toast.commandIssue.confirmCommand')
       pendingCommand.value = { commandId, value }
       showConfirmDialog.value = true
       return { success: true, showDialog: true }
@@ -1320,7 +1342,8 @@ export function useRemoteCommand(options = {}) {
     // 检查是否需要确认（适配不同的属性名）
     const needsConfirm = currentBitFieldCommand.value.needConfirm || currentBitFieldCommand.value.confirmRequired
     if (needsConfirm) {
-      confirmMessage.value = currentBitFieldCommand.value.confirmMessage || '确定要执行此命令吗？'
+      // 使用翻译函数翻译确认消息
+      confirmMessage.value = currentBitFieldCommand.value.confirmMessage ? t(`commandIssue.confirmations.${currentBitFieldCommand.value.confirmMessage}`, currentBitFieldCommand.value.confirmMessage) : t('toast.commandIssue.confirmCommand')
       pendingCommand.value = { commandId, value }
       showConfirmDialog.value = true
     } else {
@@ -1364,12 +1387,12 @@ export function useRemoteCommand(options = {}) {
 
     // 方法
     executeRemoteCommand,
-    handleMultiselectCommand,
-    handleCheckboxGroupCommand,
+    handleMultiselectCommand: (commandId, selectedOptions) => handleMultiselectCommand(commandId, selectedOptions, t, executeRemoteCommand),
+    handleCheckboxGroupCommand: (commandId, selectedOptions) => handleCheckboxGroupCommand(commandId, selectedOptions, t, executeRemoteCommand),
     handleCommandExecution: adaptedHandleCommandExecution,
-    confirmBitFieldCommand: adaptedConfirmBitFieldCommand,
+    confirmBitFieldCommand: () => confirmBitFieldCommand(t, executeRemoteCommand),
     executeConfirmedCommand: adaptedExecuteConfirmedCommand,
-    handleCheckboxBitFieldControl,
+    handleCheckboxBitFieldControl: (commandId, commandConfig) => handleCheckboxBitFieldControl(commandId, commandConfig, t, executeRemoteCommand),
     getBitFieldValue,
     setBitFieldValue,
     getBitValue,
@@ -1388,19 +1411,8 @@ export function useRemoteCommand(options = {}) {
   }
 }
 
-// 创建默认的executeRemoteCommand函数（簇模式，向后兼容）
-const defaultExecuteRemoteCommand = createExecuteRemoteCommand(
-  'cluster',
-  useClusterStore(),
-  getCommandConfig
-)
-
-// 为全局函数提供默认的executeRemoteCommand实现
-const executeRemoteCommand = defaultExecuteRemoteCommand
-
 // 导出单独的函数供其他模块使用
 export {
-  defaultExecuteRemoteCommand as executeRemoteCommand,
   startRemoteCommandListeners,
   stopRemoteCommandListeners,
   startFeedbackPolling,

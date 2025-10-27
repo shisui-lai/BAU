@@ -42,10 +42,10 @@ export function createParameterTranslator() {
     if (item.label && typeof item.label === 'string') {
       translatedItem.originalLabel = item.label
     }
-    
-    // 翻译label字段（参数名称）
-    if (item.label && typeof item.label === 'string') {
-      translatedItem.label = translateLabel(item.label, pageType)
+    // 翻译label字段（参数名称）：优先使用 originalLabel 作为键
+    const labelKey = translatedItem.originalLabel || item.label
+    if (labelKey && typeof labelKey === 'string') {
+      translatedItem.label = translateLabel(labelKey, pageType)
     }
     
     // 翻译remarks字段（备注信息）
@@ -68,12 +68,7 @@ export function createParameterTranslator() {
    * @returns {string} 翻译后的标签
    */
   function translateLabel(label, pageType) {
-    // 如果是中文，直接返回
-    if (locale.value === 'zh') {
-      return label
-    }
-    
-    // 尝试翻译
+    // 先尝试翻译（无论当前语言是什么）
     const translationKey = `config.${pageType}.label.${label}`
     if (te(translationKey)) {
       return t(translationKey)
@@ -90,12 +85,7 @@ export function createParameterTranslator() {
    * @returns {string} 翻译后的备注
    */
   function translateRemarks(remarks, pageType) {
-    // 如果是中文，直接返回
-    if (locale.value === 'zh') {
-      return remarks
-    }
-    
-    // 尝试翻译
+    // 先尝试翻译（无论当前语言是什么）
     const translationKey = `config.${pageType}.remarks.${remarks}`
     if (te(translationKey)) {
       return t(translationKey)

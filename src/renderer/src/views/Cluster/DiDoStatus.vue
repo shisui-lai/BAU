@@ -57,11 +57,25 @@ const { groupedDiDoStatus } = useDiDoStatus(temperatureLabels, signalNames)
 
 /**
  * 获取状态样式类
- * @param {number} value - 状态值 (0 或 1)
+ * @param {any} value - 状态值 (0, 1, true, false)
  * @returns {string} CSS类名
  */
 const getStatusClass = (value) => {
-  return value === 1 ? 'status-active' : 'status-inactive'
+  // 统一处理布尔值和数字值
+  const isActive = value === 1 || value === true || value === '1' || value === 'true'
+  return isActive ? 'status-active' : 'status-inactive'
+}
+
+/**
+ * 格式化状态值显示
+ * @param {any} value - 原始状态值
+ * @returns {string} 格式化后的显示值
+ */
+const formatStatusValue = (value) => {
+  // 统一将true/false转换为1/0显示
+  if (value === true || value === 'true') return '1'
+  if (value === false || value === 'false') return '0'
+  return String(value)
 }
 
 /**
@@ -123,7 +137,7 @@ const hasData = computed(() => {
             <Column field="value" :header="t('didoStatus.statusValue')" sortable>
               <template #body="{ data }">
                 <span v-if="category === 'rtData'">{{ data.value }}</span>
-                <span v-else :class="getStatusClass(data.value)" class="status-badge">{{ data.value }}</span>
+                <span v-else :class="getStatusClass(data.value)" class="status-badge">{{ formatStatusValue(data.value) }}</span>
               </template>
             </Column>
 
@@ -209,11 +223,13 @@ const hasData = computed(() => {
 .status-active {
   background-color: #10b981;
   color: white;
+  border: 1px solid #059669;
 }
 
 .status-inactive {
   background-color: #6b7280;
   color: white;
+  border: 1px solid #4b5563;
 }
 
 /* 温度值样式 */

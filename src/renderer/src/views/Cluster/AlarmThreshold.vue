@@ -11,9 +11,30 @@ import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputNumber from 'primevue/inputnumber'
+import { useI18n } from 'vue-i18n'
 
 const toastService = useToast()
 const alarmThresholdHandler = useAlarmThreshold()
+const { t, locale, te } = useI18n()
+
+// 直接使用label翻译函数
+const getLabelTranslation = (label) => {
+  if (locale.value === 'zh') return label
+  return te(`config.alarmThreshold.label.${label}`) 
+    ? t(`config.alarmThreshold.label.${label}`) 
+    : label
+}
+
+// 翻译后的参数列表
+const translatedParameterList = computed(() => {
+  const parameters = currentClassParameterList.value || []
+  return parameters.map(param => ({
+    ...param,
+    label: getLabelTranslation(param.label || param.originalLabel)
+  }))
+})
+
+// 已移除：分类按钮名称本地映射，统一由 handler.getClassInfo 返回 nameKey
 
 // 页面类型检测 - 设置为cluster类型以显示下发多选框
 const { addPageTypeMapping } = usePageTypeDetection()
@@ -43,6 +64,7 @@ const parameterClasses = Array.from(new Set(alarmThresholdHandler.ALL_ALARM_PARA
     // console.log(`[AlarmThreshold] 分类"${name}" 信息:`, classInfo)
     return {
       name,
+      nameKey: classInfo.nameKey,
       byteOffset: classInfo.byteOffset,
       byteLength: classInfo.byteLength
     }
@@ -285,7 +307,7 @@ function getParameterRemarkText(parameterKey) {
         <div class="control-left">
           <div class="button-group">
             <Button
-              :label="isCurrentlyReading ? '停止读取' : '开始读取'"
+              :label="isCurrentlyReading ? t('alarmThreshold.buttons.stopReading') : t('alarmThreshold.buttons.startReading')"
               @click="() => {
                 if (isCurrentlyReading) {
                   stopParameterReading()
@@ -297,7 +319,7 @@ function getParameterRemarkText(parameterKey) {
               size="small"
             />
             <Button
-              label="下发参数"
+              :label="t('alarmThreshold.buttons.sendParameters')"
               @click="sendCurrentClassParameters"
               :disabled="isCurrentlyReading || !currentSelectedClass"
               severity="warning"
@@ -312,7 +334,7 @@ function getParameterRemarkText(parameterKey) {
         <Button
           v-for="parameterClass in allAvailableClasses"
           :key="parameterClass.name"
-          :label="parameterClass.name"
+          :label="parameterClass.nameKey ? t(parameterClass.nameKey) : parameterClass.name"
           @click="switchToParameterClass(parameterClass.name)"
           :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
           :outlined="currentSelectedClass?.name !== parameterClass.name"
@@ -322,23 +344,24 @@ function getParameterRemarkText(parameterKey) {
       </div>
     </div>
 
-    <!-- 当前分类的参数数据表格 - 直接渲染 -->
+    <!-- 当前分类的参数数据表格 - 使用翻译后的参数列表 -->
     <DataTable
-      :value="currentClassParameterList"
+      :value="translatedParameterList"
       class="p-datatable-sm"
       :show-gridlines="true"
       scrollable
       tableStyle="min-width: 50rem"
     >
       <!-- 参数名称列 -->
-      <Column header="参数名称" style="width: 250px" :frozen="true">
+      <Column :header="t('alarmThreshold.table.parameterName')" style="width: 250px" :frozen="true">
         <template #body="slotProps">
           <div
             class="font-medium"
             :class="{
-              'text-red-600': slotProps.data.label.includes('严重'),
-              'text-yellow-600': slotProps.data.label.includes('一般'),
-              'text-cyan-600': slotProps.data.label.includes('轻微')
+              // 颜色判断：优先基于 originalLabel 的中文关键词；兼容英文（Severe/General/Minor）
+              'text-red-600': (slotProps.data.originalLabel || slotProps.data.label || '').includes('严重') || (slotProps.data.label || '').includes('Severe'),
+              'text-yellow-600': (slotProps.data.originalLabel || slotProps.data.label || '').includes('一般') || (slotProps.data.label || '').includes('General'),
+              'text-cyan-600': (slotProps.data.originalLabel || slotProps.data.label || '').includes('轻微') || (slotProps.data.label || '').includes('Minor')
             }"
           >
             {{ slotProps.data.label }}
@@ -347,7 +370,7 @@ function getParameterRemarkText(parameterKey) {
       </Column>
 
       <!-- 参数值编辑列 -->
-      <Column header="参数值" style="width: 150px">
+      <Column :header="t('alarmThreshold.table.parameterValue')" style="width: 150px">
         <template #body="slotProps">
           <InputNumber
             :model-value="getParameterInputValue(slotProps.data, slotProps.data.currentValue)"
@@ -363,7 +386,7 @@ function getParameterRemarkText(parameterKey) {
       </Column>
 
       <!-- 参数单位列 -->
-      <Column header="单位" style="width: 80px">
+      <Column :header="t('alarmThreshold.table.unit')" style="width: 80px">
         <template #body="slotProps">
           <div>
             {{ slotProps.data.unit || '-' }}
@@ -372,7 +395,7 @@ function getParameterRemarkText(parameterKey) {
       </Column>
 
       <!-- 参数备注列 -->
-      <Column header="备注说明" style="width: 300px">
+      <Column :header="t('alarmThreshold.table.remarks')" style="width: 300px">
         <template #body="slotProps">
           <div class="text-sm whitespace-pre-line">
             {{ getParameterRemarkText(slotProps.data.key) }}

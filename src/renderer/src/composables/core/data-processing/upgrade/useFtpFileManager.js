@@ -1,6 +1,7 @@
 // FTP文件管理功能
 import { ref, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from 'vue-i18n'
 
 /**
  * FTP文件管理功能
@@ -8,6 +9,7 @@ import { useToast } from 'primevue/usetoast'
  */
 export function useFtpFileManager() {
   const toast = useToast()
+  const { t } = useI18n()
   
   // 文件列表状态
   const files = ref([])
@@ -97,8 +99,12 @@ export function useFtpFileManager() {
     // 显示增强的上传成功通知
     toast.add({
       severity: fileInfo.isValid ? 'success' : 'warn',
-      summary: '✅ FTP文件上传成功',
-      detail: `${fileInfo.fileName} (${fileInfo.sizeFormatted})${fileInfo.isValid ? ' - 设备现在可以下载此文件进行升级' : ' - ⚠️ 文件格式可能不正确，请检查'}`,
+      summary: t('toast.deviceUpgrade.ftpFileUploadSuccess'),
+      detail: t('toast.deviceUpgrade.ftpFileUploadSuccessDetail', { 
+        fileName: fileInfo.fileName, 
+        size: fileInfo.sizeFormatted, 
+        status: fileInfo.isValid ? t('toast.deviceUpgrade.ftpFileUploadSuccessValid') : t('toast.deviceUpgrade.ftpFileUploadSuccessInvalid')
+      }),
       life: 8000
     })
 
@@ -107,8 +113,8 @@ export function useFtpFileManager() {
       setTimeout(() => {
         toast.add({
           severity: 'info',
-          summary: '📡 设备升级就绪',
-          detail: `文件 "${fileInfo.fileName}" 已在FTP服务器上可用，设备可通过MQTT指令下载升级`,
+          summary: t('toast.deviceUpgrade.deviceUpgradeReady'),
+          detail: t('toast.deviceUpgrade.deviceUpgradeReadyDetail', { fileName: fileInfo.fileName }),
           life: 6000
         })
       }, 1000)
@@ -121,7 +127,7 @@ export function useFtpFileManager() {
     
     toast.add({
       severity: 'info',
-      summary: '文件下载',
+      summary: t('toast.deviceUpgrade.fileDownload'),
       detail: data.fileName,
       life: 3000
     })
@@ -286,8 +292,8 @@ export function useFtpFileManager() {
 
     toast.add({
       severity: 'success',
-      summary: '📡 设备升级就绪',
-      detail: eventData.message,
+          summary: t('toast.deviceUpgrade.deviceUpgradeReady'),
+          detail: eventData.message,
       life: 6000
     })
   }

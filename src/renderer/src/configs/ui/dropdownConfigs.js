@@ -43,6 +43,7 @@ export const DROPDOWN_CONFIGS = {
       '除湿机设备类型': [
         { label: '无除湿机设备', value: 65535 },
         { label: '除湿机-01', value: 1 },
+        { label: '02-除湿机-E-J-000113', value: 2 },
       ],
       '消防控制器类型': [
         { label: '无消防控制器', value: 65535 },
@@ -185,26 +186,26 @@ export const DROPDOWN_CONFIGS = {
       ],
       '充电均衡阈值电压区间K值': {
         options: [
-          { label: '2mv', value: 10 },
-          { label: '15mv', value: 100 },
-          { label: '150mv', value: 1000 },
-          { label: '20mv', value: '20', matchValues: 'other' }
+          { label: '2mV', value: 10 },
+          { label: '15mV', value: 100 },
+          { label: '150mV', value: 1000 },
+          { label: '20mV', value: '20', matchValues: 'other' }
         ]
       },
       '放电均衡阈值电压区间K值': {
         options: [
-          { label: '2mv', value: 10 },
-          { label: '15mv', value: 100 },
-          { label: '150mv', value: 1000 },
-          { label: '20mv', value: '20', matchValues: 'other' }
+          { label: '2mV', value: 10 },
+          { label: '15mV', value: 100 },
+          { label: '150mV', value: 1000 },
+          { label: '20mV', value: '20', matchValues: 'other' }
         ]
       },
       '开路均衡阈值电压区间K值': {
         options: [
-          { label: '2mv', value: 10 },
-          { label: '15mv', value: 100 },
-          { label: '150mv', value: 1000 },
-          { label: '20mv', value: '20', matchValues: 'other' }
+          { label: '2mV', value: 10 },
+          { label: '15mV', value: 100 },
+          { label: '150mV', value: 1000 },
+          { label: '20mV', value: '20', matchValues: 'other' }
         ]
       },
     },
@@ -507,22 +508,48 @@ export function getDisplayLabel(dataType, topicType, parameterKey, value) {
  * @param {Array} options - 下拉框选项数组
  * @param {string} parameterKey - 参数名称
  * @param {Function} t - 翻译函数
+ * @param {Function} te - 翻译存在性检查函数（可选）
+ * @param {string} currentLocale - 当前语言设置（可选）
  * @returns {Array} 翻译后的选项数组
  */
-export function translateDropdownOptions(options, parameterKey, t) {
+export function translateDropdownOptions(options, parameterKey, t, te, currentLocale = 'zh', pagePrefix = 'clusterConfigParam') {
   if (!Array.isArray(options)) return options
   
+  // 如果是中文，直接返回原始选项
+  if (currentLocale === 'zh') {
+    return options.map(option => ({
+      label: option.label,
+      value: option.value,
+      ...(option.matchValues !== undefined && { matchValues: option.matchValues }),
+      ...(option.translationKey && { translationKey: option.translationKey })
+    }))
+  }
+  
   return options.map(option => {
-    const translatedOption = { ...option }
+    // 创建完全新的对象，确保所有属性都是独立的
+    const translatedOption = {
+      label: option.label,
+      value: option.value,
+      ...(option.matchValues !== undefined && { matchValues: option.matchValues }),
+      ...(option.translationKey && { translationKey: option.translationKey })
+    }
     
     // 如果有翻译键，使用翻译键进行翻译
     if (option.translationKey) {
       translatedOption.label = t(option.translationKey)
     } else {
-      // 否则尝试使用参数名称+选项标签作为翻译键
-      const fallbackKey = `clusterConfigParam.dropdownOptions.${parameterKey}.${option.label}`
-      if (t(fallbackKey) !== fallbackKey) {
+      // 根据页面前缀构建翻译键路径
+      const fallbackKey = `${pagePrefix}.dropdownOptions.${parameterKey}.${option.label}`
+      
+      // 如果有翻译存在性检查函数，先检查键是否存在
+      if (te && te(fallbackKey)) {
         translatedOption.label = t(fallbackKey)
+      } else if (!te) {
+        // 如果没有te函数，使用原来的方式检查翻译结果
+        const translationResult = t(fallbackKey)
+        if (translationResult !== fallbackKey) {
+          translatedOption.label = translationResult
+        }
       }
     }
     

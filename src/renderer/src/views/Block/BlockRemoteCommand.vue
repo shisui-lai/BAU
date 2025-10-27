@@ -7,11 +7,11 @@
     <div class="content-wrapper">
       <!-- 控制命令卡片 -->
       <div class="table-container order-like-card">
-        <h2 class="table-title">堆遥控命令操作</h2>
+        <h2 class="table-title">{{ t('blockRemoteCommandPage.title') }}</h2>
         <div class="table-content">
           <!-- 堆遥控命令区域 -->
           <div class="command-section">
-            <h3 class="section-title">遥控命令</h3>
+            <h3 class="section-title">{{ t('blockRemoteCommandPage.sections.controlCommands') }}</h3>
             <div class="command-grid">
               <div 
                 v-for="command in controlCommandTableData" 
@@ -19,7 +19,7 @@
                 class="command-item"
               >
                 <div class="command-label">
-                  {{ command.name }}
+                  {{ getCommandDisplayName(command.name) }}
                   <Tag
                     v-if="command.mode"
                     :value="getModeLabel(command.mode)"
@@ -32,10 +32,10 @@
                   <div v-if="command.uiType === 'dropdown'" class="flex align-items-center gap-2">
                     <Dropdown
                       v-model="selectedValues[command.id]"
-                      :options="command.options"
+                      :options="translateOptions(command.options)"
                       optionLabel="label"
                       optionValue="value"
-                      :placeholder="'请选择' + command.name"
+                      :placeholder="t('blockRemoteCommandPage.buttons.select') + getCommandDisplayName(command.name)"
                       class="w-full"
                       :disabled="executingCommands.has(command.id)"
                     />
@@ -45,7 +45,7 @@
                   <div v-else-if="command.uiType === 'input'" class="flex align-items-center gap-2">
                     <InputNumber
                       v-model="selectedValues[command.id]"
-                      :placeholder="command.inputConfig?.placeholder || '请输入值'"
+                      :placeholder="getInputPlaceholder(command.inputConfig?.placeholder)"
                       :min="command.inputConfig?.min"
                       :max="command.inputConfig?.max"
                       :step="command.inputConfig?.step"
@@ -71,7 +71,7 @@
                             :disabled="executingCommands.has(command.id)"
                           />
                         <label :for="'bit_' + command.id + '_' + bitField.bit" class="checkbox-label">
-                          {{ bitField.label }}
+                          {{ getOptionLabel(bitField.label) }}
                         </label>
                       </div>
                     </div>
@@ -79,7 +79,7 @@
                 </div>
                 <div class="flex justify-content-end">
                   <Button
-                    label="发送"
+                    :label="t('blockRemoteCommandPage.buttons.send')"
                     icon="pi pi-send"
                     class="p-button-sm p-button-success"
                     @click="handleCommandClick(command)"
@@ -96,17 +96,17 @@
           
           <!-- 接触器执行策略结果区域 -->
           <div class="result-section">
-            <h3 class="section-title">接触器执行策略结果</h3>
+            <h3 class="section-title">{{ t('blockRemoteCommandPage.sections.contactorStrategyResult') }}</h3>
             <div class="result-grid">
               <div 
                 v-for="item in feedbackStatusData" 
                 :key="item.id"
                 class="result-item"
               >
-                <div class="result-label">{{ item.name }}</div>
+                <div class="result-label">{{ getFeedbackLabel(item.id, item.name) }}</div>
                 <div class="result-value">
                   <Tag 
-                    :value="item.value" 
+                    :value="getStatusDisplay(item.value)" 
                     :severity="item.severity"
                     class="status-tag"
                   />
@@ -121,7 +121,7 @@
     <!-- 确认对话框 -->
     <Dialog 
       v-model:visible="showConfirmDialog" 
-      header="操作确认"
+      :header="t('blockRemoteCommandPage.dialogs.operationConfirmation')"
       :modal="true"
       :closable="true"
       :style="{ width: '400px' }"
@@ -133,13 +133,13 @@
       
       <template #footer>
         <Button 
-          label="取消" 
+          :label="t('blockRemoteCommandPage.buttons.cancel')" 
           icon="pi pi-times" 
           class="p-button-text" 
           @click="showConfirmDialog = false" 
         />
         <Button 
-          label="确认" 
+          :label="t('blockRemoteCommandPage.buttons.confirm')" 
           icon="pi pi-check" 
           class="p-button-danger" 
           @click="executeConfirmedCommandWithToast"
@@ -152,15 +152,17 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from 'vue-i18n'
 import { useRemoteCommand } from '@/composables/core/data-processing/remote-control/useRemoteCommand'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import { parseBAUResponseCode, parseContactorExecutionResult } from '@/configs/commands/block/blockRemoteCommandConfig'
-import { ERROR_CODES } from '../../../../main/table.js'
+// import { ERROR_CODES } from '../../../../main/table.js' // 已移除硬编码错误代码
 import Tag from 'primevue/tag'
 
 // Toast 组件
 const toast = useToast()
+const { t } = useI18n()
 
 // 页面类型检测 - 设置为block类型以显示堆选择器
 const { addPageTypeMapping } = usePageTypeDetection()
@@ -205,13 +207,11 @@ const {
 
 // ========== 方法 ==========
 
-/**
- * 获取模式标签文本
- * @param {string} mode - 模式类型 ('remote' | 'local')
- * @returns {string} 标签文本
- */
+/** 获取模式标签文本 */
 function getModeLabel(mode) {
-  return mode === 'remote' ? '远方模式下设' : '就地模式下设'
+  return mode === 'remote'
+    ? t('blockRemoteCommandPage.statuses.mode.remote')
+    : t('blockRemoteCommandPage.statuses.mode.local')
 }
 
 /**
@@ -229,11 +229,11 @@ function getModeSeverity(mode) {
  */
 function handleCommandClick(command) {
   if (command.uiType === 'checkbox_group') {
-    handleCheckboxBitFieldControl(command.id, command)
+    handleCheckboxBitFieldControl(command.id, command, t, executeRemoteCommand)
   } else if (command.uiType === 'input') {
     handleInputCommand(command)
   } else {
-    handleCommandExecution(command.id, selectedValues[command.id])
+    handleCommandExecution(command.id, selectedValues[command.id], t, executeRemoteCommand)
   }
 }
 
@@ -248,8 +248,8 @@ function handleInputCommand(command) {
   if (inputValue == null || inputValue === '') {
     toast.add({
       severity: 'warn',
-      summary: '输入值无效',
-      detail: `请输入有效的${command.name}值`,
+      summary: t('toast.blockRemoteCommand.invalidInput'),
+      detail: t('toast.blockRemoteCommand.pleaseEnterValid', getCommandDisplayName(command.name)),
       life: 3000
     })
     return
@@ -261,8 +261,8 @@ function handleInputCommand(command) {
     if (config.min != null && inputValue < config.min) {
       toast.add({
         severity: 'warn',
-        summary: '输入值超出范围',
-        detail: `${command.name}值不能小于${config.min}`,
+        summary: t('toast.blockRemoteCommand.outOfRange'),
+        detail: t('toast.blockRemoteCommand.minLimit', getCommandDisplayName(command.name), String(config.min)),
         life: 3000
       })
       return
@@ -270,8 +270,8 @@ function handleInputCommand(command) {
     if (config.max != null && inputValue > config.max) {
       toast.add({
         severity: 'warn',
-        summary: '输入值超出范围',
-        detail: `${command.name}值不能大于${config.max}`,
+        summary: t('toast.blockRemoteCommand.outOfRange'),
+        detail: t('toast.blockRemoteCommand.maxLimit', getCommandDisplayName(command.name), String(config.max)),
         life: 3000
       })
       return
@@ -285,7 +285,7 @@ function handleInputCommand(command) {
   }
 
   // 执行命令
-  handleCommandExecution(command.id, finalValue)
+  handleCommandExecution(command.id, finalValue, t, executeRemoteCommand)
 }
 
 /**
@@ -340,23 +340,30 @@ async function executeConfirmedCommandWithToast() {
         if (result.successCount !== undefined) {
           toast.add({
             severity: 'info',
-            summary: '命令已发送',
-            detail: `${result.commandName || '命令'} 已发送到 ${result.successCount} 个设备${result.failCount > 0 ? `，${result.failCount} 个失败` : ''}`,
+            summary: t('toast.blockRemoteCommand.commandSent'),
+            detail: t(
+              'blockRemoteCommandPage.messages.sentToCount',
+              [
+                getCommandDisplayName(result.commandName || 'Command'),
+                String(result.successCount),
+                result.failCount > 0 ? t('toast.blockRemoteCommand.someFailed', String(result.failCount)) : ''
+              ]
+            ),
             life: 3000
           })
         } else {
           toast.add({
             severity: 'success',
-            summary: '命令执行成功',
-            detail: `${result.commandName || '命令'} 执行成功`,
+            summary: t('toast.blockRemoteCommand.executeSuccess'),
+            detail: `${getCommandDisplayName(result.commandName || 'Command')}`,
             life: 3000
           })
         }
       } else {
         toast.add({
           severity: 'error',
-          summary: '命令执行失败',
-          detail: result.error || '命令执行失败',
+          summary: t('toast.blockRemoteCommand.executeFailed'),
+          detail: result.error || t('toast.blockRemoteCommand.executeFailed'),
           life: 5000
         })
       }
@@ -365,8 +372,8 @@ async function executeConfirmedCommandWithToast() {
     console.error('[BlockRemoteCommand] 确认命令执行失败:', error)
     toast.add({
       severity: 'error',
-      summary: '系统错误',
-      detail: '命令执行过程中发生错误',
+      summary: t('toast.blockRemoteCommand.systemError'),
+      detail: t('toast.blockRemoteCommand.errorDuringExec'),
       life: 5000
     })
   }
@@ -408,19 +415,19 @@ function handleRemoteCommandResponseWithToast(msg) {
   const commandType = dataType ? dataType.toLowerCase() : 'unknown'
 
   // 获取设备显示名称
-  const deviceName = `堆${blockId}`
+  const deviceName = t('toast.remoteControl.deviceName.block', { blockId })
 
   // 获取命令显示名称
   const commandNameMap = {
-    'batt_stack_ctrl_switch': '电池堆控制开关',
-    'force_clear_save_fault': '强制消除保留故障',
-    'reset_block_param': '控制参数复位',
-    'period_ins_detect_en': '周期性绝缘检测',
-    'contactor_selftest_en': '接触器自检检测',
-    'reset_bau': '重启BAU指令',
-    'manual_ctrl_sd_record': '手动控制SD卡记录',
-    'set_block_soc': '下设堆SOC',
-    'get_batt_stack_ctrl_switch_result': '查询执行结果'
+    'batt_stack_ctrl_switch': t('blockRemoteCommandPage.commands.下设电池堆控制开关'),
+    'force_clear_save_fault': t('blockRemoteCommandPage.commands.强制消除电池堆保留故障'),
+    'reset_block_param': t('blockRemoteCommandPage.commands.控制参数复位'),
+    'period_ins_detect_en': t('blockRemoteCommandPage.commands.下设周期性绝缘电阻检测指令'),
+    'contactor_selftest_en': t('blockRemoteCommandPage.commands.下设接触器自检指令'),
+    'reset_bau': t('blockRemoteCommandPage.commands.下设重启BAU指令'),
+    'manual_ctrl_sd_record': t('blockRemoteCommandPage.commands.下设手动控制SD卡记录'),
+    'set_block_soc': t('blockRemoteCommandPage.commands.下设堆SOC'),
+    'get_batt_stack_ctrl_switch_result': t('blockRemoteCommandPage.commands.查询接触器执行策略结果')
   }
 
   const commandName = commandNameMap[commandType] || commandType
@@ -429,8 +436,8 @@ function handleRemoteCommandResponseWithToast(msg) {
   if (data.error) {
     toast.add({
       severity: 'error',
-      summary: '遥控命令执行失败',
-      detail: `${deviceName}: ${commandName} 执行失败 - ${data.message || '未知错误'}`,
+      summary: t('toast.blockRemoteCommand.rcFailed'),
+      detail: `${deviceName}: ${commandName} ${t('toast.blockRemoteCommand.executeFailed')} - ${data.message || t('blockRemoteCommandPage.statuses.unknown')}`,
       life: 6000
     })
     return
@@ -453,15 +460,15 @@ function handleRemoteCommandResponseWithToast(msg) {
   if (data.code !== undefined) {
     const isSuccess = data.code === 0xE0
 
-    const codeMessage = ERROR_CODES[data.code] || `未知应答码: 0x${data.code.toString(16).toUpperCase()}`
+    const codeMessage = t(`toast.errorCodes.0x${data.code.toString(16).toUpperCase()}`) || t('toast.blockRemoteCommand.unknownResponseCode', [data.code.toString(16).toUpperCase()])
     const codeHex = `0x${data.code.toString(16).toUpperCase()}`
 
     toast.add({
       severity: isSuccess ? 'success' : 'error',
-      summary: isSuccess ? '遥控命令执行成功' : '遥控命令执行失败',
+      summary: isSuccess ? t('toast.blockRemoteCommand.rcSuccess') : t('toast.blockRemoteCommand.rcFailed'),
       detail: isSuccess 
-        ? `${deviceName}: ${commandName} 已成功执行 (应答码: ${codeHex})`
-        : `${deviceName}: ${commandName} ${codeMessage} (应答码: ${codeHex})`,
+        ? `${deviceName}: ${commandName} ${t('toast.blockRemoteCommand.executeSuccess')} (${codeHex})`
+        : `${deviceName}: ${commandName} ${codeMessage} (${codeHex})`,
       life: isSuccess ? 4000 : 6000
     })
 
@@ -542,6 +549,45 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('SET_BLOCK_SOC', onRemoteCommandResponse)
   window.electron.ipcRenderer.removeAllListeners('GET_BATT_STACK_CTRL_SWITCH_RESULT', onRemoteCommandResponse)
 })
+
+// ========== 翻译辅助 ==========
+function getCommandDisplayName(name) {
+  return t(`blockRemoteCommandPage.commands.${name}`, name)
+}
+
+function translateOptions(options = []) {
+  return (options || []).map(opt => ({ ...opt, label: getOptionLabel(opt.label) }))
+}
+
+function getOptionLabel(label) {
+  return t(`blockRemoteCommandPage.options.${label}`, label)
+}
+
+function getInputPlaceholder(ph) {
+  return ph ? t(`blockRemoteCommandPage.options.${ph}`, ph) : t('blockRemoteCommandPage.buttons.select')
+}
+
+function getFeedbackLabel(id, fallback) {
+  if (id === 'batt_stack_ctrl_switch_result') return t('blockRemoteCommandPage.sections.contactorStrategyResult')
+  return fallback
+}
+
+function getStatusDisplay(value) {
+  if (!value) return t('blockRemoteCommandPage.statuses.unknown')
+  const mapping = {
+    '执行中': t('blockRemoteCommandPage.statuses.executing'),
+    '执行失败': t('blockRemoteCommandPage.statuses.failed'),
+    '执行成功': t('blockRemoteCommandPage.statuses.success'),
+    '空闲': t('blockRemoteCommandPage.statuses.idle'),
+    '检测中': t('blockRemoteCommandPage.statuses.detecting'),
+    '检测完成': t('blockRemoteCommandPage.statuses.completed'),
+    '测试模式': t('blockRemoteCommandPage.statuses.testMode'),
+    '正常模式': t('blockRemoteCommandPage.statuses.normalMode')
+  }
+  // 处理“未知状态(...)”形式
+  if (/^未知状态/.test(String(value))) return t('blockRemoteCommandPage.statuses.unknown')
+  return mapping[String(value)] || String(value)
+}
 </script>
 
 <style scoped>

@@ -144,16 +144,31 @@ export function useAlarmThreshold() {
 
   
 
-  // 获取分类信息（包含Topic和偏移信息）
+// 获取分类信息（包含Topic和偏移信息与多语言键）
   const getClassInfo = (className) => {
     const topicType = getTopicByClassName(className)
     const offsetInfo = calculateClassOffsetInTopic(className, topicType)
+  // 分类名称到多语言key映射，与BaseParam方式保持一致
+  const nameKeyMap = {
+    '簇端电压': 'alarmThreshold.parameterClasses.clusterVoltage',
+    '簇端温度': 'alarmThreshold.parameterClasses.clusterTemperature',
+    '电流': 'alarmThreshold.parameterClasses.current',
+    '绝缘电阻': 'alarmThreshold.parameterClasses.insulation',
+    'BMU电压': 'alarmThreshold.parameterClasses.bmuVoltage',
+    'BMU温度': 'alarmThreshold.parameterClasses.bmuTemperature',
+    '接插件温度': 'alarmThreshold.parameterClasses.connectorTemperature',
+    '单体电压': 'alarmThreshold.parameterClasses.cellVoltage',
+    '单体温度': 'alarmThreshold.parameterClasses.cellTemperature',
+    '单体SOC': 'alarmThreshold.parameterClasses.cellSOC',
+    '单体SOH': 'alarmThreshold.parameterClasses.cellSOH'
+  }
     
     return {
       topicType,
       dataType: topicType,
       byteOffset: offsetInfo.byteOffset,
       byteLength: offsetInfo.byteLength,
+    nameKey: nameKeyMap[className] || '',
       ...offsetInfo
     }
   }

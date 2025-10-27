@@ -342,9 +342,9 @@ async function saveAndConnect() {
       severity: 'success',
       summary: t('mqtt.messages.connectSuccess'),
       detail: t('mqtt.messages.connectSuccessDetail', { 
-        host: formData.host, 
-        port: formData.port, 
-        clientId: formData.clientId 
+        host: mqttStore.config.host, 
+        port: mqttStore.config.port, 
+        clientId: mqttStore.config.clientId 
       }),
       life: 5000
     })
@@ -390,9 +390,9 @@ async function quickConnect(config) {
       severity: 'success',
       summary: t('mqtt.messages.connectSuccess'),
       detail: t('mqtt.messages.connectSuccessDetail', { 
-        host: config.host, 
-        port: config.port, 
-        clientId: config.clientId 
+        host: mqttStore.config.host, 
+        port: mqttStore.config.port, 
+        clientId: mqttStore.config.clientId 
       }),
       life: 3000
     })

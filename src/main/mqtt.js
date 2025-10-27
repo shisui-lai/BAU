@@ -605,7 +605,7 @@ function withResponseCheck(fn) {
           startDataRateCalculation()
 
           // 通知主进程连接成功
-          process.send({ type: 'mqtt-connected', data: { clientId: config.clientId, host: config.host } })
+          process.send({ type: 'mqtt-connected', data: { clientId: config.clientId, host: config.host, port: config.port } })
           resolve(true)
         })
 

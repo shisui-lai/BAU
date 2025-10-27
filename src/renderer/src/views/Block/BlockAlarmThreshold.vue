@@ -1,7 +1,8 @@
 <!-- 堆报警阈值页面 - 参考簇告警阈值实现，使用堆下拉与单一topic(block_fault_dns) -->
 <script setup>
 import { useToast } from 'primevue/usetoast'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
@@ -14,6 +15,23 @@ import InputNumber from 'primevue/inputnumber'
 
 const toastService = useToast()
 const blockStore = useBlockStore()
+const { t, locale, te } = useI18n()
+
+// 参数名称翻译函数
+const getLabelTranslation = (label) => {
+  if (locale.value === 'zh') return label
+  return te(`blockAlarmThresholdPage.label.${label}`) 
+    ? t(`blockAlarmThresholdPage.label.${label}`) 
+    : label
+}
+
+// 分类名称翻译函数
+const getClassTranslation = (className) => {
+  if (locale.value === 'zh') return className
+  return te(`blockAlarmThresholdPage.parameterClasses.${className}`) 
+    ? t(`blockAlarmThresholdPage.parameterClasses.${className}`) 
+    : className
+}
 
 // 声明为堆级遥调页面（显示堆选择器和下发多选）
 const { addPageTypeMapping } = usePageTypeDetection()
@@ -83,6 +101,15 @@ const {
   sendParameterReadRequest
 } = useRemoteControlCore(blockAlarmCfg, toastService, { selectorMode: 'block' })
 
+// 翻译后的参数列表 - 使用 computed 确保响应式翻译
+const translatedParameterList = computed(() => {
+  const parameters = currentClassParameterList.value || []
+  return parameters.map(param => ({
+    ...param,
+    label: getLabelTranslation(param.label || param.originalLabel)
+  }))
+})
+
 // 重试逻辑
 const retryLogic = useRetryLogic(toastService, stopParameterReading)
 
@@ -113,7 +140,11 @@ function handleReadEvent(event, mqttMessage){
 function handleWriteEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_FAULT_DNS_W') return
   const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockAlarmThreshold]', '堆报警阈值')
-  handleParameterWriteResponse(parsed)
+  handleParameterWriteResponse({
+    ...mqttMessage,
+    ...parsed,
+    className: currentSelectedClass.value?.name || '堆端报警参数'
+  })
 }
 
 onMounted(() => {
@@ -172,17 +203,17 @@ function getParameterRemarkText(){ return '' }
     <!-- 操作区 -->
     <div class="control-area mb-4">
       <div class="button-group">
-        <Button :label="isCurrentlyReading ? '停止读取' : '开始读取'" :severity="isCurrentlyReading ? 'danger' : 'primary'"
+        <Button :label="isCurrentlyReading ? t('blockAlarmThresholdPage.buttons.stopReading') : t('blockAlarmThresholdPage.buttons.startReading')" :severity="isCurrentlyReading ? 'danger' : 'primary'"
                 size="small"
                 @click="isCurrentlyReading ? stopParameterReading() : startParameterReadingWithRetry()" />
-        <Button label="下发参数" severity="warning" size="small" :disabled="isCurrentlyReading || !currentSelectedClass"
+        <Button :label="t('blockAlarmThresholdPage.buttons.sendParameters')" severity="warning" size="small" :disabled="isCurrentlyReading || !currentSelectedClass"
                 @click="sendCurrentClassParameters" />
       </div>
     </div>
 
     <!-- 分类切换 -->
     <div class="class-tabs mb-4">
-      <Button v-for="cls in allAvailableClasses" :key="cls.name" :label="cls.name"
+      <Button v-for="cls in allAvailableClasses" :key="cls.name" :label="getClassTranslation(cls.name)"
               :severity="currentSelectedClass?.name === cls.name ? 'primary' : 'secondary'"
               :outlined="currentSelectedClass?.name !== cls.name"
               size="small"
@@ -191,8 +222,8 @@ function getParameterRemarkText(){ return '' }
     </div>
 
     <!-- 参数表格 -->
-    <DataTable :value="currentClassParameterList" class="p-datatable-sm" :show-gridlines="true">
-      <Column header="参数名称" style="width: 260px" :frozen="true">
+    <DataTable :value="translatedParameterList" class="p-datatable-sm" :show-gridlines="true">
+      <Column :header="t('blockAlarmThresholdPage.table.parameterName')" style="width: 260px" :frozen="true">
         <template #body="{ data }">
           <div
             class="font-medium"
@@ -207,7 +238,7 @@ function getParameterRemarkText(){ return '' }
         </template>
       </Column>
 
-      <Column header="参数值" style="width: 160px">
+      <Column :header="t('blockAlarmThresholdPage.table.parameterValue')" style="width: 160px">
         <template #body="{ data }">
           <InputNumber
             :model-value="getParameterInputValue(data, data.currentValue)"
@@ -222,13 +253,13 @@ function getParameterRemarkText(){ return '' }
         </template>
       </Column>
 
-      <Column header="单位" style="width: 90px">
+      <Column :header="t('blockAlarmThresholdPage.table.unit')" style="width: 90px">
         <template #body="{ data }">
           <span>{{ data.unit || '-' }}</span>
         </template>
       </Column>
 
-      <Column header="备注说明" style="width: 320px">
+      <Column :header="t('blockAlarmThresholdPage.table.remarks')" style="width: 320px">
         <template #body>
           <span class="text-sm">{{ getParameterRemarkText() }}</span>
         </template>

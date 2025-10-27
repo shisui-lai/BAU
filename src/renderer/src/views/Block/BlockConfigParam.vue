@@ -2,6 +2,7 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
 import { onMounted, onUnmounted, onActivated, onDeactivated, ref, computed  } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { scheduleAutoRead, cancelAutoRead, registerAutoReadFunction } from '@/composables/utils/useAutoReadScheduler'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
@@ -19,6 +20,39 @@ import Dropdown from 'primevue/dropdown'
 
 const toastService = useToast()
 const blockStore = useBlockStore()
+const { t, locale, te } = useI18n()
+
+// 参数名称翻译函数
+const getParameterTranslation = (label) => {
+  if (locale.value === 'zh') return label
+  return te(`blockConfigParamPage.parameters.${label}`) 
+    ? t(`blockConfigParamPage.parameters.${label}`) 
+    : label
+}
+
+// 备注翻译函数
+const getRemarksTranslation = (remarks) => {
+  if (!remarks) return ''
+  // 检查是否有对应的翻译键
+  if (te(`blockConfigParamPage.remarks.${remarks}`)) {
+    return t(`blockConfigParamPage.remarks.${remarks}`)
+  }
+  // 如果没有翻译键，直接返回原始备注
+  return remarks
+}
+
+// 下拉框选项翻译函数
+const translateDropdownOptions = (options, parameterName) => {
+  if (!options || !Array.isArray(options)) return options
+  if (locale.value === 'zh') return options
+  
+  return options.map(option => ({
+    ...option,
+    label: te(`blockConfigParamPage.dropdowns.${parameterName}.${option.label}`) 
+      ? t(`blockConfigParamPage.dropdowns.${parameterName}.${option.label}`) 
+      : option.label
+  }))
+}
 
 // 声明为堆级遥调页面（显示堆选择器和下发多选）
 const { addPageTypeMapping } = usePageTypeDetection()
@@ -59,13 +93,13 @@ const batteryConfig = {
     readTopicTemplate: 'bms/host/s2d/b{block}/block_batt_param_r',
     writeTopicTemplate: 'bms/host/s2d/b{block}/block_batt_param_w',
     parameterFields: BLOCK_BATT_PARAM_R,
-    parameterClasses: [{ name: '全部参数', byteOffset: 0, byteLength: 0 }],
+    parameterClasses: [{ name: t('blockConfigParamPage.parameterTypes.allParameters'), byteOffset: 0, byteLength: 0 }],
     noClassMode: true,
     writeWholeTable: true, // 整表下发，不分块
     // 统一下拉框配置入口（方案1）：指定数据类型与Topic
     dropdown: { dataType: 'block_remote_control', topicType: 'block_batt_param' },
     parameterSerializer: (parameterDataFrame, startByteOffset, registerCount) =>
-      serializeParameterData(parameterDataFrame, BLOCK_BATT_PARAM_R, startByteOffset, registerCount, '[useBlockBattParam]', '系统簇端电池配置')
+      serializeParameterData(parameterDataFrame, BLOCK_BATT_PARAM_R, startByteOffset, registerCount, '[useBlockBattParam]', t('blockConfigParamPage.sections.batteryConfig'))
   }
 }
 
@@ -81,7 +115,7 @@ const commDevConfig = {
     writeWholeTable: true, // 整表下发，不分块
     dropdown: { dataType: 'block_remote_control', topicType: 'block_comm_dev_cfg' },
     parameterSerializer: (parameterDataFrame, startByteOffset, registerCount) =>
-      serializeParameterData(parameterDataFrame, BLOCK_COMM_DEV_CFG_R, startByteOffset, registerCount, '[useBlockCommDevCfg]', '系统通讯设备配置')
+      serializeParameterData(parameterDataFrame, BLOCK_COMM_DEV_CFG_R, startByteOffset, registerCount, '[useBlockCommDevCfg]', t('blockConfigParamPage.sections.commDevConfig'))
   }
 }
 
@@ -97,7 +131,7 @@ const operateConfig = {
     writeWholeTable: true, // 整表下发，不分块
     dropdown: { dataType: 'block_remote_control', topicType: 'block_operate_cfg' },
     parameterSerializer: (parameterDataFrame, startByteOffset, registerCount) =>
-      serializeParameterData(parameterDataFrame, BLOCK_OPERATE_CFG_R, startByteOffset, registerCount, '[useBlockOperateCfg]', '系统操作配置')
+      serializeParameterData(parameterDataFrame, BLOCK_OPERATE_CFG_R, startByteOffset, registerCount, '[useBlockOperateCfg]', t('blockConfigParamPage.sections.operateConfig'))
   }
 }
 
@@ -235,11 +269,11 @@ function startReadingWithRetry() {
 // 方案：顶部Button导航，内容区始终是一张表（两层框架）
 
 // 顶部导航（仅导航，无内容面板）
-const topMenuItems = [
-  { label: '系统簇端电池配置参数', key: 'batt' },
-  { label: '系统通讯设备配置参数', key: 'comm' },
-  { label: '系统操作配置参数', key: 'operate' }
-]
+const topMenuItems = computed(() => [
+  { label: t('blockConfigParamPage.sections.batteryConfig'), key: 'batt' },
+  { label: t('blockConfigParamPage.sections.commDevConfig'), key: 'comm' },
+  { label: t('blockConfigParamPage.sections.operateConfig'), key: 'operate' }
+])
 const activeType = ref('batt')
 
 // 切换顶部菜单
@@ -295,12 +329,23 @@ const renderParameterList = computed(() => {
     return base
   })()
 
-  // 统一字段名，适配本页模板
-  return filtered.map(p => ({
-    ...p,
-    __inputType: p.inputType === 'dropdown' ? 'dropdown' : 'input',
-    __options: p.options || null
-  }))
+  // 统一字段名，适配本页模板，并添加翻译
+  return filtered.map(p => {
+    const translatedParam = {
+      ...p,
+      label: getParameterTranslation(p.label || p.originalLabel),
+      originalLabel: p.originalLabel || p.label,
+      __inputType: p.inputType === 'dropdown' ? 'dropdown' : 'input',
+      __options: p.options || null
+    }
+    
+    // 如果是下拉框参数，翻译选项
+    if (translatedParam.__inputType === 'dropdown' && translatedParam.__options) {
+      translatedParam.__options = translateDropdownOptions(translatedParam.__options, p.originalLabel || p.label)
+    }
+    
+    return translatedParam
+  })
 })
 
 function updateDropdownValue(parameterKey, selectedOption){
@@ -377,7 +422,7 @@ function handleBatteryReadEvent(event, mqttMessage){
 
   // 标记收到响应，停止超时检查
   retryLogic.markResponse()
-  const parsed = parseParameterReadResponse(mqttMessage, '[useBlockBattParam]', '系统簇端电池配置')
+  const parsed = parseParameterReadResponse(mqttMessage, '[useBlockBattParam]', t('blockConfigParamPage.sections.batteryConfig'))
   if (!parsed) return
   if (parsed.result?.error) return handleBatteryReadError(parsed)
   console.log('[BlockConfigParam] 处理电池配置数据前，增强列表长度:', battEnhancedParameterList?.value?.length || 0)
@@ -387,8 +432,8 @@ function handleBatteryReadEvent(event, mqttMessage){
 
 function handleBatteryWriteEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_BATT_PARAM_W') return
-  const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockBattParam]', '系统簇端电池配置')
-  if (!parsed.className) parsed.className = '系统簇端电池配置'
+  const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockBattParam]', t('blockConfigParamPage.sections.batteryConfig'))
+  if (!parsed.className) parsed.className = t('blockConfigParamPage.sections.batteryConfig')
   handleBatteryWriteResponse(parsed)
 }
 
@@ -397,7 +442,7 @@ function handleCommDevReadEvent(event, mqttMessage){
 
   // 标记收到响应，停止超时检查
   retryLogic.markResponse()
-  const parsed = parseParameterReadResponse(mqttMessage, '[useBlockCommDevCfg]', '系统通讯设备配置')
+  const parsed = parseParameterReadResponse(mqttMessage, '[useBlockCommDevCfg]', t('blockConfigParamPage.sections.commDevConfig'))
   if (!parsed) return
   if (parsed.result?.error) return handleCommDevReadError(parsed)
   handleCommDevReceivedParameterData(parsed)
@@ -405,8 +450,8 @@ function handleCommDevReadEvent(event, mqttMessage){
 
 function handleCommDevWriteEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_COMM_DEV_CFG_W') return
-  const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockCommDevCfg]', '系统通讯设备配置')
-  if (!parsed.className) parsed.className = '系统通讯设备配置'
+  const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockCommDevCfg]', t('blockConfigParamPage.sections.commDevConfig'))
+  if (!parsed.className) parsed.className = t('blockConfigParamPage.sections.commDevConfig')
   handleCommDevWriteResponse(parsed)
 }
 
@@ -415,7 +460,7 @@ function handleOperateReadEvent(event, mqttMessage){
 
   // 标记收到响应，停止超时检查
   retryLogic.markResponse()
-  const parsed = parseParameterReadResponse(mqttMessage, '[useBlockOperateCfg]', '系统操作配置')
+  const parsed = parseParameterReadResponse(mqttMessage, '[useBlockOperateCfg]', t('blockConfigParamPage.sections.operateConfig'))
   if (!parsed) return
   if (parsed.result?.error) return handleOperateReadError(parsed)
   handleOperateReceivedParameterData(parsed)
@@ -423,8 +468,8 @@ function handleOperateReadEvent(event, mqttMessage){
 
 function handleOperateWriteEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_OPERATE_CFG_W') return
-  const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockOperateCfg]', '系统操作配置')
-  if (!parsed.className) parsed.className = '系统操作配置'
+  const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockOperateCfg]', t('blockConfigParamPage.sections.operateConfig'))
+  if (!parsed.className) parsed.className = t('blockConfigParamPage.sections.operateConfig')
   handleOperateWriteResponse(parsed)
 }
 
@@ -609,17 +654,17 @@ function selectAllClusters(parameterDefinition) {
             </div>
           </div>
           <div class="button-group">
-            <Button :label="currentIsReading ? '停止读取' : '开始读取'" :severity="currentIsReading ? 'danger' : 'primary'" size="small" @click="currentIsReading ? stopReading() : startReadingWithRetry()" />
-            <Button label="下发参数" severity="warning" size="small" :disabled="currentIsReading" @click="sendParameters" />
+            <Button :label="currentIsReading ? t('blockConfigParamPage.buttons.stopReading') : t('blockConfigParamPage.buttons.startReading')" :severity="currentIsReading ? 'danger' : 'primary'" size="small" @click="currentIsReading ? stopReading() : startReadingWithRetry()" />
+            <Button :label="t('blockConfigParamPage.buttons.sendParameters')" severity="warning" size="small" :disabled="currentIsReading" @click="sendParameters" />
           </div>
         </div>
       </template>
-      <Column header="参数名称" style="width: 260px" :frozen="true">
+      <Column :header="t('blockConfigParamPage.table.parameterName')" style="width: 260px" :frozen="true">
         <template #body="{ data }">
           <div v-if="data" class="font-medium">{{ data.label }}</div>
         </template>
       </Column>
-      <Column header="参数值" style="width: 220px">
+      <Column :header="t('blockConfigParamPage.table.parameterValue')" style="width: 220px">
         <template #body="{ data }">
           <!-- 下拉型参数：已在renderParameterList预计算，避免模板内调用函数引起递归更新 -->
           <Dropdown
@@ -642,7 +687,7 @@ function selectAllClusters(parameterDefinition) {
             :disabled="currentIsReading"
             size="small"
             class="w-full"
-            placeholder="192.168.1.1"
+            :placeholder="t('blockConfigParamPage.placeholders.ipAddress')"
           />
 
           <!-- 簇使能位配置参数 -->
@@ -662,7 +707,7 @@ function selectAllClusters(parameterDefinition) {
             </div>
             <div class="cluster-actions">
               <Button 
-                label="全选/清空" 
+                :label="t('blockConfigParamPage.buttons.selectAll')" 
                 size="small" 
                 class="cluster-action-btn"
                 :disabled="currentIsReading"
@@ -685,14 +730,14 @@ function selectAllClusters(parameterDefinition) {
           />
         </template>
       </Column>
-      <Column header="单位" style="width: 90px">
+      <Column :header="t('blockConfigParamPage.table.unit')" style="width: 90px">
         <template #body="{ data }">
           <span v-if="data">{{ data.unit || '-' }}</span>
         </template>
       </Column>
-      <Column header="备注说明" style="width: 320px">
+      <Column :header="t('blockConfigParamPage.table.remarks')" style="width: 320px">
         <template #body="{ data }">
-          <span v-if="data" class="text-sm">{{ activeType==='batt' ? getBatteryRemarks(data) : (data.remarks || getParameterRemarkText()) }}</span>
+          <span v-if="data" class="text-sm whitespace-pre-line">{{ getRemarksTranslation(activeType==='batt' ? getBatteryRemarks(data) : (data.remarks || getParameterRemarkText())) }}</span>
         </template>
       </Column>
     </DataTable>

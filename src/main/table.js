@@ -2473,7 +2473,7 @@ export const SOC_CFG_PARAM_R = [
 
   //充电修正电压拐点表（97%）*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
   ...Array.from({ length: 6 }, (_, i) => {
-    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    const rates = ['10%C', '25%C', '50%C', '75%C', '100%C', '150%C'];
     return {
       class: 'SOC算法参数',
       key: `chargeCorrectVoltageKnee97${i + 1}`,
@@ -2486,7 +2486,7 @@ export const SOC_CFG_PARAM_R = [
 
   //充电修正步长表*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
   ...Array.from({ length: 6 }, (_, i) => {
-    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    const rates = ['10%C', '25%C', '50%C', '75%C', '100%C', '150%C'];
     return {
       class: 'SOC算法参数',
       key: `chargeCorrectStep97${i + 1}`,
@@ -2499,7 +2499,7 @@ export const SOC_CFG_PARAM_R = [
 
   //充电修正电流区间点*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
   ...Array.from({ length: 6 }, (_, i) => {
-    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    const rates = ['10%C', '25%C', '50%C', '75%C', '100%C', '150%C'];
     return {
       class: 'SOC算法参数',
       key: `chargeCorrectCurrentRange${i + 1}`,
@@ -2516,7 +2516,7 @@ export const SOC_CFG_PARAM_R = [
   
   //充电修正电压拐点表（99%）*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
   ...Array.from({ length: 6 }, (_, i) => {
-    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    const rates = ['10%C', '25%C', '50%C', '75%C', '100%C', '150%C'];
     return {
       class: 'SOC算法参数',
       key: `chargeCorrectVoltageKnee99${i + 1}`,
@@ -2529,7 +2529,7 @@ export const SOC_CFG_PARAM_R = [
 
   //充电修正步长表*6，对应倍率：0.1C、0.25C、0.5C、0.75C、1C、1.5C
   ...Array.from({ length: 6 }, (_, i) => {
-    const rates = ['0.1C', '0.25C', '0.5C', '0.75C', '1C', '1.5C'];
+    const rates = ['10%C', '25%C', '50%C', '75%C', '100%C', '150%C'];
     return {
       class: 'SOC算法参数',
       key: `chargeCorrectStep99${i + 1}`,
@@ -2542,10 +2542,10 @@ export const SOC_CFG_PARAM_R = [
 
 
   { class: 'SOC算法参数', key: 'chargeCatchUpTime99',         label: '99%点追赶时间',               type: 'u16', scale: 10,   unit: 's' },
-  { class: 'SOC算法参数', key: 'DischargeCorrectVol025C', label: '放电修正电压拐点-0.5C', type: 'u16', scale: 1, unit: 'mV' },
-  { class: 'SOC算法参数', key: 'DischargeCorrectVol05C', label: '放电修正电压拐点-0.25C', type: 'u16', scale: 1, unit: 'mV' },
-  { class: 'SOC算法参数', key: 'chargeDischargeCorrectCurrent025C', label: '充放电修正电流=0.25C', type: 's16', scale: 10, unit: 'A' },
-  { class: 'SOC算法参数', key: 'chargeDischargeCorrectCurrent05C', label: '充放电修正电流=0.5C', type: 's16', scale: 10, unit: 'A' },
+  { class: 'SOC算法参数', key: 'DischargeCorrectVol025C', label: '放电修正电压拐点-50%C', type: 'u16', scale: 1, unit: 'mV' },
+  { class: 'SOC算法参数', key: 'DischargeCorrectVol05C', label: '放电修正电压拐点-25%C', type: 'u16', scale: 1, unit: 'mV' },
+  { class: 'SOC算法参数', key: 'chargeDischargeCorrectCurrent025C', label: '充放电修正电流=25%C', type: 's16', scale: 10, unit: 'A' },
+  { class: 'SOC算法参数', key: 'chargeDischargeCorrectCurrent05C', label: '充放电修正电流=50%C', type: 's16', scale: 10, unit: 'A' },
   { class: 'SOC算法参数', key: 'catchUpTime5Knee', label: '放电5拐点真实SOC追赶时间', type: 'u16', scale: 10, unit: 's' },
   { class: 'SOC算法参数', key: '_reserve1', label: '预留1', type: 'u16' },
   { class: 'SOC算法参数', key: '_reserve2', label: '预留2', type: 'u16' },
@@ -3510,16 +3510,16 @@ export const BLOCK_BATT_PARAM_R = [
 //topic: block_comm_dev_cfg_r/w
 export const BLOCK_COMM_DEV_CFG_R = [
   /* 系统通讯设备配置参数 ---------------------------------------- */
-  { class: '系统通讯设备配置参数', key: 'PcsType', label: 'PCS类型', type: 'u16', scale: 1, remarks: '0：无PCS\n1：双一力PCS' },
+  { class: '系统通讯设备配置参数', key: 'PcsType', label: 'PCS类型', type: 'u16', scale: 1, remarks: '0-无PCS 1-双一力PCS' },
   { class: '系统通讯设备配置参数', key: 'PcsCount', label: 'PCS数量', type: 'u16', scale: 1 },
-  { class: '系统通讯设备配置参数', key: 'CoolingDeviceType', label: '制冷设备类型', type: 'u16', scale: 1, remarks: '0：无制冷设备\n1：三河同飞' },
+  { class: '系统通讯设备配置参数', key: 'CoolingDeviceType', label: '制冷设备类型', type: 'u16', scale: 1, remarks: '0-无制冷设备 1-三河同飞' },
   { class: '系统通讯设备配置参数', key: 'CoolingDeviceCount', label: '制冷设备数量', type: 'u16', scale: 1 },
-  { class: '系统通讯设备配置参数', key: 'DehumidifierType', label: '除湿空调类型', type: 'u16', scale: 1, remarks: '0：无除湿空调\n1：三河同飞' },
+  { class: '系统通讯设备配置参数', key: 'DehumidifierType', label: '除湿空调类型', type: 'u16', scale: 1, remarks: '0-无除湿空调 1-三河同飞' },
   { class: '系统通讯设备配置参数', key: 'DehumidifierCount', label: '除湿空调数量', type: 'u16', scale: 1 },
-  { class: '系统通讯设备配置参数', key: 'IoControllerType', label: 'I/O控制板类型', type: 'u16', scale: 1, remarks: '0：无I/O控制板\n1：艾莫讯' },
+  { class: '系统通讯设备配置参数', key: 'IoControllerType', label: 'I/O控制板类型', type: 'u16', scale: 1, remarks: '0-无I/O控制板 1-艾莫讯' },
   { class: '系统通讯设备配置参数', key: 'IoControllerCount', label: 'I/O控制板数量', type: 'u16', scale: 1 },
   { class: '系统通讯设备配置参数', key: 'IoControllerBoardIP', label: 'I/O控制板IP基地址', type: 'ipv4', scale: 1 },
-  { class: '系统通讯设备配置参数', key: 'IoControllerNetworkCard', label: 'I/O控制板网卡选择', type: 'u16', scale: 1, remarks: '0：网卡1\n1：网卡2' },
+  { class: '系统通讯设备配置参数', key: 'IoControllerNetworkCard', label: 'I/O控制板网卡选择', type: 'u16', scale: 1, remarks: '0-网卡1 1-网卡2' },
   { class: '保留', key: '_skip', type: 'skip14' }
 ];
 
@@ -3531,13 +3531,13 @@ export const BLOCK_OPERATE_CFG_R = [
   { class: '系统操作配置参数', key: 'MinParallelClusterCount', label: '最小并簇数', type: 'u16', scale: 1, remarks: '最小并簇数 使能簇数 >= 最小并簇数 最小并簇数需大于0 （就地+全部簇开路下才可设置）' },
   { class: '系统操作配置参数', key: 'EnableClusterConfig1', label: '使能簇配置1', type: 'u16', scale: 1, clusterRange: [1, 10], remarks: 'Bit0~9配置第1~10簇(0x3FF为第1~10簇全部使能)（就地+全部簇开路下才可设置）' },
   { class: '系统操作配置参数', key: 'EnableClusterConfig2', label: '使能簇配置2', type: 'u16', scale: 1, clusterRange: [11, 20], remarks: 'Bit0~9配置第11~20簇(0x3FF为第11~20簇全部使能)（就地+全部簇开路下才可设置）' },
-  { class: '系统操作配置参数', key: 'IsStackVoltageZeroWhenAllOpen', label: '全部开路时堆电压是否为0', type: 'u16', scale: 1, remarks: '0：不开启\n1：开启' },
-  { class: '系统操作配置参数', key: 'DoesStackSOCFollowAvgSOCWhenIdle', label: '静置时堆SOC是否追随平均SOC', type: 'u16', scale: 1, remarks: '0：不开启\n1：开启' },
+  { class: '系统操作配置参数', key: 'IsStackVoltageZeroWhenAllOpen', label: '全部开路时堆电压是否为0', type: 'u16', scale: 1, remarks: '0-不开启1-开启' },
+  { class: '系统操作配置参数', key: 'DoesStackSOCFollowAvgSOCWhenIdle', label: '静置时堆SOC是否追随平均SOC', type: 'u16', scale: 1, remarks: '0-不开启1-开启' },
   { class: '系统操作配置参数', key: 'AvgSOCFollowThreshold', label: '平均SOC追随阈值', type: 'u16', scale: 10, unit: '%' },
   { class: '系统操作配置参数', key: 'StackSOCChangeDiff', label: '堆SOC变化差值', type: 'u16', scale: 10, unit: '%' },
-  { class: '系统操作配置参数', key: 'BCPControlExists', label: '是否存在BCP控制', type: 'u16', scale: 1, remarks: '0：不存在\n1：存在' },
+  { class: '系统操作配置参数', key: 'BCPControlExists', label: '是否存在BCP控制', type: 'u16', scale: 1, remarks: '0-不存在1-存在' },
   { class: '系统操作配置参数', key: 'StackSOCCatchUpSlope', label: '堆SOC追赶斜率', type: 'u16', scale: 1, unit: 'ms', remarks: '堆SOC追0.1%时间' },
-  { class: '系统操作配置参数', key: 'ClusterSOCSyncSwitch', label: '簇间SOC同步开关', type: 'u16', scale: 1, remarks: '0：不使能\n1：使能' },
+  { class: '系统操作配置参数', key: 'ClusterSOCSyncSwitch', label: '簇间SOC同步开关', type: 'u16', scale: 1, remarks: '0-不使能1-使能' },
   { class: '系统操作配置参数', key: 'ChargeSOCSyncPoint', label: '充电SOC同步点', type: 'u16', scale: 10, unit: '%' },
   { class: '系统操作配置参数', key: 'DischargeSOCSyncPoint', label: '放电SOC同步点', type: 'u16', scale: 10, unit: '%' },
   { class: '保留', key: '_skip', type: 'skip16' }

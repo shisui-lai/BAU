@@ -6,31 +6,31 @@
         <template #header>
           <div class="card-header">
             <i class="pi pi-plug card-icon"></i>
-            <span class="card-title">堆IO状态</span>
+            <span class="card-title">{{ t('blockIOStatusPage.title') }}</span>
           </div>
         </template>
         <template #content>
           <div class="card-content">
             <div v-if="!hasData" class="no-data">
               <i class="pi pi-info-circle"></i>
-              <span>暂无数据</span>
+              <span>{{ t('blockIOStatusPage.messages.noData') }}</span>
             </div>
             <div v-else class="io-items">
                 <!-- 系统DI状态 -->
                 <div class="io-section">
                   <div class="section-header">
                     <i class="pi pi-plug section-icon"></i>
-                    <span class="section-title">系统DI输入状态</span>
+                    <span class="section-title">{{ t('blockIOStatusPage.sections.systemDI') }}</span>
                   </div>
                   <div class="section-items">
                     <div v-for="item in systemDI" :key="item.key" class="io-item">
                       <div class="io-info">
-                        <span class="io-label">{{ item.label }}</span>
-                        <span class="io-remark">{{ item.remark }}</span>
+                        <span class="io-label">{{ translateParameter(item.label) }}</span>
+                        <span class="io-remark">{{ translateRemark(item.remark) }}</span>
                       </div>
                       <div class="io-status-indicator">
                         <Tag 
-                          :value="getIOStatusText(item.value)" 
+                          :value="translateIOStatus(item.value)" 
                           :severity="getIOStatusSeverity(item.value)"
                           class="status-tag"
                         />
@@ -43,17 +43,17 @@
                 <!-- 系统DO状态 -->
                 <div class="io-section">
                   <div class="section-header">
-                    <span class="section-title">系统DO输出状态</span>
+                    <span class="section-title">{{ t('blockIOStatusPage.sections.systemDO') }}</span>
                   </div>
                   <div class="section-items">
                     <div v-for="item in systemDO" :key="item.key" class="io-item">
                       <div class="io-info">
-                        <span class="io-label">{{ item.label }}</span>
-                        <span class="io-remark">{{ item.remark }}</span>
+                        <span class="io-label">{{ translateParameter(item.label) }}</span>
+                        <span class="io-remark">{{ translateRemark(item.remark) }}</span>
                       </div>
                       <div class="io-status-indicator">
                         <Tag 
-                          :value="getIOStatusText(item.value)" 
+                          :value="translateIOStatus(item.value)" 
                           :severity="getIOStatusSeverity(item.value)"
                           class="status-tag"
                         />
@@ -67,17 +67,17 @@
                 <div class="io-section">
                   <div class="section-header">
                     <i class="pi pi-microchip section-icon"></i>
-                    <span class="section-title">I/O控制板-DI状态</span>
+                    <span class="section-title">{{ t('blockIOStatusPage.sections.ioControlDI') }}</span>
                   </div>
                   <div class="section-items">
                     <div v-for="item in ioControlDI" :key="item.key" class="io-item">
                       <div class="io-info">
-                        <span class="io-label">{{ item.label }}</span>
-                        <span class="io-remark">{{ item.remark }}</span>
+                        <span class="io-label">{{ translateParameter(item.label) }}</span>
+                        <span class="io-remark">{{ translateRemark(item.remark) }}</span>
                       </div>
                       <div class="io-status-indicator">
                         <Tag 
-                          :value="getIOStatusText(item.value)" 
+                          :value="translateIOStatus(item.value)" 
                           :severity="getIOStatusSeverity(item.value)"
                           class="status-tag"
                         />
@@ -90,17 +90,17 @@
                 <!-- I/O控制板DO状态 -->
                 <div class="io-section">
                   <div class="section-header">
-                    <span class="section-title">I/O控制板-DO状态</span>
+                    <span class="section-title">{{ t('blockIOStatusPage.sections.ioControlDO') }}</span>
                   </div>
                   <div class="section-items">
                     <div v-for="item in ioControlDO" :key="item.key" class="io-item">
                       <div class="io-info">
-                        <span class="io-label">{{ item.label }}</span>
-                        <span class="io-remark">{{ item.remark }}</span>
+                        <span class="io-label">{{ translateParameter(item.label) }}</span>
+                        <span class="io-remark">{{ translateRemark(item.remark) }}</span>
                       </div>
                       <div class="io-status-indicator">
                         <Tag
-                          :value="getIOStatusText(item.value)"
+                          :value="translateIOStatus(item.value)"
                           :severity="getIOStatusSeverity(item.value)"
                           class="status-tag"
                         />
@@ -113,12 +113,12 @@
                 <!-- I/O控制板心跳 -->
                 <div class="io-section">
                   <div class="section-header">
-                    <span class="section-title">I/O控制板心跳</span>
+                    <span class="section-title">{{ t('blockIOStatusPage.sections.ioHeartbeat') }}</span>
                   </div>
                   <div class="section-items">
                     <div v-for="item in ioHeartbeat" :key="item.key" class="io-item">
                       <div class="io-info">
-                        <span class="io-label">{{ item.label }}</span>
+                        <span class="io-label">{{ translateParameter(item.label) }}</span>
                       </div>
                       <div class="io-status-indicator">
                         <span class="io-value">{{ item.value }}</span>
@@ -137,9 +137,13 @@
 <script setup>
 import { useBlockIO } from '@/composables/core/data-processing/block/useBlockIO'
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
+import { useI18n } from 'vue-i18n'
 import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import { computed } from 'vue'
+
+// 国际化
+const { t } = useI18n()
 
 // 堆选择功能
 const { selectedBlock } = useBlockSelect()
@@ -171,6 +175,22 @@ const getLEDClass = (value) => {
   if (value === 1 || value === true) return 'led-active'
   if (value === 0 || value === false) return 'led-inactive'
   return 'led-unknown'
+}
+
+// 翻译函数
+const translateParameter = (label) => {
+  return t(`blockIOStatusPage.parameters.${label}`, label)
+}
+
+const translateRemark = (remark) => {
+  if (!remark) return ''
+  return t(`blockIOStatusPage.remarks.${remark}`, remark)
+}
+
+const translateIOStatus = (value) => {
+  if (value === 1 || value === true) return t('blockIOStatusPage.status.activated')
+  if (value === 0 || value === false) return t('blockIOStatusPage.status.inactivated')
+  return t('blockIOStatusPage.status.unknown')
 }
 </script>
 

@@ -81,8 +81,8 @@ export const blockRemoteCommandConfig = {
     confirmMessage: '确定要执行周期性绝缘电阻检测操作吗？',
     description: '控制周期性绝缘电阻检测的启用和禁用',
     options: [
-      { label: '开启周期性绝缘检测', value: 0 },
-      { label: '关闭周期性绝缘检测', value: 1 }
+      { label: '关闭周期性绝缘检测', value: 0 },
+      { label: '开启周期性绝缘检测', value: 1 }
     ]
   },
 

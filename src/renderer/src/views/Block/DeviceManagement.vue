@@ -2,12 +2,14 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
 import { onMounted, onUnmounted, computed, ref, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { BLOCK_COMMON_PARAM_R, BLOCK_TIME_CFG_R, BLOCK_PORT_CFG_R } from '../../../../main/table.js'
 import { useBlockCommonParam } from '@/composables/core/data-processing/parameter-management/useBlockCommonParam'
 import { useSystemConfig } from '@/composables/core/data-processing/parameter-management/useSystemConfig'
+import { translateDropdownOptions } from '@/configs/ui/dropdownConfigs'
 import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
@@ -19,6 +21,7 @@ import InputText from 'primevue/inputtext'
 import { getDropdownConfig, isDropdownParameter } from '@/configs/ui/dropdownConfigs'
 
 const toastService = useToast()
+const { t, locale, te } = useI18n()
 
 //  堆系统基本配置参数配置 - 表驱动
 const blockCommonParamHandler = useBlockCommonParam()
@@ -61,7 +64,7 @@ const blockTimeConfig = {
     readTopicTemplate: 'bms/host/s2d/b1/block_time_cfg_r',
     writeTopicTemplate: 'bms/host/s2d/b1/block_time_cfg_w',
     parameterFields: BLOCK_TIME_CFG_R,
-    parameterClasses: [ { name: '系统时间配置', byteOffset: 0, byteLength: calcByteLength(BLOCK_TIME_CFG_R) } ],
+    parameterClasses: [ { name: '系统时间配置', nameKey: 'config.deviceManagementPage.sections.timeSettings', byteOffset: 0, byteLength: calcByteLength(BLOCK_TIME_CFG_R) } ],
     parameterSerializer: (parameterDataFrame, startByteOffset, registerCount) =>
       serializeParameterData(parameterDataFrame, BLOCK_TIME_CFG_R, startByteOffset, registerCount, '[useBlockTimeCfg]', '设备时间设置'),
     defaultAddress: { blockNumber: 1, clusterNumber: 0 }
@@ -74,7 +77,7 @@ const blockPortConfig = {
     readTopicTemplate: 'bms/host/s2d/b1/block_port_cfg_r',
     writeTopicTemplate: 'bms/host/s2d/b1/block_port_cfg_w',
     parameterFields: BLOCK_PORT_CFG_R,
-    parameterClasses: [ { name: '系统端口配置参数', byteOffset: 0, byteLength: calcByteLength(BLOCK_PORT_CFG_R) } ],
+    parameterClasses: [ { name: '系统端口配置参数', nameKey: 'config.deviceManagementPage.sections.portConfig', byteOffset: 0, byteLength: calcByteLength(BLOCK_PORT_CFG_R) } ],
     parameterSerializer: (parameterDataFrame, startByteOffset, registerCount) =>
       serializeParameterData(parameterDataFrame, BLOCK_PORT_CFG_R, startByteOffset, registerCount, '[useBlockPortCfg]', '系统端口配置参数'),
     defaultAddress: { blockNumber: 1, clusterNumber: 0 }
@@ -232,8 +235,8 @@ function sendPortSetParametersWithValidation() {
   if (ipv4Errors.length > 0) {
     toastService.add({
       severity: 'error',
-      summary: 'IP地址格式错误',
-      detail: `以下IP地址格式不正确，请修正后再下发：\n${ipv4Errors.join('\n')}`,
+      summary: t('config.config.deviceManagementPage.messages.ipFormatError'),
+      detail: t('config.config.deviceManagementPage.messages.ipFormatErrorDetail', [ipv4Errors.join('\n')]),
       life: 8000
     })
     return
@@ -679,6 +682,31 @@ function optionsForLabel(label){
   if (conf.options && Array.isArray(conf.options)) return conf.options
   return []
 }
+
+// 翻译下拉框选项函数 - 直接翻译，避免循环依赖
+function getTranslatedDropdownOptions(parameterLabel) {
+  const options = optionsForLabel(parameterLabel)
+  if (!Array.isArray(options)) return []
+  
+  return translateDropdownOptions(options, parameterLabel, t, te, locale.value, 'config.deviceManagementPage')
+}
+
+// 翻译端口配置下拉框选项函数
+function getTranslatedPortDropdownOptions(parameterLabel) {
+  const options = getPortParameterDropdownOptions(parameterLabel)
+  if (!Array.isArray(options)) return []
+  
+  // 端口配置使用不同的翻译键路径
+  return translateDropdownOptions(options, parameterLabel, t, te, locale.value, 'config.deviceManagementPage')
+}
+
+// 翻译端口配置参数标签函数
+function getPortLabelTranslation(label) {
+  if (locale.value === 'zh') return label
+  return te(`config.deviceManagementPage.portLabels.${label}`) 
+    ? t(`config.deviceManagementPage.portLabels.${label}`) 
+    : label
+}
 </script>
 
 <template>
@@ -689,14 +717,14 @@ function optionsForLabel(label){
       <div class="left-col" ref="leftColumnRef">
         <!-- 堆系统基本配置（移入左列） -->
         <div class="table-container order-like-card basic-card">
-          <h2 class="table-title">堆系统基本配置</h2>
+          <h2 class="table-title">{{ t('config.deviceManagementPage.sections.deviceCommonConfig') }}</h2>
           <div class="table-content">
             <div class="form-grid">
               <div class="form-row">
-                <label>远方就地模式</label>
+                <label>{{ t('config.deviceManagementPage.labels.remoteLocalMode') }}</label>
                 <Dropdown
                   v-model="mdlRemoteLocalMode"
-                  :options="optionsForLabel('远方就地模式')"
+                  :options="getTranslatedDropdownOptions('远方就地模式')"
                   optionLabel="label"
                   optionValue="value"
                   :disabled="isCurrentlyReading"
@@ -704,10 +732,10 @@ function optionsForLabel(label){
                 />
               </div>
               <div class="form-row">
-                <label>分簇控制标志位</label>
+                <label>{{ t('config.deviceManagementPage.labels.splitClusterFlag') }}</label>
                 <Dropdown
                   v-model="mdlSplitClusterFlag"
-                  :options="optionsForLabel('分簇控制标志位')"
+                  :options="getTranslatedDropdownOptions('分簇控制标志位')"
                   optionLabel="label"
                   optionValue="value"
                   :disabled="isCurrentlyReading"
@@ -715,10 +743,10 @@ function optionsForLabel(label){
                 />
               </div>
               <div class="form-row">
-                <label>EMS通讯故障断接触器使能</label>
+                <label>{{ t('config.deviceManagementPage.labels.emsDisconnectEnable') }}</label>
                 <Dropdown
                   v-model="mdlEMSDisconnect"
-                  :options="optionsForLabel('EMS通讯故障断接触器使能')"
+                  :options="getTranslatedDropdownOptions('EMS通讯故障断接触器使能')"
                   optionLabel="label"
                   optionValue="value"
                   :disabled="isCurrentlyReading"
@@ -726,10 +754,10 @@ function optionsForLabel(label){
                 />
               </div>
               <div class="form-row">
-                <label>运维模式</label>
+                <label>{{ t('config.deviceManagementPage.labels.maintainMode') }}</label>
                 <Dropdown
                   v-model="mdlMaintainMode"
-                  :options="optionsForLabel('运维模式')"
+                  :options="getTranslatedDropdownOptions('运维模式')"
                   optionLabel="label"
                   optionValue="value"
                   :disabled="isCurrentlyReading"
@@ -737,10 +765,10 @@ function optionsForLabel(label){
                 />
               </div>
               <div class="form-row">
-                <label>内测模式</label>
+                <label>{{ t('config.deviceManagementPage.labels.internalTestMode') }}</label>
                 <Dropdown
                   v-model="mdlInternalTestMode"
-                  :options="optionsForLabel('内测模式')"
+                  :options="getTranslatedDropdownOptions('内测模式')"
                   optionLabel="label"
                   optionValue="value"
                   :disabled="isCurrentlyReading"
@@ -748,14 +776,14 @@ function optionsForLabel(label){
                 />
               </div>
               <div class="form-row">
-                <label>实时数据记录周期</label>
+                <label>{{ t('config.deviceManagementPage.labels.realTimeRecordPeriod') }}</label>
                 <div class="input-cell">
                   <InputNumber
                     v-model="mdlRealTimeDataRecordPeriod"
                     :min="1"
                     :useGrouping="false"
                     :disabled="isCurrentlyReading"
-                    suffix=" 秒"
+                    :suffix="' ' + t('config.deviceManagementPage.labels.second')"
                   />
                 </div>
               </div>
@@ -767,107 +795,107 @@ function optionsForLabel(label){
 
               <!-- 恢复与上方相同的两列对齐：左侧中文与上方下拉保持同一列，右侧输入保持同一列 -->
               <div class="form-row">
-                <label>当前堆数</label>
+                <label>{{ t('config.deviceManagementPage.labels.blockCount') }}</label>
                 <div class="input-cell"><InputNumber v-model="mdlBlockCount" :min="0" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
               </div>
               <div class="form-row">
-                <label>第一堆下簇数</label>
+                <label>{{ t('config.deviceManagementPage.labels.clusterCount1') }}</label>
                 <div class="input-cell"><InputNumber v-model="mdlClusterCount1" :min="0" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
               </div>
               <div class="form-row">
-                <label>第二堆下簇数</label>
+                <label>{{ t('config.deviceManagementPage.labels.clusterCount2') }}</label>
                 <div class="input-cell"><InputNumber v-model="mdlClusterCount2" :min="0" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
               </div>
               <div class="form-row">
-                <label>第三堆下簇数</label>
+                <label>{{ t('config.deviceManagementPage.labels.clusterCount3') }}</label>
                 <div class="input-cell"><InputNumber v-model="mdlClusterCount3" :min="0" :max="20" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
               </div>
               <div class="form-row">
-                <label>第四堆下簇数</label>
+                <label>{{ t('config.deviceManagementPage.labels.clusterCount4') }}</label>
                 <div class="input-cell"><InputNumber v-model="mdlClusterCount4" :min="0" :max="20" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
               </div>
               <div class="form-row">
-                <label>第五堆下簇数</label>
+                <label>{{ t('config.deviceManagementPage.labels.clusterCount5') }}</label>
                 <div class="input-cell"><InputNumber v-model="mdlClusterCount5" :min="0" :max="20" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
               </div>
               <div class="form-row">
-                <label>第六堆下簇数</label>
+                <label>{{ t('config.deviceManagementPage.labels.clusterCount6') }}</label>
                 <div class="input-cell"><InputNumber v-model="mdlClusterCount6" :min="0" :max="20" :useGrouping="false" :disabled="isCurrentlyReading" /></div>
               </div>
 
               <div class="button-row">
-                <Button :label="isCurrentlyReading ? '停止读取' : '开始读取'" :icon="isCurrentlyReading ? 'pi pi-stop' : 'pi pi-play'" :severity="isCurrentlyReading ? 'danger' : 'success'" @click="isCurrentlyReading ? stopParameterReading() : startParameterReadingWithRetry()" size="small" />
-                <Button label="下发参数" icon="pi pi-upload" severity="warning" @click="sendCurrentClassParameters" :disabled="isCurrentlyReading" size="small" />
+                <Button :label="isCurrentlyReading ? t('config.deviceManagementPage.buttons.stopReading') : t('config.deviceManagementPage.buttons.startReading')" :icon="isCurrentlyReading ? 'pi pi-stop' : 'pi pi-play'" :severity="isCurrentlyReading ? 'danger' : 'success'" @click="isCurrentlyReading ? stopParameterReading() : startParameterReadingWithRetry()" size="small" />
+                <Button :label="t('config.deviceManagementPage.buttons.sendParameters')" icon="pi pi-upload" severity="warning" @click="sendCurrentClassParameters" :disabled="isCurrentlyReading" size="small" />
               </div>
             </div>
           </div>
         </div>
         <!-- 设备时间（三个时间块：当前设备时间 + 电脑实时时间 + 设置时间） -->
         <div class="table-container order-like-card dm-card time-card">
-          <h2 class="table-title">设备时间设置</h2>
+          <h2 class="table-title">{{ t('config.deviceManagementPage.sections.timeSettings') }}</h2>
           <div class="table-content">
             <div class="time-grid">
               <!-- 设备当前时间块 -->
               <div class="time-block">
-                <div class="time-title">设备当前时间</div>
+                <div class="time-title">{{ t('config.deviceManagementPage.labels.deviceCurrentTime') }}</div>
                 <div class="time-line">
                   <InputNumber class="time-input" v-model="timeReadback.Year" :useGrouping="false" disabled />
-                  <span>年</span>
+                  <span>{{ t('config.deviceManagementPage.labels.year') }}</span>
                   <InputNumber class="time-input" v-model="timeReadback.Month" :useGrouping="false" disabled />
-                  <span>月</span>
+                  <span>{{ t('config.deviceManagementPage.labels.month') }}</span>
                   <InputNumber class="time-input" v-model="timeReadback.Day" :useGrouping="false" disabled />
-                  <span>日</span>
+                  <span>{{ t('config.deviceManagementPage.labels.day') }}</span>
                   <InputNumber class="time-input" v-model="timeReadback.Hour" :useGrouping="false" disabled />
-                  <span>时</span>
+                  <span>{{ t('config.deviceManagementPage.labels.hour') }}</span>
                   <InputNumber class="time-input" v-model="timeReadback.Minute" :useGrouping="false" disabled />
-                  <span>分</span>
+                  <span>{{ t('config.deviceManagementPage.labels.minute') }}</span>
                   <InputNumber class="time-input" v-model="timeReadback.Second" :useGrouping="false" disabled />
-                  <span>秒</span>
+                  <span>{{ t('config.deviceManagementPage.labels.second') }}</span>
                   <div class="spacer"></div>
-                  <Button label="读取" size="small" @click="requestTimeRead" />
+                  <Button :label="t('config.deviceManagementPage.buttons.read')" size="small" @click="requestTimeRead" />
                 </div>
               </div>
 
               <!-- 电脑实时时间块 -->
               <div class="time-block">
-                <div class="time-title">电脑当前时间</div>
+                <div class="time-title">{{ t('config.deviceManagementPage.labels.computerCurrentTime') }}</div>
                 <div class="time-line">
                   <InputNumber class="time-input current-time" v-model="currentComputerTime.Year" :useGrouping="false" disabled />
-                  <span>年</span>
+                  <span>{{ t('config.deviceManagementPage.labels.year') }}</span>
                   <InputNumber class="time-input current-time" v-model="currentComputerTime.Month" :useGrouping="false" disabled />
-                  <span>月</span>
+                  <span>{{ t('config.deviceManagementPage.labels.month') }}</span>
                   <InputNumber class="time-input current-time" v-model="currentComputerTime.Day" :useGrouping="false" disabled />
-                  <span>日</span>
+                  <span>{{ t('config.deviceManagementPage.labels.day') }}</span>
                   <InputNumber class="time-input current-time" v-model="currentComputerTime.Hour" :useGrouping="false" disabled />
-                  <span>时</span>
+                  <span>{{ t('config.deviceManagementPage.labels.hour') }}</span>
                   <InputNumber class="time-input current-time" v-model="currentComputerTime.Minute" :useGrouping="false" disabled />
-                  <span>分</span>
+                  <span>{{ t('config.deviceManagementPage.labels.minute') }}</span>
                   <InputNumber class="time-input current-time" v-model="currentComputerTime.Second" :useGrouping="false" disabled />
-                  <span>秒</span>
+                  <span>{{ t('config.deviceManagementPage.labels.second') }}</span>
                   <div class="spacer"></div>
-                  <span class="live-indicator">● 实时</span>
+                  <span class="live-indicator">● {{ t('config.deviceManagementPage.labels.live') }}</span>
                 </div>
               </div>
 
               <!-- 时间设置块 -->
               <div class="time-block">
-                <div class="time-title">设置时间</div>
+                <div class="time-title">{{ t('config.deviceManagementPage.labels.setTime') }}</div>
                 <div class="time-line">
                   <InputNumber class="time-input" v-model="timeSetData.Year" :useGrouping="false" />
-                  <span>年</span>
+                  <span>{{ t('config.deviceManagementPage.labels.year') }}</span>
                   <InputNumber class="time-input" v-model="timeSetData.Month" :useGrouping="false" />
-                  <span>月</span>
+                  <span>{{ t('config.deviceManagementPage.labels.month') }}</span>
                   <InputNumber class="time-input" v-model="timeSetData.Day" :useGrouping="false" />
-                  <span>日</span>
+                  <span>{{ t('config.deviceManagementPage.labels.day') }}</span>
                   <InputNumber class="time-input" v-model="timeSetData.Hour" :useGrouping="false" />
-                  <span>时</span>
+                  <span>{{ t('config.deviceManagementPage.labels.hour') }}</span>
                   <InputNumber class="time-input" v-model="timeSetData.Minute" :useGrouping="false" />
-                  <span>分</span>
+                  <span>{{ t('config.deviceManagementPage.labels.minute') }}</span>
                   <InputNumber class="time-input" v-model="timeSetData.Second" :useGrouping="false" />
-                  <span>秒</span>
+                  <span>{{ t('config.deviceManagementPage.labels.second') }}</span>
                   <div class="spacer"></div>
-                  <Button label="读取当前" size="small" severity="info" @click="loadCurrentTimeToSet" class="sync-btn" />
-                  <Button label="设置" size="small" severity="warning" @click="sendTimeSet" />
+                  <Button :label="t('config.deviceManagementPage.buttons.readCurrent')" size="small" severity="info" @click="loadCurrentTimeToSet" class="sync-btn" />
+                  <Button :label="t('config.deviceManagementPage.buttons.set')" size="small" severity="warning" @click="sendTimeSet" />
                 </div>
               </div>
             </div>
@@ -877,13 +905,13 @@ function optionsForLabel(label){
       <div class="right-col">
         <!-- 系统端口配置参数卡片（简化：表驱动渲染全部数值字段） -->
         <div class="table-container order-like-card dm-card port-card" ref="rightCardRef">
-          <h2 class="table-title">系统端口配置参数</h2>
+          <h2 class="table-title">{{ t('config.deviceManagementPage.sections.portConfig') }}</h2>
           <div class="table-content">
             <!-- 固定按钮区域 -->
             <div class="fixed-buttons">
               <div class="button-row left compact">
-                <Button :label="isReadingPort ? '停止读取' : '开始读取'" :icon="isReadingPort ? 'pi pi-stop' : 'pi pi-play'" :severity="isReadingPort ? 'danger' : 'success'" size="small" @click="handlePortReadButtonClick" />
-                <Button label="设置" icon="pi pi-upload" size="small" severity="warning" @click="sendPortSetParametersWithValidation" :disabled="isReadingPort" />
+                <Button :label="isReadingPort ? t('config.deviceManagementPage.buttons.stopReading') : t('config.deviceManagementPage.buttons.startReading')" :icon="isReadingPort ? 'pi pi-stop' : 'pi pi-play'" :severity="isReadingPort ? 'danger' : 'success'" size="small" @click="handlePortReadButtonClick" />
+                <Button :label="t('config.deviceManagementPage.buttons.set')" icon="pi pi-upload" size="small" severity="warning" @click="sendPortSetParametersWithValidation" :disabled="isReadingPort" />
               </div>
             </div>
             <!-- 可滚动内容区域 -->
@@ -895,13 +923,13 @@ function optionsForLabel(label){
                 class="port-row two-col-item"
               >
                 <div class="port-col">
-                  <label class="port-field-label">{{ p.label || p.key }}</label>
+                  <label class="port-field-label">{{ getPortLabelTranslation(p.label || p.key) }}</label>
                   <!-- IPv4地址字段：使用普通输入框+验证 -->
                   <template v-if="p.type === 'ipv4'">
                     <InputText
                       :class="getIPv4InputClass(getPortModel(p).value)"
                       v-model="getPortModel(p).value"
-                      placeholder="0.0.0.0"
+                      :placeholder="t('config.deviceManagementPage.placeholders.ipv4Default')"
                       :disabled="isReadingPort"
                     />
                   </template>
@@ -909,11 +937,11 @@ function optionsForLabel(label){
                   <template v-else-if="isPortParameterDropdown(p.label)">
                     <Dropdown
                       class="port-field-input"
-                      :options="getPortParameterDropdownOptions(p.label)"
+                      :options="getTranslatedPortDropdownOptions(p.label)"
                       optionLabel="label"
-                      :modelValue="getPortParameterDropdownOptions(p.label)?.find(opt => opt.value === getPortModel(p).value)"
+                      :modelValue="getTranslatedPortDropdownOptions(p.label)?.find(opt => opt.value === getPortModel(p).value)"
                       @update:modelValue="val => updatePortDropdownParameterValue(p.key, val)"
-                      placeholder="请选择"
+                      :placeholder="t('config.deviceManagementPage.placeholders.select')"
                       :disabled="isReadingPort"
                     />
                   </template>

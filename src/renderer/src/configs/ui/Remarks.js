@@ -58,7 +58,7 @@ export const BASE_PARAM_REMARKS = {
   // 'clusterRatedPower': '0.01kW',
   
   // 均衡参数备注
-  'balanceStartTime': '例开启时间3S，停止1S；实际运行均衡3S停止1S，周期为4S；',
+  'balanceStartTime': '例开启时间3s，停止1s；实际运行均衡3s停止1s，周期为4s；',
   'balanceStopTime': '',
   'balanceModeOption': '0：禁止自动均衡；1：开路；2：静置；3：放电；4：充电；5：开路、静置；6：开路、放电；7：开路、充电；8：静置、放电；9：静置、充电；10：放电、充电；11：开路、静置、放电；12：开路、静置、充电；13：开路、充电、放电；14：静置、充电、放电；15：开路、静置、放电、充电',
   'balanceVoltMax': '',
@@ -94,11 +94,11 @@ export const FACTORY_CALIB_PARAM_REMARKS = {
   'localId': '默认0xE8，正式版本为0xD0-0xEF',
 
   // 网络配置备注
-  'localIp': '第一堆起始地址:192.168.10.208;第二堆起始地址:192.168.10.231',
-  'subnetMask': '255.255.255.0',
-  'defaultGateway': '192.168.10.1',
-  'primaryDns': '8.8.8.8',
-  'secondaryDns': '8.8.4.4',
+  'localIp': '第一堆起始地址_192_168_10_208_第二堆起始地址_192_168_10_231',
+  'subnetMask': 'IP_255_255_255_0',
+  'defaultGateway': 'IP_192_168_10_1',
+  'primaryDns': 'IP_8_8_8_8',
+  'secondaryDns': 'IP_8_8_4_4',
   'port': '默认为502',
 
   // MAC地址备注

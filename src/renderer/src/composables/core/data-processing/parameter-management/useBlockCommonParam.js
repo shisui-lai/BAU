@@ -51,7 +51,16 @@ function computeParameterClassesByTable(fieldTable) {
     offset += bytes
   }
 
-  return classRanges.map(r => ({ name: r.name, byteOffset: r.start, byteLength: r.end - r.start }))
+  return classRanges.map(r => {
+    const classInfo = { name: r.name, byteOffset: r.start, byteLength: r.end - r.start }
+    
+    // 为设备管理页面的分类添加翻译键
+    if (r.name === '系统基本配置') {
+      classInfo.nameKey = 'config.deviceManagementPage.sections.deviceCommonConfig'
+    }
+    
+    return classInfo
+  })
 }
 
 export function useBlockCommonParam() {

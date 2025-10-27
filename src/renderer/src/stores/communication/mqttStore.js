@@ -273,6 +273,18 @@ export const useMqttStore = defineStore('mqtt', {
       // 监听MQTT连接成功事件
       window.electron.ipcRenderer.on('mqtt-connected', (_, data) => {
         console.log('[MQTT Store] 收到连接成功事件:', data)
+        
+        // 更新配置信息，确保clientId和port信息是最新的
+        if (data.clientId) {
+          this.config.clientId = data.clientId
+        }
+        if (data.host) {
+          this.config.host = data.host
+        }
+        if (data.port) {
+          this.config.port = data.port
+        }
+        
         this.setConnected()
         this.stats.lastStatusChange = Date.now()
       })

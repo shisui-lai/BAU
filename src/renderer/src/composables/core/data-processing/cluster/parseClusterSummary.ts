@@ -1,22 +1,51 @@
 // composables/parseClusterSummary.ts
-import { reactive } from 'vue'
+import { markRaw, shallowRef, watch } from 'vue'
 import {
   ensureClusterOption,
   selectedCluster,
 } from '../../device-selection/useClusterSelect'
 
-export const clusterFrames = reactive(
+/* ========== 数据存储层 ========== */
+// 原始数据存储（非响应式，性能最优）
+const rawClusterData = markRaw(
   new Map<string, Map<string, any[]>>()
 )
 
+/* ========== 响应式更新层 ========== */
+// 更新触发器
+export const clusterSummaryTick = shallowRef(0)
+
+// 响应式数据存储
+export const clusterFrames = shallowRef(
+  new Map<string, Map<string, any[]>>()
+)
+
+/* ========== 监听更新 ========== */
+watch(
+  clusterSummaryTick,
+  () => {
+    // 从原始数据复制到响应式存储
+    const newFrames = new Map<string, Map<string, any[]>>()
+    for (const [key, innerMap] of rawClusterData.entries()) {
+      newFrames.set(key, new Map(innerMap))
+    }
+    clusterFrames.value = newFrames
+  },
+  { immediate: true }
+)
+
+/* ========== 解析函数 ========== */
 export function parseClusterSummary(msg: any) {
   const key = `${msg.blockId}-${msg.clusterId}`
 
-  if (!clusterFrames.has(key))
-    clusterFrames.set(key, reactive(new Map<string, any[]>()))
+  if (!rawClusterData.has(key))
+    rawClusterData.set(key, new Map<string, any[]>())
 
-  const m = clusterFrames.get(key)!
+  const m = rawClusterData.get(key)!
   msg.data.forEach((sec: any) => m.set(sec.class, sec.element))
+
+  // 触发响应式更新
+  clusterSummaryTick.value++
 
   // 【已禁用】动态发现机制，改用配置驱动方式
   // ensureClusterOption(key)
@@ -26,7 +55,10 @@ export function parseClusterSummary(msg: any) {
 
 /** 页面侧取数  */
 export function pickCluster(key: string, classes: string[]) {
-  const m = clusterFrames.get(key)
+  // 建立依赖关系
+  clusterSummaryTick.value
+  
+  const m = clusterFrames.value.get(key)
   if (!m) return []
 
   

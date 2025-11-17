@@ -736,7 +736,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="card">
+  <div class="page-wrapper">
+    <div class="card">
     <!-- 校准类型选择区 -->
     <div class="mb-4">
       <label for="kb-select" class="form-label">{{ t('analogCalibration.selectLabel') }}</label>
@@ -906,10 +907,11 @@ onUnmounted(() => {
     </div>
   </Dialog>
 
-  <!-- 取消提示 -->
-  <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
-    <span>{{ t('analogCalibration.password.cancelTip') }}</span>
-  </Dialog>
+    <!-- 取消提示 -->
+    <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
+      <span>{{ t('analogCalibration.password.cancelTip') }}</span>
+    </Dialog>
+  </div>
 </template>
 
 

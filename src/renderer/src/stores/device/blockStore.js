@@ -124,8 +124,17 @@ export const useBlockStore = defineStore('block', () => {
     // 排序
     enrichedOptions.sort((a, b) => a.block - b.block)
     
-    availableBlocks.value = enrichedOptions
-    console.log('[blockStore] replaceBlockOptions: replaced with', enrichedOptions.length, 'options')
+    // 比较新旧选项内容，只有内容变化时才更新
+    const oldOptions = availableBlocks.value.map(o => o.value)
+    const newOptionsValues = enrichedOptions.map(o => o.value)
+    const isSame = oldOptions.length === newOptionsValues.length && 
+                   oldOptions.every((val, idx) => val === newOptionsValues[idx])
+    
+    // 只有内容变化时才更新，避免不必要的响应式更新导致闪烁
+    if (!isSame) {
+      availableBlocks.value = enrichedOptions
+      console.log('[blockStore] replaceBlockOptions: replaced with', enrichedOptions.length, 'options')
+    }
   }
 
   /**
@@ -193,7 +202,6 @@ export const useBlockStore = defineStore('block', () => {
    */
   function setSelectedBlockForView(blockKey) {
     selectedBlockForView.value = blockKey
-    console.log('[blockStore] setSelectedBlockForView:', blockKey)
   }
 
   /**
@@ -237,7 +245,6 @@ export const useBlockStore = defineStore('block', () => {
       return
     }
     currentPageType.value = pageType
-    // console.log('[blockStore] setCurrentPageType:', pageType)
   }
 
   // ================== 工具方法 ==================
@@ -286,8 +293,8 @@ export const useBlockStore = defineStore('block', () => {
       return
     }
     
-    // 清空现有选项
-    clearBlockOptions()
+    // 在清空之前先保存旧选项，用于后续比较
+    const oldOptions = availableBlocks.value.map(o => o.value)
     
     // 根据配置生成堆选项
     const newOptions = []
@@ -303,12 +310,24 @@ export const useBlockStore = defineStore('block', () => {
     // 排序并设置选项
     newOptions.sort((a, b) => a.block - b.block)
     
-    availableBlocks.value = newOptions
-    console.log('🔧 [堆配置] 生成选项:', newOptions.map(o => o.value))
+    // 比较新旧选项内容，只有内容变化时才更新
+    const newOptionsValues = newOptions.map(o => o.value)
+    const isSame = oldOptions.length === newOptionsValues.length && 
+                   oldOptions.every((val, idx) => val === newOptionsValues[idx])
     
-    // 触发自动选择最佳堆
-    if (newOptions.length > 0) {
-      scheduleAutoSelect()
+    // 只有内容变化时才更新，避免不必要的响应式更新导致闪烁
+    if (!isSame) {
+      // 清空现有选项（只有在需要更新时才清空）
+      clearBlockOptions()
+      
+      // 设置新选项
+      availableBlocks.value = newOptions
+      console.log('🔧 [堆配置] 生成选项:', newOptions.map(o => o.value))
+      
+      // 触发自动选择最佳堆
+      if (newOptions.length > 0) {
+        scheduleAutoSelect()
+      }
     }
   }
 

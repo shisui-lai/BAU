@@ -156,7 +156,11 @@ function handler(_e, msg) {
   const key = `${msg.blockId}-${msg.clusterId}`;
   // console.log(`[SystemAbstract] 收到 SYS_ABSTRACT for cluster ${key}`);
 
-  cache.value[key] = msg.data;
+  // 浅拷贝数组，确保每次都是新引用，触发响应式更新
+  cache.value[key] = msg.data.map(section => ({
+    ...section,
+    element: [...section.element]
+  }));
 
   if (!clusterOptions.value.includes(key)) {
     clusterOptions.value.push(key);

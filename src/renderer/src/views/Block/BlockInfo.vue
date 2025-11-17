@@ -1,90 +1,75 @@
 <template>
   <div class="card">
-    <Accordion :activeIndex="0">
-      <!-- 堆汇总信息面板 -->
-      <AccordionTab :header="t('config.blockInfoPage.sections.summaryInfo')">
-        <DataTable 
-          :value="blockSummaryData" 
-          stripedRows
-          showGridlines
-          responsiveLayout="scroll"
-          class="block-summary-table"
-          :emptyMessage="selectedBlock ? t('config.blockInfoPage.messages.noData') : t('config.blockInfoPage.messages.selectBlock')"
-        >
-
-          
-          <!-- 左侧参数名称列 -->
-          <Column field="leftLabel" :header="t('config.blockInfoPage.table.parameterName')" style="min-width:200px">
-            <template #body="{ data }">
-              <span class="font-medium">{{ translateParameterName(data.leftLabel) }}</span>
-            </template>
-          </Column>
-          
-          <!-- 左侧实际值列 -->
-          <Column field="leftValue" :header="t('config.blockInfoPage.table.actualValue')" style="min-width:120px">
-            <template #body="{ data }">
-              <span>{{ formatValue(data.leftValue, data.leftScale, data.leftLabel) }}</span>
-            </template>
-          </Column>
-          
-          <!-- 左侧单位列 -->
-          <Column field="leftUnit" :header="t('config.blockInfoPage.table.unit')" style="min-width:80px">
-            <template #body="{ data }">
-              <span>{{ getFieldUnit(data.leftLabel) || '-' }}</span>
-            </template>
-          </Column>
-          
-          <!-- 右侧参数名称列 -->
-          <Column field="rightLabel" :header="t('config.blockInfoPage.table.parameterName')" style="min-width:200px">
-            <template #body="{ data }">
-              <span class="font-medium">{{ translateParameterName(data.rightLabel) }}</span>
-            </template>
-          </Column>
-          
-          <!-- 右侧实际值列 -->
-          <Column field="rightValue" :header="t('config.blockInfoPage.table.actualValue')" style="min-width:120px">
-            <template #body="{ data }">
-              <span>{{ formatValue(data.rightValue, data.rightScale, data.rightLabel) }}</span>
-            </template>
-          </Column>
-          
-          <!-- 右侧单位列 -->
-          <Column field="rightUnit" :header="t('config.blockInfoPage.table.unit')" style="min-width:80px">
-            <template #body="{ data }">
-              <span>{{ getFieldUnit(data.rightLabel) || '-' }}</span>
-            </template>
-          </Column>
-        </DataTable>
-      </AccordionTab>
-      
-      <!-- 堆系统概要信息面板 -->
-      <AccordionTab :header="t('config.blockInfoPage.sections.systemAbstract')">
-        <DataTable 
-          :value="blockSysAbstractData" 
-          :paginator="false"
-          :rows="100"
-          class="sys-abstract-data-table"
-        >
-          <Column field="label" :header="t('config.blockInfoPage.table.parameterName')" style="width: 200px">
-            <template #body="{ data }">
-              <span>{{ translateParameterName(data.label) }}</span>
-            </template>
-          </Column>
-          
-          <Column field="value" :header="t('config.blockInfoPage.table.actualValue')" style="width: 150px">
-            <template #body="{ data }">
-              <span>{{ formatValue(data.value, data.scale, data.label) }}</span>
-            </template>
-          </Column>
-          
-          <Column field="unit" :header="t('config.blockInfoPage.table.unit')" style="width: 80px">
-            <template #body="{ data }">
-              <span>{{ getFieldUnit(data.label) || '-' }}</span>
-            </template>
-          </Column>
-        </DataTable>
-      </AccordionTab>
-    </Accordion>
+    <div class="block-info">
+      <!-- 使用标签页代替手风琴 -->
+      <TabView v-model:activeIndex="activeTabIndex" class="block-info-tabs">
+        <!-- 堆汇总信息标签页 -->
+        <TabPanel :header="t('config.blockInfoPage.sections.summaryInfo')">
+          <div class="info-content" v-if="activeTabIndex === 0">
+            <!-- 空数据提示 -->
+            <div v-if="processedSummaryData.length === 0" class="empty-message">
+              {{ selectedBlock ? t('config.blockInfoPage.messages.noData') : t('config.blockInfoPage.messages.selectBlock') }}
+            </div>
+            
+            <!-- 轻量级原生表格 -->
+            <div v-else class="table-wrapper">
+              <table class="lightweight-table block-summary-table">
+                <thead>
+                  <tr>
+                    <th style="min-width:200px">{{ t('config.blockInfoPage.table.parameterName') }}</th>
+                    <th style="min-width:120px">{{ t('config.blockInfoPage.table.actualValue') }}</th>
+                    <th style="min-width:80px">{{ t('config.blockInfoPage.table.unit') }}</th>
+                    <th style="min-width:200px">{{ t('config.blockInfoPage.table.parameterName') }}</th>
+                    <th style="min-width:120px">{{ t('config.blockInfoPage.table.actualValue') }}</th>
+                    <th style="min-width:80px">{{ t('config.blockInfoPage.table.unit') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, index) in processedSummaryData" :key="index" :class="{ 'striped': index % 2 === 1 }">
+                    <td class="font-medium">{{ row.leftLabelTranslated }}</td>
+                    <td>{{ row.leftValueFormatted }}</td>
+                    <td>{{ row.leftUnitDisplay }}</td>
+                    <td class="font-medium">{{ row.rightLabelTranslated }}</td>
+                    <td>{{ row.rightValueFormatted }}</td>
+                    <td>{{ row.rightUnitDisplay }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </TabPanel>
+        
+        <!-- 堆系统概要信息标签页 -->
+        <TabPanel :header="t('config.blockInfoPage.sections.systemAbstract')">
+          <div class="info-content" v-if="activeTabIndex === 1">
+            <!-- 空数据提示 -->
+            <div v-if="processedSysAbstractData.length === 0" class="empty-message">
+              {{ selectedBlock ? t('config.blockInfoPage.messages.noData') : t('config.blockInfoPage.messages.selectBlock') }}
+            </div>
+            
+            <!-- 轻量级原生表格 -->
+            <div v-else class="table-wrapper">
+              <table class="lightweight-table sys-abstract-table">
+                <thead>
+                  <tr>
+                    <th style="width: 200px">{{ t('config.blockInfoPage.table.parameterName') }}</th>
+                    <th style="width: 150px">{{ t('config.blockInfoPage.table.actualValue') }}</th>
+                    <th style="width: 80px">{{ t('config.blockInfoPage.table.unit') }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(row, index) in processedSysAbstractData" :key="index" :class="{ 'striped': index % 2 === 1 }">
+                    <td>{{ row.labelTranslated }}</td>
+                    <td>{{ row.valueFormatted }}</td>
+                    <td>{{ row.unitDisplay }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </TabPanel>
+      </TabView>
+    </div>
   </div>
 </template>
 
@@ -95,13 +80,14 @@ import { useBlockSelect } from '@/composables/core/device-selection/useBlockSele
 import { pickBlockSummary, parseBlockSummary } from '@/composables/core/data-processing/block/parseBlockSummary'
 import { pickBlockSysAbstract, parseBlockSysAbstract } from '@/composables/core/data-processing/block/parseBlockSysAbstract'
 import { useBlockStore } from '@/stores/device/blockStore'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Accordion from 'primevue/accordion'
-import AccordionTab from 'primevue/accordiontab'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
 import { BLOCK_SUMMARY, BLOCK_SYS_ABSTRACT } from '../../../../main/table.js'
 
 const { t, te, locale } = useI18n()
+
+// 激活的标签页索引（用于懒加载）
+const activeTabIndex = ref(0)
 
 // 使用堆选择composable
 const { blockOptions, selectedBlock } = useBlockSelect()
@@ -139,11 +125,34 @@ const translateParameterName = (name) => {
 // 使用堆store
 const blockStore = useBlockStore()
 
-// 堆汇总数据
+// 堆汇总数据（原始数据）
 const blockSummaryData = ref([])
 
-// 堆系统概要数据
+// 堆系统概要数据（原始数据）
 const blockSysAbstractData = ref([])
+
+// 预处理堆汇总数据（避免模板中重复调用函数）
+const processedSummaryData = computed(() => {
+  return blockSummaryData.value.map(row => ({
+    // 左侧列数据
+    leftLabelTranslated: translateParameterName(row.leftLabel),
+    leftValueFormatted: formatValue(row.leftValue, row.leftScale, row.leftLabel),
+    leftUnitDisplay: getFieldUnit(row.leftLabel) || '-',
+    // 右侧列数据
+    rightLabelTranslated: row.rightLabel ? translateParameterName(row.rightLabel) : '',
+    rightValueFormatted: row.rightLabel ? formatValue(row.rightValue, row.rightScale, row.rightLabel) : '-',
+    rightUnitDisplay: row.rightLabel ? (getFieldUnit(row.rightLabel) || '-') : '-'
+  }))
+})
+
+// 预处理堆系统概要数据（避免模板中重复调用函数）
+const processedSysAbstractData = computed(() => {
+  return blockSysAbstractData.value.map(row => ({
+    labelTranslated: translateParameterName(row.label),
+    valueFormatted: formatValue(row.value, row.scale, row.label),
+    unitDisplay: getFieldUnit(row.label) || '-'
+  }))
+})
 
 // 获取堆显示名称
 const getBlockDisplayName = (blockKey) => {
@@ -159,7 +168,7 @@ const STATUS_MAPPINGS = computed(() => ({
     2: t('config.blockInfoPage.status.faultState.2'),
     3: t('config.blockInfoPage.status.faultState.3')
   },
-  'BAU工作模式': {
+  '堆运行状态': {
     0: t('config.blockInfoPage.status.bauWorkMode.0'),
     1: t('config.blockInfoPage.status.bauWorkMode.1'),
     2: t('config.blockInfoPage.status.bauWorkMode.2'),
@@ -261,7 +270,7 @@ const generateSummaryPlaceholders = () => {
         '堆单体温度最小值节号', '堆单体温度温差极差值'
       ],
       '状态信息': [
-        '堆故障状态', 'BAU工作模式', '设备系统状态', '电池堆禁充禁放状态',
+        '堆故障状态', '堆运行状态', '设备系统状态', '电池堆禁充禁放状态',
         '电池堆的充放电状态', '电池系统循环次数', '系统心跳'
       ]
     }
@@ -339,8 +348,8 @@ const generateSysAbstractPlaceholders = () => {
         '单体SOH平均值', '单体SOH极差值'
       ],
       '动力接插件温度概要': [
-        '动力接插件温度最大值', '动力接插件温度最大值簇编号', '动力接插件温度最大值电池编号',
-        '动力接插件温度最小值', '动力接插件温度最小值簇编号', '动力接插件温度最小值电池编号',
+        '动力接插件温度最大值', '动力接插件温度最大值簇编号', '动力接插件温度最大值包编号',
+        '动力接插件温度最小值', '动力接插件温度最小值簇编号', '动力接插件温度最小值包编号',
         '动力接插件温度平均值', '动力接插件温度极差值'
       ],
       '簇SOC概要': [
@@ -566,80 +575,167 @@ watch(selectedBlock, handleBlockChange)
   border-radius: 8px;
 }
 
-.block-summary-table {
-  margin-top: 0;
+.block-info {
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: var(--surface-ground);
+  min-height: auto;
+  height: auto;
 }
 
-.table-header {
+/* 标签页样式优化 */
+.block-info-tabs {
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: var(--surface-card);
+}
+
+:deep(.p-tabview .p-tabview-nav) {
+  background: var(--surface-section);
+  border-bottom: 1px solid var(--surface-border);
+  padding: 0.5rem 1rem 0;
+}
+
+:deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link) {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-color-secondary);
+  padding: 0.55rem 1rem; /* 更紧凑 */
+  font-weight: 600;
+  font-size: 12px; /* 再缩小标签文字 */
+  transition: all 0.2s ease;
+  border-radius: 6px 6px 0 0;
+  margin-right: 0.25rem;
+  min-height: 32px; /* 更紧凑高度 */
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
 }
 
-.table-header h6 {
-  margin: 0;
+:deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link:hover) {
+  background: var(--surface-hover);
   color: var(--text-color);
-  font-weight: 600;
 }
 
-.sys-abstract-data-table {
+:deep(.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link) {
+  background: var(--surface-card);
+  color: var(--primary-color);
+  border-color: var(--surface-border);
+  border-bottom-color: var(--surface-card);
+}
+
+:deep(.p-tabview .p-tabview-panels) {
+  background: var(--surface-card);
+  padding: 1.2rem; /* 缩小内边距 */
+  border: none;
+}
+
+/* 内容区域 */
+.info-content {
+  position: relative;
+  min-height: auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 空数据提示 */
+.empty-message {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--text-color-secondary);
+  font-size: 12px; /* 再缩小提示文字 */
+}
+
+/* 表格容器 */
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 6px;
+  border: 1px solid var(--surface-border);
+}
+
+/* 轻量级表格样式 */
+.lightweight-table {
   width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-card);
+  font-size: 11px; /* 再缩小字体：12px → 11px */
 }
 
-:deep(.p-datatable .p-datatable-header) {
+.lightweight-table thead {
   background: var(--surface-section);
-  border-bottom: 1px solid var(--surface-border);
+  border-bottom: 2px solid var(--surface-border);
 }
 
-:deep(.p-datatable .p-datatable-thead > tr > th) {
-  background: var(--surface-section);
-  border-bottom: 1px solid var(--surface-border);
+.lightweight-table th {
+  padding: 8px 12px; /* 再缩小内边距 */
+  text-align: left;
   font-weight: 600;
   color: var(--text-color);
+  border-bottom: 1px solid var(--surface-border);
+  white-space: nowrap;
+  font-size: 11px; /* 表头字体 */
 }
 
-:deep(.p-datatable .p-datatable-tbody > tr:nth-child(even)) {
+.lightweight-table td {
+  padding: 8px 12px; /* 再缩小内边距 */
+  border-bottom: 1px solid var(--surface-border);
+  color: var(--text-color);
+  font-size: 11px; /* 单元格字体 */
+}
+
+.lightweight-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.lightweight-table tbody tr:hover {
   background: var(--surface-hover);
 }
 
-:deep(.p-datatable .p-datatable-tbody > tr:hover) {
+.lightweight-table tbody tr.striped {
+  background: var(--surface-ground);
+}
+
+.lightweight-table tbody tr.striped:hover {
   background: var(--surface-hover);
 }
 
-:deep(.p-datatable .p-datatable-tbody > tr > td) {
-  border-bottom: 1px solid var(--surface-border);
-  padding: 12px 16px;
+/* 字体粗细 */
+.font-medium {
+  font-weight: 500;
 }
 
-
-:deep(.p-accordion .p-accordion-header) {
-  background: var(--surface-section);
-  border-bottom: 1px solid var(--surface-border);
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .block-info {
+    max-width: 100%;
+  }
+  
+  :deep(.p-tabview .p-tabview-panels) {
+    padding: 0.8rem;
+  }
+  
+  :deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link) {
+    padding: 0.5rem 1rem; /* 移动端更紧凑 */
+    font-size: 12px;
+  }
+  
+  .lightweight-table {
+    font-size: 10px; /* 移动端进一步缩小 */
+  }
+  
+  .lightweight-table th,
+  .lightweight-table td {
+    padding: 6px 8px; /* 移动端缩小内边距 */
+  }
 }
 
-:deep(.p-accordion .p-accordion-header:not(.p-disabled).p-highlight) {
-  background: var(--surface-hover);
-}
-
-:deep(.p-accordion .p-accordion-content) {
-  border-bottom: 1px solid var(--surface-border);
-  padding: 0;
-}
-
-:deep(.p-accordion .p-accordion-content-wrapper) {
-  padding: 0;
-}
-
-:deep(.p-accordion .p-accordion-header) {
-  transition: all 0.15s ease-in-out;
-}
-
-:deep(.p-accordion .p-accordion-content) {
-  transition: all 0.15s ease-in-out;
-}
-
-:deep(.p-accordion .p-accordion-content-wrapper) {
-  transition: all 0.15s ease-in-out;
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style> 

@@ -1,97 +1,87 @@
 <!-- 故障总览页面组件 -->
 <template>
   <div class="card">
-  <div class="fault-overview">
-    <div class="loading-indicator" v-if="isLoading">
-      <i class="pi pi-spin pi-spinner"></i>
-      <span>{{ t('faultOverview.loading') }}</span>
-    </div>
-    
-    <div v-else>
-        <Accordion class="fault-accordion" multiple :activeIndex="[0]">
-        <!-- 堆级故障面板 -->
-          <AccordionTab :header="t('faultOverview.blockFaultOverview')" class="block-fault-panel">
-          <div class="fault-cards">
-              <!-- Card: 故障最高等级总览 -->
-            <div class="fault-card level-overview">
-                <div class="fault-grid">
-                  <!-- 指示灯说明 - 左上角 -->
-                  <div class="indicator-legend">
-                    <div class="legend-item">
-                      <div class="indicator-light severe"></div>
-                      <span>{{ t('faultOverview.indicatorLegend.severe') }}</span>
+    <div class="fault-overview">
+      <div class="loading-indicator" v-if="isLoading">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>{{ t('faultOverview.loading') }}</span>
+      </div>
+      
+      <div v-else>
+        <!-- 使用标签页代替手风琴 -->
+        <TabView class="fault-tabs">
+          <!-- 堆级故障标签页 -->
+          <TabPanel :header="t('faultOverview.blockFaultOverview')">
+            <div class="fault-content">
+              <!-- 指示灯说明 -->
+              <div class="indicator-legend">
+                <div class="legend-item">
+                  <div class="indicator-light severe"></div>
+                  <span>{{ t('faultOverview.indicatorLegend.severe') }}</span>
+                </div>
+                <div class="legend-item">
+                  <div class="indicator-light general"></div>
+                  <span>{{ t('faultOverview.indicatorLegend.general') }}</span>
+                </div>
+                <div class="legend-item">
+                  <div class="indicator-light minor"></div>
+                  <span>{{ t('faultOverview.indicatorLegend.minor') }}</span>
+                </div>
+                <div class="legend-item">
+                  <div class="indicator-light normal"></div>
+                  <span>{{ t('faultOverview.indicatorLegend.normal') }}</span>
+                </div>
               </div>
-                    <div class="legend-item">
-                      <div class="indicator-light general"></div>
-                      <span>{{ t('faultOverview.indicatorLegend.general') }}</span>
-                </div>
-                    <div class="legend-item">
-                      <div class="indicator-light minor"></div>
-                      <span>{{ t('faultOverview.indicatorLegend.minor') }}</span>
-                </div>
-                    <div class="legend-item">
-                      <div class="indicator-light normal"></div>
-                      <span>{{ t('faultOverview.indicatorLegend.normal') }}</span>
-              </div>
-            </div>
-            
-                  <!-- 故障项网格 -->
-                  <div class="fault-items-grid">
-                    <div v-for="fault in blockGradeOverview" :key="fault.name" 
-                         class="fault-indicator">
-                      <div :class="['indicator-light', fault.color]"></div>
-                      <span class="fault-name">{{ fault.name }}</span>
-                </div>
+              
+              <!-- 故障项网格 -->
+              <div class="fault-items-grid">
+                <div v-for="fault in blockGradeOverview" :key="fault.name" 
+                     class="fault-indicator">
+                  <div :class="['indicator-light', fault.color]"></div>
+                  <span class="fault-name">{{ fault.name }}</span>
                 </div>
               </div>
             </div>
-          </div>
-        </AccordionTab>
-        
-        <!-- 簇级故障面板 -->
-        <AccordionTab 
-          v-for="cluster in clusterData" 
-          :key="cluster.id"
+          </TabPanel>
+          
+          <!-- 簇级故障标签页 -->
+          <TabPanel 
+            v-for="cluster in clusterData" 
+            :key="cluster.id"
             :header="t('faultOverview.clusterFaultOverview', [cluster.id])"
-          class="cluster-fault-panel"
-        >
-          <div class="fault-cards">
-              <!-- Card: 故障最高等级总览 -->
-            <div class="fault-card level-overview">
-                <div class="fault-grid">
-                  <!-- 指示灯说明 - 左上角 -->
-                  <div class="indicator-legend">
-                    <div class="legend-item">
-                      <div class="indicator-light severe"></div>
-                      <span>{{ t('faultOverview.indicatorLegend.severe') }}</span>
+          >
+            <div class="fault-content">
+              <!-- 指示灯说明 -->
+              <div class="indicator-legend">
+                <div class="legend-item">
+                  <div class="indicator-light severe"></div>
+                  <span>{{ t('faultOverview.indicatorLegend.severe') }}</span>
+                </div>
+                <div class="legend-item">
+                  <div class="indicator-light general"></div>
+                  <span>{{ t('faultOverview.indicatorLegend.general') }}</span>
+                </div>
+                <div class="legend-item">
+                  <div class="indicator-light minor"></div>
+                  <span>{{ t('faultOverview.indicatorLegend.minor') }}</span>
+                </div>
+                <div class="legend-item">
+                  <div class="indicator-light normal"></div>
+                  <span>{{ t('faultOverview.indicatorLegend.normal') }}</span>
+                </div>
               </div>
-                    <div class="legend-item">
-                      <div class="indicator-light general"></div>
-                      <span>{{ t('faultOverview.indicatorLegend.general') }}</span>
-                </div>
-                    <div class="legend-item">
-                      <div class="indicator-light minor"></div>
-                      <span>{{ t('faultOverview.indicatorLegend.minor') }}</span>
-                </div>
-                    <div class="legend-item">
-                      <div class="indicator-light normal"></div>
-                      <span>{{ t('faultOverview.indicatorLegend.normal') }}</span>
-              </div>
-            </div>
-            
-                  <!-- 故障项网格 -->
-                  <div class="fault-items-grid">
-                    <div v-for="fault in cluster.overview" :key="fault.name" 
-                         class="fault-indicator">
-                      <div :class="['indicator-light', fault.color]"></div>
-                      <span class="fault-name">{{ fault.name }}</span>
-                </div>
+              
+              <!-- 故障项网格 -->
+              <div class="fault-items-grid">
+                <div v-for="fault in cluster.overview" :key="fault.name" 
+                     class="fault-indicator">
+                  <div :class="['indicator-light', fault.color]"></div>
+                  <span class="fault-name">{{ fault.name }}</span>
                 </div>
               </div>
             </div>
-          </div>
-        </AccordionTab>
-      </Accordion>
+          </TabPanel>
+        </TabView>
       </div>
     </div>
   </div>
@@ -103,8 +93,8 @@ import { useI18n } from 'vue-i18n'
 import { useFaultOverview } from '../../composables/core/data-processing/common/useFaultOverview'
 import { useBlockSelect } from '../../composables/core/device-selection/useBlockSelect'
 import { useBlockStore } from '../../stores/device/blockStore'
-import Accordion from 'primevue/accordion'
-import AccordionTab from 'primevue/accordiontab'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
 
 const { t } = useI18n()
 
@@ -282,8 +272,8 @@ watch(selectedBlock, handleBlockChange)
   max-width: 1400px;
   margin: 0 auto;
   background-color: var(--surface-ground);
-  min-height: auto; /* 改为自适应高度 */
-  height: auto; /* 自适应高度 */
+  min-height: auto;
+  height: auto;
 }
 
 .loading-indicator {
@@ -300,114 +290,62 @@ watch(selectedBlock, handleBlockChange)
   font-size: 18px;
 }
 
-/* 手风琴样式优化 - 贴合主题 */
-.fault-accordion {
+/* 标签页样式优化 */
+.fault-tabs {
   border: 1px solid var(--surface-border);
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   background: var(--surface-card);
-  margin: 0;
-  height: auto; /* 自适应高度 */
 }
 
-
-
-/* 手风琴头部样式 */
-:deep(.p-accordion .p-accordion-header) {
+:deep(.p-tabview .p-tabview-nav) {
   background: var(--surface-section);
-  border: none;
   border-bottom: 1px solid var(--surface-border);
-  margin: 0;
-  transition: all 0.2s ease;
+  padding: 0.5rem 1rem 0;
 }
 
-:deep(.p-accordion .p-accordion-header:last-child) {
-  border-bottom: none;
-}
-
-/* 第一个手风琴面板的上圆角 */
-:deep(.p-accordion .p-accordion-tab:first-child .p-accordion-header) {
-  border-radius: 12px 12px 0 0;
-}
-
-/* 最后一个手风琴面板的下圆角 - 当收起时 */
-:deep(.p-accordion .p-accordion-tab:last-child .p-accordion-header:not(.p-highlight)) {
-  border-radius: 0 0 12px 12px;
-}
-
-/* 最后一个手风琴面板的内容区域下圆角 - 当展开时 */
-:deep(.p-accordion .p-accordion-tab:last-child .p-accordion-content) {
-  border-radius: 0 0 12px 12px;
-}
-
-:deep(.p-accordion .p-accordion-header a) {
-  padding: 16px 20px;
+:deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link) {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-color-secondary);
+  padding: 0.75rem 1.25rem;
   font-weight: 600;
-  color: var(--text-color);
-  background: transparent;
-  border: none;
-  border-radius: 0;
   transition: all 0.2s ease;
+  border-radius: 6px 6px 0 0;
+  margin-right: 0.25rem;
 }
 
-
-
-:deep(.p-accordion .p-accordion-header:hover) {
+:deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link:hover) {
   background: var(--surface-hover);
-}
-
-:deep(.p-accordion .p-accordion-header:hover a) {
-  background: transparent;
   color: var(--text-color);
 }
 
-:deep(.p-accordion .p-accordion-header:not(.p-disabled).p-highlight) {
-  background: var(--surface-hover);
-}
-
-:deep(.p-accordion .p-accordion-header.p-highlight a) {
-  color: var(--text-color);
-  background: transparent;
-}
-
-/* 手风琴内容样式 */
-:deep(.p-accordion .p-accordion-content) {
-  border: none;
-  background: transparent;
-  padding: 0;
-}
-
-/* 卡片容器样式 - 单列显示 */
-.fault-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0;
+:deep(.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link) {
   background: var(--surface-card);
-  height: 100%;
+  color: var(--primary-color);
+  border-color: var(--surface-border);
+  border-bottom-color: var(--surface-card);
 }
 
-/* 最后一个手风琴面板内的卡片下圆角 */
-:deep(.p-accordion .p-accordion-tab:last-child .fault-cards) {
-  border-radius: 0 0 12px 12px;
-  overflow: hidden;
+:deep(.p-tabview .p-tabview-panels) {
+  background: var(--surface-card);
+  padding: 1.5rem;
+  border: none;
 }
 
-.fault-grid {
+/* 故障内容区域 */
+.fault-content {
   position: relative;
-  padding: 16px;
-  min-height: auto; /* 改为自适应高度 */
+  min-height: auto;
 }
 
-/* 指示灯说明 - 左上角 */
+/* 指示灯说明 */
 .indicator-legend {
-  position: absolute;
-  top: 8px;
-  left: 16px;
   display: flex;
   gap: 12px;
-  z-index: 10;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .legend-item {
@@ -435,7 +373,6 @@ watch(selectedBlock, handleBlockChange)
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 12px;
-  padding-top: 25px; /* 压缩为左上角的指示灯说明留出的空间 */
 }
 
 .fault-indicator {
@@ -492,28 +429,6 @@ watch(selectedBlock, handleBlockChange)
   flex: 1;
 }
 
-.fault-card {
-  border: 1px solid var(--surface-border);
-  border-radius: 0;
-  padding: 0;
-  background: var(--surface-card);
-  box-shadow: none;
-  transition: all 0.3s ease;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.fault-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.card-subtitle {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-color-secondary);
-}
-
 /* 响应式设计 */
 @media (max-width: 768px) {
   .fault-items-grid {
@@ -526,23 +441,21 @@ watch(selectedBlock, handleBlockChange)
   
   .indicator-legend {
     gap: 8px;
-    top: 6px;
-    left: 12px;
   }
   
   .legend-item {
-    padding: 0px 6px !important;
-    font-size: 11px;
-    gap: 1px;
+    padding: 3px 8px;
+    font-size: 12px;
+    gap: 4px;
   }
   
   .legend-item .indicator-light {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   
-  .fault-items-grid {
-    padding-top: 25px;
+  :deep(.p-tabview .p-tabview-panels) {
+    padding: 1rem;
   }
 }
 

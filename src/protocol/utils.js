@@ -16,7 +16,9 @@
            REAL_TIME_SAVE_R, SOX_CFG_PARAM_R, SOC_CFG_PARAM_R, SOH_CFG_PARAM_R, BLOCK_SUMMARY,
            BLOCK_VERSION, BLOCK_SYS_ABSTRACT, BLOCK_IO_STATUS, BLOCK_ANALOG_FAULT_LEVEL, BLOCK_ANALOG_FAULT_GRADE,
            BLOCK_COMMON_PARAM_R, BLOCK_TIME_CFG_R, BLOCK_PORT_CFG_R, BLOCK_DNS_PARAM_R,
-           BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_COMM_LOST, FACTORY_CALIB_PARAM_R } from '../main/table'
+           BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_COMM_LOST, FACTORY_CALIB_PARAM_R,
+           BCU_BMU_UPGRADE_RESULT_FIELDS, BAU_UPGRADE_RESULT_FIELDS, SYS_RUN_TIME_R,
+           EVENT_RECORD_FLAG_R, EVENT_RECORD_R } from '../main/table'
   export const toBuf = hex => Buffer.from(hex.replace(/\s+/g, ''), 'hex')
   export const dv    = buf => new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
 
@@ -98,6 +100,13 @@
           continue
         }
 
+      // skip类型：跳过指定字节数
+      if (type.startsWith('skip')) {
+        const skipBytes = Number(type.slice(4))
+        off += skipBytes
+          continue
+        }
+
       /* ---------- 位字段(bit) 解析（单 bit -> Boolean） ---------------- */
       if (type === 'bit'){                                            
         const parentVal = cache[fld.bitsOf]          // 取所属寄存器原始值
@@ -170,7 +179,16 @@
          if (type === 'hex' || type === 'hex16') {
            base[key] = rawVal;
          } else {
-           base[key] = rawVal / (fld.scale ?? 1);
+           // 如果字段有map属性，进行映射；否则进行scale处理
+           if (fld.map && typeof fld.map === 'object') {
+             // 对于有map的字段，存储原始值和映射后的文本值
+             base[key] = {
+               raw: rawVal,
+               txt: fld.map[rawVal] !== undefined ? fld.map[rawVal] : `未知值(0x${rawVal.toString(16).toUpperCase()})`
+             }
+           } else {
+             base[key] = rawVal / (fld.scale ?? 1);
+           }
          }
          cache[key] = rawVal;
 
@@ -960,6 +978,241 @@ export function createQueryCommandParser(commandTopic) {
   }
 }
 
+/**
+ * 从uint32_t bitmask解析BMU失败设备列表
+ * @param {number} bitmask - 32位bitmask，每个bit代表一个BMU
+ * @returns {Array<number>} 失败的BMU编号数组（1-32）
+ */
+function parseBmuFailedDevices(bitmask) {
+  const failedDevices = []
+  for (let i = 0; i < 32; i++) {
+    if (bitmask & (1 << i)) {
+      failedDevices.push(i + 1) // BMU编号从1开始
+    }
+  }
+  return failedDevices
+}
+
+/**
+ * 解析BCU/BMU升级执行结果
+ * @param {string|Buffer} payload - MQTT消息payload（hex字符串或Buffer）
+ * @returns {Object} 解析结果
+ */
+export function parseBcuBmuUpgradeResultRAW(payload) {
+  try {
+    const buf = Buffer.isBuffer(payload)
+      ? payload
+      : Buffer.from(String(payload).replace(/\s+/g, ''), 'hex')
+
+    if (buf.length === 0) {
+      return {
+        error: true,
+        commandType: 'query_command',
+        topic: 'get_bcu_bmu_upgrade_result',
+        data: {
+          code: 0xFF,
+          message: '响应数据为空',
+          success: false
+        }
+      }
+    }
+
+    // 失败响应: 1字节错误码
+    if (buf.length === 1) {
+      const errorCode = buf.readUInt8(0)
+      const isSuccess = errorCode === 0xE0
+
+      return {
+        error: !isSuccess,
+        commandType: 'query_command',
+        topic: 'get_bcu_bmu_upgrade_result',
+        data: {
+          code: errorCode,
+          message: ERROR_CODES[errorCode] || '未知错误',
+          success: isSuccess
+        }
+      }
+    }
+
+    // 成功响应: 20字节数据（9个字段，8个uint16_t + 1个uint32_t）
+    if (buf.length === 20) {
+      // 使用parseByTable解析字段（从table.js中的BCU_BMU_UPGRADE_RESULT_FIELDS）
+      const view = dv(buf)
+      const { baseConfig } = parseByTable(view, BCU_BMU_UPGRADE_RESULT_FIELDS, 0)
+
+      // 提取解析结果（带map的字段返回{raw, txt}格式）
+      const deviceType = baseConfig.deviceType
+      const downloadCompleteFlag = baseConfig.downloadCompleteFlag
+      const completionType = baseConfig.completionType
+      const otaErrorCode = baseConfig.otaErrorCode
+      const bcuFaultCode = baseConfig.bcuFaultCode
+      const bmuFaultCode = baseConfig.bmuFaultCode
+      const bmuFailedDevicesRaw = baseConfig.bmuFailedDevicesRaw
+      const totalPackets = baseConfig.totalPackets
+      const currentPacket = baseConfig.currentPacket
+
+      // 解析BMU失败设备列表（从bitmask）
+      const bmuFailedDevices = parseBmuFailedDevices(bmuFailedDevicesRaw)
+
+      // 构建返回数据（统一格式）
+      return {
+        error: false,
+        commandType: 'query_command',
+        topic: 'get_bcu_bmu_upgrade_result',
+        data: {
+          // 原始值
+          deviceTypeRaw: typeof deviceType === 'object' ? deviceType.raw : deviceType,
+          downloadCompleteFlagRaw: typeof downloadCompleteFlag === 'object' ? downloadCompleteFlag.raw : downloadCompleteFlag,
+          completionTypeRaw: typeof completionType === 'object' ? completionType.raw : completionType,
+          otaErrorCodeRaw: typeof otaErrorCode === 'object' ? otaErrorCode.raw : otaErrorCode,
+          bcuFaultCodeRaw: typeof bcuFaultCode === 'object' ? bcuFaultCode.raw : bcuFaultCode,
+          bmuFaultCodeRaw: typeof bmuFaultCode === 'object' ? bmuFaultCode.raw : bmuFaultCode,
+          bmuFailedDevicesRaw,
+          totalPacketsRaw: totalPackets,
+          currentPacketRaw: currentPacket,
+          // 解析后的文本值（有map的字段使用txt，否则使用原始值）
+          deviceType: typeof deviceType === 'object' ? deviceType.txt : deviceType,
+          downloadCompleteFlag: typeof downloadCompleteFlag === 'object' ? downloadCompleteFlag.txt : downloadCompleteFlag,
+          completionType: typeof completionType === 'object' ? completionType.txt : completionType,
+          otaErrorCode: typeof otaErrorCode === 'object' ? otaErrorCode.txt : otaErrorCode,
+          bcuFaultCode: typeof bcuFaultCode === 'object' ? bcuFaultCode.txt : (bcuFaultCode === 0 ? '无故障' : `故障码: 0x${bcuFaultCode.toString(16).toUpperCase()}`),
+          bmuFaultCode: typeof bmuFaultCode === 'object' ? bmuFaultCode.txt : (bmuFaultCode === 0 ? '无故障' : `故障码: 0x${bmuFaultCode.toString(16).toUpperCase()}`),
+          bmuFailedDevices,
+          totalPackets,
+          currentPacket,
+          success: true
+        }
+      }
+    }
+
+    // 其他长度 - 异常响应
+    console.warn(`[升级结果解析] 意外的响应长度: ${buf.length}`)
+    return {
+      error: true,
+      commandType: 'query_command',
+      topic: 'get_upgrade_result',
+      data: {
+        code: 0xFF,
+        message: '响应格式异常',
+        success: false
+      }
+    }
+
+  } catch (error) {
+    console.error(`[升级结果解析] 解析失败:`, error)
+    return {
+      error: true,
+      commandType: 'query_command',
+      topic: 'get_upgrade_result',
+      data: {
+        code: 0xFF,
+        message: `解析错误: ${error.message}`,
+        success: false
+      }
+    }
+  }
+}
+
+/**
+ * 解析BAU升级执行结果
+ * @param {string|Buffer} payload - MQTT消息payload（hex字符串或Buffer）
+ * @returns {Object} 解析结果
+ */
+export function parseBauUpgradeResultRAW(payload) {
+  try {
+    const buf = Buffer.isBuffer(payload)
+      ? payload
+      : Buffer.from(String(payload).replace(/\s+/g, ''), 'hex')
+
+    if (buf.length === 0) {
+      return {
+        error: true,
+        commandType: 'query_command',
+        topic: 'get_bau_upgrade_result',
+        data: {
+          code: 0xFF,
+          message: '响应数据为空',
+          success: false
+        }
+      }
+    }
+
+    // 失败响应: 1字节错误码
+    if (buf.length === 1) {
+      const errorCode = buf.readUInt8(0)
+      const isSuccess = errorCode === 0xE0
+
+      return {
+        error: !isSuccess,
+        commandType: 'query_command',
+        topic: 'get_bau_upgrade_result',
+        data: {
+          code: errorCode,
+          message: ERROR_CODES[errorCode] || '未知错误',
+          success: isSuccess
+        }
+      }
+    }
+
+    // 成功响应: 6字节数据（3个uint16_t字段）
+    if (buf.length === 6) {
+      // 使用parseByTable解析字段（从table.js中的BAU_UPGRADE_RESULT_FIELDS）
+      // 从offset 0开始解析，保持字段对齐，但只提取后两个字段
+      const view = dv(buf)
+      const { baseConfig } = parseByTable(view, BAU_UPGRADE_RESULT_FIELDS, 0)
+
+      // 提取解析结果（带map的字段返回{raw, txt}格式）
+      const downloadCompleteFlag = baseConfig.downloadCompleteFlag
+      const otaErrorCode = baseConfig.otaErrorCode
+      const bauFaultCode = baseConfig.bauFaultCode
+
+      // 构建返回数据（包含所有字段）
+      return {
+        error: false,
+        commandType: 'query_command',
+        topic: 'get_bau_upgrade_result',
+        data: {
+          // 原始值
+          downloadCompleteFlagRaw: typeof downloadCompleteFlag === 'object' ? downloadCompleteFlag.raw : downloadCompleteFlag,
+          otaErrorCodeRaw: typeof otaErrorCode === 'object' ? otaErrorCode.raw : otaErrorCode,
+          bauFaultCodeRaw: typeof bauFaultCode === 'object' ? bauFaultCode.raw : bauFaultCode,
+          // 解析后的文本值（有map的字段使用txt，否则使用原始值）
+          downloadCompleteFlag: typeof downloadCompleteFlag === 'object' ? downloadCompleteFlag.txt : downloadCompleteFlag,
+          otaErrorCode: typeof otaErrorCode === 'object' ? otaErrorCode.txt : otaErrorCode,
+          bauFaultCode: typeof bauFaultCode === 'object' ? bauFaultCode.txt : (bauFaultCode === 0 ? '无故障' : `故障码: 0x${bauFaultCode.toString(16).toUpperCase()}`),
+          success: true
+        }
+      }
+    }
+
+    // 其他长度 - 异常响应
+    console.warn(`[BAU升级结果解析] 意外的响应长度: ${buf.length}`)
+    return {
+      error: true,
+      commandType: 'query_command',
+      topic: 'get_bau_upgrade_result',
+      data: {
+        code: 0xFF,
+        message: '响应格式异常',
+        success: false
+      }
+    }
+
+  } catch (error) {
+    console.error(`[BAU升级结果解析] 解析失败:`, error)
+    return {
+      error: true,
+      commandType: 'query_command',
+      topic: 'get_bau_upgrade_result',
+      data: {
+        code: 0xFF,
+        message: `解析错误: ${error.message}`,
+        success: false
+      }
+    }
+  }
+}
+
 // 解析 sys_base_param_r 原始数据
 export function parseSysBaseParamRAW(payload) {
   const buf = Buffer.isBuffer(payload)
@@ -1097,6 +1350,302 @@ export function parseBlockCommonParamRAW(payload) {
     const view = new DataView(paramsBuf.buffer, paramsBuf.byteOffset, paramsBuf.byteLength);
     const { baseConfig } = parseByTable(view, BLOCK_TIME_CFG_R);
     return { error: false, data: baseConfig };
+  }
+
+  // 解析 sys_run_time_r 原始数据（系统时间记录）
+  export function parseSysRunTimeRAW(payload) {
+    const buf = Buffer.isBuffer(payload)
+      ? payload
+      : Buffer.from(String(payload).replace(/\s+/g, ''), 'hex')
+    
+    if (buf.length === 0) return null
+    
+    // 失败响应: 1字节错误码
+    if (buf.length === 1) {
+      const errorCode = buf.readUInt8(0)
+      return {
+        error: true,
+        baseConfig: {},
+        data: {
+          code: errorCode,
+          message: ERROR_CODES[errorCode] || '未知错误'
+        }
+      }
+    }
+    
+    // 成功响应: 前2字节为数据长度
+    const dataLen = buf.readUInt16LE(0)
+    const paramsBuf = buf.slice(2)
+    
+    // 根据协议定义：事件记录标志位(120 * 2字节) = 240字节
+    // 使用实际数据长度，不进行截断，确保与协议完全一致
+    if (paramsBuf.length !== dataLen) {
+      console.warn(`[parseSysRunTimeRAW] length mismatch: dataLen field=${dataLen}, actual buffer length=${paramsBuf.length}`)
+    }
+    
+    // 使用DataView解析，使用实际数据长度
+    const view = new DataView(
+      paramsBuf.buffer,
+      paramsBuf.byteOffset,
+      paramsBuf.byteLength
+    )
+    
+    // 调用通用解析，按SYS_RUN_TIME_R定义将buffer解析为对象
+    const { baseConfig } = parseByTable(view, SYS_RUN_TIME_R)
+    
+    
+    // 后处理：BCD时间解码、32位字段组合、格式化
+    const processedData = processSysRunTimeData(baseConfig, SYS_RUN_TIME_R)
+    
+    return {
+      error: false,
+      baseConfig: baseConfig,  // 保留原始解析数据
+      data: processedData      // 返回分组后的数据
+    }
+  }
+
+  // BCD解码函数
+  function parseBCD(decimalValue) {
+    if (decimalValue === undefined || decimalValue === null) {
+      return 0
+    }
+    let bcd = decimalValue
+    let result = 0
+    let multiplier = 1
+    while (bcd > 0) {
+      const digit = bcd % 16
+      result += digit * multiplier
+      multiplier *= 10
+      bcd = Math.floor(bcd / 16)
+    }
+    return result
+  }
+
+  // 格式化系统时间（7个BCD寄存器：秒-分-时-周-日-月-年）
+  // 注意：虽然寄存器顺序是秒-分-时-周-日-月-年，但formatSystemTime需要按年-月-日-周-时-分-秒的顺序处理
+  // 所以需要反转参数顺序：params[0]=年, params[1]=月, params[2]=日, params[3]=周, params[4]=时, params[5]=分, params[6]=秒
+  // 注意：周字段不输出，但需要校验
+  function formatSystemTime(params) {
+    if (!Array.isArray(params) || params.length < 7) {
+      return '无效时间'
+    }
+    
+    // 反转参数顺序：从秒-分-时-周-日-月-年 转换为 年-月-日-周-时-分-秒
+    // 注意：params数组顺序是秒-分-时-周-日-月-年，但实际数据含义是年-月-日-周-时-分-秒
+    // 所以需要重新映射：
+    const yearRaw = params[0]    // 年 (原params[0]，实际是秒的位置，但数据是年)
+    const monthRaw = params[1]   // 月 (原params[1]，实际是分的位置，但数据是月)
+    const dayRaw = params[2]     // 日 (原params[2]，实际是时的位置，但数据是日)
+    const weekRaw = params[3]    // ISO周数（不输出但需要校验）(原params[3]，周)
+    const hourRaw = params[4]    // 时 (原params[4]，实际是日的位置，但数据是时)
+    const minuteRaw = params[5]  // 分 (原params[5]，实际是月的位置，但数据是分)
+    const secondRaw = params[6]  // 秒 (原params[6]，实际是年的位置，但数据是秒)
+    
+    // BCD解码并应用范围校验（参考reference项目）
+    // 验证规则顺序：年-月-日-周-时-分-秒
+    const parseBCDWithValidation = (decimalValue, index) => {
+      const value = parseBCD(decimalValue)
+      // 验证规则（参考reference项目）
+      const validationRules = [
+        { min: 0, max: 99, fix: true },   // 年 (index 0, 后两位)
+        { min: 1, max: 12, fix: true },  // 月 (index 1)
+        { min: 1, max: 31, fix: true },  // 日 (index 2)
+        { min: 1, max: 53, fix: false },  // 周 (index 3, 不输出但需要校验)
+        { min: 0, max: 23, fix: true },   // 时 (index 4)
+        { min: 0, max: 59, fix: true },   // 分 (index 5)
+        { min: 0, max: 59, fix: true }   // 秒 (index 6)
+      ]
+      const rule = validationRules[index]
+      if (rule?.fix) {
+        return Math.max(rule.min, Math.min(value, rule.max))
+      }
+      return value
+    }
+    
+    const year = 2000 + parseBCDWithValidation(yearRaw, 0)  // 年份后两位，转换为2000-2099
+    const month = parseBCDWithValidation(monthRaw, 1)     // 月
+    const day = parseBCDWithValidation(dayRaw, 2)         // 日
+    const week = parseBCDWithValidation(weekRaw, 3)       // ISO周数（不输出但需要校验）
+    const hour = parseBCDWithValidation(hourRaw, 4)       // 时
+    const minute = parseBCDWithValidation(minuteRaw, 5)   // 分
+    const second = parseBCDWithValidation(secondRaw, 6)  // 秒
+    
+    // 验证时间范围
+    const pad2 = (num) => num.toString().padStart(2, '0')
+    
+    // 返回格式：YYYY-M-D-HH:mm:ss
+    const result = `${year}-${month}-${day}-${pad2(hour)}:${pad2(minute)}:${pad2(second)}`
+    return result
+  }
+
+  // 将分钟转换为 "xx天xx小时xx分钟"
+  function convertMinutesToDayHour(minutes) {
+    if (minutes === 0) return '0分钟'
+    const days = Math.floor(minutes / 1440)
+    const hours = Math.floor((minutes % 1440) / 60)
+    const mins = minutes % 60
+    const parts = []
+    if (days > 0) parts.push(`${days}天`)
+    if (hours > 0) parts.push(`${hours}小时`)
+    if (mins > 0 || parts.length === 0) parts.push(`${mins}分钟`)
+    return parts.join('')
+  }
+
+  // 后处理函数：BCD解码、32位组合、格式化
+  function processSysRunTimeData(baseConfig, schema) {
+    const processedConfig = { ...baseConfig }
+    
+    // 1. BCD时间解码和格式化 - 直接更新baseConfig中的值，替换原始BCD值
+    // 系统当前时间（7个字段合并为1个格式化字段）
+    // 寄存器顺序：秒-分-时-周-日-月-年
+    // schema定义的顺序也是：秒-分-时-周-日-月-年
+    // 所以parseByTable读取后，字段映射关系为：
+    // CurrentTime_Second = buffer[0] = 秒
+    // CurrentTime_Minute = buffer[1] = 分
+    // CurrentTime_Hour = buffer[2] = 时
+    // CurrentTime_Week = buffer[3] = 周（不输出）
+    // CurrentTime_Day = buffer[4] = 日
+    // CurrentTime_Month = buffer[5] = 月
+    // CurrentTime_Year = buffer[6] = 年
+    if (processedConfig.CurrentTime_Second !== undefined) {
+      // 注意：虽然schema定义的顺序是秒-分-时-周-日-月-年，但formatSystemTime期望的参数顺序也是秒-分-时-周-日-月-年
+      // 所以直接按schema顺序传入即可
+      const currentTimeParams = [
+        processedConfig.CurrentTime_Second, // params[0] = 秒 (buffer[0])
+        processedConfig.CurrentTime_Minute, // params[1] = 分 (buffer[1])
+        processedConfig.CurrentTime_Hour,   // params[2] = 时 (buffer[2])
+        processedConfig.CurrentTime_Week,    // params[3] = 周 (buffer[3]，不输出)
+        processedConfig.CurrentTime_Day,     // params[4] = 日 (buffer[4])
+        processedConfig.CurrentTime_Month,   // params[5] = 月 (buffer[5])
+        processedConfig.CurrentTime_Year     // params[6] = 年 (buffer[6])
+      ]
+      
+      // 将格式化后的时间值替换第一个时间字段的值，其他字段在groupByClass中会被跳过（因为没有label）
+      const formattedTime = formatSystemTime(currentTimeParams)
+      processedConfig.CurrentTime_Second = formattedTime
+      // 清空其他时间字段，避免重复显示
+      processedConfig.CurrentTime_Minute = undefined
+      processedConfig.CurrentTime_Hour = undefined
+      processedConfig.CurrentTime_Week = undefined
+      processedConfig.CurrentTime_Day = undefined
+      processedConfig.CurrentTime_Month = undefined
+      processedConfig.CurrentTime_Year = undefined
+    }
+    
+    // 处理3次系统记录
+    for (let i = 1; i <= 3; i++) {
+      const prefix = `Boot${i}_`
+      
+      // 启动时间（7个字段合并为1个格式化字段）
+      // 寄存器顺序：秒-分-时-周-日-月-年
+      // schema定义的顺序也是：秒-分-时-周-日-月-年
+      // 所以字段映射关系与系统当前时间相同
+      if (processedConfig[`${prefix}StartTime_Second`] !== undefined) {
+        const startTimeParams = [
+          processedConfig[`${prefix}StartTime_Second`], // params[0] = 秒 (buffer[0])
+          processedConfig[`${prefix}StartTime_Minute`], // params[1] = 分 (buffer[1])
+          processedConfig[`${prefix}StartTime_Hour`],   // params[2] = 时 (buffer[2])
+          processedConfig[`${prefix}StartTime_Week`],   // params[3] = 周 (buffer[3]，不输出)
+          processedConfig[`${prefix}StartTime_Day`],    // params[4] = 日 (buffer[4])
+          processedConfig[`${prefix}StartTime_Month`],   // params[5] = 月 (buffer[5])
+          processedConfig[`${prefix}StartTime_Year`]     // params[6] = 年 (buffer[6])
+        ]
+        processedConfig[`${prefix}StartTime_Second`] = formatSystemTime(startTimeParams)
+        processedConfig[`${prefix}StartTime_Minute`] = undefined
+        processedConfig[`${prefix}StartTime_Hour`] = undefined
+        processedConfig[`${prefix}StartTime_Week`] = undefined
+        processedConfig[`${prefix}StartTime_Day`] = undefined
+        processedConfig[`${prefix}StartTime_Month`] = undefined
+        processedConfig[`${prefix}StartTime_Year`] = undefined
+      }
+      
+      // 停止时间（7个字段合并为1个格式化字段）
+      // 寄存器顺序：秒-分-时-周-日-月-年
+      // schema定义的顺序也是：秒-分-时-周-日-月-年
+      // 所以字段映射关系与系统当前时间相同
+      if (processedConfig[`${prefix}StopTime_Second`] !== undefined) {
+        const stopTimeParams = [
+          processedConfig[`${prefix}StopTime_Second`], // params[0] = 秒 (buffer[0])
+          processedConfig[`${prefix}StopTime_Minute`], // params[1] = 分 (buffer[1])
+          processedConfig[`${prefix}StopTime_Hour`],   // params[2] = 时 (buffer[2])
+          processedConfig[`${prefix}StopTime_Week`],    // params[3] = 周 (buffer[3]，不输出)
+          processedConfig[`${prefix}StopTime_Day`],     // params[4] = 日 (buffer[4])
+          processedConfig[`${prefix}StopTime_Month`],   // params[5] = 月 (buffer[5])
+          processedConfig[`${prefix}StopTime_Year`]     // params[6] = 年 (buffer[6])
+        ]
+        processedConfig[`${prefix}StopTime_Second`] = formatSystemTime(stopTimeParams)
+        processedConfig[`${prefix}StopTime_Minute`] = undefined
+        processedConfig[`${prefix}StopTime_Hour`] = undefined
+        processedConfig[`${prefix}StopTime_Week`] = undefined
+        processedConfig[`${prefix}StopTime_Day`] = undefined
+        processedConfig[`${prefix}StopTime_Month`] = undefined
+        processedConfig[`${prefix}StopTime_Year`] = undefined
+      }
+      
+      // 2. 32位字段组合 - 组合后更新Low字段的值，High字段设为undefined
+      // 运行时间（分钟）
+      if (processedConfig[`${prefix}RunTime_Low`] !== undefined && processedConfig[`${prefix}RunTime_High`] !== undefined) {
+        const runTime = processedConfig[`${prefix}RunTime_Low`] | (processedConfig[`${prefix}RunTime_High`] << 16)
+        processedConfig[`${prefix}RunTime_Low`] = convertMinutesToDayHour(runTime)
+        processedConfig[`${prefix}RunTime_High`] = undefined
+      }
+      
+      // 周期任务堆栈大小（字节）
+      if (processedConfig[`${prefix}PeriodicStack_Low`] !== undefined && processedConfig[`${prefix}PeriodicStack_High`] !== undefined) {
+        const stackSize = processedConfig[`${prefix}PeriodicStack_Low`] | (processedConfig[`${prefix}PeriodicStack_High`] << 16)
+        processedConfig[`${prefix}PeriodicStack_Low`] = `${(stackSize / 1000).toFixed(1)}Kb`
+        processedConfig[`${prefix}PeriodicStack_High`] = undefined
+      }
+      
+      // 系统堆栈空间（字节）
+      if (processedConfig[`${prefix}SystemStack_Low`] !== undefined && processedConfig[`${prefix}SystemStack_High`] !== undefined) {
+        const stackSize = processedConfig[`${prefix}SystemStack_Low`] | (processedConfig[`${prefix}SystemStack_High`] << 16)
+        processedConfig[`${prefix}SystemStack_Low`] = `${(stackSize / 1000).toFixed(1)}Kb`
+        processedConfig[`${prefix}SystemStack_High`] = undefined
+      }
+      
+      // 系统堆栈最小空间（字节）
+      if (processedConfig[`${prefix}SystemStackMin_Low`] !== undefined && processedConfig[`${prefix}SystemStackMin_High`] !== undefined) {
+        const stackSize = processedConfig[`${prefix}SystemStackMin_Low`] | (processedConfig[`${prefix}SystemStackMin_High`] << 16)
+        processedConfig[`${prefix}SystemStackMin_Low`] = `${(stackSize / 1000).toFixed(1)}Kb`
+        processedConfig[`${prefix}SystemStackMin_High`] = undefined
+      }
+    }
+    
+    // 3. 使用groupByClass分组
+    // groupByClass会自动跳过undefined值和skip类型的字段
+    const grouped = groupByClass(schema, processedConfig)
+    
+    // 4. 更新分组后数据的label，使其更符合显示需求
+    const timeRecordSection = grouped.find(section => section.class === '系统时间记录')
+    if (timeRecordSection) {
+      timeRecordSection.element.forEach(item => {
+        // 更新label，将"第X次-启动时间-秒"改为"第X次-系统启动时间"
+        if (item.label && item.label.includes('启动时间-秒')) {
+          item.label = item.label.replace('启动时间-秒', '系统启动时间')
+        }
+        if (item.label && item.label.includes('停止时间-秒')) {
+          item.label = item.label.replace('停止时间-秒', '系统停止时间')
+        }
+        if (item.label && item.label.includes('运行时间-低16位')) {
+          item.label = item.label.replace('运行时间-低16位', '系统运行时间')
+        }
+        if (item.label && item.label.includes('周期任务堆栈-低16位')) {
+          item.label = item.label.replace('周期任务堆栈-低16位', '周期任务堆栈大小')
+        }
+        if (item.label && item.label.includes('系统堆栈-低16位')) {
+          item.label = item.label.replace('系统堆栈-低16位', '系统堆栈空间')
+        }
+        if (item.label && item.label.includes('系统堆栈最小-低16位')) {
+          item.label = item.label.replace('系统堆栈最小-低16位', '系统堆栈最小空间')
+        }
+        if (item.label && item.label.includes('系统当前时间-秒')) {
+          item.label = '系统当前时间'
+        }
+      })
+    }
+    
+    return grouped
   }
 
   // 解析 block_port_cfg_r 原始数据（系统端口配置参数）
@@ -2096,6 +2645,247 @@ export function parseFactoryCalibrationRAW(hex) {
 
   // 返回标准格式
   return { error: false, data: baseConfig };
+}
+
+// ========== 事件记录解析函数 ==========
+
+/**
+ * 解析事件记录标志位数据（event_record_flag_r）
+ * 数据格式：数据长度(2字节) + 事件记录标志位(23 * 2字节 = 46字节)
+ * 
+ * 事件记录标志位的作用：
+ * 1. 存储状态管理：记录当前存储了多少条事件记录，存储百分比
+ * 2. 读取位置管理：记录写事件记录开始位置，用于确定从哪里开始读取最新记录
+ * 3. 删除操作管理：记录删除开始位置和等待删除数量，用于管理删除操作
+ * 4. 版本信息：记录上一次事件记录版本号，用于版本兼容性检查
+ * 5. 导出计算：根据存储数量和写开始位置，计算导出偏移量（offsetRead = 总数 - 要读数量）
+ * 
+ * @param {string|Buffer} payload - 十六进制字符串或Buffer
+ * @returns {Object} 解析结果
+ */
+export function parseEventRecordFlagRAW(payload) {
+  const buf = Buffer.isBuffer(payload)
+    ? payload
+    : Buffer.from(String(payload).replace(/\s+/g, ''), 'hex');
+
+  if (buf.length === 0) return null;
+  
+  // 失败响应: 1字节错误码
+  if (buf.length === 1) {
+    const errorCode = buf.readUInt8(0);
+    console.error(`event_record_flag_r error: ${errorCode}`);
+    return {
+      error: true,
+      baseConfig: {},
+      data: { code: errorCode, message: ERROR_CODES[errorCode] || '未知错误' }
+    };
+  }
+
+  // 成功响应: 前2字节为数据长度 (字节数)，后续为事件记录标志位数据
+  const dataLen = buf.readUInt16LE(0);
+  const paramsBuf = buf.slice(2);
+  
+  if (paramsBuf.length !== dataLen) {
+    console.warn(`[parseEventRecordFlagRAW] 数据长度不匹配: 期望 ${dataLen} 字节，实际 ${paramsBuf.length} 字节`);
+  }
+
+  // 把 Buffer → DataView
+  const view = new DataView(
+    paramsBuf.buffer,
+    paramsBuf.byteOffset,
+    paramsBuf.byteLength
+  );
+
+  // 调用通用解析，按EVENT_RECORD_FLAG_R定义将buffer解析为对象
+  const { baseConfig } = parseByTable(view, EVENT_RECORD_FLAG_R);
+  
+  // 使用groupByClass分组数据
+  const data = groupByClass(EVENT_RECORD_FLAG_R, baseConfig);
+  
+  return {
+    error: false,
+    baseConfig: { DataLength: dataLen },
+    data: data
+  };
+}
+
+/**
+ * 解析事件记录数据（event_record_r）
+ * 数据格式：数据长度(2字节) + 事件记录偏移量(2字节) + 事件记录数据(128 * 2字节 = 256字节)
+ * 
+ * 事件记录数据包含：
+ * - 时间戳（年、月、日、周、时、分、秒）
+ * - 事件类型和参数
+ * - 系统状态（电压、电流、温度、SOC、SOH、SOE等）
+ * - 故障信息（簇汇总模拟量三级告警、簇汇总硬件故障、堆硬件故障等）
+ * - 版本信息（事件记录版本号、BOOT版本号、软件版本号等）
+ * - CRC16校验
+ * 
+ * @param {string|Buffer} payload - 十六进制字符串或Buffer
+ * @returns {Object} 解析结果
+ */
+export function parseEventRecordRAW(payload) {
+  const buf = Buffer.isBuffer(payload)
+    ? payload
+    : Buffer.from(String(payload).replace(/\s+/g, ''), 'hex');
+
+  if (buf.length === 0) return null;
+  
+  // 失败响应: 1字节错误码
+  if (buf.length === 1) {
+    const errorCode = buf.readUInt8(0);
+    console.error(`event_record_r error: ${errorCode}`);
+    return {
+      error: true,
+      baseConfig: {},
+      data: { code: errorCode, message: ERROR_CODES[errorCode] || '未知错误' }
+    };
+  }
+
+  // 成功响应: 前2字节为数据长度，后续为多条记录，每条记录格式为：事件记录偏移量(2字节) + 事件记录数据(256字节)
+  // 新协议格式：数据长度(2) + [偏移量(2) + 数据(256)] * M
+  const dataLen = buf.readUInt16LE(0);  // 数据长度字段（包含所有记录的偏移量和数据）
+  
+  // 每条记录的结构：偏移量(2字节) + 数据(256字节) = 258字节
+  const RECORD_DATA_SIZE = 256  // 每条记录的数据部分：256字节（128个寄存器 * 2字节）
+  const RECORD_TOTAL_SIZE = 2 + RECORD_DATA_SIZE  // 每条记录总长度：偏移量(2) + 数据(256) = 258字节
+  
+  // 根据实际数据长度计算记录数（从第2字节开始，每条记录258字节）
+  const remainingData = buf.length - 2  // 减去数据长度字段(2字节)
+  const recordCount = Math.floor(remainingData / RECORD_TOTAL_SIZE)  // 每条记录258字节
+  
+  // 验证数据长度：数据长度应该等于所有记录的总长度
+  const expectedDataLength = RECORD_TOTAL_SIZE * recordCount  // 258 * M
+  if (dataLen !== expectedDataLength && recordCount > 0) {
+    console.warn(`[parseEventRecordRAW] 数据长度不匹配: header中为${dataLen}字节，计算为${expectedDataLength}字节（记录数${recordCount}）`);
+  }
+  
+  // 如果剩余数据不足以构成一条完整记录，记录警告
+  if (remainingData < RECORD_TOTAL_SIZE && recordCount === 0) {
+    console.warn(`[parseEventRecordRAW] 数据长度不足: 需要至少${RECORD_TOTAL_SIZE}字节（1条记录），实际 ${remainingData} 字节`);
+  }
+
+  // 解析多条记录
+  const records = []
+  let offset = 2  // 从数据长度字段后开始（第2字节）
+  
+  for (let i = 0; i < recordCount; i++) {
+    // 检查剩余数据是否足够
+    if (offset + RECORD_TOTAL_SIZE > buf.length) {
+      console.warn(`[parseEventRecordRAW] 记录${i}数据不足: 需要${RECORD_TOTAL_SIZE}字节，剩余 ${buf.length - offset} 字节`);
+      break
+    }
+    
+    // 读取本条记录的偏移量（2字节）
+    const recordOffset = buf.readUInt16LE(offset)
+    offset += 2
+    
+    // 读取本条记录的数据（256字节）
+    const recordDataBuf = buf.slice(offset, offset + RECORD_DATA_SIZE)
+    offset += RECORD_DATA_SIZE
+    
+    if (recordDataBuf.length < RECORD_DATA_SIZE) {
+      console.warn(`[parseEventRecordRAW] 记录${i}数据长度不足: 需要${RECORD_DATA_SIZE}字节，实际 ${recordDataBuf.length} 字节`);
+      break
+    }
+    
+    // 提取原始寄存器数组（128个寄存器，每个2字节）
+    const rawRegisters = []
+    for (let j = 0; j < 128; j++) {
+      rawRegisters.push(recordDataBuf.readUInt16LE(j * 2))
+    }
+    
+    // 保存原始buffer的副本（用于准确读取非对齐字段）
+    const rawBufferCopy = Buffer.from(recordDataBuf)
+
+    // 把 Buffer → DataView
+    const view = new DataView(
+      recordDataBuf.buffer,
+      recordDataBuf.byteOffset,
+      recordDataBuf.byteLength
+    );
+
+    // 调用通用解析，按EVENT_RECORD_R定义将buffer解析为对象
+    const { baseConfig: parsedBaseConfig } = parseByTable(view, EVENT_RECORD_R);
+    
+    // 将DataLength和RecordOffset合并到baseConfig中
+    let baseConfig = {
+      DataLength: dataLen,
+      RecordOffset: recordOffset,  // 使用从响应中读取的偏移量，而不是计算值
+      RecordCount: recordCount,    // 本次响应包含的记录数
+      ...parsedBaseConfig // 包含所有解析后的字段值
+    }
+    
+    // 后处理：BCD时间解码 - 事件记录的时间字段是BCD编码的
+    // 事件记录时间字段顺序：年-月-日-周-时-分-秒（与系统时间记录的秒-分-时-周-日-月-年不同）
+    if (baseConfig.Year !== undefined && baseConfig.Month !== undefined && baseConfig.Day !== undefined) {
+      // BCD解码函数
+      const parseBCD = (decimalValue) => {
+        if (decimalValue === undefined || decimalValue === null) {
+          return 0
+        }
+        let bcd = decimalValue
+        let result = 0
+        let multiplier = 1
+        while (bcd > 0) {
+          const digit = bcd % 16
+          result += digit * multiplier
+          multiplier *= 10
+          bcd = Math.floor(bcd / 16)
+        }
+        return result
+      }
+      
+      // BCD解码并校验
+      const parseBCDWithValidation = (decimalValue, min, max) => {
+        const value = parseBCD(decimalValue)
+        return Math.max(min, Math.min(value, max))
+      }
+      
+      // 保存原始值用于调试
+      const yearRaw = baseConfig.Year
+      const monthRaw = baseConfig.Month
+      const dayRaw = baseConfig.Day
+      const weekRaw = baseConfig.Week
+      const hourRaw = baseConfig.Hour
+      const minuteRaw = baseConfig.Minute
+      const secondRaw = baseConfig.Second
+      
+      // BCD解码时间字段
+      baseConfig.Year = 2000 + parseBCDWithValidation(yearRaw, 0, 99)  // 年份后两位，转换为2000-2099
+      baseConfig.Month = parseBCDWithValidation(monthRaw, 1, 12)      // 月
+      baseConfig.Day = parseBCDWithValidation(dayRaw, 1, 31)          // 日
+      baseConfig.Week = parseBCDWithValidation(weekRaw, 1, 53)        // 周（不输出但需要校验）
+      baseConfig.Hour = parseBCDWithValidation(hourRaw, 0, 23)        // 时
+      baseConfig.Minute = parseBCDWithValidation(minuteRaw, 0, 59)    // 分
+      baseConfig.Second = parseBCDWithValidation(secondRaw, 0, 59)    // 秒
+    }
+    
+    // 使用groupByClass分组数据
+    const data = groupByClass(EVENT_RECORD_R, baseConfig);
+
+    records.push({
+      RecordOffset: recordOffset,  // 使用从响应中读取的偏移量
+      baseConfig: baseConfig,
+      data: data,
+      rawRegisters: rawRegisters,
+      rawBuffer: rawBufferCopy
+    })
+  }
+
+  return {
+    error: false,
+    baseConfig: {
+      DataLength: dataLen,
+      RecordOffset: records.length > 0 ? records[0].RecordOffset : 0,  // 第一条记录的偏移量
+      RecordCount: recordCount     // 记录数量
+    },
+    records: records,  // 返回多条记录的数组
+    // 为了向后兼容，保留单条记录的字段（第一条记录）
+    data: records.length > 0 ? records[0].data : [],
+    rawRegisters: records.length > 0 ? records[0].rawRegisters : [],
+    rawBuffer: records.length > 0 ? records[0].rawBuffer : null
+  };
 }
 
 

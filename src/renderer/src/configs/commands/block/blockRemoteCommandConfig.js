@@ -65,7 +65,9 @@ export const blockRemoteCommandConfig = {
       { label: '复位系统通讯设备配置参数', bit: 3, value: 8 },
       { label: '复位系统操作配置参数', bit: 4, value: 16 },
       { label: '复位系统堆告警安装参数', bit: 5, value: 32 },
-      { label: '复位系统系统运行时间', bit: 6, value: 64 }
+      { label: '复位事件记录标志', bit: 6, value: 64 },
+      { label: '复位系统系统运行时间', bit: 7, value: 128 }
+
     ]
   },
 

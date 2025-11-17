@@ -4,7 +4,6 @@ import { createPinia } from 'pinia'
 import { createI18n } from 'vue-i18n'
 import router from './router'
 import messages from '@intlify/unplugin-vue-i18n/messages'
-
 import PrimeVue from 'primevue/config'
 import AutoComplete from 'primevue/autocomplete'
 import Accordion from 'primevue/accordion'
@@ -78,7 +77,6 @@ import Rating from 'primevue/rating'
 import RadioButton from 'primevue/radiobutton'
 import Ripple from 'primevue/ripple'
 import Row from 'primevue/row'
-import Select from 'primevue/select'
 import SelectButton from 'primevue/selectbutton'
 import ScrollPanel from 'primevue/scrollpanel'
 import ScrollTop from 'primevue/scrolltop'
@@ -198,7 +196,6 @@ app.component('ProgressSpinner', ProgressSpinner)
 app.component('RadioButton', RadioButton)
 app.component('Rating', Rating)
 app.component('Row', Row)
-app.component('Select', Select)
 app.component('SelectButton', SelectButton)
 app.component('ScrollPanel', ScrollPanel)
 app.component('ScrollTop', ScrollTop)

@@ -130,9 +130,9 @@ function renameLabel (label, cls) {
 /* —— 4. 组装卡片 —— */
 const tableRows = computed(() => {
   const key        = selectedCluster.value ?? ''
-  const frame      = frames.get(key) ? Object.fromEntries(frames.get(key)) : {}
-  const packFrame  = packFramesMap.get(key)
-                    ? Object.fromEntries(packFramesMap.get(key))
+  const frame      = frames.value.get(key) ? Object.fromEntries(frames.value.get(key)) : {}
+  const packFrame  = packFramesMap.value.get(key)
+                    ? Object.fromEntries(packFramesMap.value.get(key))
                     : {}
 
   const rows = []

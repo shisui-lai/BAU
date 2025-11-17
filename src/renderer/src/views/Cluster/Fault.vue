@@ -3,6 +3,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { parseFault, sortedAllFaults } from '../../composables/core/data-processing/common/parseFault'
 import { useClusterStore } from '../../stores/device/clusterStore'
+import { useBlockStore } from '../../stores/device/blockStore'
 import { useI18n } from 'vue-i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -25,6 +26,8 @@ declare global {
 
 // 使用 clusterStore 管理筛选状态
 const clusterStore = useClusterStore()
+// 使用 blockStore 获取全局堆配置
+const blockStore = useBlockStore()
 
 // 使用国际化
 const { t, te, locale } = useI18n()
@@ -270,6 +273,80 @@ function translateBrokenwireFault(desc: string, locale: string): string {
   return desc
 }
 
+/* ---------- 二级故障动态翻译函数 ---------- */
+/**
+ * 二级故障动态翻译函数
+ * 用于处理包含BMU编号的二级故障翻译，避免在JSON中预定义大量翻译条目
+ * @param {string} desc - 原始故障描述
+ * @param {string} locale - 当前语言设置
+ * @returns {string} 翻译后的描述
+ */
+function translateFaultLevel2(desc: string, locale: string): string {
+  // 中文环境直接返回原始描述
+  if (locale === 'zh') return desc
+  
+  // 解析BMU编号和插件编号
+  const bmuMatch = desc.match(/BMU(\d+)/)
+  const plugMatch = desc.match(/插件(\d+)/)
+  
+  // BMU级故障翻译
+  if (bmuMatch) {
+    const bmuNum = bmuMatch[1]
+    
+    // 插件过温故障
+    if (plugMatch && desc.includes('插件') && desc.includes('过温')) {
+      return `BMU${bmuNum} Pack connector${plugMatch[1]} Overtemperature`
+    }
+    
+    // BMU过压/欠压/过温/欠温
+    if (desc.includes('BMU过压')) {
+      return `BMU${bmuNum} BMU Overvoltage`
+    } else if (desc.includes('BMU欠压')) {
+      return `BMU${bmuNum} BMU Undervoltage`
+    } else if (desc.includes('BMU过温')) {
+      return `BMU${bmuNum} BMU Overtemperature`
+    } else if (desc.includes('BMU欠温')) {
+      return `BMU${bmuNum} BMU Undertemperature`
+    }
+  }
+  
+  // 非BMU级别的其他故障（不带编号）
+  if (desc === '单体压差过大') {
+    return 'Excessive Voltage Difference between cells'
+  } else if (desc === '单体温差过大') {
+    return 'Excessive Temperature Difference between cells'
+  } else if (desc === 'SOC差异过大') {
+    return 'Excessive SOC Difference between cells'
+  } else if (desc === 'BMU压差') {
+    return 'Excessive Voltage Difference between BMUs'
+  } else if (desc === '簇端过压') {
+    return 'Cluster Overvoltage'
+  } else if (desc === '簇端欠压') {
+    return 'Cluster Undervoltage'
+  } else if (desc === '绝缘正对地') {
+    return 'Lower Positive Insulation Resistance'
+  } else if (desc === '绝缘负对地') {
+    return 'Lower Negative Insulation Resistance'
+  } else if (desc === '充电过流') {
+    return 'Charge Over Current'
+  } else if (desc === '放电过流') {
+    return 'Discharge Over Current'
+  } else if (desc === 'RT1过温') {
+    return 'RT1 Overtemperature'
+  } else if (desc === 'RT2过温') {
+    return 'RT2 Overtemperature'
+  } else if (desc === 'RT3过温') {
+    return 'RT3 Overtemperature'
+  } else if (desc === 'RT4过温') {
+    return 'RT4 Overtemperature'
+  } else if (desc === 'RT5过温') {
+    return 'RT5 Overtemperature'
+  }
+  
+  // 如果无法识别模式，返回原始描述
+  return desc
+}
+
 
 /* ---------- 故障翻译方法 ---------- */
 function getFaultTranslation(data: any): string {
@@ -294,8 +371,8 @@ function getFaultTranslation(data: any): string {
       topicKey = 'faultLevel1'
       break
     case 'FAULT_LEVEL2':
-      topicKey = 'faultLevel2'
-      break
+      // 二级故障使用动态翻译，避免在JSON中预定义大量翻译条目
+      return translateFaultLevel2(desc, locale.value)
     // 三级故障精准匹配
     case 'CELL_OV_FAULT_LEVEL3':
     case 'CELL_UV_FAULT_LEVEL3':
@@ -402,7 +479,7 @@ function getFaultTranslation(data: any): string {
                     <MultiSelect
                       v-if="clusterStore.faultFilterMode === 'block'"
                       v-model="clusterStore.selectedBlocksForFault"
-                      :options="clusterStore.availableBlocks"
+                      :options="blockStore.availableBlocks"
                       optionLabel="label"
                       optionValue="value"
                       :placeholder="t('alarmInfoPage.placeholders.selectBlocks')"
@@ -413,7 +490,7 @@ function getFaultTranslation(data: any): string {
                     <MultiSelect
                       v-if="clusterStore.faultFilterMode === 'cluster'"
                       v-model="clusterStore.selectedClustersForFault"
-                      :options="clusterStore.availableFaultClusters"
+                      :options="clusterStore.availableClusters"
                       optionLabel="label"
                       optionValue="value"
                       :placeholder="t('alarmInfoPage.placeholders.selectClusters')"

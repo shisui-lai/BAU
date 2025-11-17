@@ -98,6 +98,11 @@ if (process.contextIsolated) {
       ipcRenderer: {
         on: (channel, listener) => ipcRenderer.on(channel, listener),
         removeListener: (channel, listener) => ipcRenderer.removeListener(channel, listener)
+      },
+
+      // Dialog API
+      dialog: {
+        showOpenDialog: (options) => ipcRenderer.invoke('dialog:showOpenDialog', options)
       }
     })
   } catch (error) {

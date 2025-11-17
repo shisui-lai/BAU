@@ -1,13 +1,38 @@
 // composables/parseBlockSummary.ts
-import { reactive } from 'vue'
+import { markRaw, shallowRef, watch } from 'vue'
 import { ensureBlockOption } from '../../device-selection/useBlockSelect'
 import { BLOCK_SUMMARY } from '../../../../../../main/table.js'
 
-export const blockSummaryFrames = reactive(
+/* ========== 数据存储层 ========== */
+// 原始数据存储（非响应式，性能最优）
+const rawBlockSummaryData = markRaw(
   new Map<string, Map<string, any[]>>()
 )
 
+/* ========== 响应式更新层 ========== */
+// 更新触发器
+export const blockSummaryTick = shallowRef(0)
 
+// 响应式数据存储
+export const blockSummaryFrames = shallowRef(
+  new Map<string, Map<string, any[]>>()
+)
+
+/* ========== 监听更新 ========== */
+watch(
+  blockSummaryTick,
+  () => {
+    // 从原始数据复制到响应式存储
+    const newFrames = new Map<string, Map<string, any[]>>()
+    for (const [key, innerMap] of rawBlockSummaryData.entries()) {
+      newFrames.set(key, new Map(innerMap))
+    }
+    blockSummaryFrames.value = newFrames
+  },
+  { immediate: true }
+)
+
+/* ========== 解析函数 ========== */
 export function parseBlockSummary(msg: any) {
   const key = `block${msg.blockId}` // 堆数据只按堆号标识，如 "block1", "block2"
   
@@ -17,10 +42,10 @@ export function parseBlockSummary(msg: any) {
   //   dataKeys: Object.keys(msg.data || {})
   // })
 
-  if (!blockSummaryFrames.has(key))
-    blockSummaryFrames.set(key, reactive(new Map<string, any[]>()))
+  if (!rawBlockSummaryData.has(key))
+    rawBlockSummaryData.set(key, new Map<string, any[]>())
 
-  const m = blockSummaryFrames.get(key)!
+  const m = rawBlockSummaryData.get(key)!
   
   // 处理主进程发送的数据结构
   // msg.data 是一个对象，包含解析后的字段
@@ -33,6 +58,9 @@ export function parseBlockSummary(msg: any) {
       m.set(className, elements)
     })
   }
+
+  // 触发响应式更新
+  blockSummaryTick.value++
 
   // 维护堆选项
   // console.log('[parseBlockSummary] 调用ensureBlockOption:', key)
@@ -99,7 +127,10 @@ function getFieldRemark(key: string): string {
 
 /** 页面侧取数 —— 与旧接口保持一致 */
 export function pickBlockSummary(key: string, classes: string[]) {
-  const m = blockSummaryFrames.get(key)
+  // 建立依赖关系
+  blockSummaryTick.value
+  
+  const m = blockSummaryFrames.value.get(key)
   if (!m) return []
 
   const list = Array.from(m.entries()) as [string, any[]][]
@@ -111,9 +142,9 @@ export function pickBlockSummary(key: string, classes: string[]) {
 /** 获取堆的在线状态 */
 export function getBlockStatus(blockId: number): boolean {
   const key = `block${blockId}`
-  const m = blockSummaryFrames.get(key)
+  const m = blockSummaryFrames.value.get(key)
   if (!m) return false
   
   // 检查是否有基本数据来判断堆是否在线
   return m.has('堆基本信息') || m.has('状态信息')
-} 
+}

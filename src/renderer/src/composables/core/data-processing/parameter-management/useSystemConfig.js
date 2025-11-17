@@ -19,12 +19,16 @@ export function useSystemConfig() {
   const systemConfig = ref(null)
   const isConfigLoaded = ref(false)
   
+  // 周期性读取定时器
+  let periodicReadTimer = null
+  const PERIODIC_READ_INTERVAL = 30000 // 30秒（固定值）
+  
   /**
    * 处理系统配置更新
    * @param {Object} config - 系统配置参数
    */
   function handleSystemConfigUpdate(config) {
-    console.log(' [配置更新] 系统配置:', `${config.BlockCount}堆, 第一堆${config.ClusterCount1}簇, 第二堆${config.ClusterCount2}簇`)
+    // 配置更新日志已在 clusterStore 中记录，此处不再重复
     
     // 验证配置参数的有效性
     const { BlockCount, ClusterCount1, ClusterCount2 } = config
@@ -64,9 +68,7 @@ export function useSystemConfig() {
    * @param {number} delay - 延迟时间（毫秒），默认1500ms
    */
   function triggerConfigReload(delay = 1500) {
-    console.log('🔄 [useSystemConfig] 收到配置更新触发请求，准备重新读取配置...')
     setTimeout(() => {
-      console.log('🔄 [useSystemConfig] 开始重新读取系统配置参数...')
       requestSystemConfig()
     }, delay)
   }
@@ -127,6 +129,34 @@ export function useSystemConfig() {
     }
   }
   
+  /**
+   * 启动周期性读取配置
+   */
+  function startPeriodicRead() {
+    // 如果定时器已存在，先清理
+    if (periodicReadTimer) {
+      clearInterval(periodicReadTimer)
+    }
+    
+    // 设置周期性读取
+    periodicReadTimer = setInterval(() => {
+      // 检查 MQTT 连接状态
+      if (mqttStore.isConnected) {
+        requestSystemConfig()
+      }
+    }, PERIODIC_READ_INTERVAL)
+  }
+  
+  /**
+   * 停止周期性读取配置
+   */
+  function stopPeriodicRead() {
+    if (periodicReadTimer) {
+      clearInterval(periodicReadTimer)
+      periodicReadTimer = null
+    }
+  }
+  
   // 生命周期管理
   onMounted(() => {
     // 注册MQTT事件监听器
@@ -136,6 +166,11 @@ export function useSystemConfig() {
     } else {
       console.warn('[useSystemConfig] 无法获取 ipcRenderer，监听器注册失败')
     }
+    
+    // 启动周期性读取（延迟启动，避免与启动时的读取冲突）
+    setTimeout(() => {
+      startPeriodicRead()
+    }, 5000) // 延迟5秒启动
   })
   
   onUnmounted(() => {
@@ -144,6 +179,9 @@ export function useSystemConfig() {
     if (ipc) {
       ipc.removeListener('BLOCK_COMMON_PARAM_R', handleConfigReadEvent)
     }
+    
+    // 停止周期性读取
+    stopPeriodicRead()
   })
   
   return {
@@ -155,5 +193,7 @@ export function useSystemConfig() {
     handleSystemConfigUpdate,  // 手动更新系统配置
     requestSystemConfig,       // 主动请求读取系统配置
     triggerConfigReload,       // 触发配置重新读取（供其他组件调用）
+    startPeriodicRead,        // 手动启动周期性读取
+    stopPeriodicRead,         // 手动停止周期性读取
   }
 }

@@ -148,9 +148,9 @@
       "ftpStartFailed": "启动失败",
       "ftpStopFailed": "停止失败",
       "upgradeStarted": "升级指令下发成功",
-      "upgradeStopped": "升级已停止",
-      "upgradeSuccess": "升级成功",
-      "upgradeFailed": "升级失败",
+      "upgradeStopped": "操作已取消",
+      "upgradeSuccess": "指令下发成功",
+      "upgradeFailed": "指令下发失败",
       "operationFailed": "操作失败",
       "serverAddress": "服务器地址: {address}",
       "upgradeInstructionSent": "升级指令已发送到设备，请等待设备响应",
@@ -285,15 +285,21 @@
     "disconnection": "掉线信息",
     "faultOverview": "故障总览",
     "didoStatus": "DI/DO状态",
+    "didoStatusNative": "DI/DO状态(原生表格)",
     "systemConfig": "系统配置",
     "clusterConfigParam": "簇配置参数",
+    "clusterConfigParamNative": "簇配置参数(原生表格)",
     "clusterAlarmThreshold": "簇报警阈值",
+    "clusterAlarmThresholdNative": "簇报警阈值(原生表格)",
     "soxParam": "SOX参数",
+    "soxParamNative": "SOX参数(原生表格)",
     "analogCalibration": "模拟量校准",
     "controlFunction": "控制功能",
     "commandIssue": "指令下发",
     "deviceUpgrade": "设备升级",
+    "forceUpgrade": "强制升级",
     "addressAdaptive": "地址自适应",
+    "eventTime": "系统时间与记录",
     "blockSummary": "堆汇总信息",
     "blockInfo": "堆信息",
     "blockVersion": "堆版本信息",
@@ -304,6 +310,70 @@
     "alarmInfo": "告警信息",
     "bauAddressDetection": "BAU地址探测",
     "deviceManagement": "设备管理"
+  },
+  "forceUpgrade": {
+    "tftpServerConfig": "TFTP服务器配置",
+    "startTftp": "启动TFTP",
+    "stopTftp": "停止TFTP",
+    "tftpIp": "TFTP服务器IP",
+    "tftpIpPlaceholder": "192.168.11.200",
+    "tftpPort": "TFTP端口",
+    "upgradeFile": "升级文件",
+    "upgradeFilePlaceholder": "请选择升级文件",
+    "selectFile": "选择文件",
+    "startUpgrade": "开始升级",
+    "stopUpgrade": "停止升级",
+    "sendingInfo": "正在发送升级指令...",
+    "times": "次",
+    "operationGuide": {
+      "title": "操作说明",
+      "step1": "设置TFTP服务器IP（默认: 192.168.11.200）",
+      "step2": "选择升级文件",
+      "step3": "启动TFTP服务器",
+      "step4": "点击\"开始升级\"按钮发送强制升级指令",
+      "step5": "等待BAU设备响应并从TFTP服务器下载升级文件",
+      "step6": "设备完成升级并重启"
+    },
+    "log": {
+      "title": "操作日志",
+      "clear": "清空",
+      "noLogs": "暂无日志",
+      "cleared": "日志已清空",
+      "fileSelected": "已选择文件: {fileName}",
+      "rootSet": "TFTP根目录: {dir}",
+      "fileSelectFailed": "文件选择失败: {message}",
+      "tftpStarted": "TFTP服务器已启动: {host}:{port}",
+      "tftpStopped": "TFTP服务器已停止",
+      "tftpStartFailed": "TFTP启动失败: {message}",
+      "tftpStopFailed": "TFTP停止失败: {message}",
+      "sendingBroadcast": "开始发送强制升级广播指令...",
+      "stopping": "正在停止升级...",
+      "upgradeStopped": "已停止升级",
+      "upgradeSuccess": "升级完成",
+      "upgradeFailed": "升级失败",
+      "upgradeError": "升级错误: {error}",
+      "moduleLoaded": "强制升级模块已加载"
+    },
+    "toast": {
+      "tftpStarted": "TFTP已启动",
+      "tftpStopped": "TFTP已停止",
+      "tftpStartFailed": "TFTP启动失败",
+      "tftpStopFailed": "TFTP停止失败",
+      "fileSelectSuccess": "文件选择成功",
+      "fileSelectedDetail": "已选择: {fileName}",
+      "fileNameError": "文件名错误",
+      "fileSelectFailed": "文件选择失败",
+      "cannotStart": "无法开始",
+      "startTftpFirst": "请先启动TFTP服务器",
+      "selectFileFirst": "请先选择升级文件",
+      "selectInterfaceFirst": "请先设置TFTP服务器IP",
+      "tftpIpRequired": "请输入TFTP服务器IP地址",
+      "tftpIpError": "IP地址错误",
+      "upgradeSuccess": "升级成功",
+      "upgradeFailed": "升级失败",
+      "upgradeError": "升级错误",
+      "upgradeProgress": "升级进度"
+    }
   },
   "password": {
     "error": "密码错误",
@@ -318,7 +388,10 @@
       "deviceUpgrade": "设备升级",
       "fileUpgradeStatus": "文件升级状态",
       "clusterSelection": "簇选择",
-      "bmuUpgradeParams": "BMU升级参数"
+      "bmuUpgradeParams": "BMU升级参数",
+      "upgradeResult": "BCU/BMU升级执行结果",
+      "bauUpgradeResult": "BAU升级执行结果",
+      "upgradeExecutionResult": "升级执行结果"
     },
     "labels": {
       "serverIP": "服务器IP:",
@@ -375,10 +448,10 @@
       "notFound": "未找到",
       "valid": "有效",
       "invalid": "无效",
-      "upgrading": "升级中",
-      "success": "成功",
-      "error": "错误",
-      "stopped": "已停止"
+      "upgrading": "指令下发中",
+      "success": "指令下发成功",
+      "error": "指令下发失败",
+      "stopped": "操作已取消"
     },
     "messages": {
       "noFileSelected": "未选择升级文件",
@@ -387,7 +460,9 @@
       "pleaseStartFTP": "请先启动FTP服务器",
       "lastUpdate": "最后更新:",
       "passwordError": "密码错误",
-      "operationCancelled": "已取消操作，未进入升级页面"
+      "operationCancelled": "已取消操作，未进入升级页面",
+      "noUpgradeResult": "暂无升级结果，请先启动BCU/BMU升级",
+      "noBauUpgradeResult": "暂无BAU升级结果，请先启动BAU升级"
     },
     "toast": {
       "directorySelected": "目录选择成功",
@@ -412,6 +487,17 @@
     "cluster": {
       "cluster1to10": "第1-10簇:",
       "cluster11to20": "第11-20簇:"
+    },
+    "result": {
+      "deviceType": "升级设备类型",
+      "downloadCompleteFlag": "下载完成标志",
+      "otaErrorCode": "OTA下载错误码",
+      "bcuFaultCode": "BCU升级故障码",
+      "bmuFaultCode": "BMU升级故障码",
+      "bauFaultCode": "BAU升级故障码",
+      "bmuFailedDevices": "BMU升级失败设备",
+      "progress": "下载进度",
+      "clusterResult": "簇 {clusterKey} 升级结果"
     }
   },
   "mqtt": {
@@ -911,6 +997,7 @@
       "unit": "单位",
       "remarks": "备注说明"
     },
+    "noData": "暂无数据",
     "parameterClasses": {
       "bmuConfig": "BMU配置",
       "typeSelection": "类型选择",
@@ -1133,6 +1220,7 @@
       "unit": "单位",
       "remarks": "备注说明"
     },
+    "noData": "暂无数据",
     "parameterClasses": {
       "clusterVoltage": "簇端电压",
       "clusterTemperature": "簇端温度",
@@ -1164,6 +1252,7 @@
       "unit": "单位",
       "remarks": "备注说明"
     },
+    "noData": "暂无数据",
     "parameterClasses": {
       "实时SOC": "实时SOC",
       "实时SOH": "实时SOH",
@@ -1327,7 +1416,7 @@
         "堆单体温度最小值簇号": "堆单体温度最小值簇号",
         "堆单体温度最小值节号": "堆单体温度最小值节号",
         "堆单体温度温差极差值": "堆单体温度温差极差值",
-        "BAU工作模式": "BAU工作模式",
+        "堆运行状态": "堆运行状态",
         "单体电压最大值": "单体电压最大值",
         "单体电压最大值簇编号": "单体电压最大值簇编号",
         "单体电压最大值电池编号": "单体电压最大值电池编号",
@@ -1378,10 +1467,10 @@
         "单体SOH极差值": "单体SOH极差值",
         "动力接插件温度最大值": "动力接插件温度最大值",
         "动力接插件温度最大值簇编号": "动力接插件温度最大值簇编号",
-        "动力接插件温度最大值电池编号": "动力接插件温度最大值电池编号",
+        "动力接插件温度最大值包编号": "动力接插件温度最大值包编号",
         "动力接插件温度最小值": "动力接插件温度最小值",
         "动力接插件温度最小值簇编号": "动力接插件温度最小值簇编号",
-        "动力接插件温度最小值电池编号": "动力接插件温度最小值电池编号",
+        "动力接插件温度最小值包编号": "动力接插件温度最小值包编号",
         "动力接插件温度平均值": "动力接插件温度平均值",
         "动力接插件温度极差值": "动力接插件温度极差值",
         "簇SOC平均值": "簇SOC平均值",
@@ -1890,6 +1979,7 @@
       "selectOperation": "选择操作",
       "selectControlItems": "选择控制项",
       "selectedItems": "已选{0}项",
+      "selectAll": "全选",
       "cancel": "取消",
       "confirm": "确认"
     },
@@ -2668,6 +2758,7 @@
       "复位系统通讯设备配置参数": "复位系统通讯设备配置参数",
       "复位系统操作配置参数": "复位系统操作配置参数",
       "复位系统堆告警安装参数": "复位系统堆告警安装参数",
+      "复位事件记录标志": "复位事件记录标志",
       "复位系统系统运行时间": "复位系统系统运行时间"
     }
   },
@@ -2679,7 +2770,8 @@
     "buttons": {
       "allFaults": "全部故障",
       "filterByBlock": "按堆筛选",
-      "filterByCluster": "按簇筛选"
+      "filterByCluster": "按簇筛选",
+      "selectAll": "全选"
     },
     "placeholders": {
       "selectBlocks": "请选择要查看的堆",
@@ -3151,5 +3243,88 @@
         "插件1温度掉线": "插件1温度掉线",
         "插件2温度掉线": "插件2温度掉线"
       }
+  },
+  "eventTime": {
+    "title1": "系统时间与记录",
+    "title2": "平台时间",
+    "title3": "设备时间",
+    "buttonLable1": "下设平台时间",
+    "title4": "系统启动次数",
+    "title5": {
+      "第1次系统记录": "第1次系统记录",
+      "第2次系统记录": "第2次系统记录",
+      "第3次系统记录": "第3次系统记录"
+    },
+    "title6": "事件记录读取",
+    "tableTile1": "参数",
+    "tableTile2": "值",
+    "tableTile3": "单位",
+    "exportPath": "导出路径",
+    "exportOffset": "导出偏移量",
+    "exportNums": "导出数量",
+    "exportAll": "导出全部",
+    "deleteNums": "删除包数",
+    "deleteAll": "删除全部",
+    "buttonLable2": "选择目录",
+    "buttonLable3": "导出",
+    "buttonLable4": "删除",
+    "cancelExport": "取消导出",
+    "toast": {
+      "syncSuccess": "时间同步成功",
+      "syncFailed": "时间同步失败：{error}",
+      "enterExportZero": "事件记录数量为0",
+      "enterExportCount": "请输入导出数量",
+      "exportCountTooBig": "导出数量不能超过总存储数量（{total}条）",
+      "enterDeleteCount": "请输入有效的删除包数",
+      "deleteCmdSent": "删除指令已发送",
+      "deleteCmdSendFailed": "删除指令发送失败",
+      "deleteSuccess": "删除成功",
+      "deleteFailed": "删除失败",
+      "exportSuccess": "事件记录导出成功",
+      "exportPartialSuccess": "事件记录部分导出成功（成功{success}条，共{total}条）",
+      "exportCanceled": "导出已取消"
+    },
+    "confirm": {
+      "exportHeader": "导出确认",
+      "exportAllMessage": "确认导出所有事件记录？",
+      "exportPartialMessage": "确认导出 {count} 条事件记录？",
+      "deleteHeader": "删除确认",
+      "deleteAllMessage": "确认删除所有事件记录？此操作不可恢复！",
+      "deletePartialMessage": "确认删除 {count} 条事件记录？此操作不可恢复！",
+      "yes": "确定",
+      "no": "取消",
+      "delete": "删除",
+      "cancel": "取消"
+    },
+    "table1Parameters": {
+      "第1次-系统启动时间": "Boot 1 Start Time",
+      "第1次-系统停止时间": "Boot 1 Stop Time",
+      "第1次-系统运行时间": "Boot 1 Run Time",
+      "第1次-周期任务堆栈大小": "Boot 1 Periodic Stack",
+      "第1次-系统堆栈空间": "Boot 1 System Stack",
+      "第1次-系统堆栈最小空间": "Boot 1 System Stack Min",
+      "第2次-系统启动时间": "Boot 2 Start Time",
+      "第2次-系统停止时间": "Boot 2 Stop Time",
+      "第2次-系统运行时间": "Boot 2 Run Time",
+      "第2次-周期任务堆栈大小": "Boot 2 Periodic Stack",
+      "第2次-系统堆栈空间": "Boot 2 System Stack",
+      "第2次-系统堆栈最小空间": "Boot 2 System Stack Min",
+      "第3次-系统启动时间": "Boot 3 Start Time",
+      "第3次-系统停止时间": "Boot 3 Stop Time",
+      "第3次-系统运行时间": "Boot 3 Run Time",
+      "第3次-周期任务堆栈大小": "Boot 3 Periodic Stack",
+      "第3次-系统堆栈空间": "Boot 3 System Stack",
+      "第3次-系统堆栈最小空间": "Boot 3 System Stack Min",
+      "系统当前时间": "System Current Time",
+      "系统启动次数": "Boot Count"
+    },
+    "table2Parameters": {
+      "上一次事件记录版本号": "Last Event Record Version",
+      "事件记录存储数量": "Event Record Storage Count",
+      "事件记录存储百分比": "Event Record Storage Percentage",
+      "写事件记录开始位置": "Write Event Record Start Position",
+      "删除事件记录开始位置": "Delete Event Record Start Position",
+      "等待删除事件记录数量": "Pending Delete Event Record Count"
+    }
   }
 }

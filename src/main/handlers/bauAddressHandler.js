@@ -1,12 +1,27 @@
 //UDP通信、数据包处理、网络剧接口管理
 import dgram from 'dgram'
 import os from 'os'
+import path from 'path'
+import fs from 'fs'
+const tftp = require('tftp')
 
 // 协议常量
 const PC_PORT = 35000
 const BAU_PORT = 39999
 const BROADCAST_ADDRESS = '255.255.255.255'
 const RESPONSE_TIMEOUT = 2000
+
+// TFTP服务器相关
+let tftpServer = null
+let TFTP_ROOT = path.join(process.cwd(), 'upgrade-files')
+const TFTP_DEFAULT_IP = '192.168.11.200'
+const TFTP_DEFAULT_PORT = 69
+
+// 强制升级循环发送相关
+let forceUpgradeClient = null
+let forceUpgradeInterval = null
+let isForceUpgrading = false
+let forceUpgradeEvent = null
 
 // 功能码定义
 const FUNCTION_CODES = {
@@ -16,6 +31,7 @@ const FUNCTION_CODES = {
   SET_IP2: 0xA004,
   QUERY_MQTT: 0xA005,
   SET_MQTT: 0xA006,
+  FORCE_UPGRADE: 0xAFFD,
   RESET_DEFAULT: 0xAFFE,
   RESET_DEVICE: 0xAFFF
 }
@@ -104,6 +120,22 @@ const createPacket = (functionCode, data = null) => {
       // 写入复位魔数 0xFE424155，大端序
       // FE表示复位默认参数操作，424155是"BAU"的变形
       buffer.writeUInt32BE(0xFE424155, offset)
+      break
+
+    // 强制升级BAU操作：触发BAU设备升级流程
+    case FUNCTION_CODES.FORCE_UPGRADE:
+      // 写入强制升级魔数 0xFD424155，大端序
+      // FD表示强制升级操作，424155是"BAU"的变形
+      buffer.writeUInt32BE(0xFD424155, offset)
+      offset += 4
+      // 剩余4个备用uint32字段填充0 (16字节)，总共20字节数据区
+      // 注意：buffer是22字节（2字节功能码 + 20字节数据区），offset从2开始
+      // 已写入4字节魔数，剩余16字节需要填充4个uint32
+      for (let i = 0; i < 4; i++) {
+        buffer.writeUInt32BE(0, offset)
+        offset += 4
+      }
+      return buffer // 强制升级包完成，直接返回
       break
 
     // 重启设备操作：重新启动BAU设备
@@ -249,6 +281,26 @@ const parseResponse = (buffer, functionCode) => {
           //   port: result.port,
           //   macAddress: result.macAddress
           // })
+        }
+        break
+
+      case FUNCTION_CODES.FORCE_UPGRADE:
+        // 强制升级响应解析
+        // 响应结构: 功能码(2) + 响应码(2) + 备用(20字节) + MAC地址(8字节) = 32字节
+        // 与其他命令（QUERY_IP1/IP2、QUERY_MQTT）格式保持一致
+        if (buffer.length >= 32) { // 至少需要32字节
+          // 跳过5个备用uint32字段 (20字节)
+          offset += 20
+          // 读取MAC地址（2个uint32，与其他命令一致）
+          const macPart1 = buffer.readUInt32BE(offset)
+          offset += 4
+          const macPart2 = buffer.readUInt32BE(offset)
+          offset += 4
+          result.macAddress = formatMacAddressFromTwoUint32(macPart1, macPart2)
+        } else {
+          console.log(`[BAU Parse] 强制升级响应数据长度不足: ${buffer.length} < 32`)
+          result.error = `强制升级响应数据长度不足: ${buffer.length} < 32`
+          result.success = false
         }
         break
 
@@ -619,6 +671,412 @@ export const handleResetDeviceWithInterface = (event, params) => {
     functionCode: FUNCTION_CODES.RESET_DEVICE,
     interfaceAddress: params.interfaceAddress
   })
+}
+
+/**
+ * 开始强制升级（循环发送UDP指令）
+ * 每100ms发送一次22字节的强制升级命令包，直到收到设备响应
+ */
+export const startForceUpgrade = (event, { interfaceAddress }) => {
+  return new Promise((resolve, reject) => {
+    // 如果已经在升级中，先停止
+    if (isForceUpgrading) {
+      stopForceUpgrade()
+    }
+
+    console.log('[Force Upgrade] 开始发送强制升级指令')
+    console.log('[Force Upgrade] 本地接口:', interfaceAddress)
+
+    // 创建 UDP 客户端
+    forceUpgradeClient = dgram.createSocket('udp4')
+    isForceUpgrading = true
+    forceUpgradeEvent = event
+
+    const bindAddress = interfaceAddress || '0.0.0.0'
+
+    // 构造22字节强制升级指令（使用createPacket函数）
+    const upgradePacket = createPacket(FUNCTION_CODES.FORCE_UPGRADE)
+
+    // 先注册错误监听器（在bind之前）
+    forceUpgradeClient.on('error', (err) => {
+      console.error('[Force Upgrade] UDP客户端错误:', err)
+      if (forceUpgradeEvent && forceUpgradeEvent.sender) {
+        forceUpgradeEvent.sender.send('force-upgrade-error', {
+          error: err.message
+        })
+      }
+      stopForceUpgrade()
+    })
+
+    // 绑定本地端口和接口
+    forceUpgradeClient.bind(PC_PORT, bindAddress, () => {
+      forceUpgradeClient.setBroadcast(true)
+      console.log(`[Force Upgrade] UDP客户端已绑定到 ${bindAddress}:${PC_PORT}`)
+
+      // 构造并打印数据包信息
+      console.log(`[Force Upgrade] 升级数据包 (${upgradePacket.length}字节):`, upgradePacket.toString('hex'))
+      console.log(`[Force Upgrade] 目标: ${BROADCAST_ADDRESS}:${BAU_PORT}`)
+      
+      // 发送第一条指令
+      sendForceUpgradeCommand(upgradePacket)
+
+      // 每100ms发送一次指令（参考reference项目）
+      forceUpgradeInterval = setInterval(() => {
+        sendForceUpgradeCommand(upgradePacket)
+      }, 100)
+      
+      console.log('[Force Upgrade] 开始循环发送，间隔: 100ms')
+
+      resolve()
+    })
+
+    // 发送升级指令的函数
+    let sendCount = 0 // 发送计数器，用于控制日志频率
+    function sendForceUpgradeCommand(packet) {
+      if (!forceUpgradeClient || !isForceUpgrading) return
+
+      sendCount++
+      
+      forceUpgradeClient.send(
+        packet,
+        0,
+        packet.length,
+        BAU_PORT,
+        BROADCAST_ADDRESS,
+        (err) => {
+          if (err) {
+            console.error('[Force Upgrade] 发送指令失败:', err.message)
+            stopForceUpgrade()
+            // 只发送一次错误通知
+            if (forceUpgradeEvent && forceUpgradeEvent.sender) {
+              forceUpgradeEvent.sender.send('force-upgrade-error', {
+                error: err.message
+              })
+            }
+          } else {
+            // 每10次发送打印一次日志（避免日志过多）
+            if (sendCount % 10 === 0 || sendCount === 1) {
+              console.log(`[Force Upgrade] 已发送指令 ${sendCount} 次到 ${BROADCAST_ADDRESS}:${BAU_PORT}, 数据包:`, packet.toString('hex'))
+            }
+            
+            // 通知前端正在发送
+            if (forceUpgradeEvent && forceUpgradeEvent.sender) {
+              forceUpgradeEvent.sender.send('force-upgrade-sending', {
+                timestamp: Date.now()
+              })
+            }
+          }
+        }
+      )
+    }
+
+    // 监听 BAU 的响应
+    // 注意：BAU可能返回两种响应
+    // 1. 0xAFFD - 强制升级命令响应（22字节格式，与其他命令相同）
+    // 2. 可能还有进度反馈响应（需要根据实际协议调整）
+    forceUpgradeClient.on('message', (msg, rinfo) => {
+      console.log(`[Force Upgrade] 收到来自 ${rinfo.address}:${rinfo.port} 的响应`)
+      console.log('[Force Upgrade] 响应长度:', msg.length, '数据:', msg.toString('hex'))
+
+      // 检查是否是标准22字节响应格式（0xAFFD）
+      if (msg.length >= 4) {
+        const responseFunctionCode = msg.readUInt16BE(0)
+        
+        if (responseFunctionCode === FUNCTION_CODES.FORCE_UPGRADE) {
+          // 解析标准32字节响应
+          const parsedData = parseResponse(msg, FUNCTION_CODES.FORCE_UPGRADE)
+          
+          if (parsedData.success) {
+            // 成功响应（响应码0xE000）
+            console.log('[Force Upgrade] BAU响应：升级指令执行成功')
+            
+            // 发送成功事件
+            if (forceUpgradeEvent && forceUpgradeEvent.sender) {
+              forceUpgradeEvent.sender.send('force-upgrade-success', {
+                ip: rinfo.address,
+                mac: parsedData.macAddress || '未知',
+                message: '升级指令执行成功'
+              })
+            }
+            
+            // 关闭UDP，结束操作（与其他BAU指令保持一致）
+            stopForceUpgrade()
+          } else {
+            // 失败响应（响应码0xE001或其他错误码）
+            console.log('[Force Upgrade] BAU响应：升级指令执行失败')
+            if (forceUpgradeEvent && forceUpgradeEvent.sender) {
+              forceUpgradeEvent.sender.send('force-upgrade-failed', {
+                ip: rinfo.address,
+                mac: parsedData.macAddress || '未知',
+                message: parsedData.error || '升级指令执行失败'
+              })
+            }
+            
+            // 关闭UDP，结束操作
+            stopForceUpgrade()
+          }
+        } else {
+          // 可能是进度反馈或其他响应，暂时记录
+          console.log(`[Force Upgrade] 收到其他响应，功能码: 0x${responseFunctionCode.toString(16)}`)
+        }
+      } else {
+        console.warn('[Force Upgrade] 收到未知格式的响应，长度:', msg.length)
+      }
+    })
+
+  })
+}
+
+/**
+ * 停止发送升级指令，但保持UDP监听
+ */
+function stopSendingCommand() {
+  console.log('[Force Upgrade] 停止发送升级指令，保持UDP监听')
+  if (forceUpgradeInterval) {
+    clearInterval(forceUpgradeInterval)
+    forceUpgradeInterval = null
+  }
+}
+
+/**
+ * 停止强制升级并关闭UDP客户端
+ * 参考reference项目：不发送通知到前端，前端已经立即更新状态
+ */
+export const stopForceUpgrade = () => {
+  console.log('[Force Upgrade] 完全停止强制升级')
+
+  // 清除定时器
+  if (forceUpgradeInterval) {
+    clearInterval(forceUpgradeInterval)
+    forceUpgradeInterval = null
+  }
+
+  // 关闭 UDP 客户端
+  if (forceUpgradeClient) {
+    try {
+      forceUpgradeClient.close()
+    } catch (err) {
+      console.error('[Force Upgrade] 关闭UDP客户端失败:', err)
+    }
+    forceUpgradeClient = null
+  }
+
+  isForceUpgrading = false
+  forceUpgradeEvent = null
+}
+
+/**
+ * 获取强制升级状态
+ */
+export const getForceUpgradeStatus = () => {
+  return { isUpgrading: isForceUpgrading }
+}
+
+/**
+ * 支持网卡选择的强制升级BAU处理器（新版本：循环发送）
+ * 处理强制升级BAU的请求，通过指定网卡循环发送UDP广播
+ */
+export const handleForceUpgradeWithInterface = (event, params) => {
+  startForceUpgrade(event, {
+    interfaceAddress: params.interfaceAddress
+  })
+}
+
+// ==================== TFTP服务器功能 ====================
+
+/**
+ * 启动 TFTP 服务器
+ * @param {string} host - 服务器IP地址（已忽略，强制使用TFTP_DEFAULT_IP）
+ * @param {number} port - 端口号，默认 69
+ * @param {string} root - 根目录路径
+ * @returns {Promise<{success: boolean, message?: string}>}
+ */
+export const startTftpServer = (host, port = TFTP_DEFAULT_PORT, root = TFTP_ROOT) => {
+  return new Promise((resolve) => {
+    // 检查是否已经在运行
+    if (tftpServer) {
+      return resolve({ success: false, message: 'TFTP服务器已在运行' })
+    }
+
+    // 强制使用固定的TFTP IP地址，忽略传入的host参数
+    const tftpHost = TFTP_DEFAULT_IP
+
+    // 确保根目录存在
+    if (!fs.existsSync(root)) {
+      try {
+        fs.mkdirSync(root, { recursive: true })
+      } catch (err) {
+        return resolve({
+          success: false,
+          message: `创建TFTP根目录失败: ${err.message}`
+        })
+      }
+    }
+
+    try {
+      // 创建 TFTP 服务器（固定使用TFTP_DEFAULT_IP）
+      tftpServer = tftp.createServer({
+        host: tftpHost,
+        port: port,
+        root: root,
+        denyPUT: true // 禁止上传，仅允许下载
+      })
+
+      // 监听服务器错误
+      tftpServer.on('error', (error) => {
+        console.error('[TFTP] 服务器错误:', error)
+        
+        tftpServer = null
+        
+        let errorMessage = ''
+        const errorCode = error.code || ''
+        
+        if (errorCode === 'EADDRNOTAVAIL') {
+          errorMessage = `TFTP服务器启动失败，请检查本机IP是否为 ${tftpHost}。`
+        } else if (errorCode === 'EADDRINUSE') {
+          errorMessage = `端口 ${port} 已被占用，请关闭占用该端口的程序或更换端口。`
+        } else if (errorCode === 'EACCES') {
+          errorMessage = `权限不足，无法绑定端口 ${port}。请尝试使用管理员权限运行程序或使用大于1024的端口号。`
+        } else {
+          errorMessage = `TFTP服务器启动失败: ${error.message}`
+        }
+        
+        resolve({
+          success: false,
+          message: errorMessage,
+          errorCode: errorCode
+        })
+      })
+
+      // 监听请求事件
+      tftpServer.on('request', (req, res) => {
+        console.log(
+          `[TFTP] 收到${req.method}请求: ${req.file} 来自 ${req.stats.remoteAddress}:${req.stats.remotePort}`
+        )
+        
+        req.on('error', (error) => {
+          console.error(`[TFTP] 请求错误 (${req.file}):`, error.message)
+        })
+        
+        tftpServer.requestListener(req, res)
+      })
+
+      // 监听服务器启动成功
+      tftpServer.on('listening', () => {
+        console.log(`[TFTP] 服务器已启动: tftp://${tftpHost}:${port} (根目录: ${root})`)
+        resolve({
+          success: true,
+          message: `TFTP服务器已启动在 ${tftpHost}:${port}`
+        })
+      })
+
+      // 启动服务器
+      tftpServer.listen()
+    } catch (err) {
+      tftpServer = null
+      console.error('[TFTP] 启动失败:', err)
+      resolve({
+        success: false,
+        message: `TFTP服务器启动失败: ${err.message}`
+      })
+    }
+  })
+}
+
+/**
+ * 停止 TFTP 服务器
+ * @returns {Promise<{success: boolean, message?: string}>}
+ */
+export const stopTftpServer = () => {
+  return new Promise((resolve) => {
+    console.log('[TFTP] 准备停止服务器', !!tftpServer)
+    if (!tftpServer) {
+      return resolve({ success: false, message: 'TFTP服务器未在运行' })
+    }
+
+    try {
+      tftpServer.once('close', () => {
+        console.log('[TFTP] 服务器已停止')
+        tftpServer = null
+        resolve({ success: true, message: 'TFTP服务器已停止' })
+      })
+      
+      tftpServer.close()
+    } catch (err) {
+      console.error('[TFTP] 停止失败:', err)
+      tftpServer = null
+      resolve({
+        success: false,
+        message: `TFTP服务器停止失败: ${err.message}`
+      })
+    }
+  })
+}
+
+/**
+ * 获取 TFTP 服务器状态
+ * @returns {{running: boolean}}
+ */
+export const getTftpStatus = () => {
+  return { running: !!tftpServer }
+}
+
+/**
+ * 设置 TFTP 根目录
+ * @param {string} dir - 新的根目录路径
+ */
+export const setTftpRoot = (dir) => {
+  TFTP_ROOT = dir
+  if (!fs.existsSync(TFTP_ROOT)) {
+    try {
+      fs.mkdirSync(TFTP_ROOT, { recursive: true })
+    } catch (err) {
+      console.error(`[TFTP] 创建根目录失败: ${err.message}`)
+    }
+  }
+}
+
+/**
+ * 获取 TFTP 根目录
+ * @returns {string}
+ */
+export const getTftpRoot = () => {
+  return TFTP_ROOT
+}
+
+/**
+ * 获取TFTP默认IP
+ * @returns {string}
+ */
+export const getTftpDefaultIp = () => {
+  return TFTP_DEFAULT_IP
+}
+
+/**
+ * TFTP文件选择处理器（需要在index.js中使用dialog实现）
+ * 返回文件信息用于设置TFTP根目录
+ */
+export const handleSelectTftpUpgradeFile = async (filePath) => {
+  try {
+    const fileName = path.basename(filePath)
+    const fileDir = path.dirname(filePath)
+    
+    // 设置TFTP根目录为文件所在目录
+    setTftpRoot(fileDir)
+    
+    return {
+      success: true,
+      fileName: fileName,
+      fileDir: fileDir,
+      fullPath: filePath
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: true,
+      message: `文件处理失败: ${error.message}`
+    }
+  }
 }
 
 

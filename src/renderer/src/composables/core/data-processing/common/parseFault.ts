@@ -4,6 +4,7 @@
 // ./src/renderer/src/composables/parseFault.ts 
 import { markRaw, shallowRef, watch } from 'vue'
 import { locateCell } from '../../../../../../protocol/utils'
+import { useClusterStore } from '../../../../stores/device/clusterStore'
 
 /* ---------- 全局电芯序号计算函数 ---------- */
 function calculateGlobalCell(bmu: number, cellInBmu: number, cfg: any = {}) {
@@ -490,8 +491,13 @@ function shouldDisplayFault(dataType: string, label: string): boolean {
 
   // 2. 二级表：过滤单体相关故障，保留BMU级故障
   if (dataType.startsWith('FAULT_LEVEL2')) {
-    const cellFaultPrefixes = ['CellOv', 'CellUv', 'CellOTc', 'CellUTc', 'CellOTd', 'CellUTd', 'SocHigh', 'SocLow']
-    const isCellFault = cellFaultPrefixes.some(prefix => label.includes(prefix))
+    const cellFaultTypes = [
+      '单体电池过压', '单体电池欠压',
+      '充电单体过温', '充电单体欠温',
+      '放电单体过温', '放电单体欠温',
+      '单体SOC过高', '单体SOC过低'
+    ]
+    const isCellFault = cellFaultTypes.some(type => label.includes(type))
     return !isCellFault  // 单体故障不显示，BMU故障显示
   }
 
@@ -618,10 +624,7 @@ export function parseFault (msg: any) {
             desc = label.replace(/^BMU\d+\s*第\s*\d+\s*节\s*/, '')
           }
           
-          // 针对FAULT_LEVEL2进行动态翻译处理
-          if (dataType === 'FAULT_LEVEL2') {
-            desc = normalizeFaultLevel2Label(desc)
-          }
+          // FAULT_LEVEL2的动态翻译在Fault.vue的getFaultTranslation中处理
 
           // 检查故障是否已存在，保持首次发生时间
           const existingRecord = map.get(label)
@@ -756,10 +759,6 @@ export function parseFault (msg: any) {
           desc = label.replace(/^BMU\d+\s*第\s*\d+\s*节\s*/, '')
         }
         
-        // 针对FAULT_LEVEL2进行动态翻译处理
-        if (dataType === 'FAULT_LEVEL2') {
-          desc = normalizeFaultLevel2Label(desc)
-        }
 
         //检查故障是否已存在，保持首次发生时间
         const existingRecord = map.get(label)
@@ -804,6 +803,66 @@ export function parseFault (msg: any) {
 
 // 启动清理定时器
 startCleanupTimer()
+
+/* ---------- 根据系统配置清理无效堆簇的故障数据 ---------- */
+/**
+ * 根据系统配置清理无效堆簇的故障数据
+ * @param {Array} validClusters - 有效的簇选项列表
+ */
+function cleanupInvalidClusterFaults(validClusters: Array<{value: string}>) {
+  // 构建有效堆簇的 Set
+  const validKeys = new Set(validClusters.map(c => c.value))
+  const validBlockKeys = new Set(
+    validClusters.map(c => {
+      const [block] = c.value.split('-').map(Number)
+      return `${block}-0` // 堆告警格式
+    })
+  )
+  
+  let cleanedCount = 0
+  // 遍历 rawFaultData，删除无效堆簇的数据
+  for (const [clusterKey, faultMap] of rawFaultData.entries()) {
+    // 检查是否为有效堆簇
+    if (!validKeys.has(clusterKey) && !validBlockKeys.has(clusterKey)) {
+      cleanedCount += faultMap.size
+      rawFaultData.delete(clusterKey) // 删除整个堆簇的故障数据
+    }
+  }
+  
+  if (cleanedCount > 0) {
+    console.log(`🧹 [parseFault] 清理了 ${cleanedCount} 个无效堆簇的故障数据`)
+    // 强制清除缓存，确保下次更新时重新计算
+    lastDataHash = ''  // 清除缓存指纹
+    sortedCache = []   // 清除缓存数据
+    throttledUpdate()  // 触发响应式更新
+  }
+}
+
+// 监听 clusterStore 的 availableClusters 变化
+const clusterStore = useClusterStore()
+watch(
+  () => clusterStore.availableClusters,
+  (newClusters: Array<{value: string}>, oldClusters?: Array<{value: string}>) => {
+    // 只在配置真正变化时清理（避免初始化时误清理）
+    if (newClusters && newClusters.length > 0) {
+      // 检查是否真的有变化（通过长度或内容比较）
+      const hasChanged = !oldClusters || 
+                        oldClusters.length !== newClusters.length ||
+                        !oldClusters.every((old, idx) => 
+                          newClusters[idx]?.value === old.value
+                        )
+      
+      if (hasChanged) {
+        cleanupInvalidClusterFaults(newClusters)
+      }
+    } else if (newClusters && newClusters.length === 0) {
+      // 如果配置变为空，清理所有故障数据
+      rawFaultData.clear()
+      throttledUpdate()
+    }
+  },
+  { deep: true }
+)
 
 /* ---------- 调试工具（生产环境可移除） ---------- */
 export function logMemoryUsage(tag: string) {

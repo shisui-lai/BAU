@@ -2718,7 +2718,7 @@ export const BLOCK_SUMMARY = [
   { class: '最大最小值', key: 'stackCellTemperatureDifferenceRange', label: '堆单体温度温差极差值', type: 'u16', scale: 10, unit: '℃' },
 
   { class: '状态信息', key: 'stackFaultStatus', label: '堆故障状态', type: 'u16', scale: 1, remarks: '0-无故障 1-轻微故障 2-一般故障 3-严重故障(对外接口使用)' },
-  { class: '状态信息', key: 'bauWorkingMode', label: 'BAU工作模式', type: 'u16', scale: 1, remarks: '0xFF:各簇状态不一致 其他(0:静置 1:充电 2:放电 3:开路 4:接触器自检)' },
+  { class: '状态信息', key: 'bauWorkingMode', label: '堆运行状态', type: 'u16', scale: 1, remarks: '0xFF:各簇状态不一致 其他(0:静置 1:充电 2:放电 3:开路 4:接触器自检)' },
   { class: '状态信息', key: 'deviceSystemStatus', label: '设备系统状态', type: 'u16', scale: 1, remarks: '0:运行监测 1:绝缘检测状态 2:接触器自检状态 3:系统初始化 4:BCU升级状态 5:-- 6:BCU自适应地址状态 7:BMU自适应地址状态 8:BMU升级状态 0xFFFF:其他' },
   { class: '状态信息', key: 'chargeDischargeForbiddenStatus', label: '电池堆禁充禁放状态', type: 'u16', scale: 1, remarks: '0:可充可放 1:可充禁放 2:可放禁充 3:禁充禁放' },
   { class: '状态信息', key: 'chargeDischargeStatus', label: '电池堆的充放电状态', type: 'u16', scale: 1, remarks: '0:其他 1:充电 2:放电' },
@@ -2810,10 +2810,10 @@ export const BLOCK_SYS_ABSTRACT = [
   // 极柱温度概要信息
   { class: '动力接插件温度概要', key: 'poleTempMax', label: '动力接插件温度最大值', type: 's16', scale: 10, unit: '℃', remarks: '默认无效值为大于0x7FFE' },
   { class: '动力接插件温度概要', key: 'poleTempMaxClusterId', label: '动力接插件温度最大值簇编号', type: 's16', scale: 1 },
-  { class: '动力接插件温度概要', key: 'poleTempMaxBatteryId', label: '动力接插件温度最大值电池编号', type: 's16', scale: 1 },
+  { class: '动力接插件温度概要', key: 'poleTempMaxBatteryId', label: '动力接插件温度最大值包编号', type: 's16', scale: 1 },
   { class: '动力接插件温度概要', key: 'poleTempMin', label: '动力接插件温度最小值', type: 's16', scale: 10, unit: '℃', remarks: '默认无效值为大于0x7FFE' },
   { class: '动力接插件温度概要', key: 'poleTempMinClusterId', label: '动力接插件温度最小值簇编号', type: 's16', scale: 1 },
-  { class: '动力接插件温度概要', key: 'poleTempMinBatteryId', label: '动力接插件温度最小值电池编号', type: 's16', scale: 1 },
+  { class: '动力接插件温度概要', key: 'poleTempMinBatteryId', label: '动力接插件温度最小值包编号', type: 's16', scale: 1 },
   { class: '动力接插件温度概要', key: 'poleTempAverage', label: '动力接插件温度平均值', type: 's16', scale: 10, unit: '℃' },
   { class: '动力接插件温度概要', key: 'poleTempRange', label: '动力接插件温度极差值', type: 's16', scale: 10, unit: '℃' },
   { key:'_skip7', type:'skip4' },
@@ -3362,6 +3362,118 @@ export const BLOCK_COMM_LOST = [
     { class: '系统时间配置', key: 'Second', label: '秒', type: 'u16', scale: 1 }
   ];
 
+  // 系统时间记录（sys_run_time_r）
+  // 数据长度：120 × u16 = 240 字节（120个寄存器）
+  // 单独划分独立的掉电存储区
+  // 协议格式：数据长度(2字节) + 事件记录标志位(120 * 2字节)
+  export const SYS_RUN_TIME_R = [
+    // 系统当前时间（7个寄存器，BCD编码：秒-分-时-周-日-月-年）
+    { class: '系统时间记录', key: 'CurrentTime_Second', label: '系统当前时间-秒', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'CurrentTime_Minute', label: '系统当前时间-分', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'CurrentTime_Hour', label: '系统当前时间-时', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'CurrentTime_Week', label: '系统当前时间-周', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'CurrentTime_Day', label: '系统当前时间-日', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'CurrentTime_Month', label: '系统当前时间-月', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'CurrentTime_Year', label: '系统当前时间-年', type: 'u16', scale: 1 },
+    
+    // 系统启动次数（1个寄存器）
+    { class: '系统时间记录', key: 'BootCount', label: '系统启动次数', type: 'u16', scale: 1 },
+    
+    // 第1次系统记录（21个寄存器）
+    // 系统启动时间（7个寄存器，BCD编码：秒-分-时-周-日-月-年）
+    { class: '系统时间记录', key: 'Boot1_StartTime_Second', label: '第1次-启动时间-秒', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StartTime_Minute', label: '第1次-启动时间-分', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StartTime_Hour', label: '第1次-启动时间-时', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StartTime_Week', label: '第1次-启动时间-周', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StartTime_Day', label: '第1次-启动时间-日', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StartTime_Month', label: '第1次-启动时间-月', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StartTime_Year', label: '第1次-启动时间-年', type: 'u16', scale: 1 },
+    
+    // 系统停止时间（7个寄存器，BCD编码：秒-分-时-周-日-月-年）
+    { class: '系统时间记录', key: 'Boot1_StopTime_Second', label: '第1次-停止时间-秒', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StopTime_Minute', label: '第1次-停止时间-分', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StopTime_Hour', label: '第1次-停止时间-时', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StopTime_Week', label: '第1次-停止时间-周', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StopTime_Day', label: '第1次-停止时间-日', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StopTime_Month', label: '第1次-停止时间-月', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_StopTime_Year', label: '第1次-停止时间-年', type: 'u16', scale: 1 },
+    
+    // 系统运行时间（2个寄存器，uint32_t，单位：分钟，分辨率：1分钟）
+    { class: '系统时间记录', key: 'Boot1_RunTime_Low', label: '第1次-运行时间-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_RunTime_High', label: '第1次-运行时间-高16位', type: 'u16', scale: 1 },
+    
+    // 周期任务堆栈大小（2个寄存器，uint32_t，单位：字节）
+    { class: '系统时间记录', key: 'Boot1_PeriodicStack_Low', label: '第1次-周期任务堆栈-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_PeriodicStack_High', label: '第1次-周期任务堆栈-高16位', type: 'u16', scale: 1 },
+    
+    // 系统堆栈空间（2个寄存器，uint32_t，单位：字节）
+    { class: '系统时间记录', key: 'Boot1_SystemStack_Low', label: '第1次-系统堆栈-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_SystemStack_High', label: '第1次-系统堆栈-高16位', type: 'u16', scale: 1 },
+    
+    // 系统堆栈最小空间（2个寄存器，uint32_t，单位：字节）
+    { class: '系统时间记录', key: 'Boot1_SystemStackMin_Low', label: '第1次-系统堆栈最小-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot1_SystemStackMin_High', label: '第1次-系统堆栈最小-高16位', type: 'u16', scale: 1 },
+    
+    // 预留（10个寄存器）
+    { key: '_skip_boot1', type: 'skip20' },
+    
+    // 第2次系统记录（21个寄存器）- 结构同第1次
+    { class: '系统时间记录', key: 'Boot2_StartTime_Second', label: '第2次-启动时间-秒', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StartTime_Minute', label: '第2次-启动时间-分', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StartTime_Hour', label: '第2次-启动时间-时', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StartTime_Week', label: '第2次-启动时间-周', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StartTime_Day', label: '第2次-启动时间-日', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StartTime_Month', label: '第2次-启动时间-月', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StartTime_Year', label: '第2次-启动时间-年', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StopTime_Second', label: '第2次-停止时间-秒', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StopTime_Minute', label: '第2次-停止时间-分', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StopTime_Hour', label: '第2次-停止时间-时', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StopTime_Week', label: '第2次-停止时间-周', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StopTime_Day', label: '第2次-停止时间-日', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StopTime_Month', label: '第2次-停止时间-月', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_StopTime_Year', label: '第2次-停止时间-年', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_RunTime_Low', label: '第2次-运行时间-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_RunTime_High', label: '第2次-运行时间-高16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_PeriodicStack_Low', label: '第2次-周期任务堆栈-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_PeriodicStack_High', label: '第2次-周期任务堆栈-高16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_SystemStack_Low', label: '第2次-系统堆栈-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_SystemStack_High', label: '第2次-系统堆栈-高16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_SystemStackMin_Low', label: '第2次-系统堆栈最小-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot2_SystemStackMin_High', label: '第2次-系统堆栈最小-高16位', type: 'u16', scale: 1 },
+    { key: '_skip_boot2', type: 'skip20' },
+    
+    // 第3次系统记录（21个寄存器）- 结构同第1次
+    { class: '系统时间记录', key: 'Boot3_StartTime_Second', label: '第3次-启动时间-秒', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StartTime_Minute', label: '第3次-启动时间-分', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StartTime_Hour', label: '第3次-启动时间-时', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StartTime_Week', label: '第3次-启动时间-周', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StartTime_Day', label: '第3次-启动时间-日', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StartTime_Month', label: '第3次-启动时间-月', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StartTime_Year', label: '第3次-启动时间-年', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StopTime_Second', label: '第3次-停止时间-秒', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StopTime_Minute', label: '第3次-停止时间-分', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StopTime_Hour', label: '第3次-停止时间-时', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StopTime_Week', label: '第3次-停止时间-周', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StopTime_Day', label: '第3次-停止时间-日', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StopTime_Month', label: '第3次-停止时间-月', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_StopTime_Year', label: '第3次-停止时间-年', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_RunTime_Low', label: '第3次-运行时间-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_RunTime_High', label: '第3次-运行时间-高16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_PeriodicStack_Low', label: '第3次-周期任务堆栈-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_PeriodicStack_High', label: '第3次-周期任务堆栈-高16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_SystemStack_Low', label: '第3次-系统堆栈-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_SystemStack_High', label: '第3次-系统堆栈-高16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_SystemStackMin_Low', label: '第3次-系统堆栈最小-低16位', type: 'u16', scale: 1 },
+    { class: '系统时间记录', key: 'Boot3_SystemStackMin_High', label: '第3次-系统堆栈最小-高16位', type: 'u16', scale: 1 },
+    { key: '_skip_boot3', type: 'skip20' },
+    
+    // 预留（16个寄存器）
+    { key: '_skip_reserved', type: 'skip32' }
+    
+    // 注意：根据协议定义，实际数据为120个u16寄存器（240字节），不包含CRC16
+    // CRC16可能在协议的其他层处理，不在本数据块中
+  ];
+
   // 堆系统端口配置参数（block_port_cfg） 
   export const BLOCK_PORT_CFG_R = [
     // —— CAN1/2/3 速率（仲裁/数据）——
@@ -3606,4 +3718,694 @@ export const BMU_ADAPTIVE_ADDR_PARAM_FIELDS = [
 
   // 寄存器3: 总分配地址数 (2字节)
   { class: 'BMU地址自适应', key: 'totalAddrCount', label: '总分配地址数', type: 'u16', scale: 1 }
+];
+
+// ========== 升级结果字段映射表 ==========
+
+/**
+ * 升级设备类型映射
+ */
+export const UPGRADE_DEVICE_TYPE_MAP = {
+  0xA001: 'BCU升级',
+  0xA002: 'BMU升级'
+}
+
+/**
+ * 升级文件下载完成标志映射
+ */
+export const DOWNLOAD_COMPLETE_FLAG_MAP = {
+  0x0000: '未知',
+  0x5BB5: '下载完成'
+}
+
+/**
+ * 升级完成类型映射
+ */
+export const UPGRADE_COMPLETION_TYPE_MAP = {
+  0x0000: '无效',
+  0x5BB5: '升级执行中……',
+  0xB0A1: '单机升级完成',
+  0xB0B1: '单机升级失败',
+  0xB0A2: '广播升级完成',
+  0xB0B2: '广播升级失败',
+  0xB0A3: '强制单机升级完成',
+  0xB0B3: '强制单机升级失败',
+  0xB0A4: '强制广播升级完成',
+  0xB0B4: '强制广播升级失败'
+}
+
+/**
+ * OTA文件下载错误码映射
+ */
+export const OTA_ERROR_CODE_MAP = {
+  0x0000: '无故障',
+  0x0001: '服务器名称无效',
+  0x0002: '连接服务器失败',
+  0x0003: '登录服务器失败',
+  0x0004: '打开文件失败',
+  0x0005: '读取文件失败',
+  0x0006: '服务器端终止',
+  0x0007: '文件头部CRC校验错误',
+  0x0008: '文件类型不匹配',
+  0x0009: '文件大小超限',
+  0x000A: 'FLASH擦除失败',
+  0x000B: 'FLASH编程错误',
+  0x000C: 'FLASH读取错误',
+  0x000D: '文件CRC32校验错误',
+  0x000E: '系统状态错误',
+  0x000F: '文件写入次数过多',
+  // BAU特有错误码（0x0010-0x0013）
+  0x0010: '本地FTP服务器不可用',
+  0x0011: '本地磁盘异常',
+  0x0012: '无在线簇',
+  0x0013: '升级超时'
+}
+
+/**
+ * BCU升级故障码映射
+ * 说明：BCU升级故障码与OTA错误码保持一致（0x0000-0x000F）
+ */
+export const BCU_FAULT_CODE_MAP = {
+  0x0000: '无故障',
+  0x0001: '服务器名称无效',
+  0x0002: '连接服务器失败',
+  0x0003: '登录服务器失败',
+  0x0004: '打开文件失败',
+  0x0005: '读取文件失败',
+  0x0006: '服务器端终止',
+  0x0007: '文件头部CRC校验错误',
+  0x0008: '文件类型不匹配',
+  0x0009: '文件大小超限',
+  0x000A: 'FLASH擦除失败',
+  0x000B: 'FLASH编程错误',
+  0x000C: 'FLASH读取错误',
+  0x000D: '文件CRC32校验错误',
+  0x000E: '系统状态错误',
+  0x000F: '文件写入次数过多'
+}
+
+/**
+ * BMU升级故障码映射
+ * 说明：BMU升级故障码包含OTA错误码（0x0000）和BMU特有故障码（0x0001-0x0009）
+ * 注意：BMU特有故障码的0x0001-0x0009与OTA错误码的对应映射含义不同，优先使用BMU特有故障码
+ */
+export const BMU_FAULT_CODE_MAP = {
+  0x0000: '无故障',
+  // BMU特有故障码（0x0001-0x0009）
+  0x0001: 'BMU应答数量过多',
+  0x0002: 'BMU应答数量过少',
+  0x0003: '存在BMU应答升级失败',
+  0x0004: '地址错误',
+  0x0005: '请求升级帧应答超时',
+  0x0006: 'pack开始帧应答超时',
+  0x0007: 'pack结束帧应答超时',
+  0x0008: '退出帧应答超时',
+  0x0009: '完成帧应答超时',
+  // OTA错误码（0x000A-0x000F）
+  0x000A: 'FLASH擦除失败',
+  0x000B: 'FLASH编程错误',
+  0x000C: 'FLASH读取错误',
+  0x000D: '文件CRC32校验错误',
+  0x000E: '系统状态错误',
+  0x000F: '文件写入次数过多'
+}
+
+/**
+ * BAU升级故障码映射
+ * 说明：BAU升级故障码包含OTA错误码（0x0000-0x000F）和BAU特有故障码（0x0010-0x0013）
+ */
+export const BAU_FAULT_CODE_MAP = {
+  // OTA错误码（0x0000-0x000F）
+  0x0000: '无故障',
+  0x0001: '服务器名称无效',
+  0x0002: '连接服务器失败',
+  0x0003: '登录服务器失败',
+  0x0004: '打开文件失败',
+  0x0005: '读取文件失败',
+  0x0006: '服务器端终止',
+  0x0007: '文件头部CRC校验错误',
+  0x0008: '文件类型不匹配',
+  0x0009: '文件大小超限',
+  0x000A: 'FLASH擦除失败',
+  0x000B: 'FLASH编程错误',
+  0x000C: 'FLASH读取错误',
+  0x000D: '文件CRC32校验错误',
+  0x000E: '系统状态错误',
+  0x000F: '文件写入次数过多',
+  // BAU特有故障码（0x0010-0x0013）
+  0x0010: '本地FTP服务器不可用',
+  0x0011: '本地磁盘异常',
+  0x0012: '无在线簇',
+  0x0013: '升级超时'
+}
+
+// ========== BCU/BMU升级结果字段定义表 ==========
+// topic: get_bcu_bmu_upgrade_result (20字节，10个uint16_t字段，其中1个是uint32_t)
+export const BCU_BMU_UPGRADE_RESULT_FIELDS = [
+  // 字段1: 升级设备类型 (uint16_t, offset 0)
+  { class: '升级控制执行结果', key: 'deviceType', label: '升级设备类型', type: 'u16', scale: 1, map: UPGRADE_DEVICE_TYPE_MAP },
+  
+  // 字段2: 升级文件下载完成标志 (uint16_t, offset 2)
+  { class: '升级控制执行结果', key: 'downloadCompleteFlag', label: '升级文件下载完成标志', type: 'u16', scale: 1, map: DOWNLOAD_COMPLETE_FLAG_MAP },
+  
+  // 字段3: 升级完成类型 (uint16_t, offset 4)
+  { class: '升级控制执行结果', key: 'completionType', label: '升级完成类型', type: 'u16', scale: 1, map: UPGRADE_COMPLETION_TYPE_MAP },
+  
+  // 字段4: OTA文件下载错误码 (uint16_t, offset 6)
+  { class: '升级控制执行结果', key: 'otaErrorCode', label: 'OTA文件下载错误码', type: 'u16', scale: 1, map: OTA_ERROR_CODE_MAP },
+  
+  // 字段5: BCU升级故障码 (uint16_t, offset 8)
+  { class: '升级控制执行结果', key: 'bcuFaultCode', label: 'BCU升级故障码', type: 'u16', scale: 1, map: BCU_FAULT_CODE_MAP },
+  
+  // 字段6: BMU升级故障码 (uint16_t, offset 10)
+  { class: '升级控制执行结果', key: 'bmuFaultCode', label: 'BMU升级故障码', type: 'u16', scale: 1, map: BMU_FAULT_CODE_MAP },
+  
+  // 字段7: BMU升级失败设备标识 (uint32_t, offset 12-15)
+  // 注意：这是bitmask，需要特殊处理，暂时存储原始值
+  { class: '升级控制执行结果', key: 'bmuFailedDevicesRaw', label: 'BMU升级失败设备标识', type: 'u32', scale: 1 },
+  
+  // 字段8: BMU程序总包数 (uint16_t, offset 16)
+  { class: '升级控制执行结果', key: 'totalPackets', label: 'BMU程序总包数', type: 'u16', scale: 1 },
+  
+  // 字段9: BMU下载当前包序号 (uint16_t, offset 18)
+  { class: '升级控制执行结果', key: 'currentPacket', label: 'BMU下载当前包序号', type: 'u16', scale: 1 }
+];
+
+// ========== BAU升级结果字段定义表 ==========
+// topic: get_bau_upgrade_result (6字节，3个uint16_t字段)
+// 注意：第一个字段（下载完成标志）保留占位但不使用，仅用于保证解析对齐
+export const BAU_UPGRADE_RESULT_FIELDS = [
+  // 字段1: 升级文件下载完成标志 (uint16_t, offset 0) - 保留占位，不显示在UI
+  { class: 'BAU升级控制执行结果', key: 'downloadCompleteFlag', label: '升级文件下载完成标志', type: 'u16', scale: 1, map: DOWNLOAD_COMPLETE_FLAG_MAP },
+  
+  // 字段2: OTA文件下载错误码 (uint16_t, offset 2)
+  { class: 'BAU升级控制执行结果', key: 'otaErrorCode', label: 'OTA文件下载错误码', type: 'u16', scale: 1, map: OTA_ERROR_CODE_MAP },
+  
+  // 字段3: BAU升级故障码 (uint16_t, offset 4)
+  { class: 'BAU升级控制执行结果', key: 'bauFaultCode', label: 'BAU升级故障码', type: 'u16', scale: 1, map: BAU_FAULT_CODE_MAP }
+];
+
+// ========== 事件记录标志位（event_record_flag_r）==========
+// 数据长度：23 × u16 = 46 字节（23个寄存器）
+// 协议格式：数据长度(2字节) + 事件记录标志位(23 * 2字节)
+// 注意：只读，可控制数据复位；单独划分独立的掉电存储区
+export const EVENT_RECORD_FLAG_R = [
+  // 上一次事件记录版本号（10个寄存器，ASCII编码，20字节）
+  // 注意：使用str20类型，直接读取20字节并解码为ASCII字符串
+  { class: '事件记录标志位', key: 'LastVersion', label: '上一次事件记录版本号', type: 'str20' },
+  
+  // 事件记录存储数量（1个寄存器，uint16_t，单位：条）
+  { class: '事件记录标志位', key: 'StorageCount', label: '事件记录存储数量', type: 'u16', scale: 1 },
+  
+  // 事件记录存储百分比（1个寄存器，uint16_t，范围：0-1000，单位：0.1%）
+
+  { class: '事件记录标志位', key: 'StoragePercent', label: '事件记录存储百分比', type: 'u16', scale: 100 },
+  
+  // 写事件记录开始位置（2个寄存器，uint32_t）
+  // 注意：当前项目支持直接使用u32类型，parseByTable会自动读取4字节
+  { class: '事件记录标志位', key: 'WriteStartPos', label: '写事件记录开始位置', type: 'u32', scale: 1 },
+  
+  // 删除事件记录开始位置（2个寄存器，uint32_t）
+  { class: '事件记录标志位', key: 'DeleteStartPos', label: '删除事件记录开始位置', type: 'u32', scale: 1 },
+  
+  // 等待删除事件记录数量（2个寄存器，uint32_t）
+  { class: '事件记录标志位', key: 'PendingDeleteCount', label: '等待删除事件记录数量', type: 'u32', scale: 1 },
+  
+  // 预留（4个寄存器）
+  { class: '事件记录标志位', key: 'Reserved_1', label: '预留-寄存器1', type: 'u16', scale: 1, hide: true },
+  { class: '事件记录标志位', key: 'Reserved_2', label: '预留-寄存器2', type: 'u16', scale: 1, hide: true },
+  { class: '事件记录标志位', key: 'Reserved_3', label: '预留-寄存器3', type: 'u16', scale: 1, hide: true },
+  { class: '事件记录标志位', key: 'Reserved_4', label: '预留-寄存器4', type: 'u16', scale: 1, hide: true },
+  
+  // CRC16（1个寄存器）
+  { class: '事件记录标志位', key: 'CRC16', label: 'CRC16', type: 'u16', scale: 1, hide: true }
+];
+
+// ========== 事件记录数据（event_record_r）==========
+// 数据长度：128 × u16 = 256 字节（128个寄存器）
+// 协议格式：数据长度(2字节) + 事件记录偏移量(2字节) + 事件记录数据(128 * 2字节) = 260字节
+// 注意：根据事件触发记录结构体定义，事件记录数据包含128个寄存器，详细字段定义见文档
+export const EVENT_RECORD_R = [
+  // 字段0-6：事件记录时间（7个寄存器，BCD编码：年-月-日-周-时-分-秒）
+  { class: '事件记录数据', key: 'Year', label: '年', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Month', label: '月', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Day', label: '日', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Week', label: '周', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Hour', label: '时', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Minute', label: '分', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Second', label: '秒', type: 'u16', scale: 1 },
+  
+  // 字段7：事件类型（1个寄存器）
+  { class: '事件记录数据', key: 'EventType', label: '事件类型', type: 'u16', scale: 1 },
+  
+  // 字段8-11：事件参数1-4（4个寄存器）
+  { class: '事件记录数据', key: 'Param1', label: '参数1', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Param2', label: '参数2', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Param3', label: '参数3', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'Param4', label: '参数4', type: 'u16', scale: 1 },
+  
+  // 字段12：远方就地场景（1个寄存器）
+  { class: '事件记录数据', key: 'RemoteLocalScene', label: '远方就地场景', type: 'u16', scale: 1 },
+  
+  // 字段13：分簇控制模式（1个寄存器）
+  { class: '事件记录数据', key: 'ClusterControlMode', label: '分簇控制模式', type: 'u16', scale: 1 },
+  
+  // 字段14：最小并簇数（1个寄存器）
+  { class: '事件记录数据', key: 'MinClusterCount', label: '最小并簇数', type: 'u16', scale: 1 },
+  
+  // 字段15-16：使能簇标志1、2（2个寄存器）
+  { class: '事件记录数据', key: 'EnableClusterFlag1', label: '使能簇标志1', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'EnableClusterFlag2', label: '使能簇标志2', type: 'u16', scale: 1 },
+  
+  // 字段17-18：退并簇标志1、2（2个寄存器）
+  { class: '事件记录数据', key: 'ExitClusterFlag1', label: '退并簇标志1', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'ExitClusterFlag2', label: '退并簇标志2', type: 'u16', scale: 1 },
+  
+  // 字段19-20：安装簇数、在线簇数（2个寄存器）
+  { class: '事件记录数据', key: 'InstalledClusterCount', label: '安装簇数', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'OnlineClusterCount', label: '在线簇数', type: 'u16', scale: 1 },
+  
+  // 字段21：堆运行状态（1个寄存器）
+  { class: '事件记录数据', key: 'StackRunStatus', label: '堆运行状态', type: 'u16', scale: 1 },
+  
+  // 字段22：堆总故障（1个寄存器）
+  { class: '事件记录数据', key: 'StackTotalFault', label: '堆总故障', type: 'u16', scale: 1 },
+  
+  // 字段23：堆允充允放状态（1个寄存器）
+  { class: '事件记录数据', key: 'StackChargeDischargeStatus', label: '堆允充允放状态', type: 'u16', scale: 1 },
+  
+  // 字段24：簇汇总模拟量三级告警（6个寄存器，u16[6]，12字节，需要按bit解析）
+  // 严重故障1（u16）
+  { class: '簇汇总模拟量三级告警', key: 'ClusterAnalogAlarm_Severe1', label: '严重故障1', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageDiffHigh_Severe', label: '单体压差上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 0 },
+  { class: '簇汇总模拟量三级告警', key: 'CellTempDiffHigh_Severe', label: '单体温差上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 1 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCDiffHigh_Severe', label: '单体SOC差异过大告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 2 },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageDiffHigh_Severe', label: '电池包间压差过大告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 3 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterVoltageHigh_Severe', label: '簇电压上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 4 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterVoltageLow_Severe', label: '簇电压下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 5 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterInsulationRPosLow_Severe', label: '簇绝缘电阻R+下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 6 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterInsulationRNegLow_Severe', label: '簇绝缘电阻R-下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 7 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterChargeCurrentHigh_Severe', label: '簇充电电流上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 8 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterDischargeCurrentHigh_Severe', label: '簇放电电流上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 9 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT1OverTemp_Severe', label: 'BCU RT1过温告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 10 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT2OverTemp_Severe', label: 'BCU RT2过温告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 11 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT3OverTemp_Severe', label: 'BCU RT3过温告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 12 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT4OverTemp_Severe', label: 'BCU RT4过温告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 13 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT5OverTemp_Severe', label: 'BCU RT5过温告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 14 },
+  { class: '簇汇总模拟量三级告警', key: 'Reserved_Severe1', label: '预留-严重故障1', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe1', bit: 15 },
+  
+  // 严重故障2（u16）
+  { class: '簇汇总模拟量三级告警', key: 'ClusterAnalogAlarm_Severe2', label: '严重故障2', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageHigh_Severe', label: '电池包电压上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 0 },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageLow_Severe', label: '电池包电压下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 1 },
+  { class: '簇汇总模拟量三级告警', key: 'PackTempHigh_Severe', label: '电池包温度上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 2 },
+  { class: '簇汇总模拟量三级告警', key: 'PackTempLow_Severe', label: '电池包温度下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 3 },
+  { class: '簇汇总模拟量三级告警', key: 'PackConnectorPosTempHigh_Severe', label: '电池包动力接插件正极温度上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 4 },
+  { class: '簇汇总模拟量三级告警', key: 'PackConnectorNegTempHigh_Severe', label: '电池包动力接插件负极温度上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 5 },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageHigh_Severe', label: '单体电压上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 6 },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageLow_Severe', label: '单体电压下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 7 },
+  { class: '簇汇总模拟量三级告警', key: 'CellChargeTempHigh_Severe', label: '充电单体温度上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 8 },
+  { class: '簇汇总模拟量三级告警', key: 'CellChargeTempLow_Severe', label: '充电单体温度下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 9 },
+  { class: '簇汇总模拟量三级告警', key: 'CellDischargeTempHigh_Severe', label: '放电单体温度上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 10 },
+  { class: '簇汇总模拟量三级告警', key: 'CellDischargeTempLow_Severe', label: '放电单体温度下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 11 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCHigh_Severe', label: '单体SOC上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 12 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCLow_Severe', label: '单体SOC下限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 13 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterVoltageDiffHigh_Severe', label: '簇间压差上限告警-严重', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 14 },
+  { class: '簇汇总模拟量三级告警', key: 'Reserved_Severe2', label: '预留-严重故障2', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Severe2', bit: 15 },
+  
+  // 一般故障1（u16）
+  { class: '簇汇总模拟量三级告警', key: 'ClusterAnalogAlarm_Moderate1', label: '一般故障1', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageDiffHigh_Moderate', label: '单体压差上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 0 },
+  { class: '簇汇总模拟量三级告警', key: 'CellTempDiffHigh_Moderate', label: '单体温差上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 1 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCDiffHigh_Moderate', label: '单体SOC差异过大告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 2 },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageDiffHigh_Moderate', label: '电池包间压差过大告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 3 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterVoltageHigh_Moderate', label: '簇电压上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 4 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterVoltageLow_Moderate', label: '簇电压下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 5 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterInsulationRPosLow_Moderate', label: '簇绝缘电阻R+下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 6 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterInsulationRNegLow_Moderate', label: '簇绝缘电阻R-下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 7 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterChargeCurrentHigh_Moderate', label: '簇充电电流上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 8 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterDischargeCurrentHigh_Moderate', label: '簇放电电流上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 9 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT1OverTemp_Moderate', label: 'BCU RT1过温告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 10 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT2OverTemp_Moderate', label: 'BCU RT2过温告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 11 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT3OverTemp_Moderate', label: 'BCU RT3过温告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 12 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT4OverTemp_Moderate', label: 'BCU RT4过温告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 13 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT5OverTemp_Moderate', label: 'BCU RT5过温告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 14 },
+  { class: '簇汇总模拟量三级告警', key: 'Reserved_Moderate1', label: '预留-一般故障1', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate1', bit: 15 },
+  
+  // 一般故障2（u16）
+  { class: '簇汇总模拟量三级告警', key: 'ClusterAnalogAlarm_Moderate2', label: '一般故障2', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageHigh_Moderate', label: '电池包电压上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 0 },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageLow_Moderate', label: '电池包电压下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 1 },
+  { class: '簇汇总模拟量三级告警', key: 'PackTempHigh_Moderate', label: '电池包温度上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 2 },
+  { class: '簇汇总模拟量三级告警', key: 'PackTempLow_Moderate', label: '电池包温度下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 3 },
+  { class: '簇汇总模拟量三级告警', key: 'PackConnectorPosTempHigh_Moderate', label: '电池包动力接插件正极温度上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 4 },
+  { class: '簇汇总模拟量三级告警', key: 'PackConnectorNegTempHigh_Moderate', label: '电池包动力接插件负极温度上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 5 },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageHigh_Moderate', label: '单体电压上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 6 },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageLow_Moderate', label: '单体电压下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 7 },
+  { class: '簇汇总模拟量三级告警', key: 'CellChargeTempHigh_Moderate', label: '充电单体温度上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 8 },
+  { class: '簇汇总模拟量三级告警', key: 'CellChargeTempLow_Moderate', label: '充电单体温度下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 9 },
+  { class: '簇汇总模拟量三级告警', key: 'CellDischargeTempHigh_Moderate', label: '放电单体温度上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 10 },
+  { class: '簇汇总模拟量三级告警', key: 'CellDischargeTempLow_Moderate', label: '放电单体温度下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 11 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCHigh_Moderate', label: '单体SOC上限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 12 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCLow_Moderate', label: '单体SOC下限告警-一般', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 13 },
+  { class: '簇汇总模拟量三级告警', key: 'Reserved_Moderate2_14', label: '预留-一般故障2-Bit14', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 14 },
+  { class: '簇汇总模拟量三级告警', key: 'Reserved_Moderate2_15', label: '预留-一般故障2-Bit15', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Moderate2', bit: 15 },
+  
+  // 轻微故障1（u16）
+  { class: '簇汇总模拟量三级告警', key: 'ClusterAnalogAlarm_Mild1', label: '轻微故障1', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageDiffHigh_Mild', label: '单体压差上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 0 },
+  { class: '簇汇总模拟量三级告警', key: 'CellTempDiffHigh_Mild', label: '单体温差上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 1 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCDiffHigh_Mild', label: '单体SOC差异过大告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 2 },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageDiffHigh_Mild', label: '电池包间压差过大告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 3 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterVoltageHigh_Mild', label: '簇电压上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 4 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterVoltageLow_Mild', label: '簇电压下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 5 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterInsulationRPosLow_Mild', label: '簇绝缘电阻R+下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 6 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterInsulationRNegLow_Mild', label: '簇绝缘电阻R-下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 7 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterChargeCurrentHigh_Mild', label: '簇充电电流上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 8 },
+  { class: '簇汇总模拟量三级告警', key: 'ClusterDischargeCurrentHigh_Mild', label: '簇放电电流上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 9 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT1OverTemp_Mild', label: 'BCU RT1过温告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 10 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT2OverTemp_Mild', label: 'BCU RT2过温告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 11 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT3OverTemp_Mild', label: 'BCU RT3过温告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 12 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT4OverTemp_Mild', label: 'BCU RT4过温告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 13 },
+  { class: '簇汇总模拟量三级告警', key: 'BCU_RT5OverTemp_Mild', label: 'BCU RT5过温告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 14 },
+  { class: '簇汇总模拟量三级告警', key: 'Reserved_Mild1', label: '预留-轻微故障1', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild1', bit: 15 },
+  
+  // 轻微故障2（u16）
+  { class: '簇汇总模拟量三级告警', key: 'ClusterAnalogAlarm_Mild2', label: '轻微故障2', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageHigh_Mild', label: '电池包电压上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 0 },
+  { class: '簇汇总模拟量三级告警', key: 'PackVoltageLow_Mild', label: '电池包电压下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 1 },
+  { class: '簇汇总模拟量三级告警', key: 'PackTempHigh_Mild', label: '电池包温度上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 2 },
+  { class: '簇汇总模拟量三级告警', key: 'PackTempLow_Mild', label: '电池包温度下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 3 },
+  { class: '簇汇总模拟量三级告警', key: 'PackConnectorPosTempHigh_Mild', label: '电池包动力接插件正极温度上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 4 },
+  { class: '簇汇总模拟量三级告警', key: 'PackConnectorNegTempHigh_Mild', label: '电池包动力接插件负极温度上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 5 },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageHigh_Mild', label: '单体电压上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 6 },
+  { class: '簇汇总模拟量三级告警', key: 'CellVoltageLow_Mild', label: '单体电压下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 7 },
+  { class: '簇汇总模拟量三级告警', key: 'CellChargeTempHigh_Mild', label: '充电单体温度上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 8 },
+  { class: '簇汇总模拟量三级告警', key: 'CellChargeTempLow_Mild', label: '充电单体温度下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 9 },
+  { class: '簇汇总模拟量三级告警', key: 'CellDischargeTempHigh_Mild', label: '放电单体温度上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 10 },
+  { class: '簇汇总模拟量三级告警', key: 'CellDischargeTempLow_Mild', label: '放电单体温度下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 11 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCHigh_Mild', label: '单体SOC上限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 12 },
+  { class: '簇汇总模拟量三级告警', key: 'CellSOCLow_Mild', label: '单体SOC下限告警-轻微', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 13 },
+  { class: '簇汇总模拟量三级告警', key: 'Reserved_Mild2_14', label: '预留-轻微故障2-Bit14', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 14 },
+  { class: '簇汇总模拟量三级告警', key: 'Reserved_Mild2_15', label: '预留-轻微故障2-Bit15', type: 'bit', bitsOf: 'ClusterAnalogAlarm_Mild2', bit: 15 },
+  
+  // 字段25：簇汇总硬件故障（6个寄存器，u16[6]，12字节，需要按bit解析）
+  // 故障字1（u16）
+  { class: '簇汇总硬件故障', key: 'ClusterHardwareFault_Word1', label: '故障字1', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总硬件故障', key: 'PrechargeHighSideDriveFault', label: '预充高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 0 },
+  { class: '簇汇总硬件故障', key: 'MainPosHighSideDriveFault', label: '主正高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 1 },
+  { class: '簇汇总硬件故障', key: 'MainPosOxidation', label: '主正氧化', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 2 },
+  { class: '簇汇总硬件故障', key: 'MainPosSticking', label: '主正黏连', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 3 },
+  { class: '簇汇总硬件故障', key: 'MainPosContactorFault', label: '主正接触器故障汇总', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 4 },
+  { class: '簇汇总硬件故障', key: 'MainNegContactorFeedbackFault', label: '主负接触器反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 5 },
+  { class: '簇汇总硬件故障', key: 'MainNegHighSideDriveFault', label: '主负高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 6 },
+  { class: '簇汇总硬件故障', key: 'MainNegOxidation', label: '主负氧化', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 7 },
+  { class: '簇汇总硬件故障', key: 'MainNegSticking', label: '主负黏连', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 8 },
+  { class: '簇汇总硬件故障', key: 'MainNegContactorFault', label: '主负接触器故障汇总', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 9 },
+  { class: '簇汇总硬件故障', key: 'PrechargeContactorFeedbackFault', label: '预充接触器反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 10 },
+  { class: '簇汇总硬件故障', key: 'PrechargeHighSideDriveFault2', label: '预充高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 11 },
+  { class: '簇汇总硬件故障', key: 'PrechargeOxidation', label: '预充氧化', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 12 },
+  { class: '簇汇总硬件故障', key: 'PrechargeSticking', label: '预充黏连', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 13 },
+  { class: '簇汇总硬件故障', key: 'PrechargeContactorFault', label: '预充接触器故障汇总', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 14 },
+  { class: '簇汇总硬件故障', key: 'TotalFault', label: '汇总的故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word1', bit: 15 },
+  
+  // 故障字2（u16）
+  { class: '簇汇总硬件故障', key: 'ClusterHardwareFault_Word2', label: '故障字2', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总硬件故障', key: 'IsolationSwitchFeedbackFault', label: '隔离开关反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 0 },
+  { class: '簇汇总硬件故障', key: 'CircuitBreakerFeedbackFault', label: '断路器反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 1 },
+  { class: '簇汇总硬件故障', key: 'FanFeedbackFault', label: '风扇反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 2 },
+  { class: '簇汇总硬件故障', key: 'DCPowerKMFeedbackFault', label: '直流供电KM反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 3 },
+  { class: '簇汇总硬件故障', key: 'DoorAccessFeedbackFault', label: '门禁反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 4 },
+  { class: '簇汇总硬件故障', key: 'SPDFeedbackFault', label: 'SPD反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 5 },
+  { class: '簇汇总硬件故障', key: 'ACVoltageFeedbackFault', label: '交流电压反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 6 },
+  { class: '簇汇总硬件故障', key: 'SmokeDetectorFeedbackFault', label: '烟感反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 7 },
+  { class: '簇汇总硬件故障', key: 'FireReleaseSignal', label: '消防释放信号', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 8 },
+  { class: '簇汇总硬件故障', key: 'TempSensorFeedbackFault', label: '温感反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 9 },
+  { class: '簇汇总硬件故障', key: 'VentilationSystemFeedbackFault', label: '排风系统反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 10 },
+  { class: '簇汇总硬件故障', key: 'AuxCircuitBreakerFeedbackFault', label: '辅助断路器反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 11 },
+  { class: '簇汇总硬件故障', key: 'HydrogenDetectorFeedbackFault', label: '氢气探测器反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 12 },
+  { class: '簇汇总硬件故障', key: 'MSDFeedbackFault', label: 'MSD反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 13 },
+  { class: '簇汇总硬件故障', key: 'EmergencyStopFeedbackFault', label: '急停反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 14 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word2', label: '预留1', type: 'bit', bitsOf: 'ClusterHardwareFault_Word2', bit: 15 },
+  
+  // 故障字3（u16）
+  { class: '簇汇总硬件故障', key: 'ClusterHardwareFault_Word3', label: '故障字3', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总硬件故障', key: 'MainPosHighSideDriveFault_Word3', label: '主正高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 0 },
+  { class: '簇汇总硬件故障', key: 'MainNegHighSideDriveFault_Word3', label: '主负高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 1 },
+  { class: '簇汇总硬件故障', key: 'PrechargeHighSideDriveFault_Word3', label: '预充高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 2 },
+  { class: '簇汇总硬件故障', key: 'RedLightHighSideDriveFault', label: '红灯高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 3 },
+  { class: '簇汇总硬件故障', key: 'YellowLightHighSideDriveFault', label: '黄灯高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 4 },
+  { class: '簇汇总硬件故障', key: 'GreenLightHighSideDriveFault', label: '绿灯高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 5 },
+  { class: '簇汇总硬件故障', key: 'FanHighSideDriveFault', label: '风机高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 6 },
+  { class: '簇汇总硬件故障', key: 'MainBreakerHighSideDriveFault', label: '主断分励高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 7 },
+  { class: '簇汇总硬件故障', key: 'DCPowerKMHighSideDriveFault', label: '直流供电KM高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 8 },
+  { class: '簇汇总硬件故障', key: 'PCSBlockHighSideDriveFault', label: 'pcs封波高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 9 },
+  { class: '簇汇总硬件故障', key: 'AuxBreakerControlHighSideDriveFault', label: '辅助断路器控制高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 10 },
+  { class: '簇汇总硬件故障', key: 'VentilationControlHighSideDriveFault', label: '排风系统控制高边驱动反馈故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 11 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word3_12', label: '预留2-Bit12', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 12 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word3_13', label: '预留2-Bit13', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 13 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word3_14', label: '预留2-Bit14', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 14 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word3_15', label: '预留2-Bit15', type: 'bit', bitsOf: 'ClusterHardwareFault_Word3', bit: 15 },
+  
+  // 故障字4（u16）
+  { class: '簇汇总硬件故障', key: 'ClusterHardwareFault_Word4', label: '故障字4', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总硬件故障', key: 'CoolingDeviceCommFault', label: '制冷设备通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 0 },
+  { class: '簇汇总硬件故障', key: 'PCSDeviceCommFault', label: 'PCS设备通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 1 },
+  { class: '簇汇总硬件故障', key: 'DehumidifierCommFault', label: '除湿机通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 2 },
+  { class: '簇汇总硬件故障', key: 'FireFightingDeviceCommFault', label: '消防设备通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 3 },
+  { class: '簇汇总硬件故障', key: 'BMUCommFault', label: 'BMU通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 4 },
+  { class: '簇汇总硬件故障', key: 'CANHallCommFault', label: 'CAN霍尔通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 5 },
+  { class: '簇汇总硬件故障', key: 'BCUCommFault', label: 'BCU通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 6 },
+  { class: '簇汇总硬件故障', key: 'DaisyChainCommFault', label: '菊花链通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 7 },
+  { class: '簇汇总硬件故障', key: 'AFECommFault', label: 'afe通信故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 8 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word4_9', label: '预留3-Bit9', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 9 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word4_10', label: '预留3-Bit10', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 10 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word4_11', label: '预留3-Bit11', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 11 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word4_12', label: '预留3-Bit12', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 12 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word4_13', label: '预留3-Bit13', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 13 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word4_14', label: '预留3-Bit14', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 14 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word4_15', label: '预留3-Bit15', type: 'bit', bitsOf: 'ClusterHardwareFault_Word4', bit: 15 },
+  
+  // 故障字5（u16）
+  { class: '簇汇总硬件故障', key: 'ClusterHardwareFault_Word5', label: '故障字5', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总硬件故障', key: 'BCUEnvSensorFault', label: 'bcu环境传感器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 0 },
+  { class: '簇汇总硬件故障', key: 'BSensorFault', label: 'B+传感器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 1 },
+  { class: '簇汇总硬件故障', key: 'BNegSensorFault', label: 'B-传感器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 2 },
+  { class: '簇汇总硬件故障', key: 'PSensorFault', label: 'P+传感器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 3 },
+  { class: '簇汇总硬件故障', key: 'PNegSensorFault', label: 'P-传感器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 4 },
+  { class: '簇汇总硬件故障', key: 'Fuse1SensorFault', label: '熔断器1传感器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 5 },
+  { class: '簇汇总硬件故障', key: 'Fuse2SensorFault', label: '熔断器2传感器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 6 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_7', label: '预留4-Bit7', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 7 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_8', label: '预留4-Bit8', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 8 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_9', label: '预留4-Bit9', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 9 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_10', label: '预留4-Bit10', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 10 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_11', label: '预留4-Bit11', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 11 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_12', label: '预留4-Bit12', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 12 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_13', label: '预留4-Bit13', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 13 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_14', label: '预留4-Bit14', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 14 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word5_15', label: '预留4-Bit15', type: 'bit', bitsOf: 'ClusterHardwareFault_Word5', bit: 15 },
+  
+  // 故障字6（u16）
+  { class: '簇汇总硬件故障', key: 'ClusterHardwareFault_Word6', label: '故障字6', type: 'u16', scale: 1, hide: false },
+  { class: '簇汇总硬件故障', key: 'HallFault', label: '霍尔故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 0 },
+  { class: '簇汇总硬件故障', key: 'InvalidDataExists', label: '存在无效数据', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 1 },
+  { class: '簇汇总硬件故障', key: 'FRAMFault', label: '铁电存储器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 2 },
+  { class: '簇汇总硬件故障', key: 'EEPROMFault', label: 'eeprom存储器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 3 },
+  { class: '簇汇总硬件故障', key: 'FlashFault', label: 'flash存储器故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 4 },
+  { class: '簇汇总硬件故障', key: 'VoltageCollectionDisconnect', label: '电压采集断线', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 5 },
+  { class: '簇汇总硬件故障', key: 'TemperatureCollectionDisconnect', label: '温度采集断线', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 6 },
+  { class: '簇汇总硬件故障', key: 'ReservedFault', label: '保留故障', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 7 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word6_8', label: '预留5-Bit8', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 8 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word6_9', label: '预留5-Bit9', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 9 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word6_10', label: '预留5-Bit10', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 10 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word6_11', label: '预留5-Bit11', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 11 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word6_12', label: '预留5-Bit12', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 12 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word6_13', label: '预留5-Bit13', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 13 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word6_14', label: '预留5-Bit14', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 14 },
+  { class: '簇汇总硬件故障', key: 'Reserved_Word6_15', label: '预留5-Bit15', type: 'bit', bitsOf: 'ClusterHardwareFault_Word6', bit: 15 },
+  
+  // 字段26：堆硬件故障（2个寄存器，u16[2]，4字节，需要按bit解析）
+  // 故障字1（u16）
+  { class: '堆硬件故障', key: 'StackHardwareFault_Word1', label: '故障字1', type: 'u16', scale: 1, hide: false },
+  { class: '堆硬件故障', key: 'FireAlarm', label: '消防报警', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 0 },
+  { class: '堆硬件故障', key: 'FireFault', label: '消防故障', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 1 },
+  { class: '堆硬件故障', key: 'EmergencyStopSignal', label: '急停信号', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 2 },
+  { class: '堆硬件故障', key: 'FireRelease', label: '消防释放', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 3 },
+  { class: '堆硬件故障', key: 'DCSPDAlarm', label: '直流浪涌告警', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 4 },
+  { class: '堆硬件故障', key: 'DoorAccessFault', label: '门禁故障', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 5 },
+  { class: '堆硬件故障', key: 'ACSPDAlarm', label: '交流浪涌告警', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 6 },
+  { class: '堆硬件故障', key: 'FuseFault', label: '熔断器故障', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 7 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord1_8', label: '预留1-Bit8', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 8 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord1_9', label: '预留1-Bit9', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 9 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord1_10', label: '预留1-Bit10', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 10 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord1_11', label: '预留1-Bit11', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 11 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord1_12', label: '预留1-Bit12', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 12 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord1_13', label: '预留1-Bit13', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 13 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord1_14', label: '预留1-Bit14', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 14 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord1_15', label: '预留1-Bit15', type: 'bit', bitsOf: 'StackHardwareFault_Word1', bit: 15 },
+  
+  // 故障字2（u16）
+  { class: '堆硬件故障', key: 'StackHardwareFault_Word2', label: '故障字2', type: 'u16', scale: 1, hide: false },
+  { class: '堆硬件故障', key: 'FRAMFault_Stack', label: '铁电存储器故障', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 0 },
+  { class: '堆硬件故障', key: 'CoolingDeviceCommFault_Stack', label: '制冷设备通讯故障', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 1 },
+  { class: '堆硬件故障', key: 'PCSCommFault_Stack', label: 'PCS通讯故障', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 2 },
+  { class: '堆硬件故障', key: 'DehumidifierACCommFault', label: '除湿空调通讯故障', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 3 },
+  { class: '堆硬件故障', key: 'IOControlBoardCommFault', label: 'I/O控制板通讯故障', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 4 },
+  { class: '堆硬件故障', key: 'BCUCommFault_Stack', label: 'BCU通讯故障', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 5 },
+  { class: '堆硬件故障', key: 'EMSCommFault', label: 'EMS通讯故障', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 6 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_7', label: '预留2-Bit7', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 7 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_8', label: '预留2-Bit8', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 8 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_9', label: '预留2-Bit9', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 9 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_10', label: '预留2-Bit10', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 10 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_11', label: '预留2-Bit11', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 11 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_12', label: '预留2-Bit12', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 12 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_13', label: '预留2-Bit13', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 13 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_14', label: '预留2-Bit14', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 14 },
+  { class: '堆硬件故障', key: 'Reserved_StackWord2_15', label: '预留2-Bit15', type: 'bit', bitsOf: 'StackHardwareFault_Word2', bit: 15 },
+  
+  // 字段27-33：堆电压、堆电流、堆SOC、堆SOH、堆SOE、堆充电SOP、堆放电SOP（7个寄存器）
+  { class: '事件记录数据', key: 'StackVoltage', label: '堆电压', type: 'u16', scale: 10, unit: 'V' },
+  { class: '事件记录数据', key: 'StackCurrent', label: '堆电流', type: 'u16', scale: 10, unit: 'A' },
+  { class: '事件记录数据', key: 'StackSOC', label: '堆SOC', type: 'u16', scale: 10, unit: '%' },
+  { class: '事件记录数据', key: 'StackSOH', label: '堆SOH', type: 'u16', scale: 10, unit: '%' },
+  { class: '事件记录数据', key: 'StackSOE', label: '堆SOE', type: 'u16', scale: 10, unit: '%' },
+  { class: '事件记录数据', key: 'StackChargeSOP', label: '堆充电SOP', type: 'u16', scale: 10, unit: '%' },
+  { class: '事件记录数据', key: 'StackDischargeSOP', label: '堆放电SOP', type: 'u16', scale: 10, unit: '%' },
+  
+  // 字段34-35：绝缘电阻+、绝缘电阻-（2个寄存器）
+  { class: '事件记录数据', key: 'InsulationResistancePos', label: '绝缘电阻+', type: 'u16', scale: 1, unit: 'kΩ' },
+  { class: '事件记录数据', key: 'InsulationResistanceNeg', label: '绝缘电阻-', type: 'u16', scale: 1, unit: 'kΩ' },
+  
+  // 字段36-37：堆最大允许充电功率、堆最大放电允许功率（2个寄存器）
+  { class: '事件记录数据', key: 'StackMaxChargePower', label: '堆最大允许充电功率', type: 'u16', scale: 1, unit: 'kW' },
+  { class: '事件记录数据', key: 'StackMaxDischargePower', label: '堆最大放电允许功率', type: 'u16', scale: 1, unit: 'kW' },
+  
+  // 字段38-49：簇电压/电流/SOC的最大值和最小值（每个包含值和簇号）
+  // 字段38-39：簇电压最大值、簇电压最大值簇号
+  { class: '事件记录数据', key: 'ClusterVoltageMax', label: '簇电压最大值', type: 'u16', scale: 10, unit: 'V' },
+  { class: '事件记录数据', key: 'ClusterVoltageMaxClusterNo', label: '簇电压最大值簇号', type: 'u8', scale: 1 },
+  
+  // 字段40-41：簇电压最小值、簇电压最小值簇号
+  { class: '事件记录数据', key: 'ClusterVoltageMin', label: '簇电压最小值', type: 'u16', scale: 10, unit: 'V' },
+  { class: '事件记录数据', key: 'ClusterVoltageMinClusterNo', label: '簇电压最小值簇号', type: 'u8', scale: 1 },
+  
+  // 字段42-43：簇电流最大值、簇电流最大值簇号
+  { class: '事件记录数据', key: 'ClusterCurrentMax', label: '簇电流最大值', type: 'u16', scale: 10, unit: 'A' },
+  { class: '事件记录数据', key: 'ClusterCurrentMaxClusterNo', label: '簇电流最大值簇号', type: 'u8', scale: 1 },
+  
+  // 字段44-45：簇电流最小值、簇电流最小值簇号
+  { class: '事件记录数据', key: 'ClusterCurrentMin', label: '簇电流最小值', type: 'u16', scale: 10, unit: 'A' },
+  { class: '事件记录数据', key: 'ClusterCurrentMinClusterNo', label: '簇电流最小值簇号', type: 'u8', scale: 1 },
+  
+  // 字段46-47：簇SOC最大值、簇SOC最大值簇号
+  { class: '事件记录数据', key: 'ClusterSOCMax', label: '簇SOC最大值', type: 'u16', scale: 10, unit: '%' },
+  { class: '事件记录数据', key: 'ClusterSOCMaxClusterNo', label: '簇SOC最大值簇号', type: 'u8', scale: 1 },
+  
+  // 字段48-49：簇SOC最小值、簇SOC最小值簇号
+  { class: '事件记录数据', key: 'ClusterSOCMin', label: '簇SOC最小值', type: 'u16', scale: 10, unit: '%' },
+  { class: '事件记录数据', key: 'ClusterSOCMinClusterNo', label: '簇SOC最小值簇号', type: 'u8', scale: 1 },
+  
+  // 字段50-61：包电压/温度的最大值和最小值（每个包含值、簇号、包号）
+  // 字段50-52：包电压最大值、包电压最大值簇号、包电压最大值包号
+  { class: '事件记录数据', key: 'PackVoltageMax', label: '包电压最大值', type: 'u16', scale: 10, unit: 'V' },
+  { class: '事件记录数据', key: 'PackVoltageMaxClusterNo', label: '包电压最大值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'PackVoltageMaxPackNo', label: '包电压最大值包号', type: 'u8', scale: 1 },
+  
+  // 字段53-55：包电压最小值、包电压最小值簇号、包电压最小值包号
+  { class: '事件记录数据', key: 'PackVoltageMin', label: '包电压最小值', type: 'u16', scale: 10, unit: 'V' },
+  { class: '事件记录数据', key: 'PackVoltageMinClusterNo', label: '包电压最小值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'PackVoltageMinPackNo', label: '包电压最小值包号', type: 'u8', scale: 1 },
+  
+  // 字段56-58：包温度最大值、包温度最大值簇号、包温度最大值包号
+  { class: '事件记录数据', key: 'PackTempMax', label: '包温度最大值', type: 's16', scale: 10, unit: '℃' },
+  { class: '事件记录数据', key: 'PackTempMaxClusterNo', label: '包温度最大值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'PackTempMaxPackNo', label: '包温度最大值包号', type: 'u8', scale: 1 },
+  
+  // 字段59-61：包温度最小值、包温度最小值簇号、包温度最小值包号
+  { class: '事件记录数据', key: 'PackTempMin', label: '包温度最小值', type: 's16', scale: 10, unit: '℃' },
+  { class: '事件记录数据', key: 'PackTempMinClusterNo', label: '包温度最小值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'PackTempMinPackNo', label: '包温度最小值包号', type: 'u8', scale: 1 },
+  
+  // 字段62-67：动力接插件温度的最大值和最小值（每个包含值、簇号、包号）
+  // 字段62-64：动力接插件温度最大值、动力接插件温度最大值簇号、动力接插件温度最大值包号
+  { class: '事件记录数据', key: 'ConnectorTempMax', label: '动力接插件温度最大值', type: 's16', scale: 10, unit: '℃' },
+  { class: '事件记录数据', key: 'ConnectorTempMaxClusterNo', label: '动力接插件温度最大值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'ConnectorTempMaxPackNo', label: '动力接插件温度最大值包号', type: 'u8', scale: 1 },
+  
+  // 字段65-67：动力接插件温度最小值、动力接插件温度最小值簇号、动力接插件温度最小值包号
+  { class: '事件记录数据', key: 'ConnectorTempMin', label: '动力接插件温度最小值', type: 's16', scale: 10, unit: '℃' },
+  { class: '事件记录数据', key: 'ConnectorTempMinClusterNo', label: '动力接插件温度最小值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'ConnectorTempMinPackNo', label: '动力接插件温度最小值包号', type: 'u8', scale: 1 },
+  
+  // 字段68-85：单体电压/温度/SOC的最大值和最小值（每个包含值、簇号、节号）
+  // 字段68-70：单体电压最大值、单体电压最大值簇号、单体电压最大值节号
+  { class: '事件记录数据', key: 'CellVoltageMax', label: '单体电压最大值', type: 'u16', scale: 1000, unit: 'V' },
+  { class: '事件记录数据', key: 'CellVoltageMaxClusterNo', label: '单体电压最大值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'CellVoltageMaxCellNo', label: '单体电压最大值节号', type: 'u16', scale: 1 },
+  
+  // 字段71-73：单体电压最小值、单体电压最小值簇号、单体电压最小值节号
+  { class: '事件记录数据', key: 'CellVoltageMin', label: '单体电压最小值', type: 'u16', scale: 1000, unit: 'V' },
+  { class: '事件记录数据', key: 'CellVoltageMinClusterNo', label: '单体电压最小值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'CellVoltageMinCellNo', label: '单体电压最小值节号', type: 'u16', scale: 1 },
+  
+  // 字段74-76：单体温度最大值、单体温度最大值簇号、单体温度最大值节号
+  { class: '事件记录数据', key: 'CellTempMax', label: '单体温度最大值', type: 's16', scale: 10, unit: '℃' },
+  { class: '事件记录数据', key: 'CellTempMaxClusterNo', label: '单体温度最大值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'CellTempMaxCellNo', label: '单体温度最大值节号', type: 'u16', scale: 1 },
+  
+  // 字段77-79：单体温度最小值、单体温度最小值簇号、单体温度最小值节号
+  { class: '事件记录数据', key: 'CellTempMin', label: '单体温度最小值', type: 's16', scale: 10, unit: '℃' },
+  { class: '事件记录数据', key: 'CellTempMinClusterNo', label: '单体温度最小值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'CellTempMinCellNo', label: '单体温度最小值节号', type: 'u16', scale: 1 },
+  
+  // 字段80-82：单体SOC最大值、单体SOC最大值簇号、单体SOC最大值节号
+  { class: '事件记录数据', key: 'CellSOCMax', label: '单体SOC最大值', type: 'u16', scale: 10, unit: '%' },
+  { class: '事件记录数据', key: 'CellSOCMaxClusterNo', label: '单体SOC最大值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'CellSOCMaxCellNo', label: '单体SOC最大值节号', type: 'u16', scale: 1 },
+  
+  // 字段83-85：单体SOC最小值、单体SOC最小值簇号、单体SOC最小值节号
+  { class: '事件记录数据', key: 'CellSOCMin', label: '单体SOC最小值', type: 'u16', scale: 10, unit: '%' },
+  { class: '事件记录数据', key: 'CellSOCMinClusterNo', label: '单体SOC最小值簇号', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'CellSOCMinCellNo', label: '单体SOC最小值节号', type: 'u16', scale: 1 },
+  
+  // 字段86-89：OCV最大值和最小值（每个包含值和簇号）
+  // 字段86-87：OCV最大值、OCV最大值簇号
+  { class: '事件记录数据', key: 'OCVMax', label: 'OCV最大值', type: 'u16', scale: 1, unit: 'V' },
+  { class: '事件记录数据', key: 'OCVMaxClusterNo', label: 'OCV最大值簇号', type: 'u8', scale: 1 },
+  
+  // 字段88-89：OCV最小值、OCV最小值簇号
+  { class: '事件记录数据', key: 'OCVMin', label: 'OCV最小值', type: 'u16', scale: 1, unit: 'V' },
+  { class: '事件记录数据', key: 'OCVMinClusterNo', label: 'OCV最小值簇号', type: 'u8', scale: 1 },
+  
+  // 字段90-92：版本号（20字节，ASCII编码）
+  { class: '事件记录数据', key: 'EventRecordVersion', label: '事件记录版本号', type: 'str20' },
+  { class: '事件记录数据', key: 'BootVersion', label: 'BOOT版本号', type: 'str20' },
+  { class: '事件记录数据', key: 'SoftwareVersion', label: '软件版本号', type: 'str20' },
+  
+  // 字段93-94：算法版本号（2字节，16进制显示）
+  { class: '事件记录数据', key: 'SOXAlgorithmVersion', label: 'SOX算法版本号', type: 'hex', scale: 1 },
+  { class: '事件记录数据', key: 'ClusterExitMergeAlgorithmVersion', label: '退并簇算法版本号', type: 'hex', scale: 1 },
+  
+  // 字段95-96：系统DI/DO输入输出状态（2字节）
+  { class: '事件记录数据', key: 'SystemDIInputStatus', label: '系统DI输入状态', type: 'u16', scale: 1 },
+  { class: '事件记录数据', key: 'SystemDOOutputStatus', label: '系统DO输出状态', type: 'u16', scale: 1 },
+  
+  // 字段97-101：通讯状态（1字节，u8）
+  { class: '事件记录数据', key: 'EMSCommStatus', label: 'EMS通讯状态', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'PCSCommStatus', label: 'PCS通讯状态', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'CoolingMachineCommStatus', label: '水冷机通讯状态', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'IOModuleCommStatus', label: 'I/O模块通讯状态', type: 'u8', scale: 1 },
+  { class: '事件记录数据', key: 'DehumidifierCommStatus', label: '除湿机通讯状态', type: 'u8', scale: 1 },
+  
+  // 字段102：SD卡状态（2字节）
+  { class: '事件记录数据', key: 'SDCardStatus', label: 'SD卡状态', type: 'u16', scale: 1 },
+  
+  // 字段103：网卡2 IP地址（1字节，u8）
+  { class: '事件记录数据', key: 'NetworkCard2IPAddress', label: '网卡2 IP地址', type: 'u8', scale: 1 },
+  
+  // 字段104：预留（2字节）
+  { class: '事件记录数据', key: 'Reserved', label: '预留', type: 'u16', scale: 1, hide: true },
+  
+  // 字段105：CRC16（2字节）
+  { class: '事件记录数据', key: 'CRC16', label: 'CRC16', type: 'u16', scale: 1, hide: true }
 ];

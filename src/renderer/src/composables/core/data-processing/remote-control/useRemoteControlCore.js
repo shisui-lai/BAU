@@ -1231,12 +1231,13 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (!needDeviceForWrite) {
       targetKeys = ['__standalone__']
     }
+    // 如果没有选择批量下发目标，直接提示用户选择
     if (needDeviceForWrite && targetKeys.length === 0) {
       toastService.add({
-        severity: 'warn',
-        summary: t('toast.remoteControl.selectTarget'),
-        detail: selectorMode === 'cluster' ? t('toast.remoteControl.selectTargetCluster') : t('toast.remoteControl.selectTargetBlock'),
-        life: 3000
+        severity: 'error',
+        summary: t('toast.commandIssue.executeFailed'),
+        detail: t('toast.commandIssue.selectTargetDevice'),
+        life: 5000
       })
       return
     }

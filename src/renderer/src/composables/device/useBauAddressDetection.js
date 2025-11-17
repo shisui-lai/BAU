@@ -55,6 +55,7 @@ export function useBauAddressDetection() {
     SET_IP2: 0xA004,
     QUERY_MQTT: 0xA005,
     SET_MQTT: 0xA006,
+    FORCE_UPGRADE: 0xAFFD,
     RESET_DEFAULT: 0xAFFE,
     RESET_DEVICE: 0xAFFF
   }
@@ -316,6 +317,14 @@ export function useBauAddressDetection() {
     showPasswordConfirm(t('bauAddressDetectionPage.dialogs.resetDeviceTitle'), 'resetDevice', {})
   }
 
+  /**
+   * 强制升级BAU设备
+   * 触发BAU设备的强制升级流程
+   */
+  function forceUpgrade() {
+    showPasswordConfirm(t('bauAddressDetectionPage.dialogs.forceUpgradeTitle'), 'forceUpgrade', {})
+  }
+
   // ==================== 密码确认机制 ====================
 
   /**
@@ -386,6 +395,9 @@ export function useBauAddressDetection() {
       case 'resetDevice':
         executeResetOperation(FUNCTION_CODES.RESET_DEVICE, t('toast.bauAddressDetection.resetDevice', '复位设备'))
         break
+      case 'forceUpgrade':
+        executeResetOperation(FUNCTION_CODES.FORCE_UPGRADE, t('toast.bauAddressDetection.forceUpgrade', '强制升级'))
+        break
     }
   }
 
@@ -417,8 +429,15 @@ export function useBauAddressDetection() {
       window.electronAPI.ipc.unregisterListener(listenerId)
     })
 
-    // 统一使用网卡选择方法进行复位操作
-    const invokeMethod = functionCode === FUNCTION_CODES.RESET_DEFAULT ? 'bau-reset-default-with-interface' : 'bau-reset-device-with-interface'
+    // 统一使用网卡选择方法进行复位/升级操作
+    let invokeMethod
+    if (functionCode === FUNCTION_CODES.RESET_DEFAULT) {
+      invokeMethod = 'bau-reset-default-with-interface'
+    } else if (functionCode === FUNCTION_CODES.RESET_DEVICE) {
+      invokeMethod = 'bau-reset-device-with-interface'
+    } else if (functionCode === FUNCTION_CODES.FORCE_UPGRADE) {
+      invokeMethod = 'bau-force-upgrade-with-interface'
+    }
 
     window.electronAPI.ipc.invoke(invokeMethod, {
       functionCode: functionCode,
@@ -560,6 +579,7 @@ export function useBauAddressDetection() {
     modifyMqttConfig,
     resetToDefault,
     resetDevice,
+    forceUpgrade,
 
     // 结果相关
     operationResult,

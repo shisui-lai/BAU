@@ -304,9 +304,11 @@ defineExpose({
       <div class="layout-main">
         <!-- 为参数管理页面和电池信息页面启用keep-alive，避免频繁mount/unmount -->
         <router-view v-slot="{ Component }">
-          <keep-alive include="SOXParam,BaseParam,AlarmThreshold,cellData">
-            <component :is="Component" />
-          </keep-alive>
+          <transition name="fade" mode="out-in">
+            <keep-alive include="SOXParam,BaseParam,AlarmThreshold,cellData,SOXParamNative,BaseParamNative,AlarmThresholdNative">
+              <component :is="Component" />
+            </keep-alive>
+          </transition>
         </router-view>
       </div>
     </div>
@@ -330,6 +332,19 @@ defineExpose({
   </div>
   <Toast />
 </template>
+
+<style lang="scss">
+/* 路由过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
 
 <style lang="scss" scoped>
 /* 移除原有的右上角状态指示器样式，改为在AppSidebar中实现 */

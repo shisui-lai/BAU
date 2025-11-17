@@ -1,17 +1,28 @@
 // 该文件用于在子进程中处理 MQTT 消息的订阅、解析与转发（主→渲染），并提供发布与连接管理能力
 import { PACK_SUMMARY, IO_STATUS_SCHEMA, /*HARDWARE_FAULT_SCHEMA,*/ FAULT_LEVEL2_SCHEMA, BROKENWIRE_SCHEMA, BALANCE_STATUS_SCHEMA } from './packSchemaFactory'
+const fs = require('fs')
+const path = require('path')
 import { OUT_FAULT_MAP, SAVED_FAULT_MAP } from './table.js'
 import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/ processSecondFaultRAW, processThirdFaultRAW,
     processBrokenwireRAW, parseSysBaseParamRAW, processBalanceRAW, parseWriteResponse,
     parseClusterDnsParamRAW,parsePackDnsParamRAW,parseCellDnsParamRAW,
     parseRealTimeSaveRAW,parseSOXCfgParamRAW,parseSOCCfgParamRAW,parseSOHCfgParamRAW,
-    createRemoteCommandParser, createQueryCommandParser, parseByTable,groupByClass, toBuf, dv, pick,
+    createRemoteCommandParser, createQueryCommandParser, parseByTable,groupByClass, toBuf, dv, pick, parseBcuBmuUpgradeResultRAW, parseBauUpgradeResultRAW,
     parseBlockSummaryRAW, parseBlockVersionRAW, parseBlockSysAbstractRAW, processBlockIoStatusRAW,
     parseCluAnalogFaultLevelSumRAW, parseBlockAnalogFaultLevelRAW, parseBlockAnalogFaultGradeRAW,
     parseCluAnalogFaultGradeRAW, parseBlockCommonParamRAW, parseBlockTimeCfgRAW, parseBlockPortCfgRAW, parseBlockDnsParamRAW,
     parseBlockBattParamRAW, parseBlockCommDevCfgRAW, parseBlockOperateCfgRAW,
     processBcuAdaptiveQueryResult, processBmuAdaptiveQueryResult,
-    processCellVoltageRAW, processCellTemperatureRAW, processCellSocRAW, processCellSohRAW, parseFactoryCalibrationRAW } from '../protocol/utils'
+    processCellVoltageRAW, processCellTemperatureRAW, processCellSocRAW, processCellSohRAW, parseFactoryCalibrationRAW,
+    parseSysRunTimeRAW,
+    parseEventRecordFlagRAW,
+    parseEventRecordRAW } from '../protocol/utils'
+  import { 
+    startReadingEvent, 
+    cancelReadingEvent, 
+    processEventRecordResponse,
+    getEventReadingState
+  } from './eventRecordExport'  
   // 【限流优化】已注释掉限流机制，改为直接发送
   // 原因：1) 速率计算已移到子进程，渲染进程负担已减轻
   //       2) 限流器存在内存管理复杂度
@@ -53,6 +64,8 @@ import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/
            SOC_CFG_PARAM_R,         // SOC算法配置参数表
            SOH_CFG_PARAM_R,         // SOH算法配置参数表
            FACTORY_CALIB_PARAM_R,   // 出厂校正参数表 //协议修改新增
+           EVENT_RECORD_FLAG_R,     // 事件记录标志位表
+           EVENT_RECORD_R,          // 事件记录数据表
 
            ERROR_CODES,
            BLOCK_HARDWARE_FAULT,    // 堆硬件故障
@@ -74,6 +87,11 @@ import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/
   let dataRateAccumulator = 0      // 当前秒累计的原始MQTT数据量（字节）
   let currentDataRate = 0          // 当前显示的数据速率 KB/s
   let dataRateTimer = null         // 速率计算定时器
+
+  // ========== 事件记录导出状态管理 ==========
+  let isReadingEvent = false       // 是否正在读取事件记录
+  // 进度更新批次大小（用于事件记录进度更新）
+  const PROGRESS_BATCH = 100
 
   /**
    * 重置健康检查相关数据
@@ -271,6 +289,7 @@ function withResponseCheck(fn) {
   const processBrokenWireData   = hex => processBrokenwireRAW(hex, BROKENWIRE_SCHEMA,   '掉线信息');
   const processBalanceStatusData = hex => processBalanceRAW(hex, BALANCE_STATUS_SCHEMA, '均衡状态');
   const processSysBaseParamData =  withResponseCheck(buf => parseSysBaseParamRAW(buf)); 
+  const processSysRunTimeData = withResponseCheck(hex => parseSysRunTimeRAW(hex)); 
   // const processClusterDnsParamData = withResponseCheck(hex => parseConfigSection(hex, CLUSTER_DNS_PARAM_R, '簇端告警阈值'));
   // const processPackDnsParamData = withResponseCheck(hex => parseConfigSection(hex, PACK_DNS_PARAM_R, '包端告警阈值'));
   // const processCellDnsParamData = withResponseCheck(hex => parseConfigSection(hex, CELL_DNS_PARAM_R, '单体告警阈值'));
@@ -283,6 +302,8 @@ function withResponseCheck(fn) {
   const processSOCCfgParamData = withResponseCheck(buf => parseSOCCfgParamRAW(buf));
   const processSOHCfgParamData = withResponseCheck(buf => parseSOHCfgParamRAW(buf));
   const processFactoryCalibParamData = withResponseCheck(buf => parseFactoryCalibrationRAW(buf.toString('hex'))); //协议修改新增
+  const processEventRecordFlagData = withResponseCheck(hex => parseEventRecordFlagRAW(hex));
+  const processEventRecordData = withResponseCheck(hex => parseEventRecordRAW(hex));
 
     /* ---------- 8 种三级故障：自动带入 kind ---------- */
   const parseCellOv_L3   = thirdL3('cell_ov');
@@ -427,6 +448,8 @@ function withResponseCheck(fn) {
     get_contactor_ctrl_result: createQueryCommandParser('get_contactor_ctrl_result'),
     get_insulation_detect_result: createQueryCommandParser('get_insulation_detect_result'),
     get_sys_run_mode: createQueryCommandParser('get_sys_run_mode'),
+    get_bcu_bmu_upgrade_result: parseBcuBmuUpgradeResultRAW,
+    get_bau_upgrade_result: parseBauUpgradeResultRAW,
 
 
     // 堆汇总信息
@@ -456,6 +479,15 @@ function withResponseCheck(fn) {
     // 堆时间设置
     block_time_cfg_r:  withResponseCheck(hex => parseBlockTimeCfgRAW(hex)),
     block_time_cfg_w:  parseWriteResponse,
+
+    // 系统时间记录
+    sys_run_time_r: processSysRunTimeData,
+
+    // 事件记录标志位
+    event_record_flag_r: processEventRecordFlagData,
+
+    // 事件记录数据
+    event_record_r: processEventRecordData,
 
     // 堆系统端口配置参数
     block_port_cfg_r:  withResponseCheck(hex => parseBlockPortCfgRAW(hex)),
@@ -496,6 +528,9 @@ function withResponseCheck(fn) {
 
     // BMU地址自适应 - BAU应答
     bmu_adaptive_addr: createRemoteCommandParser('bmu_adaptive_addr'),
+
+    // 删除事件记录 - BAU应答
+    clear_event_record_num: createRemoteCommandParser('clear_event_record_num'),
 
   }
 
@@ -820,7 +855,6 @@ function withResponseCheck(fn) {
         return
       }
 
-
       const parts = topic.split('/')
       const suffix    = parts.at(-1)               // cell_volt / sys_abstract / …
       const blockId   = Number(parts[3].slice(1))  // b1 -> 1
@@ -850,7 +884,6 @@ function withResponseCheck(fn) {
       let result;
       try {
         result = parseFun(hex)        // 只需传 hex
-        // console.log(result)
       } catch (err) {
         console.error(
           `[PARSE_ERR] ${dataType} len=${len} topic=${topic}\n` +
@@ -878,6 +911,30 @@ function withResponseCheck(fn) {
         // ⚠️ 移除 payloadSize，不再在msg中传递，速率由子进程独立计算
       }
 
+      // ========== 事件记录数据特殊处理 ==========
+      // 如果正在读取事件记录，且这是对应的事件记录数据，则处理响应
+      if (suffix === 'event_record_r') {
+        const eventState = getEventReadingState()
+        if (eventState.isReadingEvent && eventState.eventReadingBlockId === blockId) {
+          // 构建响应数据对象（支持多条记录）
+          const responseData = {
+            RecordOffset: baseConfig?.RecordOffset,  // 起始偏移量（第一条记录的偏移量）
+            RecordCount: baseConfig?.RecordCount,    // 记录数量
+            records: result.records || [],           // 多条记录数组
+            baseConfig,                              // 基础配置
+            data,                                    // 第一条记录的数据
+            result: result.error ? { error: true, code: data?.code, message: data?.message } : null,
+            rawRegisters: result.rawRegisters,       // 第一条记录的原始寄存器
+            rawBuffer: result.rawBuffer             // 第一条记录的原始buffer
+          }
+          
+          // 调用事件记录导出模块的处理函数
+          processEventRecordResponse(responseData, blockId, client)
+          
+          return // 事件记录数据已处理，不再继续常规解析流程
+        }
+      }
+
       // 【限流优化】直接发送，不再使用限流器
       // 优势：1) 架构简化，避免限流器内存管理复杂度
       //       2) 数据实时性更好，无300ms延迟
@@ -887,7 +944,7 @@ function withResponseCheck(fn) {
       // 更新最后消息接收时间
       lastMessageReceived = Date.now()
       // logCompact('[发送给主进程]', msg)   // 单进程调试输出
-      if (result.error) {
+      if (result.error && suffix !== 'event_record_r') {
         logCompact('[遥信 失败响应]', msg);
       }
     }
@@ -948,25 +1005,109 @@ function withResponseCheck(fn) {
         return
       }
       
+      // ========== 事件记录导出功能 ==========
+      if (cmd === 'START_READ_EVENT') {
+        const { offsetRead, totalRead, blockId, exportDir } = message
+        
+        if (!client || !isConnected) {
+          console.error('[MQTT Child] MQTT未连接，无法读取事件记录')
+          process.send({
+            type: 'readEventError',
+            data: {
+              blockId,
+              error: 'MQTT未连接'
+            }
+          })
+          return
+        }
+        
+        // 开始读取（使用事件记录导出模块）
+        startReadingEvent(blockId, offsetRead, totalRead, exportDir || '', client).catch(error => {
+          console.error('[MQTT Child] 事件记录读取异常:', error)
+        })
+        return
+      }
+      
+      if (cmd === 'CANCEL_READ_EVENT') {
+        const { blockId } = message
+        cancelReadingEvent(blockId)
+        return
+      }
+      
+      
       // 升级功能已简化，复用现有的MQTT_PUBLISH逻辑
       
       // 原有的MQTT发布指令处理
       if (cmd === 'MQTT_PUBLISH') {
-      // ① 把十六进制字符串转回 Buffer
-      // const buf = Buffer.from(payloadHex, 'hex');
-      
-      console.log('[Child] publish MQTT', topic, payloadHex)
-      // ② 真正发到 MQTT Broker
-      // client.publish(topic, buf, (err) => {
-      //   if (err) {
-      //     process.send({ type:'mqtt-error', err: err.message });
-      //   }
-      // });
-      const payloadBuf = Buffer.from(payloadHex, 'hex')
-      client.publish(topic, payloadBuf)
-    }
+        // 【安全防护】检查client和连接状态，防止空指针异常
+        if (!client) {
+          console.warn('[MQTT Child] 发布失败：MQTT客户端未初始化')
+          // 尝试发送错误消息，使用try-catch避免IPC通道关闭时的错误
+          try {
+            if (process.connected) {
+              process.send({ 
+                type: 'mqtt-error', 
+                data: { error: 'MQTT客户端未初始化，无法发布消息' } 
+              })
+            }
+          } catch (e) {
+            // IPC通道可能已关闭，忽略错误
+          }
+          return
+        }
+
+        if (!isConnected) {
+          console.warn('[MQTT Child] 发布失败：MQTT未连接')
+          try {
+            if (process.connected) {
+              process.send({ 
+                type: 'mqtt-error', 
+                data: { error: 'MQTT未连接，无法发布消息' } 
+              })
+            }
+          } catch (e) {
+            // IPC通道可能已关闭，忽略错误
+          }
+          return
+        }
+
+        try {
+          // ① 把十六进制字符串转回 Buffer
+          const payloadBuf = Buffer.from(payloadHex, 'hex')
+          
+          // ② 真正发到 MQTT Broker
+          console.log('[Child] publish MQTT', topic, payloadHex)
+          client.publish(topic, payloadBuf, (err) => {
+            if (err) {
+              console.error('[MQTT Child] 发布消息失败:', err.message)
+              try {
+                if (process.connected) {
+                  process.send({ type: 'mqtt-error', data: { error: err.message } })
+                }
+              } catch (e) {
+                // IPC通道可能已关闭，忽略错误
+              }
+            }
+          })
+        } catch (error) {
+          // 【关键修复】捕获所有异常，防止进程崩溃
+          console.error('[MQTT Child] 发布消息时发生异常:', error.message)
+          try {
+            if (process.connected) {
+              process.send({ 
+                type: 'mqtt-error', 
+                data: { error: `发布失败: ${error.message}` } 
+              })
+            }
+          } catch (e) {
+            // IPC通道可能已关闭，忽略错误
+          }
+        }
+      }
   });
 
+  // ========== 事件记录导出功能已移至 eventRecordExport.js ==========
+  
   process.once('SIGINT',  cleanUp);
   process.once('exit',    cleanUp);
   process.once('SIGTERM', cleanUp);

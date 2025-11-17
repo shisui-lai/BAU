@@ -59,6 +59,7 @@ export function usePageTypeDetection() {
     '/block/blockSysAbstract': 'blockread',         // 堆系统概要页面（备用路由）
     '/Bau/address-adaptive': 'blockread',          // 地址自适应页面
     '/Bau/upgrade': 'blockread',
+    '/Bau/eventRecord/event': 'blockread',        // 系统时间与记录页面（堆级只读页面）
     
     // ================== 堆级遥调、遥控页面 (block-type) ==================
     // 需要显示堆选择器和下发多选框的页面（可读写）
@@ -114,7 +115,6 @@ export function usePageTypeDetection() {
       clusterStore.setCurrentPageType('standalone')
       blockStore.setCurrentPageType('standalone')
     }
-    // console.log(`[PageTypeDetection] 设置页面类型: ${pageType} (路由: ${route.path})`)
   }
   
   /**
@@ -174,7 +174,6 @@ export function usePageTypeDetection() {
   watch(
     () => route.path,
     (newPath) => {
-      // console.log(`[PageTypeDetection] 路由变化: ${newPath}`)
       updatePageType()
     },
     { immediate: false }
@@ -182,7 +181,6 @@ export function usePageTypeDetection() {
   
   // 组件挂载时初始化页面类型
   onMounted(() => {
-    // console.log(`[PageTypeDetection] 初始化页面类型检测，当前路由: ${route.path}`)
     updatePageType()
   })
   

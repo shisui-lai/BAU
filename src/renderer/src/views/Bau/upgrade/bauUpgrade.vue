@@ -13,11 +13,37 @@ import Dropdown from 'primevue/dropdown'
 import Checkbox from 'primevue/checkbox'
 import Dialog from 'primevue/dialog'
 import Password from 'primevue/password'
+import ProgressBar from 'primevue/progressbar'
 import { useFtpFileManager } from '@/composables/core/data-processing/upgrade/useFtpFileManager.js'
+import { useRemoteCommand } from '@/composables/core/data-processing/remote-control/useRemoteCommand'
+import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
+import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
+import { useClusterStore } from '@/stores/device/clusterStore'
+import { useBlockStore } from '@/stores/device/blockStore'
 
 const toast = useToast()
 const router = useRouter()
 const { t, te, locale } = useI18n()
+
+// 簇选择器和堆选择器（用于升级结果查询）
+const { selectedCluster } = useClusterSelect()
+const { selectedBlock } = useBlockSelect()
+
+// Store（用于获取系统拓扑信息和配置）
+const clusterStore = useClusterStore()
+const blockStore = useBlockStore()
+
+// 遥控命令服务（用于升级结果查询）
+const { 
+  feedbackStatus, 
+  startUpgradeResultPolling, 
+  stopUpgradeResultPolling,
+  handleFeedbackQueryResponse,
+  startBauUpgradeResultPolling,
+  stopBauUpgradeResultPolling,
+  startBcuBmuUpgradeResultPolling,
+  stopBcuBmuUpgradeResultPolling
+} = useRemoteCommand({ selectorMode: 'cluster' })
 
 // 翻译函数 - 参考Order.vue的实现方式
 // 中文环境 (locale.value === 'zh')
@@ -44,6 +70,56 @@ const translateStatus = (status) => {
   return te(translationKey) 
     ? t(translationKey) 
     : status
+}
+
+// 根据升级类型启动对应的升级结果轮询
+function startUpgradeResultPollingByType() {
+  // 先停止所有轮询
+  stopUpgradeResultPolling()
+  stopBauUpgradeResultPolling()
+  stopBcuBmuUpgradeResultPolling()
+
+  // 清除之前的升级结果数据，确保只显示当前升级的结果
+  feedbackStatus.bcu_bmu_upgrade_result.clear()
+  feedbackStatus.bau_upgrade_result = null
+
+  const upgradeType = selectedUpgrade.value
+
+  // BAU升级 (0xA000) - 使用堆级轮询
+  if (upgradeType === '0xA000') {
+    if (selectedBlock.value) {
+      // 从 selectedBlock (如 'block1') 提取堆号
+      const blockId = Number(String(selectedBlock.value).replace('block', ''))
+      if (blockId > 0) {
+        startBauUpgradeResultPolling(() => blockId)
+        console.log(`[升级结果轮询] 已启动BAU升级结果轮询，堆号: ${blockId}`)
+      }
+    } else {
+      console.warn('[升级结果轮询] BAU升级需要选择堆，但当前未选择')
+    }
+  }
+  // BCU/BMU升级 (0xA001/0xA002) - 同时启动BAU轮询和BCU/BMU多簇轮询
+  else if (upgradeType === '0xA001' || upgradeType === '0xA002') {
+    // 同时启动BAU结果轮询（堆级）
+    if (selectedBlock.value) {
+      const blockId = Number(String(selectedBlock.value).replace('block', ''))
+      if (blockId > 0) {
+        startBauUpgradeResultPolling(() => blockId)
+        console.log(`[升级结果轮询] 已启动BAU升级结果轮询，堆号: ${blockId}`)
+      }
+    } else {
+      console.warn('[升级结果轮询] BCU/BMU升级需要选择堆（用于BAU结果查询），但当前未选择')
+    }
+    
+    // 启动BCU/BMU结果多簇轮询（根据用户勾选的簇）
+    const clusterKeys = blockClusterKeys.value
+    if (clusterKeys.length === 0) {
+      console.warn('[升级结果轮询] 未勾选任何簇，无法启动BCU/BMU升级结果轮询')
+    } else {
+      startBcuBmuUpgradeResultPolling(clusterKeys)
+      console.log(`[升级结果轮询] 已启动BCU/BMU升级结果多簇轮询，簇: ${clusterKeys.join(', ')}`)
+    }
+  }
 }
 
 // 密码保护相关
@@ -132,7 +208,14 @@ const selectedFileStatus = computed(() => {
 // 升级参数
 const selectedUpgrade = computed({
   get: () => upgradeStore.upgradeParams.type,
-  set: (value) => upgradeStore.updateUpgradeParams({ type: value })
+  set: (value) => {
+    upgradeStore.updateUpgradeParams({ type: value })
+    // 注意：不在升级类型改变时启动轮询，只在升级开始后才启动
+    // 如果升级正在进行中，则重启轮询以匹配新的升级类型
+    if (upgradeStore.upgradeStatus.isUpgrading) {
+      startUpgradeResultPollingByType()
+    }
+  }
 })
 
 const bcuSelection1 = computed({
@@ -144,6 +227,86 @@ const bcuSelection2 = computed({
   get: () => upgradeStore.upgradeParams.bcuSelection2,
   set: (value) => upgradeStore.updateUpgradeParams({ bcuSelection2: value })
 })
+
+// 获取用户勾选的所有全局簇号
+const selectedGlobalClusters = computed(() => {
+  return [...bcuSelection1.value, ...bcuSelection2.value].sort((a, b) => a - b)
+})
+
+/**
+ * 将全局簇号转换为 block-cluster 格式的簇键列表
+ * @param {Array<number>} globalClusterIds - 全局簇号数组，如 [1, 2, 3, 4]
+ * @param {Array} availableClusters - 从 clusterStore 获取的簇列表
+ * @returns {Array<string>} block-cluster 格式的簇键列表，如 ['1-1', '1-2', '1-3', '2-1']
+ */
+function mapGlobalClustersToBlockClusters(globalClusterIds, availableClusters) {
+  if (!globalClusterIds || globalClusterIds.length === 0) return []
+  if (!availableClusters || availableClusters.length === 0) return []
+  
+  // 按全局簇号排序
+  const sortedGlobalIds = [...globalClusterIds].sort((a, b) => a - b)
+  
+  // 从 availableClusters 中按顺序提取对应全局簇号的 block-cluster 键
+  // availableClusters 已经是按 block 和 cluster 排序的，全局簇号就是顺序索引+1
+  const result = []
+  sortedGlobalIds.forEach(globalId => {
+    // 全局簇号从1开始，数组索引从0开始
+    const index = globalId - 1
+    if (index >= 0 && index < availableClusters.length) {
+      const cluster = availableClusters[index]
+      if (cluster && cluster.value) {
+        result.push(cluster.value) // cluster.value 格式为 '1-1', '2-1' 等
+      }
+    }
+  })
+  
+  return result
+}
+
+// 将全局簇号转换为 block-cluster 格式
+const blockClusterKeys = computed(() => {
+  if (selectedGlobalClusters.value.length === 0) return []
+  return mapGlobalClustersToBlockClusters(
+    selectedGlobalClusters.value,
+    clusterStore.availableClusters
+  )
+})
+
+/**
+ * 将 block-cluster 格式转换回全局簇号
+ * @param {string} clusterKey - block-cluster 格式的簇键，如 '1-1', '2-3'
+ * @param {Array} availableClusters - 可用簇列表
+ * @returns {number|null} 全局簇号（1-20）或null
+ */
+function mapBlockClusterToGlobalCluster(clusterKey, availableClusters) {
+  if (!clusterKey || !availableClusters || availableClusters.length === 0) {
+    return null
+  }
+
+  // 在availableClusters中查找对应的索引
+  const index = availableClusters.findIndex(cluster => cluster.value === clusterKey)
+
+  // 全局簇号 = 索引 + 1（因为全局簇号从1开始）
+  return index >= 0 ? index + 1 : null
+}
+
+/**
+ * 获取簇的显示名称（用于升级结果显示）
+ * @param {string} clusterKey - block-cluster 格式的簇键
+ * @returns {string} 显示名称，如 '簇1', '簇2'
+ */
+function getClusterDisplayName(clusterKey) {
+  const globalClusterId = mapBlockClusterToGlobalCluster(clusterKey, clusterStore.availableClusters)
+
+  if (globalClusterId !== null) {
+    console.log(`[升级结果显示] ${clusterKey} -> 簇${globalClusterId}`)
+    return `簇${globalClusterId}`
+  }
+
+  // 回退到原始显示方式
+  console.warn(`[升级结果显示] 无法映射 ${clusterKey}，使用原始显示`)
+  return `堆${clusterKey}`
+}
 
 const bmuUpdateStyle = computed({
   get: () => upgradeStore.upgradeParams.bmuStyle,
@@ -226,6 +389,16 @@ const translatedUpgradeStatusText = computed(() => {
   const statusKey = statusMap[status] || status
   return translateStatus(statusKey)
 })
+
+// 升级执行结果（Map结构）
+const bcuBmuUpgradeResultsMap = computed(() => {
+  return feedbackStatus.bcu_bmu_upgrade_result // 已经是Map结构
+})
+const hasUpgradeResult = computed(() => bcuBmuUpgradeResultsMap.value && bcuBmuUpgradeResultsMap.value.size > 0)
+
+// BAU升级执行结果
+const bauUpgradeResult = computed(() => feedbackStatus.bau_upgrade_result)
+const hasBauUpgradeResult = computed(() => bauUpgradeResult.value !== null)
 
 // 计算属性
 const canStartUpgrade = computed(() => upgradeStore.canStartUpgrade)
@@ -363,11 +536,63 @@ const toggleBcuSelection = (selectionArray, clusterId) => {
 const toggleBcuSelection1 = (clusterId) => toggleBcuSelection(bcuSelection1.value, clusterId)
 const toggleBcuSelection2 = (clusterId) => toggleBcuSelection(bcuSelection2.value, clusterId)
 
+// ================== 簇配置限制逻辑 ==================
+
+/**
+ * 根据 store 中的配置数据计算簇的限制信息
+ * 作用：确定总簇数和每个堆的簇数，用于限制用户选择
+ */
+const clusterLimits = computed(() => {
+  // 从 clusterStore 获取可用簇列表
+  const availableClusters = clusterStore.availableClusters
+
+  // 如果没有配置数据，返回保守的默认值（0簇，避免误操作）
+  if (!availableClusters || availableClusters.length === 0) {
+    return {
+      totalClusters: 0,     // 总簇数：默认0（保守）
+      heap1Clusters: 0,     // 堆1簇数：默认0
+      heap2Clusters: 0      // 堆2簇数：默认0
+    }
+  }
+
+  // 统计每个堆的簇数
+  let heap1Clusters = 0
+  let heap2Clusters = 0
+
+  availableClusters.forEach(cluster => {
+    if (cluster.block === 1) {
+      heap1Clusters++
+    } else if (cluster.block === 2) {
+      heap2Clusters++
+    }
+  })
+
+  // 总簇数 = 堆1簇数 + 堆2簇数
+  const totalClusters = heap1Clusters + heap2Clusters
+
+  return { totalClusters, heap1Clusters, heap2Clusters }
+})
+
+/**
+ * 判断指定的簇编号是否在有效范围内
+ * @param {number} clusterNum - 簇编号（1-20）
+ * @returns {boolean} - true表示可用，false表示超出配置范围
+ *
+ * 举例：如果系统配置总共12簇
+ * - isClusterAvailable(5) 返回 true（5 <= 12）
+ * - isClusterAvailable(15) 返回 false（15 > 12）
+ */
+const isClusterAvailable = (clusterNum) => {
+  return clusterNum <= clusterLimits.value.totalClusters
+}
+
+
+
 // 全选1-10簇的状态（计算属性）
 const isAllSelected1 = computed(() => {
-  // 检查1-10簇是否全部被选中
+  // 只检查可用的1-10簇是否全部被选中
   for (let i = 1; i <= 10; i++) {
-    if (!bcuSelection1.value.includes(i)) {
+    if (isClusterAvailable(i) && !bcuSelection1.value.includes(i)) {
       return false
     }
   }
@@ -376,9 +601,9 @@ const isAllSelected1 = computed(() => {
 
 // 全选11-20簇的状态（计算属性）
 const isAllSelected2 = computed(() => {
-  // 检查11-20簇是否全部被选中
+  // 只检查可用的11-20簇是否全部被选中
   for (let i = 11; i <= 20; i++) {
-    if (!bcuSelection2.value.includes(i)) {
+    if (isClusterAvailable(i) && !bcuSelection2.value.includes(i)) {
       return false
     }
   }
@@ -391,8 +616,14 @@ const toggleSelectAll1 = () => {
     // 如果已经全选，则清空
     bcuSelection1.value = []
   } else {
-    // 否则全选1-10簇
-    bcuSelection1.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    // 否则全选1-10簇中可用的簇（根据系统配置限制）
+    const availableClusters = []
+    for (let i = 1; i <= 10; i++) {
+      if (isClusterAvailable(i)) {
+        availableClusters.push(i)
+      }
+    }
+    bcuSelection1.value = availableClusters
   }
 }
 
@@ -402,14 +633,24 @@ const toggleSelectAll2 = () => {
     // 如果已经全选，则清空
     bcuSelection2.value = []
   } else {
-    // 否则全选11-20簇
-    bcuSelection2.value = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    // 否则全选11-20簇中可用的簇（根据系统配置限制）
+    const availableClusters = []
+    for (let i = 11; i <= 20; i++) {
+      if (isClusterAvailable(i)) {
+        availableClusters.push(i)
+      }
+    }
+    bcuSelection2.value = availableClusters
   }
 }
 
 const startUpgrade = async () => {
   try {
     await upgradeStore.startUpgrade()
+    
+    // 升级启动后，确保轮询已启动
+    startUpgradeResultPollingByType()
+    
     toast.add({
       severity: 'success',
       summary: t('toast.deviceUpgrade.upgradeStarted'),
@@ -429,6 +670,12 @@ const startUpgrade = async () => {
 const stopUpgrade = async () => {
   try {
     await upgradeStore.stopUpgrade()
+    
+    // 停止升级时，停止升级结果轮询
+    stopUpgradeResultPolling()
+    stopBauUpgradeResultPolling()
+    stopBcuBmuUpgradeResultPolling()
+    
     toast.add({
       severity: 'info',
       summary: t('toast.deviceUpgrade.upgradeStopped'),
@@ -521,14 +768,51 @@ const cancelPwd = () => {
   }, 500)
 }
 
+// 处理升级结果MQTT应答
+function handleUpgradeResultResponse(_e, msg) {
+  // 消息结构：{ blockId, clusterId, dataType, topic, data, ... }
+  // dataType 在 msg 对象上，不在 msg.data 上
+  if (msg && msg.dataType) {
+    const dataType = msg.dataType.toLowerCase()
+    
+    // 处理BCU/BMU升级结果
+    if (dataType === 'get_bcu_bmu_upgrade_result') {
+      if (handleFeedbackQueryResponse) {
+        // handleFeedbackQueryResponse 期望 responseData.data 和 responseData.topic 存在
+        handleFeedbackQueryResponse('get_bcu_bmu_upgrade_result', { 
+          data: msg.data,
+          topic: msg.topic,
+          blockId: msg.blockId,
+          clusterId: msg.clusterId
+        })
+      }
+    }
+    
+    // 处理BAU升级结果
+    if (dataType === 'get_bau_upgrade_result') {
+      if (handleFeedbackQueryResponse) {
+        // parseBauUpgradeResultRAW返回的结构: { error, commandType, topic, data: {...} }
+        // msg.data 是完整的解析结果对象，真正的数据在 msg.data.data
+        handleFeedbackQueryResponse('get_bau_upgrade_result', { data: msg.data?.data || msg.data })
+      }
+    }
+  } else {
+    console.warn('[bauUpgrade.vue] ⚠️ 升级结果查询应答格式异常 - msg:', msg)
+  }
+}
+
 // 初始化页面函数
 const initializePage = async () => {
   try {
-    // 预清理，避免重复绑定
-    window.electron.ipcRenderer.removeAllListeners?.('UPGRADE')
+    console.log('[升级页面] 开始初始化页面')
 
-    // 监听升级应答结果 - 使用正确的MQTT事件名称
-    window.electron.ipcRenderer.on('UPGRADE', handleUpgradeResponse)
+    // 动态设置FTP服务器默认IP
+    const { useDefaultFtpServerIp } = await import('@/composables/utils/useNetworkInterface.js')
+    const { getDefault11SegmentIp } = useDefaultFtpServerIp()
+    const defaultIp = await getDefault11SegmentIp()
+
+    console.log('[升级页面] 设置FTP服务器默认IP:', defaultIp)
+    upgradeStore.updateFtpConfig({ host: defaultIp })
 
     // 初始化FTP文件管理功能
     setupFileEventListeners()
@@ -552,12 +836,26 @@ const initializePage = async () => {
         await refreshFileList()
       }
     }
+
+    console.log('[升级页面] 页面初始化完成')
+    // 注意：不在页面初始化时启动轮询，只在升级开始后才启动
+    // startUpgradeResultPollingByType()  // 已移除，改为在 startUpgrade 时启动
   } catch (error) {
-    console.error('页面初始化失败:', error)
+    console.error('[升级页面] 页面初始化失败:', error)
   }
 }
 
 onMounted(async () => {
+  // 预清理，避免重复绑定（与其他页面保持一致）
+  window.electron.ipcRenderer.removeAllListeners?.('UPGRADE')
+  window.electron.ipcRenderer.removeAllListeners?.('GET_BCU_BMU_UPGRADE_RESULT')
+  window.electron.ipcRenderer.removeAllListeners?.('GET_BAU_UPGRADE_RESULT')
+  
+  // 监听升级应答结果和升级结果查询应答（与其他页面保持一致）
+  window.electron.ipcRenderer.on('UPGRADE', handleUpgradeResponse)
+  window.electron.ipcRenderer.on('GET_BCU_BMU_UPGRADE_RESULT', handleUpgradeResultResponse)
+  window.electron.ipcRenderer.on('GET_BAU_UPGRADE_RESULT', handleUpgradeResultResponse)
+  
   // 密码保护检查
   if (sessionStorage.getItem('upgradePagePassword') !== 'ok') {
     showPasswordDialog.value = true
@@ -570,15 +868,24 @@ onMounted(async () => {
 
 // 清理
 onUnmounted(() => {
+  // 停止所有升级结果轮询
+  stopUpgradeResultPolling() // 停止单簇轮询
+  stopBauUpgradeResultPolling() // 停止BAU升级结果轮询
+  stopBcuBmuUpgradeResultPolling() // 停止BCU/BMU多簇轮询
+  
   // 彻底清理所有监听器
   window.electron.ipcRenderer.removeAllListeners?.('UPGRADE')
+  window.electron.ipcRenderer.removeAllListeners?.('GET_BCU_BMU_UPGRADE_RESULT')
+  window.electron.ipcRenderer.removeAllListeners?.('GET_BAU_UPGRADE_RESULT')
+  
   cleanup() // 清理FTP文件管理功能
 })
 </script>
 
 <!-- BAU设备升级界面 -->
 <template>
-  <div class="card">
+  <div class="page-wrapper">
+    <div class="card">
     <div class="upgrade-container">
       <!-- 左右布局：左侧(FTP配置+文件状态) + 右侧(设备升级) -->
       <div class="grid">
@@ -695,6 +1002,16 @@ onUnmounted(() => {
               <!-- 簇选择 - 始终显示，但根据升级类型控制是否可选 -->
               <div class="cluster-selection-section">
                 <h4>{{ t('deviceUpgrade.sections.clusterSelection') }}</h4>
+
+                <!-- 配置状态提示 -->
+                <div class="cluster-config-info mb-3" v-if="clusterLimits.totalClusters > 0">
+                  <i class="pi pi-info-circle mr-2 text-blue-500"></i>
+                  <span class="text-sm text-gray-600">
+                    当前配置：{{ clusterLimits.totalClusters }}簇
+                    (堆1: {{ clusterLimits.heap1Clusters }}簇<span v-if="clusterLimits.heap2Clusters > 0">, 堆2: {{ clusterLimits.heap2Clusters }}簇</span>)
+                  </span>
+                </div>
+
                 <div class="cluster-selection-compact">
                   <!-- 第1-10簇 -->
                   <div class="cluster-row">
@@ -717,9 +1034,11 @@ onUnmounted(() => {
                           :modelValue="bcuSelection1.includes(i)"
                           @update:modelValue="toggleBcuSelection1(i)"
                           :binary="true"
-                          :disabled="selectedUpgrade === '0xA000'"
+                          :disabled="selectedUpgrade === '0xA000' || !isClusterAvailable(i)"
                         />
-                        <label>{{ i }}</label>
+                        <label :class="{ 'text-gray-400': !isClusterAvailable(i) }">
+                          {{ i }}
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -744,9 +1063,11 @@ onUnmounted(() => {
                           :modelValue="bcuSelection2.includes(i+10)"
                           @update:modelValue="toggleBcuSelection2(i+10)"
                           :binary="true"
-                          :disabled="selectedUpgrade === '0xA000'"
+                          :disabled="selectedUpgrade === '0xA000' || !isClusterAvailable(i+10)"
                         />
-                        <label>{{ i+10 }}</label>
+                        <label :class="{ 'text-gray-400': !isClusterAvailable(i+10) }">
+                          {{ i+10 }}
+                        </label>
                       </div>
                     </div>
                   </div>
@@ -821,6 +1142,122 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- 升级执行结果独立Card -->
+    <div class="card" style="margin-top: 1rem;">
+      <div class="content-card">
+        <h3>{{ t('deviceUpgrade.sections.upgradeExecutionResult', '升级执行结果') }}</h3>
+        <div class="card-content">
+          <!-- BAU升级执行结果详情 -->
+          <div class="upgrade-result-section">
+            <h4>{{ t('deviceUpgrade.sections.bauUpgradeResult', 'BAU升级执行结果') }}</h4>
+            <div v-if="hasBauUpgradeResult" class="result-grid">
+              <!-- BAU升级时显示：OTA错误码和BAU故障码 -->
+              <template v-if="selectedUpgrade === '0xA000'">
+                <div class="result-item">
+                  <label>{{ t('deviceUpgrade.result.otaErrorCode', 'OTA下载错误码') }}：</label>
+                  <span>{{ bauUpgradeResult.otaErrorCode }}</span>
+                </div>
+                <div class="result-item">
+                  <label>{{ t('deviceUpgrade.result.bauFaultCode', 'BAU升级故障码') }}：</label>
+                  <span>{{ bauUpgradeResult.bauFaultCode }}</span>
+                </div>
+              </template>
+              <!-- BCU/BMU升级时只显示：OTA错误码 -->
+              <template v-else-if="selectedUpgrade === '0xA001' || selectedUpgrade === '0xA002'">
+                <div class="result-item">
+                  <label>{{ t('deviceUpgrade.result.otaErrorCode', 'OTA下载错误码') }}：</label>
+                  <span>{{ bauUpgradeResult.otaErrorCode }}</span>
+                </div>
+              </template>
+            </div>
+            <div v-else class="result-empty">
+              <span class="text-sm text-color-secondary">{{ t('deviceUpgrade.messages.noBauUpgradeResult', '暂无BAU升级结果，请先启动BAU升级') }}</span>
+            </div>
+          </div>
+
+          <!-- BCU/BMU升级执行结果详情 -->
+          <div class="upgrade-result-section">
+            <h4>{{ t('deviceUpgrade.sections.upgradeResult', 'BCU/BMU升级执行结果') }}</h4>
+            
+            <!-- 遍历Map显示每个簇的结果 -->
+            <div 
+              v-for="[clusterKey, result] in bcuBmuUpgradeResultsMap" 
+              :key="clusterKey"
+              class="cluster-result-card"
+              style="margin-bottom: 16px; padding: 12px; border: 1px solid var(--surface-border); border-radius: 4px;"
+            >
+              <h5 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 600;">
+                {{ getClusterDisplayName(clusterKey) }}升级结果
+              </h5>
+              
+              <div class="result-grid">
+                <!-- BCU升级时显示：升级文件下载完成标志 -->
+                <div v-if="selectedUpgrade === '0xA001'" class="result-item">
+                  <label>{{ t('deviceUpgrade.result.downloadCompleteFlag', '下载完成标志') }}：</label>
+                  <span>{{ result.downloadCompleteFlag }}</span>
+                </div>
+                
+                <!-- BMU升级时显示：升级文件下载完成标志 -->
+                <div v-if="selectedUpgrade === '0xA002'" class="result-item">
+                  <label>{{ t('deviceUpgrade.result.downloadCompleteFlag', '下载完成标志') }}：</label>
+                  <span>{{ result.downloadCompleteFlag }}</span>
+                </div>
+                
+                <!-- BCU升级时显示：OTA文件下载错误码 -->
+                <div v-if="selectedUpgrade === '0xA001'" class="result-item">
+                  <label>{{ t('deviceUpgrade.result.otaErrorCode', 'OTA下载错误码') }}：</label>
+                  <span>{{ result.otaErrorCode }}</span>
+                </div>
+                
+                <!-- BMU升级时显示：OTA文件下载错误码 -->
+                <div v-if="selectedUpgrade === '0xA002'" class="result-item">
+                  <label>{{ t('deviceUpgrade.result.otaErrorCode', 'OTA下载错误码') }}：</label>
+                  <span>{{ result.otaErrorCode }}</span>
+                </div>
+                
+                <!-- BCU升级时显示：BCU升级故障码 -->
+                <div v-if="selectedUpgrade === '0xA001'" class="result-item">
+                  <label>{{ t('deviceUpgrade.result.bcuFaultCode', 'BCU升级故障码') }}：</label>
+                  <span>{{ result.bcuFaultCode }}</span>
+                </div>
+                
+                <!-- BMU升级时显示：BMU升级故障码 -->
+                <div v-if="selectedUpgrade === '0xA002'" class="result-item">
+                  <label>{{ t('deviceUpgrade.result.bmuFaultCode', 'BMU升级故障码') }}：</label>
+                  <span>{{ result.bmuFaultCode }}</span>
+                </div>
+                
+                <!-- BMU升级时显示：BMU升级失败设备标识 -->
+                <div v-if="selectedUpgrade === '0xA002' && result.bmuFailedDevices && result.bmuFailedDevices.length > 0" class="result-item">
+                  <label>{{ t('deviceUpgrade.result.bmuFailedDevices', 'BMU升级失败设备') }}：</label>
+                  <span>{{ result.bmuFailedDevices.join(', ') }}</span>
+                </div>
+                
+                <!-- BMU升级时显示：下载进度 -->
+                <div v-if="selectedUpgrade === '0xA002' && result.totalPackets > 0" class="result-item" style="width: 100%;">
+                  <label>{{ t('deviceUpgrade.result.progress', '下载进度') }}：</label>
+                  <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0;">
+                    <ProgressBar 
+                      :value="Math.round((result.currentPacket / result.totalPackets) * 100)" 
+                      :showValue="false"
+                      style="flex: 0 1 auto; min-width: 200px; max-width: 400px; height: 16px;"
+                    />
+                    <span style="font-weight: 500; white-space: nowrap; font-size: 12px; color: var(--text-color);">
+                      {{ result.currentPacket }} / {{ result.totalPackets }} ({{ Math.round((result.currentPacket / result.totalPackets) * 100) }}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div v-if="!hasUpgradeResult" class="result-empty">
+              <span class="text-sm text-color-secondary">{{ t('deviceUpgrade.messages.noUpgradeResult', '暂无升级结果，请先启动BCU/BMU升级') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 密码保护对话框 -->
@@ -839,10 +1276,11 @@ onUnmounted(() => {
     </div>
   </Dialog>
 
-  <!-- 取消提示 -->
-  <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
-    <span>{{ t('deviceUpgrade.messages.operationCancelled') }}</span>
-  </Dialog>
+    <!-- 取消提示 -->
+    <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
+      <span>{{ t('deviceUpgrade.messages.operationCancelled') }}</span>
+    </Dialog>
+  </div>
 </template>
 
 <style scoped>
@@ -1021,5 +1459,52 @@ onUnmounted(() => {
 
 .file-status-enabled .text-sm {
   color: var(--text-color) !important;
+}
+
+/* 升级结果展示区域 */
+.upgrade-result-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--surface-section);
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+  border-left: 4px solid var(--primary-color);
+}
+
+.upgrade-result-section h4 {
+  margin: 0 0 12px 0;
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.result-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.result-item label {
+  min-width: 100px;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+}
+
+.result-item span {
+  color: var(--text-color);
+  flex: 1;
+}
+
+.result-empty {
+  padding: 16px 0;
+  text-align: center;
+  color: var(--text-color-secondary);
 }
 </style>

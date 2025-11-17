@@ -187,6 +187,14 @@ class CrashLogger {
         errorCode: error?.code,
         errorErrno: error?.errno,
         errorSyscall: error?.syscall,
+        // 扩展字段：渲染进程和子进程崩溃的详细信息
+        exitCode: error?.exitCode,
+        reason: error?.reason,
+        processType: error?.processType,
+        serviceName: error?.serviceName,
+        // 系统级别终止信号信息
+        signal: error?.signal,
+        source: error?.source,
         systemInfo: {
           platform: process.platform,
           arch: process.arch,
@@ -233,6 +241,31 @@ class CrashLogger {
    * 格式化崩溃日志
    */
   formatCrashLog(crashInfo) {
+    // 构建额外的崩溃详情（渲染进程/子进程崩溃特有）
+    let additionalInfo = ''
+    if (crashInfo.exitCode !== undefined || crashInfo.reason || crashInfo.processType || crashInfo.signal) {
+      additionalInfo = `
+【崩溃详情】`
+      
+      // 系统信号信息（系统强制终止时）
+      if (crashInfo.signal) {
+        additionalInfo += `
+- 终止信号: ${crashInfo.signal}
+- 信号来源: ${crashInfo.source || 'N/A'}`
+      }
+      
+      // 进程崩溃信息
+      if (crashInfo.exitCode !== undefined || crashInfo.reason || crashInfo.processType) {
+        additionalInfo += `
+- 退出代码: ${crashInfo.exitCode !== undefined ? crashInfo.exitCode : 'N/A'}
+- 崩溃原因: ${crashInfo.reason || 'N/A'}
+- 进程类型: ${crashInfo.processType || 'N/A'}
+- 服务名称: ${crashInfo.serviceName || 'N/A'}`
+      }
+      
+      additionalInfo += '\n'
+    }
+
     return `
 ${'='.repeat(80)}
 应用程序崩溃报告
@@ -249,7 +282,7 @@ ${crashInfo.errorMessage}
 
 【错误代码】
 ${crashInfo.errorCode || 'N/A'}
-
+${additionalInfo}
 【错误堆栈】
 ${crashInfo.errorStack}
 

@@ -1,4 +1,5 @@
 import { ref, computed, watch, onBeforeMount, onBeforeUnmount } from 'vue'
+import { throttle } from 'lodash'
 import { useBlockStore } from '@/stores/device/blockStore'
 import { useClusterStore } from '@/stores/device/clusterStore'
 
@@ -39,6 +40,9 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
   
   // IPC监听器引用
   let listenerId = null
+  
+  // 节流配置
+  const THROTTLE_INTERVAL = 1000 // 数据刷新间隔：1000ms（每秒最多1次更新）
 
   /**
    * 解析bit位状态
@@ -172,6 +176,38 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
   })
 
   /**
+   * 处理DI/DO状态数据（无限流）
+   */
+  const processDiDoStatusInternal = (event, msg) => {
+    if (!msg) return
+
+    const { blockId, clusterId, dataType, baseConfig, data } = msg
+
+    // 只处理当前选中的堆和簇的数据
+    if (blockId === currentBlockId.value && 
+        clusterId === currentClusterId.value) {
+      
+      rawData.value = {
+        baseConfig: baseConfig || {},
+        data: data || []
+      }
+
+      // 缓存数据到localStorage
+      const cacheKey = `di_do_status_b${blockId}_c${clusterId}`
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(rawData.value))
+      } catch (e) {
+        console.warn('缓存DI/DO状态数据失败:', e)
+      }
+    }
+  }
+
+  /**
+   * DI/DO状态数据节流处理函数（限流入口）
+   */
+  let throttledHandler = null
+
+  /**
    * 注册IPC监听器
    * 监听来自主进程的 DI_DO_TEMP_STATUS 数据
    */
@@ -180,33 +216,33 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     if (listenerId) {
       window.electron.ipcRenderer.removeListener('DI_DO_TEMP_STATUS', listenerId)
     }
+    
+    // 清理旧的节流函数
+    if (throttledHandler && throttledHandler.cancel) {
+      throttledHandler.cancel()
+    }
+
+    // 创建节流处理函数
+    throttledHandler = throttle(
+      (event, message) => {
+        processDiDoStatusInternal(event, message)
+      },
+      THROTTLE_INTERVAL,
+      {
+        leading: true,   // 首次调用立即执行
+        trailing: true   // 结束时执行最后一次
+      }
+    )
 
     listenerId = (event, msg) => {
-      if (!msg) return
-
-      const { blockId, clusterId, dataType, baseConfig, data } = msg
-
-      // 只处理当前选中的堆和簇的数据
-      if (blockId === currentBlockId.value && 
-          clusterId === currentClusterId.value) {
-        
-        rawData.value = {
-          baseConfig: baseConfig || {},
-          data: data || []
-        }
-
-        // 缓存数据到localStorage
-        const cacheKey = `di_do_status_b${blockId}_c${clusterId}`
-        try {
-          localStorage.setItem(cacheKey, JSON.stringify(rawData.value))
-        } catch (e) {
-          console.warn('缓存DI/DO状态数据失败:', e)
-        }
+      // 安全检查：确保 throttledHandler 存在且是函数
+      if (throttledHandler && typeof throttledHandler === 'function') {
+        throttledHandler(event, msg)
       }
     }
 
     window.electron.ipcRenderer.on('DI_DO_TEMP_STATUS', listenerId)
-    console.log('[useDiDoStatus] 已注册IPC监听器: DI_DO_TEMP_STATUS')
+    console.log('[useDiDoStatus] 已注册IPC监听器: DI_DO_TEMP_STATUS (节流间隔: 1秒)')
   }
 
   /**
@@ -252,10 +288,24 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
    * 组件卸载时清理
    */
   onBeforeUnmount(() => {
+    // 先移除监听器，防止在清理过程中收到消息导致错误
     if (listenerId) {
       window.electron.ipcRenderer.removeListener('DI_DO_TEMP_STATUS', listenerId)
       listenerId = null
       console.log('[useDiDoStatus] 已移除IPC监听器')
+    }
+    
+    // 然后清理节流函数
+    if (throttledHandler) {
+      // 先刷新所有待处理的更新
+      if (typeof throttledHandler.flush === 'function') {
+        throttledHandler.flush()
+      }
+      // 然后取消节流函数
+      if (typeof throttledHandler.cancel === 'function') {
+        throttledHandler.cancel()
+      }
+      throttledHandler = null
     }
   })
 

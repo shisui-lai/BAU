@@ -165,7 +165,7 @@ const onAdminLogin = async () => {
   }
   
   // 等待导航完成
-  await router.replace({ name: 'cellData' })
+  await router.replace({ name: 'cellDataNative' })
 
   // 导航完成后重置loading状态
   isLoading.value = false
@@ -178,7 +178,7 @@ const onGuestEnter = async () => {
   authStore.loginAsGuest()
   
   // 等待导航完成
-  await router.replace({ name: 'cellData' })
+  await router.replace({ name: 'cellDataNative' })
 
   
   // 导航完成后重置loading状态
@@ -197,10 +197,10 @@ onMounted(() => {
     rememberMe.value = true
   }
   
-  // 预加载AppLayout和cellData页面，避免首次登录时的跳转卡顿
+  // 预加载AppLayout和cellDataNative页面，避免首次登录时的跳转卡顿
   // 触发一次懒加载解析（不挂载）
   import('@/layout/AppLayout.vue')
-  import('@/views/Cluster/cellData.vue')
+  import('@/views/Cluster/linux/cellDataNative.vue')
 })
 </script>
 

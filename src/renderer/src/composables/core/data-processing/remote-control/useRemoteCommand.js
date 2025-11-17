@@ -31,12 +31,22 @@ const feedbackStatus = reactive({
   contactor_ctrl_result: '-', // 接触器执行策略结果
   insulation_detect_result: '-', // 绝缘电阻检测执行结果
   sys_run_mode: '-', // 系统运行模式
-  batt_stack_ctrl_switch_result: '-' // 堆接触器执行策略结果
+  batt_stack_ctrl_switch_result: '-', // 堆接触器执行策略结果
+  bcu_bmu_upgrade_result: reactive(new Map()), // BCU/BMU升级执行结果（Map结构，键为clusterKey，值为结果对象）
+  bau_upgrade_result: null // BAU升级执行结果（存储为对象）
 })
 
 // 反馈查询定时器相关状态
 const feedbackPollingActive = ref(false)
 let feedbackPollingTimer = null
+
+// 升级结果查询独立轮询状态（新增）
+const upgradeResultPollingActive = ref(false)
+let upgradeResultPollingTimer = null
+
+// BAU升级结果轮询状态
+const bauUpgradeResultPollingActive = ref(false)
+let bauUpgradeResultPollingTimer = null
 
 // 复选框状态管理
 const checkboxStates = reactive({
@@ -855,6 +865,77 @@ function parseBattStackCtrlSwitchResult(value) {
   }
 }
 
+/**
+ * 解析BAU升级结果数据（从parseBauUpgradeResultRAW返回的data对象）
+ * @param {Object} data - parseBauUpgradeResultRAW返回的data对象
+ * @returns {Object} 解析后的BAU升级结果对象
+ */
+function parseBauUpgradeResult(data) {
+  if (!data || data.error) {
+    return null
+  }
+  // 将"未知"或"未知值(0x...)"替换为"--"
+  const replaceUnknown = (value) => {
+    if (typeof value === 'string' && (value === '未知' || value.includes('未知值'))) {
+      return '--'
+    }
+    return value || '--'
+  }
+  return {
+    downloadCompleteFlag: replaceUnknown(data.downloadCompleteFlag),
+    downloadCompleteFlagRaw: data.downloadCompleteFlagRaw,
+    otaErrorCode: replaceUnknown(data.otaErrorCode),
+    otaErrorCodeRaw: data.otaErrorCodeRaw,
+    bauFaultCode: replaceUnknown(data.bauFaultCode),
+    bauFaultCodeRaw: data.bauFaultCodeRaw,
+    timestamp: new Date()
+  }
+}
+
+/**
+ * 解析BCU/BMU升级执行结果
+ * @param {Object} data - 解析后的数据对象（从parseBcuBmuUpgradeResultRAW返回的data字段）
+ * @returns {Object|null} 结构化的升级结果对象
+ */
+function parseBcuBmuUpgradeResult(data) {
+  // data已经是从parseBcuBmuUpgradeResultRAW返回的完整对象
+  // 直接返回，保持所有字段
+  if (!data || data.error) {
+    return null
+  }
+
+  // 将"未知"或"未知值(0x...)"替换为"--"
+  const replaceUnknown = (value) => {
+    if (typeof value === 'string' && (value === '未知' || value.includes('未知值'))) {
+      return '--'
+    }
+    return value || '--'
+  }
+
+  return {
+    deviceType: replaceUnknown(data.deviceType),
+    deviceTypeRaw: data.deviceTypeRaw,
+    downloadCompleteFlag: replaceUnknown(data.downloadCompleteFlag),
+    downloadCompleteFlagRaw: data.downloadCompleteFlagRaw,
+    completionType: replaceUnknown(data.completionType),
+    completionTypeRaw: data.completionTypeRaw,
+    otaErrorCode: replaceUnknown(data.otaErrorCode),
+    otaErrorCodeRaw: data.otaErrorCodeRaw,
+    bcuFaultCode: replaceUnknown(data.bcuFaultCode),
+    bcuFaultCodeRaw: data.bcuFaultCodeRaw,
+    bmuFaultCode: replaceUnknown(data.bmuFaultCode),
+    bmuFaultCodeRaw: data.bmuFaultCodeRaw,
+    bmuFailedDevices: data.bmuFailedDevices || [],
+    bmuFailedDevicesRaw: data.bmuFailedDevicesRaw,
+    totalPackets: data.totalPackets || 0,
+    totalPacketsRaw: data.totalPacketsRaw,
+    // currentPacket从0-based转换为1-based（协议中序号从0开始，显示时从1开始）
+    currentPacket: ((data.currentPacket || 0) + 1),
+    currentPacketRaw: data.currentPacketRaw,
+    timestamp: new Date()  // 添加时间戳
+  }
+}
+
 
 /**
  * 获取选中的复选框数量
@@ -1105,6 +1186,228 @@ function stopFeedbackPolling() {
 }
 
 /**
+ * 执行BAU升级结果查询（堆级查询，没有簇号）
+ * @param {number} blockId - 堆号
+ */
+async function executeBauUpgradeResultQuery(blockId) {
+  try {
+    const config = getCommandConfig('get_bau_upgrade_result')
+    if (!config || !config.isPollingCommand) {
+      return
+    }
+
+    if (!blockId || blockId <= 0) {
+      return
+    }
+
+    // BAU升级是堆级topic，没有簇号
+    const topic = `bms/host/s2d/b${blockId}/${config.topic}`
+
+    // 数据序列化 - 发送0xFF
+    const payload = 'ff'
+
+    // 发送MQTT消息
+    await window.electronAPI.mqttPublish(topic, payload)
+  } catch (error) {
+    console.error(`[BAU升级结果查询] 查询命令执行失败:`, error)
+  }
+}
+
+/**
+ * 执行升级结果查询（独立函数，不与其他轮询混合）
+ * @param {string} targetDevice - 目标设备（格式：'1-1'）
+ */
+async function executeUpgradeResultQuery(targetDevice) {
+  try {
+    const config = getCommandConfig('get_bcu_bmu_upgrade_result')
+    if (!config || !config.isPollingCommand) {
+      return
+    }
+
+    if (!targetDevice) {
+      return
+    }
+
+    // 解析目标设备
+    const [blockId, clusterId] = targetDevice.split('-').map(Number)
+    const topic = `bms/host/s2d/b${blockId}/c${clusterId}/${config.topic}`
+
+    // 数据序列化 - 发送0xFF
+    const payload = 'ff'
+
+    // 发送MQTT消息
+    await window.electronAPI.mqttPublish(topic, payload)
+  } catch (error) {
+    console.error(`[升级结果查询] 查询命令执行失败:`, error)
+  }
+}
+
+/**
+ * 启动升级结果独立轮询
+ * @param {function} getTargetDevice - 获取目标设备的函数
+ */
+function startUpgradeResultPolling(getTargetDevice) {
+  if (upgradeResultPollingActive.value) {
+    console.log('[升级结果查询] 定时查询已在运行中')
+    return
+  }
+
+  upgradeResultPollingActive.value = true
+
+  // 立即执行一次查询
+  const targetDevice = getTargetDevice()
+  executeUpgradeResultQuery(targetDevice)
+
+  // 启动定时器，每1秒查询一次
+  upgradeResultPollingTimer = setInterval(() => {
+    const currentTarget = getTargetDevice()
+    executeUpgradeResultQuery(currentTarget)
+  }, 1000)
+
+  console.log(`[升级结果查询] 独立轮询已启动，间隔1秒`)
+}
+
+/**
+ * 停止升级结果独立轮询
+ */
+function stopUpgradeResultPolling() {
+  if (!upgradeResultPollingActive.value) {
+    return
+  }
+
+  upgradeResultPollingActive.value = false
+
+  if (upgradeResultPollingTimer) {
+    clearInterval(upgradeResultPollingTimer)
+    upgradeResultPollingTimer = null
+  }
+
+  console.log('[升级结果查询] 独立轮询已停止')
+}
+
+/**
+ * 启动BAU升级结果独立轮询
+ * @param {function} getBlockId - 获取堆号的函数
+ */
+function startBauUpgradeResultPolling(getBlockId) {
+  if (bauUpgradeResultPollingActive.value) {
+    console.log('[BAU升级结果查询] 定时查询已在运行中')
+    return
+  }
+
+  bauUpgradeResultPollingActive.value = true
+
+  // 立即执行一次查询
+  const blockId = getBlockId()
+  executeBauUpgradeResultQuery(blockId)
+
+  // 启动定时器，每1秒查询一次
+  bauUpgradeResultPollingTimer = setInterval(() => {
+    const currentBlockId = getBlockId()
+    executeBauUpgradeResultQuery(currentBlockId)
+  }, 1000)
+
+  console.log(`[BAU升级结果查询] 独立轮询已启动，间隔1秒`)
+}
+
+/**
+ * 停止BAU升级结果独立轮询
+ */
+function stopBauUpgradeResultPolling() {
+  if (!bauUpgradeResultPollingActive.value) {
+    return
+  }
+
+  bauUpgradeResultPollingActive.value = false
+
+  if (bauUpgradeResultPollingTimer) {
+    clearInterval(bauUpgradeResultPollingTimer)
+    bauUpgradeResultPollingTimer = null
+  }
+
+  console.log('[BAU升级结果查询] 独立轮询已停止')
+}
+
+// BCU/BMU升级结果多簇轮询状态
+const bcuBmuUpgradeResultPollingActive = ref(false)
+let bcuBmuUpgradeResultPollingTimer = null
+
+/**
+ * 执行单个簇的BCU/BMU升级结果查询
+ * @param {string} clusterKey - 簇键值，格式 '1-1'
+ */
+async function executeBcuBmuUpgradeResultQuery(clusterKey) {
+  try {
+    const config = getCommandConfig('get_bcu_bmu_upgrade_result')
+    if (!config || !config.isPollingCommand) {
+      return
+    }
+    
+    if (!clusterKey) {
+      return
+    }
+    
+    const [blockId, clusterId] = clusterKey.split('-').map(Number)
+    const topic = `bms/host/s2d/b${blockId}/c${clusterId}/${config.topic}`
+    const payload = 'ff'
+    
+    await window.electronAPI.mqttPublish(topic, payload)
+  } catch (error) {
+    console.error(`[BCU/BMU升级结果查询] 查询失败 ${clusterKey}:`, error)
+  }
+}
+
+/**
+ * 启动BCU/BMU升级结果多簇轮询
+ * @param {Array<string>} clusterKeys - 簇键列表，格式 ['1-1', '1-2', ...]
+ */
+function startBcuBmuUpgradeResultPolling(clusterKeys) {
+  if (bcuBmuUpgradeResultPollingActive.value) {
+    console.log('[BCU/BMU升级结果查询] 定时查询已在运行中')
+    return
+  }
+  
+  if (!clusterKeys || clusterKeys.length === 0) {
+    console.warn('[BCU/BMU升级结果查询] 簇列表为空，无法启动轮询')
+    return
+  }
+  
+  bcuBmuUpgradeResultPollingActive.value = true
+  
+  // 立即执行一次批量查询
+  clusterKeys.forEach(clusterKey => {
+    executeBcuBmuUpgradeResultQuery(clusterKey)
+  })
+  
+  // 启动定时器，每1秒批量查询一次
+  bcuBmuUpgradeResultPollingTimer = setInterval(() => {
+    clusterKeys.forEach(clusterKey => {
+      executeBcuBmuUpgradeResultQuery(clusterKey)
+    })
+  }, 1000)
+  
+  console.log(`[BCU/BMU升级结果查询] 多簇轮询已启动，簇数: ${clusterKeys.length}，间隔1秒`)
+}
+
+/**
+ * 停止BCU/BMU升级结果多簇轮询
+ */
+function stopBcuBmuUpgradeResultPolling() {
+  if (!bcuBmuUpgradeResultPollingActive.value) {
+    return
+  }
+  
+  bcuBmuUpgradeResultPollingActive.value = false
+  
+  if (bcuBmuUpgradeResultPollingTimer) {
+    clearInterval(bcuBmuUpgradeResultPollingTimer)
+    bcuBmuUpgradeResultPollingTimer = null
+  }
+  
+  console.log('[BCU/BMU升级结果查询] 多簇轮询已停止')
+}
+
+/**
  * 处理反馈查询的应答数据
  * @param {string} commandId - 命令ID
  * @param {Object} responseData - 应答数据
@@ -1139,6 +1442,47 @@ function handleFeedbackQueryResponse(commandId, responseData) {
         // console.log(`[反馈查询] 堆接触器执行策略结果 - 原始数据值: ${dataValue} (类型: ${typeof dataValue})`)
         feedbackStatus.batt_stack_ctrl_switch_result = parseBattStackCtrlSwitchResult(dataValue)
         // console.log(`[反馈查询] 堆接触器执行策略结果: ${feedbackStatus.batt_stack_ctrl_switch_result} (原始值: ${dataValue})`)
+        break
+
+      case 'get_bcu_bmu_upgrade_result':
+        // 特殊处理：get_bcu_bmu_upgrade_result 返回的是对象，不是简单数值
+        // 从MQTT响应Topic中解析 blockId 和 clusterId
+        const topic = responseData.topic || ''
+        const topicMatch = topic.match(/b(\d+)\/c(\d+)\//)
+        let blockId, clusterId
+        
+        if (topicMatch) {
+          blockId = parseInt(topicMatch[1])
+          clusterId = parseInt(topicMatch[2])
+        } else {
+          // 如果从topic解析失败，尝试从responseData中获取（如果MQTT解析器已包含）
+          blockId = responseData.blockId
+          clusterId = responseData.clusterId
+        }
+        
+        if (blockId && clusterId) {
+          const clusterKey = `${blockId}-${clusterId}`
+          
+          if (responseData.data && typeof responseData.data === 'object' && !responseData.error) {
+            feedbackStatus.bcu_bmu_upgrade_result.set(
+              clusterKey,
+              parseBcuBmuUpgradeResult(responseData.data)
+            )
+          } else {
+            feedbackStatus.bcu_bmu_upgrade_result.delete(clusterKey)
+          }
+        } else {
+          console.warn(`[反馈查询] get_bcu_bmu_upgrade_result 无法解析 blockId 和 clusterId，topic: ${topic}`)
+        }
+        break
+
+      case 'get_bau_upgrade_result':
+        // 特殊处理：get_bau_upgrade_result 返回的是对象，不是简单数值
+        if (responseData.data && typeof responseData.data === 'object' && !responseData.error) {
+          feedbackStatus.bau_upgrade_result = parseBauUpgradeResult(responseData.data)
+        } else {
+          feedbackStatus.bau_upgrade_result = null
+        }
         break
 
       default:
@@ -1407,7 +1751,19 @@ export function useRemoteCommand(options = {}) {
     stopFeedbackPolling,
     handleFeedbackQueryResponse,
     startRemoteCommandListeners,
-    stopRemoteCommandListeners
+    stopRemoteCommandListeners,
+    // 升级结果独立轮询（新增）
+    startUpgradeResultPolling,
+    stopUpgradeResultPolling,
+    upgradeResultPollingActive,
+    // BAU升级结果独立轮询（新增）
+    startBauUpgradeResultPolling,
+    stopBauUpgradeResultPolling,
+    bauUpgradeResultPollingActive,
+    // BCU/BMU升级结果多簇轮询（新增）
+    startBcuBmuUpgradeResultPolling,
+    stopBcuBmuUpgradeResultPolling,
+    bcuBmuUpgradeResultPollingActive
   }
 }
 

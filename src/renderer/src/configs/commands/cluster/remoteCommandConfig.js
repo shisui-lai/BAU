@@ -386,6 +386,25 @@ export const REMOTE_COMMANDS = {
     confirmRequired: false,
     value: 0xFF,
     isPollingCommand: true // 标记为轮询命令
+  },
+
+  get_bcu_bmu_upgrade_result: {
+    name: '查询BCU/BMU升级执行结果',
+    topic: 'get_bcu_bmu_upgrade_result',
+    dataType: 'u8',
+    type: 'query',
+    confirmRequired: false,
+    value: 0xFF,
+    isPollingCommand: true // 标记为轮询命令
+  },
+  get_bau_upgrade_result: {
+    name: '查询BAU升级执行结果',
+    topic: 'get_bau_upgrade_result',
+    dataType: 'u8',
+    type: 'query',
+    confirmRequired: false,
+    value: 0xFF,
+    isPollingCommand: true // 标记为轮询命令
   }
 }
 

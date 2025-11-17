@@ -52,8 +52,8 @@ const bmuResultFields = computed(() => [
 ])
 
 // 状态管理
-const bcuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 30, queryTimer: null })
-const bmuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 30, queryTimer: null })
+const bcuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 60, queryTimer: null })
+const bmuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 60, queryTimer: null })
 const bcuResult = ref(null)
 // BMU结果改为数组，支持多个簇的结果显示
 const bmuResults = ref([])

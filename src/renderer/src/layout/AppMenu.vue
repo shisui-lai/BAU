@@ -44,7 +44,7 @@ const rawMenuItems = ref([
       { labelKey: 'menu.clusterVersion', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
       { labelKey: 'menu.disconnection', icon: 'pi pi-link', route: '/Cluster/Brokenwire', roles: ['admin', 'guest'] },
       { labelKey: 'menu.faultOverview', icon: 'pi pi-eye', route: '/FaultOverview', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.didoStatus', icon: 'pi pi-th-large', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
+      { labelKey: 'menu.didoStatus', icon: 'pi pi-table', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
     ]
   },
   {
@@ -57,7 +57,7 @@ const rawMenuItems = ref([
       { labelKey: 'menu.clusterConfigParam', icon: 'pi pi-sliders-h', route: '/Cluster/BaseParam', roles: ['admin'] },
       { labelKey: 'menu.clusterAlarmThreshold', icon: 'pi pi-bell', route: '/Cluster/AlarmThreshold', roles: ['admin'] },
       { labelKey: 'menu.soxParam', icon: 'pi pi-chart-line', route: '/Cluster/SOXParam', roles: ['admin'] },
-      { labelKey: 'menu.analogCalibration', icon: 'pi pi-wrench', route: '/Cluster/IvCalibration', roles: ['admin'] }
+      { labelKey: 'menu.analogCalibration', icon: 'pi pi-wrench', route: '/Cluster/IvCalibration', roles: ['admin'] },
     ]
   },
   {
@@ -69,7 +69,9 @@ const rawMenuItems = ref([
     items: [
       { labelKey: 'menu.commandIssue', icon: 'pi pi-send', route: '/Cluster/Order', roles: ['admin'] },
       { labelKey: 'menu.deviceUpgrade', icon: 'pi pi-download', route: '/Bau/upgrade', roles: ['admin'] },
-      { labelKey: 'menu.addressAdaptive', icon: 'pi pi-sitemap', route: '/Bau/address-adaptive', roles: ['admin'] }
+      { labelKey: 'menu.forceUpgrade', icon: 'pi pi-upload', route: '/Bau/force-upgrade', roles: ['admin'] },
+      { labelKey: 'menu.addressAdaptive', icon: 'pi pi-sitemap', route: '/Bau/address-adaptive', roles: ['admin'] },
+      { labelKey: 'menu.eventTime', icon: 'pi pi-clock', route: '/Bau/eventRecord/event', roles: ['admin'] }
     ]
   },
   {

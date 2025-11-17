@@ -424,16 +424,15 @@ function handleDeviceManagementWriteEvent(event, mqttMessage) {
   }
   handleParameterWriteResponse(parsed)
   
-  // 【新增】检查是否是堆系统基本配置的成功写入，如果是则触发系统配置重新读取
-  const isSuccess = mqttMessage.data?.success || 
-                   mqttMessage.result?.success || 
-                   mqttMessage.success || 
-                   (mqttMessage.data?.code === 224)  // 成功状态码
+  // 检查是否是堆系统基本配置的成功写入，如果是则触发系统配置重新读取
+  // parsed 是 parseBlockCommonParamWriteResponse 解析后的结果，结构为 { result: { success: boolean } }
+  const isSuccess = parsed?.result?.success === true || 
+                   (mqttMessage.data?.code === 0xE0) ||  // 成功状态码 0xE0 (224)
+                   (mqttMessage.data?.code === 224)
   
   if (isSuccess) {
-    console.log('🔄 [配置下发] 堆系统基本配置下发成功，触发重新读取')
-    // 调用 useSystemConfig 的重新读取方法
-    triggerConfigReload()
+    // 调用 useSystemConfig 的重新读取方法（延迟1.5秒，等待设备处理完成）
+    triggerConfigReload(1500)
   }
 }
 

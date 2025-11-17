@@ -1,5 +1,5 @@
 import { app, Menu, shell, BrowserWindow, ipcMain, dialog, screen, session, powerMonitor } from 'electron'
-import { join } from 'path'
+import { join, parse } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 const { fork } = require('child_process')
@@ -14,12 +14,26 @@ import {
   handleSetIpWithInterface,
   handleSetMqttWithInterface,
   handleResetDefaultWithInterface,
-  handleResetDeviceWithInterface
+  handleResetDeviceWithInterface,
+  handleForceUpgradeWithInterface,
+  // TFTP和强制升级相关处理器
+  startTftpServer,
+  stopTftpServer,
+  getTftpStatus,
+  setTftpRoot,
+  getTftpRoot,
+  getTftpDefaultIp,
+  startForceUpgrade,
+  stopForceUpgrade,
+  getForceUpgradeStatus
 } from './handlers/bauAddressHandler.js'//地址探测
 
 let mainWindow
 let quitting = false;
 import forkPath1 from './mqtt.js?modulePath'
+
+// 默认导出目录
+let DEFAULT_EXPORT_DIR = join(process.cwd(), 'EventExports')
 
 // MQTT子进程将在createWindow函数中通过进程管理器启动
 console.log('[Main] 准备使用进程管理器管理MQTT子进程...')
@@ -47,6 +61,15 @@ ipcMain.handle('show-open-dialog', async () => {
   return { canceled: true }
 })
 
+// Dialog API - 通用对话框接口
+ipcMain.handle('dialog:showOpenDialog', async (event, options = {}) => {
+  const result = await dialog.showOpenDialog(mainWindow || BrowserWindow.getFocusedWindow(), {
+    ...options,
+    properties: options.properties || ['openFile']
+  })
+  return result
+})
+
 // 升级功能已简化，复用现有的mqttPublish接口，无需专门的IPC处理器
 
 // IPC 通道：前端调用获取当前语言
@@ -63,8 +86,8 @@ ipcMain.handle('set-locale', (_event, locale) => {
 import * as ftpServerModule from './ftpServer.js'
 
 
-// ==================== 崩溃错误捕获 ====================
-// 捕获未捕获的异常
+// ==================== 崩溃错误捕获系统 ====================
+// 捕获主进程未捕获的异常
 process.on('uncaughtException', (err) => {
   // 静默处理某些已知的无害错误
   if (err?.message?.includes('Object has been destroyed')) {
@@ -86,7 +109,7 @@ process.on('uncaughtException', (err) => {
   }
 })
 
-// 捕获未处理的Promise拒绝
+// 捕获主进程未处理的Promise拒绝
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[UNHANDLED REJECTION] 捕获到未处理的Promise拒绝:', reason)
 
@@ -105,7 +128,165 @@ process.on('warning', (warning) => {
   console.warn('[PROCESS WARNING]', warning.name, warning.message)
   console.warn('[PROCESS WARNING] Stack:', warning.stack)
 })
-// ======================================================
+
+// 捕获渲染进程崩溃（最常见的闪退原因！）
+app.on('render-process-gone', (event, webContents, details) => {
+  console.error('[RENDER PROCESS GONE] 渲染进程崩溃!', details)
+  
+  const error = new Error(`渲染进程崩溃: ${details.reason}`)
+  error.exitCode = details.exitCode
+  error.reason = details.reason
+  
+  crashLogger.logCrash(error, 'render-process-gone')
+  
+  // 如果是主窗口崩溃，尝试重新加载
+  if (mainWindow && webContents === mainWindow.webContents) {
+    console.error('[RENDER PROCESS GONE] 主窗口崩溃，尝试重新加载...')
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.reload()
+      }
+    }, 1000)
+  }
+})
+
+// 捕获子进程崩溃（包括GPU进程等）
+app.on('child-process-gone', (event, details) => {
+  console.error('[CHILD PROCESS GONE] 子进程崩溃!', details)
+  
+  const error = new Error(`子进程崩溃: ${details.type} - ${details.reason}`)
+  error.exitCode = details.exitCode
+  error.reason = details.reason
+  error.processType = details.type
+  error.serviceName = details.serviceName || 'unknown'
+  
+  crashLogger.logCrash(error, 'child-process-gone')
+  
+  // GPU进程崩溃时的特殊处理
+  if (details.type === 'GPU') {
+    console.error('[CHILD PROCESS GONE] GPU进程崩溃，可能需要禁用硬件加速')
+  }
+})
+
+// ==================== Windows系统级别终止信号监听 ====================
+// 捕获Windows系统强制终止应用的情况
+// 这些信号可能来自：任务管理器、系统关机、资源不足、防病毒软件等
+
+// SIGTERM - 系统请求终止（最常见）
+process.on('SIGTERM', () => {
+  console.error('[SIGTERM] 收到系统终止信号！应用即将被强制关闭')
+  
+  const error = new Error('应用被系统强制终止 (SIGTERM)')
+  error.signal = 'SIGTERM'
+  error.source = 'Windows系统或任务管理器'
+  
+  // 使用同步方式立即记录日志，因为进程即将被强制终止
+  crashLogger.logCrash(error, 'system-sigterm')
+  
+  // 尝试清理资源
+  crashLogger.stopResourceMonitoring()
+  
+  console.error('[SIGTERM] 日志已记录，进程即将退出')
+  process.exit(0)
+})
+
+// SIGINT - 中断信号（Ctrl+C，或系统中断）
+process.on('SIGINT', () => {
+  console.error('[SIGINT] 收到中断信号！')
+  
+  const error = new Error('应用被中断 (SIGINT)')
+  error.signal = 'SIGINT'
+  error.source = 'Ctrl+C或系统中断'
+  
+  crashLogger.logCrash(error, 'system-sigint')
+  crashLogger.stopResourceMonitoring()
+  
+  console.error('[SIGINT] 日志已记录，进程即将退出')
+  process.exit(0)
+})
+
+// SIGBREAK - Windows特有的中断信号（Ctrl+Break）
+if (process.platform === 'win32') {
+  process.on('SIGBREAK', () => {
+    console.error('[SIGBREAK] 收到Windows中断信号！')
+    
+    const error = new Error('应用被中断 (SIGBREAK - Windows)')
+    error.signal = 'SIGBREAK'
+    error.source = 'Windows Ctrl+Break'
+    
+    crashLogger.logCrash(error, 'system-sigbreak')
+    crashLogger.stopResourceMonitoring()
+    
+    console.error('[SIGBREAK] 日志已记录，进程即将退出')
+    process.exit(0)
+  })
+}
+
+// SIGHUP - 挂起信号（终端关闭、SSH断开等）
+process.on('SIGHUP', () => {
+  console.error('[SIGHUP] 收到挂起信号！')
+  
+  const error = new Error('应用收到挂起信号 (SIGHUP)')
+  error.signal = 'SIGHUP'
+  error.source = '终端关闭或连接断开'
+  
+  crashLogger.logCrash(error, 'system-sighup')
+  crashLogger.stopResourceMonitoring()
+  
+  console.error('[SIGHUP] 日志已记录，进程即将退出')
+  process.exit(0)
+})
+
+// 监听系统电源事件（休眠、睡眠、关机等）
+powerMonitor.on('shutdown', (e) => {
+  console.error('[POWER] 系统正在关机！')
+  
+  // 阻止立即关机，给我们时间记录日志
+  e.preventDefault()
+  
+  const error = new Error('系统关机导致应用终止')
+  error.signal = 'shutdown'
+  error.source = 'Windows系统关机'
+  
+  // 同步记录日志
+  crashLogger.logCrash(error, 'system-shutdown')
+  crashLogger.stopResourceMonitoring()
+  
+  console.error('[POWER] 关机日志已记录')
+  
+  // 立即退出，让系统继续关机流程
+  setTimeout(() => {
+    app.exit(0)
+  }, 100)
+})
+
+// 监听系统休眠/睡眠
+powerMonitor.on('suspend', () => {
+  console.warn('[POWER] 系统正在进入休眠/睡眠状态')
+  
+  const error = new Error('系统休眠前记录状态')
+  error.signal = 'suspend'
+  error.source = 'Windows系统休眠/睡眠'
+  
+  // 记录休眠前的状态（不退出应用）
+  crashLogger.logCrash(error, 'system-suspend')
+})
+
+// 监听系统从休眠/睡眠恢复
+powerMonitor.on('resume', () => {
+  console.log('[POWER] 系统已从休眠/睡眠恢复')
+})
+
+// 监听系统锁定（用户注销/锁屏）
+powerMonitor.on('lock-screen', () => {
+  console.log('[POWER] 系统已锁定（用户锁屏/注销）')
+})
+
+// 监听系统解锁
+powerMonitor.on('unlock-screen', () => {
+  console.log('[POWER] 系统已解锁')
+})
+// ====================================================================
 
 // ------------ 多语言偏好存储 ------------
 let store
@@ -115,11 +296,23 @@ async function initStore() {
   store = new Store({ defaults: { locale: 'zh' } })
 }
 
-
-process.on('uncaughtException', (err) => {
-  if (err?.message?.includes('Object has been destroyed')) return; // 静默
-  console.error('[UNCAUGHT]', err);
-});
+// ==================== 硬件加速优化（Linux环境） ====================
+// 在Linux环境下启用GPU硬件加速的命令行参数
+if (process.platform === 'linux') {
+  // 启用GPU光栅化
+  app.commandLine.appendSwitch('enable-gpu-rasterization')
+  // 启用零拷贝（减少CPU-GPU数据传输开销）
+  app.commandLine.appendSwitch('enable-zero-copy')
+  // 使用原生GPU内存缓冲区
+  app.commandLine.appendSwitch('enable-native-gpu-memory-buffers')
+  // 忽略GPU黑名单（某些GPU可能被默认禁用）
+  app.commandLine.appendSwitch('ignore-gpu-blacklist')
+  // 启用GPU合成（提升渲染性能）
+  app.commandLine.appendSwitch('enable-gpu-compositing')
+  
+  console.log('[Main] Linux环境：已启用GPU硬件加速优化')
+}
+// ======================================================================
 
 // app.whenReady().then(() => {
 //   session.defaultSession.loadExtension(devtoolsPath, { allowFileAccess: true })
@@ -153,7 +346,9 @@ function createWindow() {
       sandbox: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      nodeIntegration: false
+      nodeIntegration: false,
+      // 明确启用硬件加速（默认为true，但显式声明更清晰）
+      hardwareAcceleration: true
     }
   })
   mainWindow.on('close', (event) => {
@@ -182,11 +377,58 @@ function createWindow() {
       app.quit()
     }
   })
+
+  // ==================== 窗口级别的崩溃监听 ====================
+  // 监听窗口无响应事件（渲染进程卡死）
+  mainWindow.on('unresponsive', () => {
+    console.error('[WINDOW UNRESPONSIVE] 主窗口无响应')
+    
+    const error = new Error('主窗口无响应（渲染进程可能卡死）')
+    crashLogger.logCrash(error, 'window-unresponsive')
+    
+    // 显示对话框询问用户是否等待或重启
+    const result = dialog.showMessageBoxSync(mainWindow, {
+      type: 'warning',
+      buttons: ['等待', '重新加载', '退出'],
+      title: '窗口无响应',
+      message: '应用程序无响应',
+      detail: '渲染进程可能已卡死，您可以选择等待、重新加载或退出应用。',
+      defaultId: 0,
+      cancelId: 0
+    })
+    
+    if (result === 1) {
+      // 重新加载
+      console.log('[WINDOW UNRESPONSIVE] 用户选择重新加载窗口')
+      mainWindow.reload()
+    } else if (result === 2) {
+      // 退出应用
+      console.log('[WINDOW UNRESPONSIVE] 用户选择退出应用')
+      app.exit(0)
+    }
+  })
+
+  // 监听窗口恢复响应事件
+  mainWindow.on('responsive', () => {
+    console.log('[WINDOW RESPONSIVE] 主窗口已恢复响应')
+  })
+
+  // 监听渲染进程崩溃（已废弃，但保留以兼容旧版本Electron）
+  mainWindow.webContents.on('crashed', (event, killed) => {
+    console.error('[WEBCONTENTS CRASHED] 渲染进程崩溃（已废弃的事件）', { killed })
+  })
+
+  // 监听渲染进程销毁事件
+  mainWindow.webContents.on('destroyed', () => {
+    console.warn('[WEBCONTENTS DESTROYED] 渲染进程已销毁')
+  })
+  // =======================================================
+  
   // 打开开发者工具
-  mainWindow.webContents.openDevTools()
+ /*  mainWindow.webContents.openDevTools() */
 
   // 在开发环境中安装Vue DevTools
-  if (is.dev) {
+/*   if (is.dev) {
     try {
       const installExtension = require('electron-devtools-installer').default
       const { VUEJS3_DEVTOOLS } = require('electron-devtools-installer')
@@ -197,7 +439,7 @@ function createWindow() {
     } catch (error) {
       console.log('[Main] Vue DevTools模块未找到，跳过安装:', error.message)
     }
-  }
+  } */
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.maximize()
@@ -328,6 +570,45 @@ function createWindow() {
         pendingSetImmediateCount++
         setImmediate(() => {
           mainWindow.webContents.send('data-rate-update', msg.data)
+          pendingSetImmediateCount--
+        })
+        return
+      }
+
+      // ========== 事件记录导出相关消息处理 ==========
+      if (msg.type === 'readEventProgress') {
+        pendingSetImmediateCount++
+        setImmediate(() => {
+          mainWindow.webContents.send('update-readEventProgress', msg.data)
+          pendingSetImmediateCount--
+        })
+        return
+      }
+
+      if (msg.type === 'readEventCompleted') {
+        pendingSetImmediateCount++
+        setImmediate(() => {
+          // 传递saveDir和data对象（保持blockId格式）
+          mainWindow.webContents.send('export-completed', msg.data)
+          pendingSetImmediateCount--
+        })
+        return
+      }
+
+      if (msg.type === 'readEventError') {
+        pendingSetImmediateCount++
+        setImmediate(() => {
+          mainWindow.webContents.send('readEventErrorFromMain', msg.data)
+          pendingSetImmediateCount--
+        })
+        return
+      }
+
+      if (msg.type === 'readEventCanceled') {
+        pendingSetImmediateCount++
+        setImmediate(() => {
+          // 转发取消通知到渲染进程
+          mainWindow.webContents.send('export-canceled', msg.data)
           pendingSetImmediateCount--
         })
         return
@@ -515,6 +796,97 @@ function createWindow() {
       return processManager.getStats()
     })
 
+    // ========== 事件记录导出相关IPC处理 ==========
+    
+    // 启动事件记录导出
+    ipcMain.on('start-reading-data-event', (event, { offsetRead, totalRead, blockId }) => {
+      const mqttTask = processManager.getMQTTTask()
+      if (!mqttTask || mqttTask.killed) {
+        mainWindow.webContents.send('readEventErrorFromMain', {
+          blockId,
+          error: 'MQTT进程未运行'
+        })
+        return
+      }
+
+      // 使用默认目录
+      const saveDir = DEFAULT_EXPORT_DIR
+      console.log(`[Main] 使用默认导出目录: ${saveDir}`)
+      
+      // 通知渲染进程：导出开始，显示目录
+      event.sender.send('export-started', saveDir)
+
+      mqttTask.send({
+        cmd: 'START_READ_EVENT',
+        offsetRead,
+        totalRead,
+        blockId,
+        exportDir: saveDir
+      })
+    })
+
+    // 取消事件记录导出
+    ipcMain.on('cancel-export-event', (event, { blockId }) => {
+      const mqttTask = processManager.getMQTTTask()
+      if (mqttTask && !mqttTask.killed) {
+        mqttTask.send({
+          cmd: 'CANCEL_READ_EVENT',
+          blockId
+        })
+      }
+    })
+
+    // ========== 导出目录管理 ==========
+    
+    // 获取默认导出目录
+    ipcMain.handle('get-default-export-dir', () => {
+      return DEFAULT_EXPORT_DIR
+    })
+
+    // 选择默认导出目录
+    ipcMain.handle('choose-default-export-dir', async () => {
+      const { canceled, filePaths } = await dialog.showOpenDialog({
+        properties: ['openDirectory'],
+        defaultPath: DEFAULT_EXPORT_DIR
+      })
+      if (!canceled && filePaths && filePaths.length > 0) {
+        DEFAULT_EXPORT_DIR = filePaths[0]
+        // 创建目录（如果不是根目录）
+        const isRoot = parse(DEFAULT_EXPORT_DIR).root === DEFAULT_EXPORT_DIR
+        if (!isRoot) {
+          try {
+            const fs = require('fs')
+            fs.mkdirSync(DEFAULT_EXPORT_DIR, { recursive: true })
+          } catch (err) {
+            console.error(`创建导出目录 "${DEFAULT_EXPORT_DIR}" 失败：`, err)
+            if (err.code !== 'EPERM') {
+              throw err
+            }
+          }
+        }
+        return DEFAULT_EXPORT_DIR
+      }
+      return null
+    })
+
+    // 设置默认导出目录
+    ipcMain.on('set-default-export-dir', (event, dir) => {
+      DEFAULT_EXPORT_DIR = dir
+      const isRoot = parse(dir).root === dir
+      if (!isRoot) {
+        try {
+          const fs = require('fs')
+          fs.mkdirSync(DEFAULT_EXPORT_DIR, { recursive: true })
+        } catch (err) {
+          console.error(`创建导出目录 "${DEFAULT_EXPORT_DIR}" 失败：`, err)
+          if (err.code !== 'EPERM') {
+            throw err
+          }
+        }
+      }
+      event.sender.send('export-dir-updated', DEFAULT_EXPORT_DIR)
+    })
+
 }
 
 
@@ -602,8 +974,92 @@ ipcMain.handle('bau-query-ip-with-interface', handleQueryIpWithInterface)
 ipcMain.handle('bau-query-mqtt-with-interface', handleQueryMqttWithInterface)
 ipcMain.handle('bau-set-ip-with-interface', handleSetIpWithInterface)
 ipcMain.handle('bau-set-mqtt-with-interface', handleSetMqttWithInterface)
+ipcMain.handle('bau-force-upgrade-with-interface', handleForceUpgradeWithInterface)
 ipcMain.handle('bau-reset-default-with-interface', handleResetDefaultWithInterface)
 ipcMain.handle('bau-reset-device-with-interface', handleResetDeviceWithInterface)
+
+// TFTP服务器相关IPC事件注册
+ipcMain.handle('tftp-start', async (_, { host, port }) => {
+  return await startTftpServer(host, port)
+})
+
+ipcMain.handle('tftp-stop', async () => {
+  return await stopTftpServer()
+})
+
+ipcMain.handle('tftp-status', () => {
+  return getTftpStatus()
+})
+
+ipcMain.handle('get-tftp-root', () => {
+  return getTftpRoot()
+})
+
+ipcMain.handle('get-tftp-default-ip', () => {
+  return getTftpDefaultIp()
+})
+
+ipcMain.on('set-tftp-root', (event, dir) => {
+  setTftpRoot(dir)
+})
+
+// TFTP升级文件选择（使用dialog选择文件）
+// 参考reference项目：直接在IPC处理器中处理所有逻辑，返回标准格式
+ipcMain.handle('select-tftp-upgrade-file', async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    title: '选择TFTP升级文件',
+    defaultPath: getTftpRoot(),
+    properties: ['openFile'],
+    filters: [
+      { name: '升级文件', extensions: ['pkg', 'bin', 'hex', 'fw'] },
+      { name: '所有文件', extensions: ['*'] }
+    ]
+  })
+  
+  if (canceled || !filePaths.length) {
+    return { canceled: true }
+  }
+  
+  const fullPath = filePaths[0]
+  const path = require('path')
+  const fileName = path.basename(fullPath)
+  const fileDir = path.dirname(fullPath)
+  
+  try {
+    // 设置TFTP根目录为文件所在目录
+    setTftpRoot(fileDir)
+    
+    return {
+      canceled: false,
+      fullPath,
+      fileName,
+      fileDir,
+      success: true
+    }
+  } catch (error) {
+    return {
+      canceled: false,
+      fullPath,
+      fileName,
+      error: true,
+      message: `文件处理失败: ${error.message}`
+    }
+  }
+})
+
+// 强制升级相关IPC事件注册
+ipcMain.on('start-force-upgrade', (event, { interfaceAddress }) => {
+  startForceUpgrade(event, { interfaceAddress })
+})
+
+// 参考reference项目：不传递event，前端已经立即更新状态
+ipcMain.on('stop-force-upgrade', () => {
+  stopForceUpgrade()
+})
+
+ipcMain.handle('get-force-upgrade-status', () => {
+  return getForceUpgradeStatus()
+})
 
 
 // 系统资源和崩溃日志相关IPC事件注册

@@ -60,6 +60,9 @@ const THROTTLE_CONFIG = {
 
   const dataTableRef = ref(null)             // DataTable引用（保留用于其他可能的操作）
 
+  /* ────────── AFE配置缓存（用于检测配置变化）────────── */
+  const afeConfigCache = reactive({})        // 存储每个簇的AFE配置：clusterKey → { afeCellCounts, afeTempCounts, bmuTotal, afePerBmu }
+
   /* ────────── 内存缓存管理 ────────── */
   
   // 清空内存缓存
@@ -72,6 +75,88 @@ const THROTTLE_CONFIG = {
       console.log('[内存缓存清空完成]')
     } catch (error) {
       console.error('[内存缓存清空失败]', error)
+    }
+  }
+
+  /* ────────── AFE配置管理 ────────── */
+
+  /**
+   * 检查AFE配置是否发生变化
+   * @param {string} clusterKey - 簇标识，如 "1-1"
+   * @param {Object} newConfig - 新的配置对象 { afeCellCounts, afeTempCounts, bmuTotal, afePerBmu }
+   * @returns {boolean} 是否发生变化
+   */
+  function hasAfeConfigChanged(clusterKey, newConfig) {
+    const oldConfig = afeConfigCache[clusterKey]
+    if (!oldConfig) {
+      return true // 首次配置，认为有变化
+    }
+
+    // 比较关键配置参数
+    const { afeCellCounts, afeTempCounts, bmuTotal, afePerBmu } = newConfig
+    const {
+      afeCellCounts: oldAfeCellCounts,
+      afeTempCounts: oldAfeTempCounts,
+      bmuTotal: oldBmuTotal,
+      afePerBmu: oldAfePerBmu
+    } = oldConfig
+
+    // 比较基本参数
+    if (bmuTotal !== oldBmuTotal || afePerBmu !== oldAfePerBmu) {
+      return true
+    }
+
+    // 比较AFE电池数量数组
+    if (!afeCellCounts || !oldAfeCellCounts ||
+        afeCellCounts.length !== oldAfeCellCounts.length ||
+        !afeCellCounts.every((count, index) => count === oldAfeCellCounts[index])) {
+      return true
+    }
+
+    // 比较AFE温度数量数组
+    if (!afeTempCounts || !oldAfeTempCounts ||
+        afeTempCounts.length !== oldAfeTempCounts.length ||
+        !afeTempCounts.every((count, index) => count === oldAfeTempCounts[index])) {
+      return true
+    }
+
+    return false
+  }
+
+  /**
+   * 清理指定簇的矩阵缓存
+   * @param {string} clusterKey - 簇标识，如 "1-1"
+   * @param {string} reason - 清理原因（用于日志）
+   */
+  function clearClusterMatrixCache(clusterKey, reason = '配置变化') {
+    const MEASURE_TYPES = ['CELL_VOLT', 'CELL_TEMP', 'CELL_SOC', 'CELL_SOH']
+    let clearedCount = 0
+
+    MEASURE_TYPES.forEach(dataType => {
+      const map = clusterCache[dataType]
+      if (map instanceof Map && map.has(clusterKey)) {
+        map.delete(clusterKey)
+        clearedCount++
+      }
+    })
+
+    if (clearedCount > 0) {
+      console.log(`🧹 [矩阵缓存清理] 簇${clusterKey} 清理了${clearedCount}个数据类型的缓存 (原因: ${reason})`)
+    }
+  }
+
+  /**
+   * 更新AFE配置缓存
+   * @param {string} clusterKey - 簇标识
+   * @param {Object} config - 配置对象
+   */
+  function updateAfeConfigCache(clusterKey, config) {
+    afeConfigCache[clusterKey] = {
+      afeCellCounts: [...(config.afeCellCounts || [])],
+      afeTempCounts: [...(config.afeTempCounts || [])],
+      bmuTotal: config.bmuTotal,
+      afePerBmu: config.afePerBmu,
+      timestamp: Date.now()
     }
   }
 
@@ -361,7 +446,23 @@ watch(activeView, (newView, oldView) => {
     const clusterKey = `${msg.blockId}-${msg.clusterId}`
     const cfg = DATA_TYPE_MAP.value[msg.dataType]
 
-    /*  如果首见该簇 → 创建空矩阵 */
+    // 检查AFE配置是否发生变化
+    if (msg.baseConfig) {
+      const newConfig = {
+        afeCellCounts: msg.baseConfig.afeCellCounts,
+        afeTempCounts: msg.baseConfig.afeTempCounts,
+        bmuTotal: msg.baseConfig.bmuTotal,
+        afePerBmu: msg.baseConfig.afePerBmu
+      }
+
+      // 如果配置发生变化，清理该簇的所有矩阵缓存
+      if (hasAfeConfigChanged(clusterKey, newConfig)) {
+        clearClusterMatrixCache(clusterKey, 'AFE配置变化')
+        updateAfeConfigCache(clusterKey, newConfig)
+      }
+    }
+
+    /*  如果首见该簇或缓存已被清理 → 创建空矩阵 */
     if (!clusterCache[msg.dataType]) clusterCache[msg.dataType] = new Map()
     if (!clusterCache[msg.dataType].has(clusterKey)) {
       if (!msg.baseConfig) {
@@ -373,13 +474,13 @@ watch(activeView, (newView, oldView) => {
         ? msg.baseConfig.afeTempCounts
         : msg.baseConfig.afeCellCounts
 
-      const m = buildEmptyMatrix({                            // ➋ 新写法
+      const m = buildEmptyMatrix({
         bmuTotal     : msg.baseConfig.bmuTotal,
         afePerBmu    : msg.baseConfig.afePerBmu,
         afeCellCounts : counts
       })
       clusterCache[msg.dataType].set(clusterKey, m)
-      // console.log(`   创建空矩阵 rows=${m.length} for ${clusterKey} ${msg.dataType}`)
+      console.log(`🔧 [矩阵重建] 簇${clusterKey} ${msg.dataType} 创建新矩阵 ${m.length}行`)
     }
 
     /*  写入数据 */
@@ -421,7 +522,7 @@ watch(activeView, (newView, oldView) => {
       }
     }
 
-    // 【关键修复】比较选项，只有在真正变化时才更新，避免循环触发
+    // 比较选项，只有在真正变化时才更新，避免循环触发
     const currentValues = clusterOptions.value.map(o => o.value).sort().join(',')
     const newValues = opts.map(o => o.value).sort().join(',')
     
@@ -481,9 +582,6 @@ watch(activeView, (newView, oldView) => {
 
   const cellsPerAfe = computed(() => matrixRows.value[0]?.cells.length || 0)
 
-  // const maxCols = computed(() =>
-  //   Math.max(...matrixRows.value.map(r => r.cells.length), 0)
-  // )
   const maxCols = computed(() =>
     Math.max(...matrixRows.value.map(r => r.cells.length), 0)
   )

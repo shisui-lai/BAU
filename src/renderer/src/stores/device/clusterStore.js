@@ -231,28 +231,21 @@ export const useClusterStore = defineStore('cluster', () => {
    * @returns {string} 最佳堆簇键值
    */
   function findBestCluster(clusters) {
-    console.log('🎯 [智能选择] 开始智能选择，可用簇列表:', clusters)
-
     if (!clusters || clusters.length === 0) {
-      console.log('🎯 [智能选择] 没有可用的簇，返回null')
       return null
     }
 
     // 提取所有键值
     const clusterKeys = clusters.map(c => c.value || c)
-    console.log('🎯 [智能选择] 提取的簇键值:', clusterKeys)
 
     // 优先级1：查找 1-1
     if (clusterKeys.includes('1-1')) {
-      console.log('🎯 [智能选择] 找到1-1，优先选择')
       return '1-1'
     }
 
     // 优先级2：查找 1-x（堆1的其他簇）
     const block1Clusters = clusterKeys.filter(key => key.startsWith('1-')).sort()
-    console.log('🎯 [智能选择] 堆1的簇:', block1Clusters)
     if (block1Clusters.length > 0) {
-      console.log('🎯 [智能选择] 选择堆1的第一个簇:', block1Clusters[0])
       return block1Clusters[0]
     }
 
@@ -370,6 +363,18 @@ export const useClusterStore = defineStore('cluster', () => {
       return
     }
     
+    // 调试：检查输入数据
+    console.log(`[故障筛选] updateFaultOptions 被调用，故障数量: ${faultData.length}`)
+    if (faultData.length > 0) {
+      const firstFault = faultData[0]
+      console.log(`[故障筛选] 第一个故障的数据结构:`, {
+        hasCluster: !!firstFault.cluster,
+        clusterType: typeof firstFault.cluster,
+        clusterValue: firstFault.cluster,
+        clusterString: String(firstFault.cluster)
+      })
+    }
+    
     const blocks = new Set()
     const clusters = new Map()
     
@@ -407,7 +412,8 @@ export const useClusterStore = defineStore('cluster', () => {
     availableBlocks.value = Array.from(blocks)
       .sort((a, b) => a - b)
       .map(block => ({
-        value: block
+        value: block,
+        label: `堆${block}`  // 添加 label 字段供 MultiSelect 使用
       }))
     
     // 更新簇选项（故障专用）
@@ -418,10 +424,19 @@ export const useClusterStore = defineStore('cluster', () => {
       })
       .map(item => ({
         value: `${item.block}-${item.cluster}`,
+        label: `堆${item.block}/簇${item.cluster}`,  // 添加 label 字段供 MultiSelect 使用
         block: item.block,
         cluster: item.cluster
       }))
     
+    // 调试：检查解析结果
+    console.log(`[故障筛选] 解析结果:`, {
+      blocksCount: blocks.size,
+      clustersCount: clusters.size,
+      availableBlocks: availableBlocks.value.length,
+      availableFaultClusters: availableFaultClusters.value.length,
+      firstCluster: availableFaultClusters.value[0]
+    })
   }
   
   /**
@@ -719,17 +734,16 @@ export const useClusterStore = defineStore('cluster', () => {
     const configChanged = hasSystemConfigChanged(config)
     
     if (!configChanged) {
-      console.log('🔄 [簇配置] 配置未变化，跳过重新初始化')
       return
     }
     
-    console.log('🔄 [簇配置] 检测到配置变化，重新初始化堆簇结构')
+    console.log(`🔄 [簇配置] 配置更新: ${BlockCount}堆, 第1堆${ClusterCount1}簇, 第2堆${ClusterCount2}簇`)
     
     // 保存当前配置
     lastSystemConfig = { ...config }
 
-    // 清空现有选项
-    clearClusterOptions()
+    // 【关键修复】在清空之前先保存旧选项，用于后续比较
+    const oldOptions = availableClusters.value.map(o => o.value)
 
     // 根据配置生成簇选项
     const newOptions = []
@@ -768,18 +782,38 @@ export const useClusterStore = defineStore('cluster', () => {
       return a.cluster - b.cluster
     })
 
-    // 检查当前选择是否仍然有效
-    const currentSelectionValid = isCurrentSelectionValid(newOptions)
+    // 比较新旧选项内容，只有内容变化时才更新
+    const newOptionsValues = newOptions.map(o => o.value)
+    const isSame = oldOptions.length === newOptionsValues.length && 
+                   oldOptions.every((val, idx) => val === newOptionsValues[idx])
     
-    if (currentSelectionValid) {
-      console.log('🔄 [簇配置] 当前选择仍然有效，保持选择:', selectedClusterForView.value)
-      // 直接设置选项，不触发重新选择
+    // 只有内容变化时才更新，避免不必要的响应式更新导致闪烁
+    if (!isSame) {
+      // 清空现有选项（只有在需要更新时才清空）
+      clearClusterOptions()
+      
+      // 先更新 availableClusters，确保响应式更新
       availableClusters.value = newOptions
-    } else {
-      console.log('🔄 [簇配置] 当前选择无效，将重新选择')
-      // 设置选项并触发重新选择
-      availableClusters.value = newOptions
-      if (newOptions.length > 0) {
+      
+      // 清理 selectedClustersForWrite 中的无效簇（在 availableClusters 更新后）
+      const validClusterKeys = new Set(newOptions.map(opt => opt.value))
+      const beforeCleanCount = selectedClustersForWrite.value.length
+      // 使用数组替换方式确保响应式更新
+      const cleanedSelection = selectedClustersForWrite.value.filter(
+        key => validClusterKeys.has(key)
+      )
+      selectedClustersForWrite.value = cleanedSelection
+      const afterCleanCount = selectedClustersForWrite.value.length
+      
+      if (beforeCleanCount !== afterCleanCount) {
+        console.log(`🧹 [簇配置] 清理了 ${beforeCleanCount - afterCleanCount} 个无效的批量下发选择`)
+      }
+
+      // 检查当前选择是否仍然有效
+      const currentSelectionValid = isCurrentSelectionValid(newOptions)
+      
+      // 如果当前选择无效，触发重新选择
+      if (!currentSelectionValid && newOptions.length > 0) {
         scheduleAutoSelect()
       }
     }

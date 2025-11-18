@@ -21,6 +21,11 @@ import { useBlockSelect } from '@/composables/core/device-selection/useBlockSele
 import { useClusterStore } from '@/stores/device/clusterStore'
 import { useBlockStore } from '@/stores/device/blockStore'
 
+// 版本信息相关导入
+import { pickBlockVersion } from '@/composables/core/data-processing/block/parseBlockVersion'
+import { pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
+import { pickPack } from '@/composables/core/data-processing/cluster/parsePackSummary'
+
 const toast = useToast()
 const router = useRouter()
 const { t, te, locale } = useI18n()
@@ -399,6 +404,98 @@ const hasUpgradeResult = computed(() => bcuBmuUpgradeResultsMap.value && bcuBmuU
 // BAU升级执行结果
 const bauUpgradeResult = computed(() => feedbackStatus.bau_upgrade_result)
 const hasBauUpgradeResult = computed(() => bauUpgradeResult.value !== null)
+
+// ================== 版本信息相关计算属性 ==================
+
+// 格式化版本值的辅助函数
+const formatVersionValue = (value, scale = 1) => {
+  if (value === null || value === undefined) return '–'
+  if (typeof value === 'string') return value.trim() || '–'
+  if (typeof value === 'number') return (value / scale).toString()
+  return String(value) || '–'
+}
+
+// BAU版本信息
+const bauVersionInfo = computed(() => {
+  const data = pickBlockVersion('block1', ['版本信息'])
+
+  if (data['版本信息'] && data['版本信息'].length > 0) {
+    const dataMap = {}
+    data['版本信息'].forEach(item => {
+      dataMap[item.label] = formatVersionValue(item.value, item.scale)
+    })
+    return dataMap
+  }
+
+  // 返回占位符数据
+  return {
+    'BAU软件版本号': '–',
+    'BAU硬件版本号': '–',
+    'BAU产品编码': '–'
+  }
+})
+
+// BCU版本信息 - 获取所有簇的BCU版本
+const bcuVersionInfo = computed(() => {
+  const availableClusters = clusterStore.availableClusters
+  const bcuVersions = []
+
+  availableClusters.forEach(cluster => {
+    const clusterKey = cluster.value // 格式：'1-1', '1-2' 等
+    const clusterData = pickCluster(clusterKey, ['版本信息'])
+
+    if (clusterData.length > 0) {
+      const versionGroup = clusterData[0]
+      const bcuSoftwareItem = versionGroup.element.find(item => item.label === 'BCU软件版本号')
+
+      if (bcuSoftwareItem) {
+        bcuVersions.push({
+          clusterKey,
+          clusterLabel: cluster.label,
+          version: formatVersionValue(bcuSoftwareItem.value)
+        })
+      }
+    }
+  })
+
+  return bcuVersions
+})
+
+// BMU版本信息 - 获取所有簇的BMU版本
+const bmuVersionInfo = computed(() => {
+  const availableClusters = clusterStore.availableClusters
+  const bmuVersions = []
+
+  availableClusters.forEach(cluster => {
+    const clusterKey = cluster.value // 格式：'1-1', '1-2' 等
+    const packData = pickPack(clusterKey, ['BMU版本信息'])
+
+    if (packData.length > 0) {
+      const bmuGroup = packData[0]
+      const bmuItems = bmuGroup.element.filter(item =>
+        item.label.includes('软件版本') && !item.label.includes('BOOT')
+      )
+
+      bmuItems.forEach(item => {
+        bmuVersions.push({
+          clusterKey,
+          clusterLabel: cluster.label,
+          bmuLabel: item.label,
+          version: formatVersionValue(item.value)
+        })
+      })
+    }
+  })
+
+  return bmuVersions
+})
+
+// 版本信息是否有数据
+const hasVersionData = computed(() => {
+  return bauVersionInfo.value['BAU软件版本号'] !== '–' ||
+         bcuVersionInfo.value.length > 0 ||
+         bmuVersionInfo.value.length > 0
+})
 
 // 计算属性
 const canStartUpgrade = computed(() => upgradeStore.canStartUpgrade)
@@ -887,9 +984,9 @@ onUnmounted(() => {
   <div class="page-wrapper">
     <div class="card">
     <div class="upgrade-container">
-      <!-- 左右布局：左侧(FTP配置+文件状态) + 右侧(设备升级) -->
+      <!-- 左右布局：左侧(FTP配置+版本信息) + 右侧(设备升级) -->
       <div class="grid">
-        <!-- 左侧：FTP配置 + 文件状态 -->
+        <!-- 左侧：FTP配置 + 版本信息 -->
         <div class="col-7">
           <!-- FTP服务器配置卡片 -->
           <div class="content-card">
@@ -969,6 +1066,66 @@ onUnmounted(() => {
             </div>
           </div>
 
+          <!-- 版本信息卡片 -->
+          <div class="content-card" style="margin-top: 0.5rem;">
+            <h3>{{ t('deviceUpgrade.sections.versionInfo', '版本信息') }}</h3>
+            <div class="card-content">
+              <!-- BAU版本信息 -->
+              <div class="version-section">
+                <h4>{{ t('deviceUpgrade.version.bauVersion', 'BAU版本') }}</h4>
+                <div class="version-grid">
+                  <div class="version-item">
+                    <label>{{ t('deviceUpgrade.version.softwareVersion', '软件版本') }}：</label>
+                    <span>{{ bauVersionInfo['BAU软件版本号'] }}</span>
+                  </div>
+                  <div class="version-item">
+                    <label>{{ t('deviceUpgrade.version.hardwareVersion', '硬件版本') }}：</label>
+                    <span>{{ bauVersionInfo['BAU硬件版本号'] }}</span>
+                  </div>
+                  <div class="version-item">
+                    <label>{{ t('deviceUpgrade.version.productCode', '产品编码') }}：</label>
+                    <span>{{ bauVersionInfo['BAU产品编码'] }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BCU版本信息 -->
+              <div class="version-section">
+                <h4>{{ t('deviceUpgrade.version.bcuVersion', 'BCU版本') }}</h4>
+                <div v-if="bcuVersionInfo.length > 0" class="version-grid">
+                  <div
+                    v-for="bcu in bcuVersionInfo"
+                    :key="bcu.clusterKey"
+                    class="version-item"
+                  >
+                    <label>{{ bcu.clusterLabel }}：</label>
+                    <span>{{ bcu.version }}</span>
+                  </div>
+                </div>
+                <div v-else class="version-empty">
+                  <span class="text-sm text-color-secondary">{{ t('deviceUpgrade.version.noBcuData', '暂无BCU版本数据') }}</span>
+                </div>
+              </div>
+
+              <!-- BMU版本信息 -->
+              <div class="version-section">
+                <h4>{{ t('deviceUpgrade.version.bmuVersion', 'BMU版本') }}</h4>
+                <div v-if="bmuVersionInfo.length > 0" class="version-grid">
+                  <div
+                    v-for="bmu in bmuVersionInfo"
+                    :key="`${bmu.clusterKey}-${bmu.bmuLabel}`"
+                    class="version-item"
+                  >
+                    <label>{{ bmu.clusterLabel }}-{{ bmu.bmuLabel.replace('软件版本', '') }}：</label>
+                    <span>{{ bmu.version }}</span>
+                  </div>
+                </div>
+                <div v-else class="version-empty">
+                  <span class="text-sm text-color-secondary">{{ t('deviceUpgrade.version.noBmuData', '暂无BMU版本数据') }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
         </div>
 
@@ -1503,6 +1660,59 @@ onUnmounted(() => {
 }
 
 .result-empty {
+  padding: 16px 0;
+  text-align: center;
+  color: var(--text-color-secondary);
+}
+
+/* 版本信息展示区域 */
+.version-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--surface-section);
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+  border-left: 4px solid var(--primary-color);
+}
+
+.version-section:first-child {
+  margin-top: 0;
+}
+
+.version-section h4 {
+  margin: 0 0 12px 0;
+  color: var(--text-color);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.version-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.version-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.version-item label {
+  min-width: 100px;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  flex-shrink: 0;
+}
+
+.version-item span {
+  color: var(--text-color);
+  flex: 1;
+  word-break: break-all;
+}
+
+.version-empty {
   padding: 16px 0;
   text-align: center;
   color: var(--text-color-secondary);

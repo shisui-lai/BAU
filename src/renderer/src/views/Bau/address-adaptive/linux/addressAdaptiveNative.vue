@@ -215,13 +215,17 @@ function handleRemoteCommandResponseWithToast(msg) {
 
       // 根据命令类型开始相应的查询
       if (commandType === 'bcu_adaptive_addr') {
+        console.log('[AddressAdaptive] 启动BCU周期性查询')
         bcuStatus.value.isExecuting = false
         bcuStatus.value.queryCount = 0
         startBcuPeriodicQuery()
       } else if (commandType === 'bmu_adaptive_addr') {
+        console.log('[AddressAdaptive] 启动BMU周期性查询')
         bmuStatus.value.isExecuting = false
         bmuStatus.value.queryCount = 0
         startBmuPeriodicQuery()
+      } else {
+        console.warn('[AddressAdaptive] 未知的命令类型，无法启动查询:', commandType)
       }
 
     } else {
@@ -505,6 +509,7 @@ const startBmuAdaptive = async () => {
 
 // 遥控命令应答处理函数（参考Order.vue）
 function onRemoteCommandResponse(_e, msg) {
+  console.log('[AddressAdaptive] 收到遥控命令应答:', msg)
   handleRemoteCommandResponseWithToast(msg)
 }
 
@@ -568,6 +573,8 @@ const startBcuPeriodicQuery = () => {
  * 开始BMU周期性查询（每秒一次，共30次）
  */
 const startBmuPeriodicQuery = () => {
+  console.log('[AddressAdaptive] 开始BMU周期性查询，最大查询次数:', bmuStatus.value.maxQueryCount)
+
   // 清理可能存在的旧定时器
   if (bmuStatus.value.queryTimer) {
     clearInterval(bmuStatus.value.queryTimer)
@@ -583,12 +590,13 @@ const startBmuPeriodicQuery = () => {
       // 达到最大查询次数，停止查询
       clearInterval(bmuStatus.value.queryTimer)
       bmuStatus.value.queryTimer = null
-      console.log('[AddressAdaptive] BMU查询已完成，共查询30次')
+      console.log(`[AddressAdaptive] BMU查询已完成，共查询${bmuStatus.value.maxQueryCount}次`)
       return
     }
 
     queryBmuResult()
     bmuStatus.value.queryCount++
+    console.log(`[AddressAdaptive] BMU查询第${bmuStatus.value.queryCount}次`)
   }, 1000) // 每秒查询一次
 }
 
@@ -677,13 +685,17 @@ const handleBmuQueryResult = (_e, msg) => {
       if (adaptiveResult) {
         updateBmuResults(adaptiveResult)
 
-        // 检查是否完成，如果完成则停止查询并重置按钮状态
-        if (adaptiveResult.isComplete) {
+        // 对于全部簇查询，不要因为单个簇完成就停止查询
+        // 只有在查询特定簇时才检查完成状态
+        const isAllClustersQuery = (lastSentCluster.value || selectedCluster.value) === '0xFF'
+        if (adaptiveResult.isComplete && !isAllClustersQuery) {
           if (bmuStatus.value.queryTimer) {
             clearInterval(bmuStatus.value.queryTimer)
             bmuStatus.value.queryTimer = null
           }
           console.log('[AddressAdaptive] BMU查询完成，停止周期性查询')
+        } else if (adaptiveResult.isComplete && isAllClustersQuery) {
+          console.log('[AddressAdaptive] 簇', adaptiveResult.currentCluster, '已完成，但继续查询其他簇')
         }
       }
     })
@@ -693,13 +705,17 @@ const handleBmuQueryResult = (_e, msg) => {
     if (adaptiveResult) {
       updateBmuResults(adaptiveResult)
 
-      // 检查是否完成，如果完成则停止查询并重置按钮状态
-      if (adaptiveResult.isComplete) {
+      // 对于全部簇查询，不要因为单个簇完成就停止查询
+      // 只有在查询特定簇时才检查完成状态
+      const isAllClustersQuery = (lastSentCluster.value || selectedCluster.value) === '0xFF'
+      if (adaptiveResult.isComplete && !isAllClustersQuery) {
         if (bmuStatus.value.queryTimer) {
           clearInterval(bmuStatus.value.queryTimer)
           bmuStatus.value.queryTimer = null
         }
         console.log('[AddressAdaptive] BMU查询完成，停止周期性查询')
+      } else if (adaptiveResult.isComplete && isAllClustersQuery) {
+        console.log('[AddressAdaptive] 簇', adaptiveResult.currentCluster, '已完成，但继续查询其他簇')
       }
     }
   }

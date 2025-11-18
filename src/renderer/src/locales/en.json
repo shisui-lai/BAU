@@ -391,7 +391,8 @@
       "bmuUpgradeParams": "BMU Upgrade Parameters",
       "upgradeResult": "BCU/BMU Upgrade Execution Results",
       "bauUpgradeResult": "BAU Upgrade Execution Results",
-      "upgradeExecutionResult": "Upgrade Execution Results"
+      "upgradeExecutionResult": "Upgrade Execution Results",
+      "versionInfo": "Version Information"
     },
     "labels": {
       "serverIP": "Server IP:",
@@ -498,6 +499,16 @@
       "bmuFailedDevices": "BMU Upgrade Failed Devices",
       "progress": "Download Progress",
       "clusterResult": "Cluster {clusterKey} Upgrade Results"
+    },
+    "version": {
+      "bauVersion": "BAU Version",
+      "bcuVersion": "BCU Version",
+      "bmuVersion": "BMU Version",
+      "softwareVersion": "Software Version",
+      "hardwareVersion": "Hardware Version",
+      "productCode": "Product Code",
+      "noBcuData": "No BCU version data available",
+      "noBmuData": "No BMU version data available"
     }
   },
   "mqtt": {

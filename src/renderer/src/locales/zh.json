@@ -391,7 +391,8 @@
       "bmuUpgradeParams": "BMU升级参数",
       "upgradeResult": "BCU/BMU升级执行结果",
       "bauUpgradeResult": "BAU升级执行结果",
-      "upgradeExecutionResult": "升级执行结果"
+      "upgradeExecutionResult": "升级执行结果",
+      "versionInfo": "版本信息"
     },
     "labels": {
       "serverIP": "服务器IP:",
@@ -498,6 +499,16 @@
       "bmuFailedDevices": "BMU升级失败设备",
       "progress": "下载进度",
       "clusterResult": "簇 {clusterKey} 升级结果"
+    },
+    "version": {
+      "bauVersion": "BAU版本",
+      "bcuVersion": "BCU版本",
+      "bmuVersion": "BMU版本",
+      "softwareVersion": "软件版本",
+      "hardwareVersion": "硬件版本",
+      "productCode": "产品编码",
+      "noBcuData": "暂无BCU版本数据",
+      "noBmuData": "暂无BMU版本数据"
     }
   },
   "mqtt": {

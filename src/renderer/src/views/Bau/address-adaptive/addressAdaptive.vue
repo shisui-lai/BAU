@@ -52,8 +52,8 @@ const bmuResultFields = computed(() => [
 ])
 
 // 状态管理
-const bcuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 60, queryTimer: null })
-const bmuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 60, queryTimer: null })
+const bcuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 30, queryTimer: null })
+const bmuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 30, queryTimer: null })
 const bcuResult = ref(null)
 // BMU结果改为数组，支持多个簇的结果显示
 const bmuResults = ref([])
@@ -529,7 +529,7 @@ const queryBcuResult = async () => {
 const queryBmuResult = async () => {
   try {
     // 使用上次发送的簇值进行查询，确保读取命令与发送命令一致
-    const queryCluster = lastSentCluster.value || selectedCluster.value
+    const queryCluster = selectedCluster.value
     const clusterHex = queryCluster.replace('0x', '')
     const topic = buildTopic('bms/host/s2d/b{block}/get_bmu_adaptive_addr_result')
     await window.electronAPI.mqttPublish(topic, clusterHex)
@@ -586,7 +586,6 @@ const startBmuPeriodicQuery = () => {
       // 达到最大查询次数，停止查询
       clearInterval(bmuStatus.value.queryTimer)
       bmuStatus.value.queryTimer = null
-      console.log('[AddressAdaptive] BMU查询已完成，共查询30次')
       return
     }
 
@@ -680,14 +679,8 @@ const handleBmuQueryResult = (_e, msg) => {
       if (adaptiveResult) {
         updateBmuResults(adaptiveResult)
 
-        // 检查是否完成，如果完成则停止查询并重置按钮状态
-        if (adaptiveResult.isComplete) {
-          if (bmuStatus.value.queryTimer) {
-            clearInterval(bmuStatus.value.queryTimer)
-            bmuStatus.value.queryTimer = null
-          }
-          console.log('[AddressAdaptive] BMU查询完成，停止周期性查询')
-        }
+        // 只更新结果，不停止查询，让查询执行满60次
+        console.log('[AddressAdaptive] 收到簇', adaptiveResult.currentCluster, '的查询结果，状态:', adaptiveResult.statusText)
       }
     })
   } else {
@@ -696,14 +689,8 @@ const handleBmuQueryResult = (_e, msg) => {
     if (adaptiveResult) {
       updateBmuResults(adaptiveResult)
 
-      // 检查是否完成，如果完成则停止查询并重置按钮状态
-      if (adaptiveResult.isComplete) {
-        if (bmuStatus.value.queryTimer) {
-          clearInterval(bmuStatus.value.queryTimer)
-          bmuStatus.value.queryTimer = null
-        }
-        console.log('[AddressAdaptive] BMU查询完成，停止周期性查询')
-      }
+      // 只更新结果，不停止查询，让查询执行满60次
+      console.log('[AddressAdaptive] 收到簇', adaptiveResult.currentCluster, '的查询结果，状态:', adaptiveResult.statusText)
     }
   }
 }

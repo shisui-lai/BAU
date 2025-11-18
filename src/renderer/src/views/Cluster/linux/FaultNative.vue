@@ -27,7 +27,7 @@ const { t, te, locale } = useI18n()
 
 /* ---------- 分页状态 ---------- */
 const first = ref(0)      // 当前偏移量
-const rows = ref(30)     // 每页条数
+const pageSize = 200      // 每页条数（固定200条）
 
 /* ---------- 手动排序状态 ---------- */
 const sortOrder = ref<'none' | 'asc' | 'desc'>('none') // none: 无排序, asc: 轻微到严重, desc: 严重到轻微
@@ -171,13 +171,12 @@ const total = computed(() => filteredFaults.value.length)
 const pageRows = computed(() => {
   const faults = filteredFaults.value
   const start = first.value
-  const end = Math.min(start + rows.value, faults.length)
+  const end = Math.min(start + pageSize, faults.length)
   return faults.slice(start, end)
 })
 
 function onPageChange(e: any) {
   first.value = e.first
-  rows.value = e.rows
 }
 
 /* ---------- 故障等级颜色映射 ---------- */
@@ -609,48 +608,41 @@ function getFaultTranslation(data: any): string {
         <div class="native-paginator">
           <div class="paginator-left">
             <span class="paginator-info">
-              {{ first + 1 }} - {{ Math.min(first + rows, total) }} / {{ total }}
+              {{ first + 1 }} - {{ Math.min(first + pageSize, total) }} / {{ total }}
             </span>
           </div>
           <div class="paginator-center">
-            <button 
-              class="btn btn-secondary paginator-btn" 
-              @click="first = 0" 
+            <button
+              class="btn btn-secondary paginator-btn"
+              @click="first = 0"
               :disabled="first === 0"
             >
               <i class="pi pi-angle-double-left"></i>
             </button>
-            <button 
-              class="btn btn-secondary paginator-btn" 
-              @click="first = Math.max(0, first - rows)" 
+            <button
+              class="btn btn-secondary paginator-btn"
+              @click="first = Math.max(0, first - pageSize)"
               :disabled="first === 0"
             >
               <i class="pi pi-angle-left"></i>
             </button>
             <span class="paginator-pages">
-              {{ Math.floor(first / rows) + 1 }} / {{ Math.ceil(total / rows) || 1 }}
+              {{ Math.floor(first / pageSize) + 1 }} / {{ Math.ceil(total / pageSize) || 1 }}
             </span>
-            <button 
-              class="btn btn-secondary paginator-btn" 
-              @click="first = Math.min(total - rows, first + rows)" 
-              :disabled="first + rows >= total"
+            <button
+              class="btn btn-secondary paginator-btn"
+              @click="first = Math.min(total - pageSize, first + pageSize)"
+              :disabled="first + pageSize >= total"
             >
               <i class="pi pi-angle-right"></i>
             </button>
-            <button 
-              class="btn btn-secondary paginator-btn" 
-              @click="first = Math.floor((total - 1) / rows) * rows" 
-              :disabled="first + rows >= total"
+            <button
+              class="btn btn-secondary paginator-btn"
+              @click="first = Math.floor((total - 1) / pageSize) * pageSize"
+              :disabled="first + pageSize >= total"
             >
               <i class="pi pi-angle-double-right"></i>
             </button>
-          </div>
-          <div class="paginator-right">
-            <select v-model="rows" class="paginator-select">
-              <option :value="30">30</option>
-              <option :value="100">100</option>
-              <option :value="200">200</option>
-            </select>
           </div>
         </div>
       </div>

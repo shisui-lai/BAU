@@ -797,7 +797,7 @@ function getStatusDisplay(value) {
 
 .result-value {
   display: flex;
-  justify-content: flex-start;
+  justify-content: flex-end;
   align-items: center;
 }
 

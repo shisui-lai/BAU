@@ -34,7 +34,7 @@ const { t, te, locale } = useI18n()
 
 /* ---------- 分页状态 ---------- */
 const first = ref(0)      // 当前偏移量
-const rows = ref(30)     // 每页条数
+const pageSize = 200      // 每页条数（固定200条）
 
 /* ---------- 手动排序状态 ---------- */
 const sortOrder = ref<'none' | 'asc' | 'desc'>('none') // none: 无排序, asc: 轻微到严重, desc: 严重到轻微
@@ -159,13 +159,12 @@ const total = computed(() => filteredFaults.value.length)
 const pageRows = computed(() => {
   const faults = filteredFaults.value
   const start = first.value
-  const end = Math.min(start + rows.value, faults.length)
+  const end = Math.min(start + pageSize, faults.length)
   return faults.slice(start, end)
 })
 
 function onPageChange(e: any) {
   first.value = e.first
-  rows.value = e.rows
 }
 
 /* ---------- 故障等级颜色映射 ---------- */
@@ -425,8 +424,7 @@ function getFaultTranslation(data: any): string {
         paginator
         lazy
         :totalRecords="total"
-        :rows="rows"
-        :rowsPerPageOptions="[30, 100, 200]"
+        :rows="pageSize"
         :first="first"
         @page="onPageChange"
         :dataKey="(item: any) => `${item.cluster}-${item.label}-${item.ts}`"

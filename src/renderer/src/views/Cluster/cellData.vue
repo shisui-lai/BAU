@@ -587,6 +587,54 @@ watch(activeView, (newView, oldView) => {
   )
   const displayCols = computed(() => Array.from({ length: maxCols.value }, (_, i) => i + 1))
 
+  // 获取当前簇的baseConfig
+  const currentBaseConfig = computed(() => {
+    return afeConfigCache[selectedCluster.value] || {};
+  })
+
+  // 计算全局索引（根据数据类型选择电芯或温度）
+  function calculateGlobalIndex(rowData, colIndex) {
+    const baseConfig = currentBaseConfig.value;
+    const isTemp = activeView.value === 'CELL_TEMP';
+
+    // 根据数据类型选择对应的计数数组
+    const countsArray = isTemp ? baseConfig.afeTempCounts : baseConfig.afeCellCounts;
+
+    if (!countsArray || !baseConfig.afePerBmu) {
+      return colIndex; // 如果没有配置信息，返回列索引
+    }
+
+    // 从rowData中解析BMU和AFE信息
+    const bmuId = Math.floor(rowData.rowIdx / baseConfig.afePerBmu) + 1;
+    const afeId = (rowData.rowIdx % baseConfig.afePerBmu) + 1;
+
+    // 检查当前AFE是否有这么多电芯/温度探头
+    const currentAfeCount = countsArray[afeId - 1] || 0;
+    if (colIndex > currentAfeCount) {
+      return ''; // 超出当前AFE数量，不显示索引
+    }
+
+    let globalIndex = 0;
+
+    // 1. 累计前面BMU的所有电芯/温度探头
+    for (let b = 1; b < bmuId; b++) {
+      for (let a = 1; a <= baseConfig.afePerBmu; a++) {
+        globalIndex += countsArray[a - 1] || 0;
+      }
+    }
+
+    // 2. 累计当前BMU中前面AFE的电芯/温度探头
+    for (let a = 1; a < afeId; a++) {
+      globalIndex += countsArray[a - 1] || 0;
+    }
+
+    // 3. 加上当前AFE内的索引
+    return globalIndex + colIndex;
+  }
+
+  // 为了保持向后兼容，保留原函数名
+  const calculateGlobalCellIndex = calculateGlobalIndex;
+
   function formatCell(v){          //  模板内按需格式化
     // 处理占位符
     if (v === '--' || v === '-' || v === '---') return '---'
@@ -934,7 +982,7 @@ watch(activeView, (newView, oldView) => {
                 style="width:90px">
           <template #body="{ data }">
             <span class="cell-content">
-              {{ formatCell(data.cells[col-1]) }}<template v-if="data.cells[col-1] !== '--'"> #{{ ((data.rowIdx * cellsPerAfe) + col) }}</template>
+              {{ formatCell(data.cells[col-1]) }}<template v-if="data.cells[col-1] !== '--'"> #{{ calculateGlobalCellIndex(data, col) }}</template>
             </span>
           </template>
         </Column>

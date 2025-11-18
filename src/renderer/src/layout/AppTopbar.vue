@@ -26,7 +26,7 @@ const dataReceptionStore = useDataReceptionStore()
 const mqttStore = useMqttStore()
 
 // 版本信息
-const version = 'test-v0.2.5 11.14'
+const version = 'test-v0.2.6 11.17'
 
 
 

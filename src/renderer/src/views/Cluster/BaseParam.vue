@@ -12,7 +12,7 @@ import { useSysBaseParam } from '@/composables/core/data-processing/parameter-ma
 import { useFactoryCalibParam } from '@/composables/core/data-processing/parameter-management/useFactoryCalibParam'
 import { BASE_PARAM_REMARKS, FACTORY_CALIB_PARAM_REMARKS } from '@/configs/ui/Remarks'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
-import { useSystemConfig } from '@/composables/core/data-processing/parameter-management/useSystemConfig'
+import { useSystemConfigStore } from '@/stores/system/systemConfigStore'
 import { DEFAULT_BASE_PARAMS } from '@/configs/parameterDefaults'
 
 import Dropdown from 'primevue/dropdown'
@@ -56,8 +56,9 @@ const systemBaseParamHandler = useSysBaseParam()
 //使用标准的出厂校正参数处理功能
 const factoryCalibParamHandler = useFactoryCalibParam()
 
-// 系统配置管理
-const { requestSystemConfig } = useSystemConfig()
+// 【单实例模式】系统配置管理
+const systemConfigStore = useSystemConfigStore()
+const { requestSystemConfig } = systemConfigStore
 
 // 简化状态管理：是否为出厂校正参数模式
 const isFactoryCalibMode = ref(false)

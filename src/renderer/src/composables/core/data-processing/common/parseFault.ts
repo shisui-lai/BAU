@@ -515,21 +515,60 @@ function shouldDisplayFault(dataType: string, label: string): boolean {
     return true
   }
 
-  // 4. 堆模拟量故障等级：显示所有非预留字段
+  // 4. 堆模拟量故障等级：只显示簇间压差和簇间电流差异故障
   if (dataType === 'BLOCK_ANALOG_FAULT_GRADE') {
-    // 过滤预留字段
-    if (label.includes('预留') || label.includes('Reserved')) {
-      return false
-    }
-    return true
+    // 白名单：只允许这两个簇间故障显示
+    const allowedFaults = [
+      '簇间压差过大故障',
+      '簇间电流差过大故障'
+    ];
+    return allowedFaults.some(fault => label.includes(fault));
   }
 
-  // 5. 过滤预留字段故障
+  // 5. TOTAL_FAULT：屏蔽单体总故障、pack总故障、簇总故障1、簇总故障2
+  if (dataType === 'TOTAL_FAULT') {
+    // 检查故障标签是否属于被屏蔽的类别
+    // 单体总故障
+    if (label.includes('单体电压过压') || label.includes('单体电压欠压') ||
+        label.includes('单体充电过温') || label.includes('单体充电欠温') ||
+        label.includes('单体放电过温') || label.includes('单体放电欠温') ||
+        label.includes('单体SOC过高') || label.includes('单体SOC过低')) {
+      return false;
+    }
+
+    // pack总故障
+    if (label.includes('pack电压过高') || label.includes('pack电压过低') ||
+        label.includes('pack温度过温') || label.includes('pack温度欠温') ||
+        label.includes('动力接插件过温')) {
+      return false;
+    }
+
+    // 簇总故障1
+    if (label.includes('单体电池压差过大故障等级') || label.includes('单体电池温差过大故障等级') ||
+        label.includes('SOC差异过大故障等级') || label.includes('BMU压差故障等级') ||
+        label.includes('簇端过压故障等级') || label.includes('簇端欠压故障等级') ||
+        label.includes('绝缘电阻正对地故障等级') || label.includes('绝缘电阻负对地故障等级')) {
+      return false;
+    }
+
+    // 簇总故障2
+    if (label.includes('充电过流故障等级') || label.includes('放电过流故障等级') ||
+        label.includes('RT1过温故障等级') || label.includes('RT2过温故障等级') ||
+        label.includes('RT3过温故障等级') || label.includes('RT4过温故障等级') ||
+        label.includes('RT5过温故障等级')) {
+      return false;
+    }
+
+    // 其他TOTAL_FAULT故障（如接触器故障等）正常显示
+    return true;
+  }
+
+  // 6. 过滤预留字段故障
   if (label.includes('预留') || label.includes('Reserved')) {
     return false
   }
 
-  // 6. 其他故障类型（三级表、硬件故障、总故障等）正常显示
+  // 7. 其他故障类型（三级表、硬件故障等）正常显示
   return true
 }
 

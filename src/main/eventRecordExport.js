@@ -8,6 +8,73 @@ const path = require('path')
 import { EVENT_RECORD_R } from './table.js'
 import { formatEventRecordField } from '../protocol/eventRecordFormatter'
 
+/**
+ * 将寄存器数组转换为字节数组（用于CRC计算）
+ * @param {number[]} registers - 寄存器数组（每个元素为16位无符号整数）
+ * @returns {number[]} 字节数组
+ */
+function regsToBytes(registers) {
+  const bytes = []
+  for (const reg of registers) {
+    // 小端序：低字节在前，高字节在后
+    bytes.push(reg & 0xFF)        // 低字节
+    bytes.push((reg >> 8) & 0xFF) // 高字节
+  }
+  return bytes
+}
+
+/**
+ * 计算CRC16校验值（Modbus CRC16算法）
+ * @param {number[]} data - 字节数组
+ * @returns {number} CRC16校验值
+ */
+function computeCRC16(data) {
+  let crc = 0xffff
+  for (let b of data) {
+    crc ^= b
+    for (let i = 0; i < 8; i++) {
+      if (crc & 0x0001) {
+        crc = (crc >>> 1) ^ 0xa001
+      } else {
+        crc = crc >>> 1
+      }
+    }
+  }
+  return crc
+}
+
+/**
+ * 验证事件记录的CRC校验
+ * @param {Object} recordData - 事件记录数据对象
+ * @returns {string} 校验结果："有效" 或 "无效"
+ */
+function validateEventRecordCRC(recordData) {
+  try {
+    // 获取原始寄存器数据
+    const rawRegisters = recordData.rawRegisters
+    if (!rawRegisters || !Array.isArray(rawRegisters) || rawRegisters.length !== 128) {
+      console.warn('[CRC校验] 原始寄存器数据无效，无法进行CRC校验')
+      return '无效'
+    }
+
+    // 前127个寄存器用于CRC计算
+    const dataRegsForCrc = rawRegisters.slice(0, 127)
+    // 第128个寄存器存储CRC值
+    const expectedCrc = rawRegisters[127]
+
+    // 计算实际CRC值
+    const actualCrc = computeCRC16(regsToBytes(dataRegsForCrc))
+
+    // 比较CRC值
+    const crcOk = actualCrc === expectedCrc
+
+    return crcOk ? '有效' : '无效'
+  } catch (error) {
+    console.error('[CRC校验] CRC校验过程中发生错误:', error)
+    return '无效'
+  }
+}
+
 // 事件记录读取状态变量
 let isReadingEvent = false
 let eventReadingBlockId = null   // 当前读取的堆ID
@@ -620,6 +687,9 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
     }
   }
 
+  // 添加CRC校验列到表头末尾
+  csvHeaders.push('CRC校验')
+
   // 写入表头（表头也需要CSV转义，以防label中包含逗号或引号）
   const escapedHeaders = csvHeaders.map(header => {
     const escaped = header.replace(/"/g, '""')
@@ -752,6 +822,10 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
       const escapedValue = cellValue.replace(/"/g, '""')
       row.push(`"${escapedValue}"`)
     }
+
+    // 添加CRC校验结果到行末尾
+    const crcValidationResult = validateEventRecordCRC(recordData)
+    row.push(`"${crcValidationResult}"`)
 
     // 写入CSV行
     csvStream.write(row.join(',') + '\n')

@@ -59,11 +59,12 @@ const FAULT_CHANNELS = [
   // 堆故障频道
   'BLOCK_HARDWARE_FAULT',
   'BLOCK_TOTAL_FAULT',
-  'BLOCK_ANALOG_FAULT_GRADE',
+  'BLOCK_ANALOG_FAULT_GRADE', // 保留，但会特殊过滤只显示簇间故障
   // 簇通讯失联频道
   'BLOCK_COMM_LOST',
   // 掉线信息频道
   'BROKENWIRE'
+  // 移除：CLU_ANALOG_FAULT_GRADE - 簇级故障等级不在故障页面显示，避免与故障总览重复
 ]
 
 // 防抖更新筛选选项，避免频繁计算
@@ -564,7 +565,7 @@ function getFaultTranslation(data: any): string {
         <template #body="{ data }">
           <div class="cell-center">
             <Tag
-              :value="t(data.levelTxt)"
+              :value="data.levelTxt === '-' ? '-' : t(data.levelTxt)"
               :severity="getSeverityColor(data.levelTag)"
             />
           </div>

@@ -30,10 +30,10 @@ const router = createRouter({
     }, */
     {
       path:'',
-      name:'cellDataNative',
+      name:'cellData',
       component:()=>import(
                 /* webpackPrefetch: true */
-        /* webpackChunkName: "cellDataNative" */
+        /* webpackChunkName: "cellData" */
         '@/views/Cluster/cellData.vue'
       )
     },
@@ -47,16 +47,6 @@ const router = createRouter({
       ),
       meta: { visibleForGuest: true } // 所有用户可见
     },
-    // {
-    //   path: '/Cluster/versionNative',
-    //   name: 'versionNative',
-    //   component: () => import(
-    //     /* webpackPrefetch: true */
-    //     /* webpackChunkName: "versionNative" */
-    //     '@/views/Cluster/linux/versionNative.vue'
-    //   ),
-    //   meta: { visibleForGuest: true } // 所有用户可见
-    // },
     {
       path: '/Cluster/Order',
       name: 'Order',
@@ -97,16 +87,6 @@ const router = createRouter({
       ),
       meta: { visibleForGuest: false } // 仅管理员
     },
-    // {
-    //   path: '/Cluster/BaseParamNative',
-    //   name: 'BaseParamNative',
-    //   component: () => import(
-    //     /* webpackPrefetch: true */
-    //     /* webpackChunkName: "baseParamNative" */
-    //     '@/views/Cluster/linux/BaseParamNative.vue'
-    //   ),
-    //   meta: { visibleForGuest: false } // 仅管理员
-    // },
     {
       path: '/Cluster/AlarmThreshold',
       name: 'AlarmThreshold',
@@ -326,7 +306,7 @@ router.beforeEach((to, from, next) => {
   
   // 1. 如果访问的是 /login，且用户已经登录了（role!==0），可以直接放行到 Home
   if (to.name === 'Login') {
-    if (authStore.isLoggedIn) return next({ name: 'cellDataNative' })
+    if (authStore.isLoggedIn) return next({ name: 'cellData' })
     return next()
   }
 
@@ -337,7 +317,7 @@ router.beforeEach((to, from, next) => {
 
   // 3. 如果访客访问管理员页面（visibleForGuest: false），则跳转首页
   if (to.meta.visibleForGuest === false && authStore.isGuest) {
-    return next({ name: 'cellDataNative' })
+    return next({ name: 'cellData' })
   }
 
   // 4. 其它情况（已登录用户正常访问）

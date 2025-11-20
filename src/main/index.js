@@ -1092,6 +1092,11 @@ ipcMain.handle('test-crash-log', async (_e, testType = 'test') => {
   }
 })
 
+// 获取应用版本信息 - About对话框使用
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion()
+})
+
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.

@@ -9,7 +9,7 @@ import { useLayout } from '@/layout/composables/layout'
 import { useMqttStore } from '@/stores/communication/mqttStore'
 import { useDataReceptionStore } from '@/stores/communication/dataReceptionStore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
-import { useSystemConfig } from '@/composables/core/data-processing/parameter-management/useSystemConfig'
+import { useSystemConfigStore } from '@/stores/system/systemConfigStore'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'
 
@@ -25,8 +25,10 @@ const toast = useToast()
 // 初始化页面类型检测
 const pageTypeDetection = usePageTypeDetection()
 
-// 初始化系统配置管理（用于全局堆簇结构初始化）
-const { systemConfig, isConfigLoaded, requestSystemConfig } = useSystemConfig()
+// 【单实例模式】初始化系统配置管理（用于全局堆簇结构初始化）
+// 使用 Pinia store 解决多实例状态隔离问题
+const systemConfigStore = useSystemConfigStore()
+const { systemConfig, isConfigLoaded, requestSystemConfig } = systemConfigStore
 
 // MQTT连接弹窗控制
 const displayMqttDialog = ref(false)
@@ -224,6 +226,11 @@ onMounted(() => {
   mqttStore.initialize()
   console.log('[AppLayout] MQTT状态监听已初始化')
 
+  // 【单实例模式】初始化系统配置管理
+  // 注册IPC监听器并启动30秒定时器
+  systemConfigStore.initialize()
+  console.log('[AppLayout] 系统配置管理已初始化')
+
   checkMqttConnection()
 
   // 如果MQTT已经连接，立即读取系统配置
@@ -249,6 +256,23 @@ onMounted(() => {
 
   // 监听页面可见性变化，优化后台性能
   document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+// 组件卸载时清理资源
+onUnmounted(() => {
+  // 【单实例模式】清理系统配置管理
+  systemConfigStore.cleanup()
+  console.log('[AppLayout] 系统配置管理已清理')
+
+  // 清理数据接收监控
+  window.electron.ipcRenderer.removeAllListeners('mqtt-data-heartbeat')
+  window.electron.ipcRenderer.removeAllListeners('data-rate-update')
+  dataReceptionStore.stopMonitoring()
+
+  // 清理页面可见性监听
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
+
+  console.log('[AppLayout] 所有资源已清理')
 })
 
 // 处理页面可见性变化 - 已禁用后台节流
@@ -305,7 +329,7 @@ defineExpose({
         <!-- 为参数管理页面和电池信息页面启用keep-alive，避免频繁mount/unmount -->
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
-            <keep-alive include="SOXParam,BaseParam,AlarmThreshold,cellData,SOXParamNative,BaseParamNative,AlarmThresholdNative">
+            <keep-alive include="SOXParam,BaseParam,AlarmThreshold,cellData">
               <component :is="Component" />
             </keep-alive>
           </transition>

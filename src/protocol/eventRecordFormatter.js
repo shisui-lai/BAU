@@ -1028,7 +1028,17 @@ const EVENT_PARAM_MAPPING = {
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '执行策略', parse: parseContactorAction },
-    param4: { label: '脱离原因', parse: parseDisconnectReason }
+    param4: {
+      label: '脱离原因',
+      parse: (raw, baseConfig) => {
+        // 只有当参数3=3（设置脱离母线）时才解析参数4
+        const param3Value = Number(baseConfig?.Param3)
+        if (param3Value === 3) {
+          return parseDisconnectReason(raw)
+        }
+        return '/' // 其他情况返回空
+      }
+    }
   },
   251: { // 清除所有簇保留故障
     param1: { label: '堆序号', parse: parseBlockId },
@@ -1613,7 +1623,8 @@ function formatEventParam(eventType, paramIndex, paramValue, baseConfig) {
   
   // 直接调用parse函数，确保返回字符串
   try {
-    const result = paramDef.parse(value)
+    // 检查parse函数是否需要baseConfig参数（通过函数参数长度判断）
+    const result = paramDef.parse.length > 1 ? paramDef.parse(value, baseConfig) : paramDef.parse(value)
     return typeof result === 'string' ? result : String(result)
   } catch (error) {
     console.warn(`[formatEventParam] parse函数执行错误: eventType=${eventType}, paramIndex=${paramIndex}, value=${value}, error=${error.message}`)
@@ -1650,7 +1661,7 @@ function formatStatusField(fieldKey, value) {
       return clusterControlMap[numValue] !== undefined ? clusterControlMap[numValue] : `${numValue}(未定义)`
     
     case 'StackTotalFault': // 堆总故障
-      const stackTotalFaultMap = { 0: '无故障', 1: '严重故障', 2: '一般故障', 3: '轻微故障' }
+      const stackTotalFaultMap = { 0: '无故障', 1: '轻微故障', 2: '一般故障', 3: '严重故障' }
       return stackTotalFaultMap[numValue] !== undefined ? stackTotalFaultMap[numValue] : `${numValue}(未定义)`
     
     case 'EMSCommStatus': // EMS通讯状态

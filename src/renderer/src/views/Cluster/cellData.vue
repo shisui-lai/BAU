@@ -967,10 +967,19 @@ watch(activeView, (newView, oldView) => {
                ref="dataTableRef"
                :value="matrixRows"
                showGridlines
-               style="width:auto">
+               style="width:auto"
+               class="centered-table"
+               :pt="{
+                 thead: { style: 'text-align: center;' },
+                 header: { style: 'text-align: center; justify-content: center;' }
+               }">
 
         <!-- 冻结 BMU-AFE 列 -->
-        <Column frozen :header="t('batteryInfo.table.bmuAfe')" style="width:120px">
+        <Column frozen
+                :header="t('batteryInfo.table.bmuAfe')"
+                style="width:120px"
+                headerStyle="white-space: nowrap; text-align: center;"
+                bodyStyle="text-align: center;">
           <template #body="{ data }">{{ data.bmuLabel }}</template>
         </Column>
 
@@ -979,7 +988,9 @@ watch(activeView, (newView, oldView) => {
                 :key="col"
                 :header="col"
                 :field="`cells[${col-1}]`"
-                style="width:90px">
+                style="width:90px"
+                headerStyle="text-align: center;"
+                bodyStyle="text-align: center;">
           <template #body="{ data }">
             <span class="cell-content">
               {{ formatCell(data.cells[col-1]) }}<template v-if="data.cells[col-1] !== '--'"> #{{ calculateGlobalCellIndex(data, col) }}</template>
@@ -1101,22 +1112,41 @@ watch(activeView, (newView, oldView) => {
     overflow: visible;
   }
 
-  /* 单元格样式优化 */
-  :deep(.p-datatable-tbody td) {
-    padding: 4px 8px; /* 适当的内边距 */
-    font-size: 0.95rem; /* 稍微减小字体以适应更多内容 */
-    vertical-align: top; /* 顶部对齐，适应换行内容 */
+  /* 表头居中显示 - 参考reference成功案例 */
+  .centered-table :deep(.p-datatable-thead th) {
+    text-align: center !important;
+    vertical-align: middle !important;
   }
 
-  /* 确保冻结列不换行 */
-  :deep(.p-datatable-tbody td.p-frozen-column) {
+  /* 确保表头内容居中 */
+  .centered-table :deep(.p-column-header) {
+    text-align: center !important;
+  }
+
+  .centered-table :deep(.p-column-header-content) {
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* 数据单元格居中显示 - 参考reference成功案例 */
+  .centered-table :deep(.p-datatable-tbody td) {
+    text-align: center !important;
+    vertical-align: middle !important;
+    padding: 4px 8px; /* 适当的内边距 */
+    font-size: 0.95rem; /* 稍微减小字体以适应更多内容 */
+  }
+
+  /* 确保冻结列不换行并居中显示 */
+  .centered-table :deep(.p-datatable-tbody td.p-frozen-column) {
     white-space: nowrap;
+    text-align: center !important; /* 行首（BMU-AFE列）居中 */
   }
 
   /* 优化单元格内容显示 */
   .cell-content {
     display: inline-block;
     width: 100%;
+    text-align: center; /* 单体数据内容居中 */
     word-wrap: break-word; /* 允许长单词换行 */
     white-space: normal; /* 允许正常换行 */
     font-family: 'Consolas', 'Monaco', monospace; /* 使用等宽字体，数字对齐更好 */

@@ -504,11 +504,18 @@
       "bauVersion": "BAU Version",
       "bcuVersion": "BCU Version",
       "bmuVersion": "BMU Version",
+      "clusterVersions": "Cluster Version Info",
+      "allClusters": "All Clusters",
+      "allClustersVersions": "All Clusters Version Information",
       "softwareVersion": "Software Version",
       "hardwareVersion": "Hardware Version",
       "productCode": "Product Code",
+      "selectCluster": "Select Cluster",
+      "viewVersions": "View Versions",
+      "selectClusterToView": "Please select a cluster to view version info",
       "noBcuData": "No BCU version data available",
-      "noBmuData": "No BMU version data available"
+      "noBmuData": "No BMU version data available",
+      "noBmuVersions": "No BMU version information available"
     }
   },
   "mqtt": {
@@ -3869,8 +3876,8 @@
         "单体电池放电欠温故障等级": "Cell Discharge Undertemperature Fault Grade",
         "单体SOC过高故障等级": "Cell SOC Too High Fault Grade",
         "单体SOC过低故障等级": "Cell SOC Too Low Fault Grade",
-        "簇间压差过大故障等级": "Cluster Inter-voltage Difference Excessive Fault Grade",
-        "簇间电流差异过大故障等级": "Cluster Inter-current Difference Excessive Fault Grade"
+        "簇间压差过大故障": "Cluster Inter-voltage Difference Excessive Fault",
+        "簇间电流差过大故障": "Cluster Inter-current Difference Excessive Fault"
       },
       "blockCommLost": {
         "BCU1通讯失联": "BCU1 Communication Lost",
@@ -3985,5 +3992,16 @@
       "删除事件记录开始位置": "Delete Event Record Start Position",
       "等待删除事件记录数量": "Pending Delete Event Record Count"
     }
+  },
+  "about": {
+    "about": "About",
+    "version": "App Version",
+    "companyLabel": "Company",
+    "company": "risenstorage",
+    "addressLabel": "Address",
+    "addressName": "Risen Energy Meiqiao Phase I, Ninghai County, Ningbo City, Zhejiang Province",
+    "website": "Website",
+    "phone": "Phone",
+    "Email": "Email"
   }
 }

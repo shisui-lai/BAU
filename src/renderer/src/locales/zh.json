@@ -504,11 +504,18 @@
       "bauVersion": "BAU版本",
       "bcuVersion": "BCU版本",
       "bmuVersion": "BMU版本",
+      "clusterVersions": "簇版本信息",
+      "allClusters": "全部簇",
+      "allClustersVersions": "所有簇版本信息",
       "softwareVersion": "软件版本",
       "hardwareVersion": "硬件版本",
       "productCode": "产品编码",
+      "selectCluster": "选择簇",
+      "viewVersions": "查看版本",
+      "selectClusterToView": "请选择簇查看版本信息",
       "noBcuData": "暂无BCU版本数据",
-      "noBmuData": "暂无BMU版本数据"
+      "noBmuData": "暂无BMU版本数据",
+      "noBmuVersions": "暂无BMU版本信息"
     }
   },
   "mqtt": {
@@ -3221,8 +3228,8 @@
         "单体电池放电欠温故障等级": "单体电池放电欠温故障等级",
         "单体SOC过高故障等级": "单体SOC过高故障等级",
         "单体SOC过低故障等级": "单体SOC过低故障等级",
-        "簇间压差过大故障等级": "簇间压差过大故障等级",
-        "簇间电流差异过大故障等级": "簇间电流差异过大故障等级"
+        "簇间压差过大故障": "簇间压差过大故障",
+        "簇间电流差过大故障": "簇间电流差过大故障"
       },
       "blockCommLost": {
         "BCU1通讯失联": "BCU1通讯失联",
@@ -3337,5 +3344,16 @@
       "删除事件记录开始位置": "Delete Event Record Start Position",
       "等待删除事件记录数量": "Pending Delete Event Record Count"
     }
+  },
+  "about": {
+    "about": "关于",
+    "version": "软件版本",
+    "companyLabel": "公司",
+    "company": "东方日升储能",
+    "addressLabel": "地址",
+    "addressName": "浙江省宁波市宁海县东方日升梅桥一期",
+    "website": "官网",
+    "phone": "电话",
+    "Email": "邮箱"
   }
 }

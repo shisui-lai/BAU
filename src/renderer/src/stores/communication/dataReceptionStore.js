@@ -242,14 +242,14 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
    * 【智能配置读取】触发系统配置读取
    *
    * 功能：调用系统配置读取函数，发送MQTT配置读取请求
-   * 实现：动态导入useSystemConfig避免循环依赖
+   * 实现：使用单实例 Pinia store，避免多实例问题
    */
   function triggerSystemConfigRead() {
     try {
-      // 动态导入配置管理composable
-      import('../../composables/core/data-processing/parameter-management/useSystemConfig.js').then(({ useSystemConfig }) => {
-        const { requestSystemConfig } = useSystemConfig()
-        requestSystemConfig() // 发送MQTT配置读取请求：bms/host/s2d/b1/block_common_param_r
+      // 【单实例模式】使用 Pinia store 替代动态导入
+      import('../../stores/system/systemConfigStore.js').then(({ useSystemConfigStore }) => {
+        const systemConfigStore = useSystemConfigStore()
+        systemConfigStore.requestSystemConfig() // 发送MQTT配置读取请求：bms/host/s2d/b1/block_common_param_r
       })
     } catch (error) {
       console.error('[DataReception] 触发配置读取失败:', error)

@@ -8,7 +8,7 @@ import { useRemoteControlCore, serializeParameterData, parseParameterReadRespons
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { BLOCK_COMMON_PARAM_R, BLOCK_TIME_CFG_R, BLOCK_PORT_CFG_R } from '../../../../main/table.js'
 import { useBlockCommonParam } from '@/composables/core/data-processing/parameter-management/useBlockCommonParam'
-import { useSystemConfig } from '@/composables/core/data-processing/parameter-management/useSystemConfig'
+import { useSystemConfigStore } from '@/stores/system/systemConfigStore'
 import { translateDropdownOptions } from '@/configs/ui/dropdownConfigs'
 import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
@@ -25,8 +25,16 @@ const { t, locale, te } = useI18n()
 
 //  堆系统基本配置参数配置 - 表驱动
 const blockCommonParamHandler = useBlockCommonParam()
-// 获取系统配置管理实例，用于在配置下发成功后触发重新读取
-const { triggerConfigReload, handleSystemConfigUpdate } = useSystemConfig()
+
+// 【智能暂停机制】获取系统配置管理 Store（单实例模式）
+// 解决多实例状态隔离问题，确保暂停机制正常工作
+const systemConfigStore = useSystemConfigStore()
+const {
+  triggerConfigReload,
+  handleSystemConfigUpdate,
+  pausePeriodicRead,    // 暂停30秒定时器的方法
+  resumePeriodicRead    // 恢复30秒定时器的方法
+} = systemConfigStore
 const deviceManagementConfig = {
   dataSource: {
     name: 'BLOCK_COMMON_PARAM',  // 数据源名称标识
@@ -440,7 +448,14 @@ function handleDeviceManagementWriteEvent(event, mqttMessage) {
 
 onMounted(() => {
   console.log('[DeviceManagement] 设备管理页面已挂载')
-  
+
+  // 【智能暂停机制】暂停全局30秒定时器
+  // 防止自动读取 block_common_param_r 覆盖用户的参数选择操作
+  // 这是解决用户反馈问题的核心逻辑：当用户在设备管理页面选择下拉框参数时，
+  // 30秒定时器触发会导致选择失效，现在通过暂停定时器来避免这个问题
+  pausePeriodicRead('DeviceManagement')
+  console.log('[DeviceManagement] 已暂停全局30秒定时器，避免干扰用户参数选择')
+
   // 启动电脑时间定时更新
   updateCurrentTime() // 立即更新一次
   timeUpdateInterval = setInterval(updateCurrentTime, 1000) // 每秒更新一次
@@ -489,7 +504,13 @@ onMounted(() => {
 
 onUnmounted(() => {
   console.log('[DeviceManagement] 设备管理页面即将卸载')
-  
+
+  // 【智能暂停机制】恢复全局30秒定时器
+  // 当用户离开设备管理页面时，恢复正常的系统配置自动读取
+  // 确保系统配置监控功能正常运行
+  resumePeriodicRead('DeviceManagement')
+  console.log('[DeviceManagement] 已恢复全局30秒定时器，系统配置监控恢复正常')
+
   // 清理定时器
   if (timeUpdateInterval) {
     clearInterval(timeUpdateInterval)

@@ -117,8 +117,8 @@ export function useFaultOverview() {
             // 🚀 优化：通过label直接映射到key，不依赖于完全匹配
             // 建立label到key的映射关系
             const labelToKeyMap = {
-              '簇间压差过大故障等级': 'ClusterInterVoltageDiffFaultGrade',
-              '簇间电流差异过大故障等级': 'ClusterInterCurrentDiffFaultGrade',
+              '簇间压差过大故障': 'ClusterInterVoltageDiffFaultGrade',
+              '簇间电流差过大故障': 'ClusterInterCurrentDiffFaultGrade',
               '单体电压压差故障等级': 'CellVoltageDiffFaultGrade',
               '单体温度温差故障等级': 'CellTempDiffFaultGrade',
               '单体soc差故障等级': 'CellSocDiffFaultGrade',

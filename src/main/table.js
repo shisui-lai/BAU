@@ -3278,8 +3278,8 @@ export const BLOCK_ANALOG_FAULT_GRADE = [
 
   // 故障等级5 (2字节) - 2个故障类型，每个2位，其余预留
   { class: '堆模拟量故障等级5', key: 'BlockAnalogFaultGrade5', type: 'u16', scale: 1, hide: false },
-  { class: '堆模拟量故障等级5', key: 'ClusterInterVoltageDiffFaultGrade', label: '簇间压差过大故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade5', bit: 0, len: 2 },
-  { class: '堆模拟量故障等级5', key: 'ClusterInterCurrentDiffFaultGrade', label: '簇间电流差异过大故障等级', type: 'bits', bitsOf: 'BlockAnalogFaultGrade5', bit: 2, len: 2 },
+  { class: '堆模拟量故障等级5', key: 'ClusterInterVoltageDiffFaultGrade', label: '簇间压差过大故障', type: 'bits', bitsOf: 'BlockAnalogFaultGrade5', bit: 0, len: 2 },
+  { class: '堆模拟量故障等级5', key: 'ClusterInterCurrentDiffFaultGrade', label: '簇间电流差过大故障', type: 'bits', bitsOf: 'BlockAnalogFaultGrade5', bit: 2, len: 2 },
   { class: '堆模拟量故障等级5', key: 'BlockAnalogFaultGrade5Reserved', label: '预留', type: 'bits', bitsOf: 'BlockAnalogFaultGrade5', bit: 4, len: 12 },
 ];
 
@@ -4407,5 +4407,5 @@ export const EVENT_RECORD_R = [
   { class: '事件记录数据', key: 'Reserved', label: '预留', type: 'u16', scale: 1, hide: true },
   
   // 字段105：CRC16（2字节）
-  { class: '事件记录数据', key: 'CRC16', label: 'CRC16', type: 'u16', scale: 1, hide: true }
+  { class: '事件记录数据', key: 'CRC16', label: 'CRC16', type: 'u16', scale: 1, hide: false }
 ];

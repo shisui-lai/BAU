@@ -2,7 +2,7 @@
 import { PACK_SUMMARY, IO_STATUS_SCHEMA, /*HARDWARE_FAULT_SCHEMA,*/ FAULT_LEVEL2_SCHEMA, BROKENWIRE_SCHEMA, BALANCE_STATUS_SCHEMA } from './packSchemaFactory'
 const fs = require('fs')
 const path = require('path')
-import { OUT_FAULT_MAP, SAVED_FAULT_MAP } from './table.js'
+import { OUT_FAULT_MAP, SAVED_FAULT_MAP, BLOCK_PCS } from './table.js'
 import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/ processSecondFaultRAW, processThirdFaultRAW,
     processBrokenwireRAW, parseSysBaseParamRAW, processBalanceRAW, parseWriteResponse,
     parseClusterDnsParamRAW,parsePackDnsParamRAW,parseCellDnsParamRAW,
@@ -29,7 +29,13 @@ import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/
   //       3) 现代IPC通信能力足够处理高频消息
   //       4) 简化架构，降低维护成本
   // import { sendToParent, flushThrottlers, cancelThrottlers, setBackgroundMode } from '../protocol/ipcThrottler.js'
-  import mqtt from 'mqtt'
+import mqtt from 'mqtt'
+import { startSaveTimerSemantic, stopSaveTimerSemantic } from './mqttExport/bauDataExport'
+// 原始报文两秒节拍写入
+ 
+import { processCellVolt, processCellTemp, processCellSoc, processCellSoh, processClusterSummary, processPackSummary, processBlockSummary } from './mqttExport/ingest'
+import { logAnyMessage } from './mqttExport/mqttRawLogger'
+ 
   import {
            BLOCK_COMMON_PARAM_R,//BAU通用参数配置
            BLOCK_BATT_PARAM_R, //系统堆电池配置参数
@@ -265,7 +271,7 @@ function withResponseCheck(fn) {
 
   const processBlockCommonParamData = withResponseCheck(buf => parseBlockCommonParamRAW(buf));
   const processSysAbstractData   = hex => parseConfigSection(hex, SYS_ABSTRACT,   '系统概要');
-  const processClusterSummaryData   = hex => parseConfigSection(hex, CLUSTER_SUMMARY,   '簇端概要');
+  const processClusterSummaryData   = hex => parseConfigSection(hex, CLUSTER_SUMMARY, '簇端概要');
   const processBlockBattParamData = hex => parseConfigSection(hex, BLOCK_BATT_PARAM_R, '电池堆配置参数(1/2)');
   const processPackSummaryData   = hex => processPackSummaryRAW(hex, PACK_SUMMARY,   'Pack端概要');
   const processIoStatusData   = hex => processIoStatusRAW(hex, IO_STATUS_SCHEMA,   'IO概要');
@@ -304,6 +310,80 @@ function withResponseCheck(fn) {
   const processFactoryCalibParamData = withResponseCheck(buf => parseFactoryCalibrationRAW(buf.toString('hex'))); //协议修改新增
   const processEventRecordFlagData = withResponseCheck(hex => parseEventRecordFlagRAW(hex));
   const processEventRecordData = withResponseCheck(hex => parseEventRecordRAW(hex));
+
+  // PCS数据处理函数 - 只解析原始数据，不使用字段表
+  const processBlockPcsData = hex => {
+    const buf = toBuf(hex)
+    const view = dv(buf)
+
+    if (buf.length < 206) { // 103个uint16 = 206字节
+      console.warn('[processBlockPcsData] 数据长度不足:', buf.length)
+      return { baseConfig: {}, data: [] }
+    }
+
+    // 解析103个原始uint16数据
+    const rawData = []
+    for (let i = 0; i < 103; i++) {
+      rawData.push(view.getUint16(i * 2, true)) // 小端序
+    }
+
+    return {
+      baseConfig: {
+        dataLength: rawData[0],
+        pcsAddress: rawData[1],
+        commStatus: rawData[2]
+      },
+      data: rawData
+    }
+  }
+
+  // 制冷设备数据处理函数 - 只解析原始数据，不使用字段表
+  const processBlockRefData = hex => {
+    const buf = toBuf(hex)
+    const view = dv(buf)
+
+    if (buf.length < 206) { // 103个uint16 = 206字节
+      console.warn('[processBlockRefData] 数据长度不足:', buf.length)
+      return { baseConfig: {}, data: [] }
+    }
+
+    // 解析103个原始uint16数据
+    const rawData = []
+    for (let i = 0; i < 103; i++) {
+      rawData.push(view.getUint16(i * 2, true)) // 小端序
+    }
+
+    return {
+      baseConfig: {
+        dataLength: rawData[0],
+        refAddress: rawData[1],
+        commStatus: rawData[2]
+      },
+      data: rawData
+    }
+  }
+
+  // 除湿空调数据处理函数 - 只解析原始数据，不使用字段表
+  const processBlockDehData = hex => {
+    const buf = toBuf(hex)
+    const view = dv(buf)
+    if (buf.length < 206) {
+      console.warn('[processBlockDehData] 数据长度不足:', buf.length)
+      return { baseConfig: {}, data: [] }
+    }
+    const rawData = []
+    for (let i = 0; i < 103; i++) {
+      rawData.push(view.getUint16(i * 2, true))
+    }
+    return {
+      baseConfig: {
+        dataLength: rawData[0],
+        dehAddress: rawData[1],
+        commStatus: rawData[2]
+      },
+      data: rawData
+    }
+  }
 
     /* ---------- 8 种三级故障：自动带入 kind ---------- */
   const parseCellOv_L3   = thirdL3('cell_ov');
@@ -400,6 +480,15 @@ function withResponseCheck(fn) {
     // 系统操作配置参数
     block_operate_cfg_r: withResponseCheck(hex => parseBlockOperateCfgRAW(hex)),
     block_operate_cfg_w: parseWriteResponse,
+
+    // 堆PCS数据
+    block_pcs: processBlockPcsData,
+
+    // 堆制冷设备数据
+    block_ref: processBlockRefData,
+    
+    // 堆除湿空调数据
+    block_deh: processBlockDehData,
 
     // SOX参数处理器
     real_time_save_r:  processRealTimeSaveData,
@@ -541,6 +630,8 @@ function withResponseCheck(fn) {
   let isConnected = false
   let isConnecting = false // 新增：连接中标志，防止重复连接
   let isBackgroundMode = false // 后台模式标识
+  let semanticExportEnabled = false
+  let rawExportEnabled = false
 
   // 动态连接函数
   function connectMqtt(config) {
@@ -630,8 +721,12 @@ function withResponseCheck(fn) {
             })
           }
           
-          // 设置消息处理器
-          setupMessageHandler()
+        // 设置消息处理器
+        setupMessageHandler()
+
+        if (semanticExportEnabled) {
+          startSaveTimerSemantic()
+        }
 
           // 启动健康检查
           startHealthCheck()
@@ -653,6 +748,7 @@ function withResponseCheck(fn) {
             stopHealthCheck()
             // 【数据速率】停止速率计算
             stopDataRateCalculation()
+            stopSaveTimerSemantic()
             process.send({ type: 'mqtt-disconnected', data: {} })
           }
         })
@@ -665,6 +761,7 @@ function withResponseCheck(fn) {
           stopHealthCheck()
           // 【数据速率】停止速率计算
           stopDataRateCalculation()
+          stopSaveTimerSemantic()
           process.send({ type: 'mqtt-offline', data: {} })
         })
 
@@ -850,7 +947,6 @@ function withResponseCheck(fn) {
     
     // 创建新的消息处理器并保存引用
     messageHandlerRef = (topic, payload) => {
-      // 只有在连接状态下才处理消息
       if (!isConnected || !client) {
         return
       }
@@ -865,11 +961,18 @@ function withResponseCheck(fn) {
         clusterId = Number(parts[4].slice(1))  // c1 -> 1
       }
 
-      const tRecv = performance.now(); //收到时间戳
+      const tRecv = performance.now();
       const dataType = suffix.toUpperCase();
       const buf      = payload;
       const len      = buf.length;
       const hex      = buf.toString('hex');
+      const direction = parts[2] || ''
+      const cid = `${blockId}-${clusterId || 0}`
+      try {
+        if (rawExportEnabled) {
+          logAnyMessage({ topic, payloadHex: hex, clientId: cid, ts: Date.now(), direction })
+        }
+      } catch {}
 
       // 【数据速率】累加原始MQTT payload大小（所有接收到的数据，不管是否被限流）
       dataRateAccumulator += len
@@ -877,7 +980,6 @@ function withResponseCheck(fn) {
        /*  读取 / 遥测 / 遥信：按 TOPIC_TABLE_MAP 常规解析 —— */
       const parseFun  = TOPIC_TABLE_MAP[suffix]
       if (!parseFun) {
-        // console.warn(`[MQTT Child] ⚠️ 跳过未知消息 - 未注册解析表: ${suffix}`);
         return;
       }
 
@@ -909,6 +1011,28 @@ function withResponseCheck(fn) {
         tRecv,
         tParsed
         // ⚠️ 移除 payloadSize，不再在msg中传递，速率由子进程独立计算
+      }
+
+      if (suffix === 'cell_volt') {
+        processCellVolt({ topic, hex, blockId, clusterId, baseConfig, data })
+      }
+      if (suffix === 'cell_temp') {
+        processCellTemp({ topic, hex, blockId, clusterId, baseConfig, data })
+      }
+      if (suffix === 'cell_soc') {
+        processCellSoc({ topic, hex, blockId, clusterId, baseConfig, data })
+      }
+      if (suffix === 'cell_soh') {
+        processCellSoh({ topic, hex, blockId, clusterId, baseConfig, data })
+      }
+      if (suffix === 'cluster_summary') {
+        processClusterSummary({ topic, hex, blockId, clusterId, baseConfig, data })
+      }
+      if (suffix === 'pack_summary') {
+        processPackSummary({ topic, hex, blockId, clusterId, baseConfig, data })
+      }
+      if (suffix === 'block_summary') {
+        processBlockSummary({ topic, hex, blockId, clusterId, baseConfig, data })
       }
 
       // ========== 事件记录数据特殊处理 ==========
@@ -1004,6 +1128,19 @@ function withResponseCheck(fn) {
         })
         return
       }
+
+      if (cmd === 'SET_EXPORT_ENABLE') {
+        const prevSemantic = semanticExportEnabled
+        semanticExportEnabled = !!message.semantic
+        rawExportEnabled = !!message.raw
+        if (semanticExportEnabled && !prevSemantic) {
+          startSaveTimerSemantic()
+        }
+        if (!semanticExportEnabled && prevSemantic) {
+          stopSaveTimerSemantic()
+        }
+        return
+      }
       
       // ========== 事件记录导出功能 ==========
       if (cmd === 'START_READ_EVENT') {
@@ -1089,6 +1226,15 @@ function withResponseCheck(fn) {
               }
             }
           })
+          try {
+            const parts = String(topic).split('/')
+            const blockId = Number(parts[3]?.slice(1)) || 0
+            const clusterId = parts.length > 4 && parts[4]?.startsWith('c') ? Number(parts[4].slice(1)) : 0
+            const cid = `${blockId}-${clusterId || 0}`
+            if (rawExportEnabled) {
+              logAnyMessage({ topic, payloadHex: payloadHex, clientId: cid, ts: Date.now(), direction: 's2d' })
+            }
+          } catch {}
         } catch (error) {
           // 【关键修复】捕获所有异常，防止进程崩溃
           console.error('[MQTT Child] 发布消息时发生异常:', error.message)

@@ -7,6 +7,7 @@ const fs = require('fs')
 const path = require('path')
 import { EVENT_RECORD_R } from './table.js'
 import { formatEventRecordField } from '../protocol/eventRecordFormatter'
+import { RAW_EXPORT_DIR } from './mqttExport/paths.js'
 
 /**
  * 将寄存器数组转换为字节数组（用于CRC计算）
@@ -527,16 +528,17 @@ function stopReadingEvent(blockId, wasCanceled = false, hasError = false) {
  * @param {number} recordCount - 记录数量
  */
 function generateEventRecordCSV(blockId, saveDir, recordCount) {
-  if (!saveDir || recordCount === 0) {
-    console.warn(`[MQTT Child] CSV生成跳过: saveDir=${saveDir}, recordCount=${recordCount}`)
+  if (recordCount === 0) {
+    console.warn(`[MQTT Child] CSV生成跳过: recordCount=${recordCount}`)
     return
   }
 
   // 创建日期文件夹
   const now = new Date()
   const dateOnly = now.toISOString().split('T')[0] // YYYY-MM-DD
-  const eventFolderName = `Event_${dateOnly}`
-  const eventFolderPath = path.join(saveDir, eventFolderName)
+  // 优先使用调用方传入的保存目录；若未提供则回落到原有RAW_EXPORT_DIR
+  const baseDir = (typeof saveDir === 'string' && saveDir.trim().length > 0) ? saveDir : RAW_EXPORT_DIR
+  const eventFolderPath = path.join(baseDir, `Event_${dateOnly}`)
 
   // 确保目录存在
   try {
@@ -551,8 +553,9 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
   const minutes = String(now.getMinutes()).padStart(2, '0')
   const seconds = String(now.getSeconds()).padStart(2, '0')
   const timestamp = `${dateOnly}_${hours}-${minutes}-${seconds}`
-  const filename = `block${blockId}_${timestamp}.csv`
+  const filename = `EventRecords_block${blockId}_${timestamp}.csv`
   const outputFile = path.join(eventFolderPath, filename)
+  console.log(`[事件记录导出] 写入CSV: ${outputFile}`)
 
   // 创建写入流
   const csvStream = fs.createWriteStream(outputFile, { encoding: 'utf8', flags: 'w' })

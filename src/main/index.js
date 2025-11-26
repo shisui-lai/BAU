@@ -31,6 +31,7 @@ import {
 let mainWindow
 let quitting = false;
 import forkPath1 from './mqtt.js?modulePath'
+import { createMessageHandler } from './ipc/childBridge.js'
 
 // 默认导出目录
 let DEFAULT_EXPORT_DIR = join(process.cwd(), 'EventExports')
@@ -515,6 +516,8 @@ function createWindow() {
   
   // 页面可见性状态管理
   let isPageVisible = true
+  // 文件占用弹窗防抖：避免重复弹窗与重复监听器注册
+  let busyDialogShowing = false
   
   // 监听渲染进程的可见性变化 - 已禁用后台节流
   ipcMain.on('page-visibility-change', (_e, visible) => {
@@ -533,117 +536,7 @@ function createWindow() {
   let pendingSetImmediateCount = 0
 
   mainWindow.webContents.once('did-finish-load', () => {
-    // 设置进程管理器的消息处理器
-    // 功能：接收来自MQTT子进程的所有消息，进行分类处理
-    processManager.setMessageHandler((msg) => {
-      mainProcessMessageCount++
-      
-      // 【诊断】每1秒输出一次统计信息（临时改为1秒，方便对比速率显示）
-      // 用途：验证速率0KB/s时，主进程是否真的无消息
-      const now = Date.now()
-      if (now - mainProcessLastLogTime > 1000) {
-        const messagesPerSecond = mainProcessMessageCount / ((now - mainProcessLastLogTime) / 1000)
-        // console.log(`[Main Process] 📊 1秒统计: ${messagesPerSecond.toFixed(1)} msg/s, 待处理: ${pendingSetImmediateCount}`)
-        
-        // 【关键诊断】如果消息速率过高或待处理队列过长，发出警告
-        // 阈值说明：根据用户实际负载（200+ beats/s），调整为300 msg/s和100队列长度
-        // if (messagesPerSecond > 300) {
-        //   console.warn(`[Main Process] ⚠️ 消息速率过高 (${messagesPerSecond.toFixed(1)} msg/s)，可能导致事件循环拥堵`)
-        // }
-        // if (pendingSetImmediateCount > 100) {
-        //   console.warn(`[Main Process] ⚠️ setImmediate队列过长 (${pendingSetImmediateCount})，可能导致UI更新延迟`)
-        // }
-        
-        mainProcessMessageCount = 0
-        mainProcessLastLogTime = now
-      }
-      
-      // 过滤心跳消息 - 心跳消息已在processManager中处理，不需要转发到渲染进程
-      // 这样可以避免渲染进程收到大量无用的心跳消息
-      if (msg.type === 'heartbeat') {
-        return
-      }
-
-      // 【数据速率】直接转发速率更新消息到渲染进程
-      // 新架构：速率在MQTT子进程中计算，主进程只负责转发
-      if (msg.type === 'data-rate-update') {
-        pendingSetImmediateCount++
-        setImmediate(() => {
-          mainWindow.webContents.send('data-rate-update', msg.data)
-          pendingSetImmediateCount--
-        })
-        return
-      }
-
-      // ========== 事件记录导出相关消息处理 ==========
-      if (msg.type === 'readEventProgress') {
-        pendingSetImmediateCount++
-        setImmediate(() => {
-          mainWindow.webContents.send('update-readEventProgress', msg.data)
-          pendingSetImmediateCount--
-        })
-        return
-      }
-
-      if (msg.type === 'readEventCompleted') {
-        pendingSetImmediateCount++
-        setImmediate(() => {
-          // 传递saveDir和data对象（保持blockId格式）
-          mainWindow.webContents.send('export-completed', msg.data)
-          pendingSetImmediateCount--
-        })
-        return
-      }
-
-      if (msg.type === 'readEventError') {
-        pendingSetImmediateCount++
-        setImmediate(() => {
-          mainWindow.webContents.send('readEventErrorFromMain', msg.data)
-          pendingSetImmediateCount--
-        })
-        return
-      }
-
-      if (msg.type === 'readEventCanceled') {
-        pendingSetImmediateCount++
-        setImmediate(() => {
-          // 转发取消通知到渲染进程
-          mainWindow.webContents.send('export-canceled', msg.data)
-          pendingSetImmediateCount--
-        })
-        return
-      }
-
-      // 转发其他消息到渲染进程
-      pendingSetImmediateCount++
-      setImmediate(() => {
-        mainWindow.webContents.send(msg.type, msg.data)
-        pendingSetImmediateCount--
-      })
-
-      // 【数据接收监控】发送心跳信号到渲染进程（仅用于通讯状态监控，不再包含速率数据）
-      // 功能：监控设备数据接收状态，支持5秒超时检测
-      // 只有在收到真正的设备业务数据时才发送心跳，排除连接状态等控制消息
-      if (msg.data && typeof msg.data === 'object' && Object.keys(msg.data).length > 0 &&
-          msg.type !== 'mqtt-connected' &&
-          msg.type !== 'mqtt-disconnected' &&
-          msg.type !== 'mqtt-connect-result' &&
-          msg.type !== 'mqtt-disconnect-result' &&
-          msg.type !== 'mqtt-test-result' &&
-          msg.type !== 'data-rate-update' &&
-          msg.type !== 'heartbeat') {
-
-        // 异步发送心跳信号（不再包含dataSize，速率由子进程独立计算）
-        pendingSetImmediateCount++
-        setImmediate(() => {
-          mainWindow.webContents.send('mqtt-data-heartbeat', {
-            timestamp: Date.now(),
-            messageType: msg.type
-          })
-          pendingSetImmediateCount--
-        })
-      }
-    });
+    processManager.setMessageHandler(createMessageHandler(processManager, mainWindow))
   }
   )
 
@@ -688,7 +581,7 @@ function createWindow() {
 
         // 监听连接结果（一次性）
         const handleResult = (message) => {
-          console.log('[Main]  收到MQTT子进程消息:', message.type)
+          // console.log('[Main]  收到MQTT子进程消息:', message.type)
           if (message.type === 'mqtt-connect-result') {
             // 标记已收到首次响应
             if (!firstResponseReceived) {
@@ -777,6 +670,13 @@ function createWindow() {
       })
     })
 
+    ipcMain.on('set-export-config', (_event, { semantic, raw }) => {
+      const mqttTask = processManager.getMQTTTask()
+      if (mqttTask && !mqttTask.killed) {
+        mqttTask.send({ cmd: 'SET_EXPORT_ENABLE', semantic, raw })
+      }
+    })
+
     // 添加进程管理相关的IPC处理器
     // 这些接口允许渲染进程查询和控制MQTT子进程状态
 
@@ -846,32 +746,16 @@ function createWindow() {
     // 选择默认导出目录
     ipcMain.handle('choose-default-export-dir', async () => {
       const { canceled, filePaths } = await dialog.showOpenDialog({
-        properties: ['openDirectory'],
+        properties: ['openDirectory', 'createDirectory'],
         defaultPath: DEFAULT_EXPORT_DIR
       })
-      if (!canceled && filePaths && filePaths.length > 0) {
-        DEFAULT_EXPORT_DIR = filePaths[0]
-        // 创建目录（如果不是根目录）
-        const isRoot = parse(DEFAULT_EXPORT_DIR).root === DEFAULT_EXPORT_DIR
-        if (!isRoot) {
-          try {
-            const fs = require('fs')
-            fs.mkdirSync(DEFAULT_EXPORT_DIR, { recursive: true })
-          } catch (err) {
-            console.error(`创建导出目录 "${DEFAULT_EXPORT_DIR}" 失败：`, err)
-            if (err.code !== 'EPERM') {
-              throw err
-            }
-          }
-        }
-        return DEFAULT_EXPORT_DIR
-      }
-      return null
+      return canceled ? null : filePaths[0]
     })
 
     // 设置默认导出目录
     ipcMain.on('set-default-export-dir', (event, dir) => {
       DEFAULT_EXPORT_DIR = dir
+      // 在 Windows 上，parse(dir).root === 'D:\\' 当 dir === 'D:\\' 时
       const isRoot = parse(dir).root === dir
       if (!isRoot) {
         try {
@@ -879,12 +763,13 @@ function createWindow() {
           fs.mkdirSync(DEFAULT_EXPORT_DIR, { recursive: true })
         } catch (err) {
           console.error(`创建导出目录 "${DEFAULT_EXPORT_DIR}" 失败：`, err)
+          // 如果错误码是 EPERM（根目录不允许创建），就忽略；否则重新抛出
           if (err.code !== 'EPERM') {
             throw err
           }
         }
       }
-      event.sender.send('export-dir-updated', DEFAULT_EXPORT_DIR)
+      event.sender.send('export-dir-updated', dir)
     })
 
 }

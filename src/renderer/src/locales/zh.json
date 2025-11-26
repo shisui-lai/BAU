@@ -264,6 +264,11 @@
     "selectedItems": "已选{0}项",
     "disconnected": "未连接",
     "dataRate": "KB/s",
+    "storageEnable": "存储使能",
+    "export": {
+      "enableSemantic": "数据导出使能",
+      "enableRaw": "报文导出使能"
+    },
     "status": {
       "disconnected": "未通讯",
       "normal": "通讯正常",
@@ -309,7 +314,11 @@
     "blockRemoteCommand": "堆命令下设",
     "alarmInfo": "告警信息",
     "bauAddressDetection": "BAU地址探测",
-    "deviceManagement": "设备管理"
+    "deviceManagement": "设备管理",
+    "peripheralDevices": "外围设备",
+    "pcsDevice": "堆PCS设备",
+    "refDevice": "堆制冷设备",
+    "dehDevice": "堆除湿空调"
   },
   "forceUpgrade": {
     "tftpServerConfig": "TFTP服务器配置",
@@ -618,14 +627,17 @@
       "temperature4": "温度4",
       "temperature5": "温度5",
       "clusterSOC": "簇SOC",
-      "clusterSOH": "簇SOH",
-      "clusterSOE": "簇SOE",
+    "clusterSOH": "簇SOH",
+    "clusterSOE": "簇SOE",
+    "clusterRealSOC": "真实SOC",
+    "ocvExecCount": "OCV执行次数",
       "maxChargePower": "最大允充功率",
       "maxDischargePower": "最大允放功率",
       "singleChargeEnergy": "单次充电电量",
       "singleDischargeEnergy": "单次放电电量",
       "singleChargeCapacity": "单次充电容量",
-      "singleDischargeCapacity": "单次放电容量"
+    "singleDischargeCapacity": "单次放电容量"
+    ,"defaultParamRemainTimes": "默认参数剩余次数"
     },
     "systemStatus": {
       "idle": "静置状态",
@@ -662,7 +674,7 @@
       "energy": "kWh",
       "capacity": "Ah"
     },
-    "clusterLabels": {
+  "clusterLabels": {
       "clusterCurrent": "簇电流",
       "clusterVoltage": "簇电压",
       "prechargeVoltage": "预充电压"
@@ -739,6 +751,27 @@
         "tempDiff": "温度极差"
       }
     }
+  },
+  "systemTotalStatus": {
+    "idle": "静止",
+    "charge": "充电",
+    "discharge": "放电",
+    "forbidCharge": "禁充",
+    "forbidDischarge": "禁放",
+    "standby": "待机",
+    "alarm": "告警",
+    "fault": "故障",
+    "chgPowerLatch": "充电功率锁存",
+    "dischPowerLatch": "放电功率锁存",
+    "chgCmd": "充电指令",
+    "chgCmdDone": "充电指令完成",
+    "dischCmd": "放电指令",
+    "dischCmdDone": "放电指令完成",
+    "busOffCmd": "脱离母线指令",
+    "busOffCmdDone": "脱离母线指令完成",
+    "maintMode": "运维模式",
+    "testMode": "正常模式/测试模式",
+    "init": "初始化"
   },
   "versionInfo": {
     "classification": {
@@ -3355,5 +3388,33 @@
     "website": "官网",
     "phone": "电话",
     "Email": "邮箱"
+  },
+  "peripheral": {
+    "pcs": {
+      "title": "PCS设备",
+      "subtitle": "电力转换系统数据监控",
+      "blockSelect": "堆选择",
+      "type": "PCS型号",
+      "selectType": "请选择PCS型号",
+      "commStatus": "通讯状态",
+      "fieldName": "字段名称",
+      "fieldValue": "字段值",
+      "unknownType": "未知型号",
+      "noData": "暂无PCS数据",
+      "templateDataTip": "当前显示的是所选PCS型号的数据结构模板"
+    },
+    "ref": {
+      "title": "制冷设备",
+      "subtitle": "制冷系统数据监控",
+      "blockSelect": "堆选择",
+      "type": "制冷设备型号",
+      "selectType": "请选择制冷设备型号",
+      "commStatus": "通讯状态",
+      "fieldName": "字段名称",
+      "fieldValue": "字段值",
+      "unknownType": "未知型号",
+      "noData": "暂无制冷设备数据",
+      "templateDataTip": "当前显示的是所选制冷设备型号的数据结构模板"
+    }
   }
 }

@@ -584,6 +584,11 @@ const registerEventFlagListener = () => {
   window.electron.ipcRenderer.on('EVENT_RECORD_FLAG_R', eventFlagListener)
 }
 
+// 监听导出目录更新
+window.electron.ipcRenderer.on('export-dir-updated', (_, dir) => {
+  defaultDir.value = dir
+})
+
 // ========== 导出相关函数 ==========
 
 /**
@@ -591,17 +596,16 @@ const registerEventFlagListener = () => {
  */
 const chooseDefaultDir = async () => {
   try {
-    const dir = await window.electronAPI.dialog.showOpenDialog({
-      properties: ['openDirectory']
-    })
-    if (dir && !dir.canceled && dir.filePaths && dir.filePaths.length > 0) {
-      defaultDir.value = dir.filePaths[0]
-      // 保存到localStorage
-      try {
-        localStorage.setItem('eventExport:defaultDir', defaultDir.value)
-      } catch (e) {
-        console.warn('[EventRecord] 保存导出目录失败', e)
-      }
+    const dir = await window.electron.ipcRenderer.invoke('choose-default-export-dir')
+    if (dir) {
+      defaultDir.value = dir
+      window.electron.ipcRenderer.send('set-default-export-dir', dir)
+      toast.add({
+        severity: 'success',
+        summary: t('toast.common.executeSuccess'),
+        detail: `导出目录已设置为: ${dir}`,
+        life: 3000
+      })
     }
   } catch (error) {
     console.error('[EventRecord] 选择导出目录失败:', error)
@@ -806,10 +810,11 @@ window.electron.ipcRenderer.on('export-completed', (_, data) => {
       life: 3000
     })
   } else {
+    const dir = data && data.saveDir ? data.saveDir : ''
     toast.add({
       severity: 'success',
       summary: t('toast.common.executeSuccess'),
-      detail: t('eventTime.toast.exportSuccess'),
+      detail: `${t('eventTime.toast.exportSuccess')}${dir ? `（保存到：${dir}）` : ''}`,
       life: 3000
     })
   }
@@ -933,6 +938,14 @@ watch(
 )
 
 onMounted(async () => {
+  // 从主进程获取默认导出目录
+  try {
+    const dir = await window.electron.ipcRenderer.invoke('get-default-export-dir')
+    defaultDir.value = dir
+  } catch (error) {
+    console.warn('[EventRecord] 获取默认导出目录失败:', error)
+  }
+
   // 恢复缓存
   try {
     const tm = JSON.parse(localStorage.getItem(LS_TIME_KEY))
@@ -943,22 +956,17 @@ onMounted(async () => {
     if (Array.isArray(ev)) {
       eventData.value = ev
     }
-    // 恢复默认导出目录
-    const savedDir = localStorage.getItem('eventExport:defaultDir')
-    if (savedDir) {
-      defaultDir.value = savedDir
-    }
   } catch (e) {
     console.warn('[EventTime] localStorage数据解析失败', e)
   }
-  
+
   updateTime()
   timer = setInterval(updateTime, 1000)
-  
+
   // 注册IPC监听器
   registerListener()
   registerEventFlagListener()
-  
+
   // 如果有选中的堆，启动周期性读取
   if (blockStore.selectedBlockForView) {
     setTimeout(() => {
@@ -985,6 +993,7 @@ onBeforeUnmount(() => {
   window.electron.ipcRenderer.removeAllListeners('export-completed')
   window.electron.ipcRenderer.removeAllListeners('export-canceled')
   window.electron.ipcRenderer.removeAllListeners('readEventErrorFromMain')
+  window.electron.ipcRenderer.removeAllListeners('export-dir-updated')
   // 清理删除事件记录应答监听器
   window.electron.ipcRenderer.removeAllListeners('CLEAR_EVENT_RECORD_NUM')
   window.electron.ipcRenderer.removeAllListeners('update-readEventProgress')
@@ -1171,4 +1180,3 @@ onBeforeUnmount(() => {
   max-width: 100%;
 }
 </style>
-

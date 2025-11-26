@@ -32,6 +32,8 @@ export function usePageTypeDetection() {
     // BAU地址探测页面（独立页面：无选择器）
     '/Device/BauAddressDetection': 'standalone',
     '/block/device-management': 'standalone',
+    // PCS外设页面（堆级只读页面：只显示堆选择器）
+    '/Peripheral/BlockPcs': 'blockread',
     
     // ================== 簇级遥调、遥控页面 (cluster-type) ==================
     // 需要显示簇选择器和下发多选框的页面（可读写）

@@ -221,6 +221,48 @@ const router = createRouter({
       ]
     },
     {
+      path: '/Peripheral',
+      name: 'Peripheral',
+      component: () => import(
+        /* webpackPrefetch: true */
+        /* webpackChunkName: "app-layout" */
+        '@/layout/AppLayout.vue'
+      ),
+      children: [
+        {
+          path: 'BlockPcs',
+          name: 'BlockPcs',
+          component: () => import(
+            /* webpackPrefetch: true */
+            /* webpackChunkName: "blockPcs" */
+            '@/views/Peripheral/BlockPcs.vue'
+          ),
+          meta: { visibleForGuest: true } // 所有用户可见
+        },
+        {
+          path: 'BlockRef',
+          name: 'BlockRef',
+          component: () => import(
+            /* webpackPrefetch: true */
+            /* webpackChunkName: "blockRef" */
+            '@/views/Peripheral/BlockRef.vue'
+          ),
+          meta: { visibleForGuest: true } // 所有用户可见
+        }
+        ,
+        {
+          path: 'BlockDeh',
+          name: 'BlockDeh',
+          component: () => import(
+            /* webpackPrefetch: true */
+            /* webpackChunkName: "blockDeh" */
+            '@/views/Peripheral/BlockDeh.vue'
+          ),
+          meta: { visibleForGuest: true }
+        }
+      ]
+    },
+    {
       path: '/Bau',
       name: 'Bau',
       component: () => import(

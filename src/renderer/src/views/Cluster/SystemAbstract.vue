@@ -305,16 +305,7 @@ function getNumberFieldName(valueLabel) {
       <div
         v-for="item in viewData"
         :key="item.label"
-        style="  width: fit-content;
-          min-width: 7rem;
-          height: fit-content;
-          min-height: 2.9rem; 
-          text-align: left;
-          display: inline-block;
-          position: relative; 
-          padding: 0rem 0.2rem;
-          border-radius: 3px; 
-          border: 1.4px solid #b9c1c6db; "
+        class="summary-label-card"
       >
         <div class="text-xs opacity-60 truncate">{{ item.label }}</div>
         <div class="text-xl font-semibold">{{ item.value }}</div>
@@ -324,3 +315,33 @@ function getNumberFieldName(valueLabel) {
   </div>
 </template>
 
+<style scoped>
+/* 概要信息标签卡片样式 - 固定宽度以容纳三位数电池编号 */
+.summary-label-card {
+  width: 9rem; /* 固定宽度，确保能容纳 "最大电压1 3.456V #123" */
+  height: fit-content;
+  min-height: 2.9rem;
+  text-align: left;
+  display: inline-block;
+  position: relative;
+  padding: 0rem 0.2rem;
+  border-radius: 3px;
+  border: 1.4px solid #b9c1c6db;
+  box-sizing: border-box; /* 确保padding不会增加总宽度 */
+  overflow: hidden; /* 防止内容溢出 */
+}
+
+/* 标签文字样式 */
+.summary-label-card .text-xs {
+  white-space: nowrap; /* 防止标签换行 */
+  overflow: hidden;
+  text-overflow: ellipsis; /* 超长标签显示省略号 */
+}
+
+/* 数值文字样式 */
+.summary-label-card .text-xl {
+  word-break: break-word; /* 允许长数值换行 */
+  line-height: 1.2; /* 适当的行高 */
+  letter-spacing: -0.02em; /* 稍微减少字符间距，让数字更紧凑 */
+}
+</style>

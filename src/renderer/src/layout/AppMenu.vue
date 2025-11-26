@@ -110,6 +110,18 @@ const rawMenuItems = ref([
     route: '/Block/DeviceManagement',
     type: 'single',
     roles: ['admin']
+  },
+  {
+    labelKey: 'menu.peripheralDevices',
+    icon: 'pi pi-sitemap',
+    expanded: false,
+    type: 'group',
+    roles: ['admin', 'guest'], // 所有用户可见
+    items: [
+      { labelKey: 'menu.pcsDevice', icon: 'pi pi-bolt', route: '/Peripheral/BlockPcs', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.refDevice', icon: 'pi pi-sliders-h', route: '/Peripheral/BlockRef', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.dehDevice', icon: 'pi pi-cloud', route: '/Peripheral/BlockDeh', roles: ['admin', 'guest'] }
+    ]
   }
 ])
 

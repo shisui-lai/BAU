@@ -12,7 +12,7 @@ import { useClusterSelect } from '@/composables/core/device-selection/useCluster
 const { clusterOptions, selectedCluster,
       ensureClusterOption, replaceClusterOptions } = useClusterSelect()
 import cluster from './version.vue' 
-import { pickCluster        } from '@/composables/core/data-processing/cluster/parseClusterSummary'
+import { pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
 import { pickPack           } from '@/composables/core/data-processing/cluster/parsePackSummary'
 import { parsePackSummary }    from '@/composables/core/data-processing/cluster/parsePackSummary'
 import { parseClusterSummary }    from '@/composables/core/data-processing/cluster/parseClusterSummary'
@@ -269,7 +269,7 @@ const CELL_CHANNELS = [
 ]
 
 function onCellMsg (_e, msg) { 
-  handler(_e, msg) 
+  handler(_e, msg)
   if (msg.dataType === 'PACK_SUMMARY')       { parsePackSummary(msg); return }
   if (msg.dataType === 'CLUSTER_SUMMARY')    { parseClusterSummary(msg); return }
 }  // 保留原 handler
@@ -687,10 +687,11 @@ watch(activeView, (newView, oldView) => {
     t('batteryInfo.clusterInfo.clusterVoltage'), t('batteryInfo.clusterInfo.prechargeVoltage'), t('batteryInfo.clusterInfo.clusterCurrent'),
     t('batteryInfo.clusterInfo.insulationRPlus'), t('batteryInfo.clusterInfo.insulationRMinus'),
     t('batteryInfo.clusterInfo.temperature1'), t('batteryInfo.clusterInfo.temperature2'), t('batteryInfo.clusterInfo.temperature3'), t('batteryInfo.clusterInfo.temperature4'), t('batteryInfo.clusterInfo.temperature5'),
-    t('batteryInfo.clusterInfo.clusterSOC'), t('batteryInfo.clusterInfo.clusterSOH'), t('batteryInfo.clusterInfo.clusterSOE'),
+    t('batteryInfo.clusterInfo.clusterSOC'), t('batteryInfo.clusterInfo.clusterRealSOC'), t('batteryInfo.clusterInfo.clusterSOH'), t('batteryInfo.clusterInfo.clusterSOE'), t('batteryInfo.clusterInfo.ocvExecCount'),
     t('batteryInfo.clusterInfo.maxChargePower'), t('batteryInfo.clusterInfo.maxDischargePower'),
     t('batteryInfo.clusterInfo.singleChargeEnergy'), t('batteryInfo.clusterInfo.singleDischargeEnergy'),
-    t('batteryInfo.clusterInfo.singleChargeCapacity'), t('batteryInfo.clusterInfo.singleDischargeCapacity')
+    t('batteryInfo.clusterInfo.singleChargeCapacity'), t('batteryInfo.clusterInfo.singleDischargeCapacity'),
+    t('batteryInfo.clusterInfo.defaultParamRemainTimes')
   ]);
 
   // 服务器发送的原始中文标签到翻译后标签的映射
@@ -713,6 +714,9 @@ watch(activeView, (newView, oldView) => {
     '簇SOC': t('batteryInfo.clusterInfo.clusterSOC'),
     '簇SOH': t('batteryInfo.clusterInfo.clusterSOH'),
     '簇SOE': t('batteryInfo.clusterInfo.clusterSOE'),
+    '真实SOC(%)': t('batteryInfo.clusterInfo.clusterRealSOC'),
+    'OCV执行次数': t('batteryInfo.clusterInfo.ocvExecCount'),
+    '默认参数剩余次数': t('batteryInfo.clusterInfo.defaultParamRemainTimes'),
     '最大允充功率': t('batteryInfo.clusterInfo.maxChargePower'),
     '最大允放功率': t('batteryInfo.clusterInfo.maxDischargePower'),
     '单次充电电量': t('batteryInfo.clusterInfo.singleChargeEnergy'),
@@ -750,13 +754,68 @@ watch(activeView, (newView, oldView) => {
     [t('batteryInfo.clusterInfo.clusterSOC')]: t('batteryInfo.units.percentage'),
     [t('batteryInfo.clusterInfo.clusterSOH')]: t('batteryInfo.units.percentage'),
     [t('batteryInfo.clusterInfo.clusterSOE')]: t('batteryInfo.units.percentage'),
+    [t('batteryInfo.clusterInfo.clusterRealSOC')]: t('batteryInfo.units.percentage'),
+    [t('batteryInfo.clusterInfo.ocvExecCount')]: '',
     [t('batteryInfo.clusterInfo.maxChargePower')]: t('batteryInfo.units.power'),
     [t('batteryInfo.clusterInfo.maxDischargePower')]: t('batteryInfo.units.power'),
     [t('batteryInfo.clusterInfo.singleChargeEnergy')]: t('batteryInfo.units.energy'),
     [t('batteryInfo.clusterInfo.singleDischargeEnergy')]: t('batteryInfo.units.energy'),
     [t('batteryInfo.clusterInfo.singleChargeCapacity')]: t('batteryInfo.units.capacity'),
-    [t('batteryInfo.clusterInfo.singleDischargeCapacity')]: t('batteryInfo.units.capacity')
+    [t('batteryInfo.clusterInfo.singleDischargeCapacity')]: t('batteryInfo.units.capacity'),
+    [t('batteryInfo.clusterInfo.defaultParamRemainTimes')]: ''
   }));
+
+  function accentClass(label){
+    if (/电压|绝缘 R\+|绝缘 R-|预充电压/.test(label)) return 'accent-blue'
+    if (/温度/.test(label)) return 'accent-amber'
+    if (/SOC|真实SOC/.test(label)) return 'accent-cyan'
+    if (/SOH|SOE/.test(label)) return 'accent-cyan'
+    if (/功率|电量|容量/.test(label)) return 'accent-purple'
+    return 'accent-default'
+  }
+
+  const systemStates = computed(() => {
+    const blocks = pickCluster(selectedCluster.value, ['系统信息'])
+    const ele = blocks.find(b => b.class === '系统信息')?.element || []
+    const targetLabels = [
+      '静止','充电','放电','禁充','禁放','待机','告警','故障',
+      '充电功率锁存','放电功率锁存',
+      '充电指令','充电指令完成','放电指令','放电指令完成',
+      '脱离母线指令','脱离母线指令完成',
+      '运维模式','正常模式/测试模式','初始化'
+    ]
+
+    const result = []
+    ele.filter(it => targetLabels.includes(it.label)).forEach(it => {
+      // 双标签字段：根据 raw 显示两种状态标签并高亮激活的一个
+      if (it.label === '运维模式' && it.value && typeof it.value === 'object') {
+        const isMaint = it.value.raw === 1
+        result.push({ label: '运维模式', active: isMaint, text: '运维模式' })
+        result.push({ label: '非运维模式', active: !isMaint, text: '非运维模式' })
+        return
+      }
+      if (it.label === '正常模式/测试模式' && it.value && typeof it.value === 'object') {
+        const isTest = it.value.raw === 1
+        result.push({ label: '正常模式', active: !isTest, text: '正常模式' })
+        result.push({ label: '测试模式', active: isTest, text: '测试模式' })
+        return
+      }
+      if (it.label === '初始化' && it.value && typeof it.value === 'object') {
+        const isInit = it.value.raw === 1
+        result.push({ label: '初始化完成', active: !isInit, text: '初始化完成' })
+        result.push({ label: '初始化中',   active: isInit,  text: '初始化中' })
+        return
+      }
+
+      // 单标签位（Boolean）：直接显示该位标签，active 取值为 true/false
+      const active = Boolean(it.value)
+      result.push({ label: it.label, active, text: it.label })
+    })
+
+    return result
+  })
+
+
 
   const flatElems = computed(() => 
     // 每个 block.element 里已经是 {label,value}
@@ -814,6 +873,16 @@ watch(activeView, (newView, oldView) => {
       return { label: fieldLabel, value: displayValue }
     })
   });
+
+  const orderedRows3 = computed(() => {
+    const arr = orderedElems.value
+    const per = Math.ceil(arr.length / 3) || 1
+    return [
+      arr.slice(0, per),
+      arr.slice(per, per * 2),
+      arr.slice(per * 2)
+    ]
+  })
 
 
 
@@ -916,36 +985,35 @@ watch(activeView, (newView, oldView) => {
 
 <template>
   <div class="card flex flex-col h-full p-3 gap-1">
+    <div class="cluster-divider"></div>
+    <div class="system-fault-row">
+      <div class="property-card system-fault-card normal-item">
+        <div class="label">系统总状态位</div>
+        <div class="value">
+          <div class="system-states-container">
+            <div class="states-grid">
+              <div
+                v-for="s in systemStates"
+                :key="s.label"
+                :class="['state-item', s.active ? 'state-active' : 'state-inactive']"
+              >
+                <span class="state-label">{{ s.text }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- ▼▼ 簇端信息卡片布局：替换原DataTable ▼▼ -->
     <div class="cluster-info-container">
-      <!-- 上方分隔线 -->
-      <div class="cluster-divider"></div>
-      
-      <!-- 第一排卡片 -->
-      <div class="cluster-info-row">
-        <div v-for="e in orderedElems.slice(0, Math.ceil(orderedElems.length / 2))"
+      <div v-for="(row, idx) in orderedRows3" :key="idx" class="cluster-info-row">
+        <div v-for="e in row"
              :key="e.label"
-             class="cluster-info-card">
-          <div class="cluster-card-label">{{ e.label }}</div>
-          <div class="cluster-card-value">{{ e.value }}{{ UNIT_MAP[e.label] }}</div>
+             :class="['property-card','normal-item', accentClass(e.label)]">
+          <div class="label">{{ e.label }}</div>
+          <div class="value">{{ e.value }}{{ UNIT_MAP[e.label] }}</div>
         </div>
       </div>
-      
-      <!-- 中间分隔线 -->
-      <div class="cluster-divider"></div>
-      
-      <!-- 第二排卡片 -->
-      <div class="cluster-info-row">
-        <div v-for="e in orderedElems.slice(Math.ceil(orderedElems.length / 2))"
-             :key="e.label"
-             class="cluster-info-card">
-          <div class="cluster-card-label">{{ e.label }}</div>
-          <div class="cluster-card-value">{{ e.value }}{{ UNIT_MAP[e.label] }}</div>
-        </div>
-      </div>
-      
-      <!-- 下方分隔线 -->
-      <div class="cluster-divider"></div>
     </div>
 
     <!-- ▼▼ 数据类型切换按钮 ▼▼ -->
@@ -1035,21 +1103,15 @@ watch(activeView, (newView, oldView) => {
   }
 
   .cluster-info-row {
-    display: grid; /* 恢复grid布局 */
-    grid-template-columns: repeat(12, 1fr); /* 固定12列 */
-    gap: 6px; /* 减少卡片间距 */
-    justify-content: center; /* 让卡片整体居中 */
-    padding: 0 12px; /* 左右对称的内边距 */
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: 6px;
+    align-items: stretch;
+    padding: 0 8px;
   }
 
   /* 在小屏幕下改用flex换行布局 */
-  @media (max-width: 1400px) {
-    .cluster-info-row {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: flex-start;
-    }
-  }
+  /* 自动适配不同分辨率，不再切换为flex，保持grid自适应填充 */
 
   .cluster-divider {
     height: 1px;
@@ -1154,19 +1216,16 @@ watch(activeView, (newView, oldView) => {
   
   /* ====== 卡片网格容器 ====== */
   .card-grid{
-      display: grid;                            /* 启用 CSS Grid 布局（自动排成行列） */
-      grid-template-columns: repeat(            /* 定义列宽与列数 */
-          auto-fill,                            /* 自动填充：一行能塞多少列就塞多少列 */
-          minmax(75px, 1fr)                    /* 每列最小 100px，最大占 1fr（平均分）*/
-      );
-      gap: 30px;                              /* 网格之间的水平 + 垂直间距（总槽距） */
-      grid-auto-flow: dense;                    /* 开启"密集模式" → 小卡片会去填空洞 */
+      display: flex;                            /* 使用 Flex 布局实现自适应 */
+      flex-wrap: wrap;                          /* 允许换行 */
+      gap: 30px;                               /* 卡片之间的间距 */
       padding-left: 20px;
   }
 
   /* ====== 单张卡片主体 ====== */
   .card-grid .card{
-      min-width: 80px;                          /* 卡片最窄物理宽度；列宽 < 80px 就会换行 */
+      width: fit-content;                       /* 卡片宽度自适应内容 */
+      min-width: 80px;                          /* 保持最小宽度，避免过窄 */
       background: var(--surface-card);          /* 使用主题卡片背景色 */
       border: 1px solid var(--surface-border);  /* 使用主题边框色 */
       border-radius: 6px;                       /* 圆角半径；0 = 方角，>8px = 更圆 */
@@ -1183,6 +1242,9 @@ watch(activeView, (newView, oldView) => {
       font-size: .95rem;                        /* 字号 ~15px；改小更紧凑，改大更醒目 */
       color: var(--text-color-secondary);       /* 使用主题次要文字颜色 */
       line-height: 1.2;                         /* 行高；<=1.2 能缩小卡片高度 */
+      white-space: nowrap;                      /* 防止标签文字换行 */
+      overflow: hidden;                         /* 隐藏溢出内容 */
+      text-overflow: ellipsis;                  /* 超长文字显示省略号 */
   }
   .card-value{
       font-size: 1.2rem;                        /* 数值字号 ~19px；决定卡片高度主要因素 */
@@ -1190,4 +1252,60 @@ watch(activeView, (newView, oldView) => {
       font-variant-numeric: tabular-nums;       /* 数字等宽对齐，便于比对 */
       color: var(--text-color);                 /* 使用主题主要文字颜色 */
   }
+
+  .system-fault-row { padding: 0 8px; margin: 8px 0 6px; display: grid; grid-template-columns: 1fr; gap: 0.25rem; }
+  .system-fault-row { padding: 0 8px; margin-bottom: 6px; }
+  .system-fault-card { width: 100%; max-width: none; min-height: auto; padding: 0.35rem; box-sizing: border-box; border: 1px solid var(--surface-border); background: var(--surface-card); }
+  .property-card { border-radius: 0.4rem; padding: 0.45rem; text-align: left; transition: all 0.18s ease; cursor: pointer; position: relative; overflow: hidden; min-height: 3rem; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--surface-border); background: var(--surface-card); }
+  .property-card:hover { transform: translateY(-2px); border-color: #10b981; box-shadow: 0 6px 14px rgba(16,185,129,0.25); background: linear-gradient(180deg, rgba(230,255,242,0.08) 0%, rgba(189,245,213,0.12) 100%); }
+  .normal-item { color: #d1d5db; }
+  .normal-item .label { color: #9ca3af; font-weight: 500; font-size: 0.85rem; }
+  .normal-item .value { font-weight: 600; font-size: 0.95rem; }
+  .normal-item:hover { background: #1f2937; }
+
+  .system-states-container { padding: 0; }
+  .system-states-container { 
+    --capsule-gap-x: clamp(6px, 1.2vw, 16px);
+    --capsule-gap-y: clamp(6px, 1.2vw, 16px);
+    --capsule-pad-x: clamp(4px, 0.8vw, 8px);
+    --capsule-pad-y: clamp(2px, 0.4vw, 4px);
+    --capsule-radius: 4px;
+  }
+  .system-states-container .states-grid { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: var(--capsule-gap-y) var(--capsule-gap-x); 
+    align-items: center; 
+    justify-content: flex-start;
+  }
+  .system-states-container .state-item { 
+    display: inline-flex; 
+    flex: 0 0 auto; 
+    padding: var(--capsule-pad-y) var(--capsule-pad-x); 
+    border-radius: var(--capsule-radius); 
+    border: 1px solid var(--surface-border); 
+    background: var(--surface-card); 
+    color: var(--text-color-secondary); 
+    box-sizing: border-box; 
+    white-space: nowrap; 
+  }
+  .system-states-container .state-item.state-active { 
+    background-color: #064e3b; 
+    border-color: #10b981; 
+    color: #6ee7b7; 
+  }
+  .system-states-container .state-item.state-inactive { 
+    background: var(--surface-card); 
+    border-color: var(--surface-border); 
+    color: var(--text-color-secondary); 
+  }
+  .state-label { white-space: nowrap; line-height: 1.2; font-size: 0.8rem; }
+
+  .system-states-container { padding: 8px 12px; border-radius: 8px; background: var(--surface-card); }
+  
+  .state-active { color: #0b3d2e; background: linear-gradient(180deg, #e7fff2 0%, #c9f5dc 100%); box-shadow: 0 0 0 1px rgba(42,180,120,.28), 0 8px 16px rgba(42,180,120,.22); border-color: rgba(42,180,120,.35); }
+  .state-active:hover { box-shadow: 0 0 0 1.5px rgba(42,180,120,.36), 0 10px 22px rgba(42,180,120,.30); transform: translateY(-1px); }
+  .state-inactive { color: var(--text-color-secondary); background: var(--surface-0); opacity: .78; }
+  .state-inactive:hover { opacity: .95; box-shadow: 0 0 0 1px rgba(120,120,120,.15), 0 6px 12px rgba(120,120,120,.12); transform: translateY(-1px); }
+  .state-label { font-weight: 600; font-size: .92rem; }
 </style>

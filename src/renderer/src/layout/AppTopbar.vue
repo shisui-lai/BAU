@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useLayout } from '@/layout/composables/layout'
 import { useClusterStore } from '@/stores/device/clusterStore'
 import { useBlockStore } from '@/stores/device/blockStore'
@@ -91,6 +91,25 @@ const blockSelectedItemsLabel = computed(() => {
   return t('topBar.selectedItems', [count])
 })
 
+const storageOptions = computed(() => [
+  { label: t('topBar.export.enableSemantic'), value: 'semantic' },
+  { label: t('topBar.export.enableRaw'), value: 'raw' }
+])
+const storageEnabled = ref([])
+function sendExportConfig() {
+  const semantic = storageEnabled.value.includes('semantic')
+  const raw = storageEnabled.value.includes('raw')
+  window.electron?.ipcRenderer?.send('set-export-config', { semantic, raw })
+}
+watch(storageEnabled, () => {
+  sendExportConfig()
+})
+watch(() => mqttStore.isConnected, (val) => {
+  if (val) {
+    sendExportConfig()
+  }
+})
+
 
 </script>
 
@@ -131,6 +150,19 @@ const blockSelectedItemsLabel = computed(() => {
             :maxSelectedLabels="0"
           />
         </div>
+      </div>
+
+      <!-- 存储使能多选框（位于簇选择器与下发选择之后，靠左排布） -->
+      <div class="storage-enable-area">
+        <MultiSelect
+          v-model="storageEnabled"
+          :options="storageOptions"
+          optionLabel="label"
+          optionValue="value"
+          :placeholder="t('topBar.storageEnable')"
+          class="cluster-write-multiselect"
+          :maxSelectedLabels="0"
+        />
       </div>
       
       <!-- 堆选择器区域 - 根据页面类型显示 -->
@@ -294,6 +326,12 @@ const blockSelectedItemsLabel = computed(() => {
   min-width: 8rem;
   width: auto;
   font-size: 1rem;
+}
+
+/* 存储使能区域样式（与选择器保持一致间距与对齐） */
+.storage-enable-area {
+  display: flex;
+  align-items: center;
 }
 
 /* 菜单按钮样式 - 参考modbus设计 */

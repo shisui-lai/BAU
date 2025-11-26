@@ -264,6 +264,11 @@
     "selectedItems": "{0} item selected",
     "disconnected": "disconnect",
     "dataRate": "KB/s",
+    "storageEnable": "Storage",
+    "export": {
+      "enableSemantic": "Enable Data Export",
+      "enableRaw": "Enable Raw Message Export"
+    },
     "status": {
       "disconnected": "No Communication",
       "normal": "Normal",
@@ -309,7 +314,11 @@
     "blockRemoteCommand": "BAU Remote Cmd",
     "alarmInfo": "Alarm Info",
     "bauAddressDetection": "BAU Detection",
-    "deviceManagement": "Device Mgmt"
+    "deviceManagement": "Device Mgmt",
+    "peripheralDevices": "Peripheral Devices",
+    "pcsDevice": "Stack PCS Device",
+    "refDevice": "Stack Refrigeration",
+    "dehDevice": "Stack Dehumidifier AC"
   },
   "forceUpgrade": {
     "tftpServerConfig": "TFTP Server Configuration",
@@ -618,14 +627,17 @@
       "temperature4": "Temp4",
       "temperature5": "Temp5",
       "clusterSOC": "Cluster SOC",
-      "clusterSOH": "Cluster SOH",
-      "clusterSOE": "Cluster SOE",
+    "clusterSOH": "Cluster SOH",
+    "clusterSOE": "Cluster SOE",
+    "clusterRealSOC": "Real SOC",
+    "ocvExecCount": "OCV Exec Count",
       "maxChargePower": "Max_Chrg_P",
       "maxDischargePower": "Max_Dis_P",
       "singleChargeEnergy": "Single_Chrg_E",
       "singleDischargeEnergy": "Single_Dis_E",
       "singleChargeCapacity": "Single_Chrg_C",
-      "singleDischargeCapacity": "Single_Dis_C"
+    "singleDischargeCapacity": "Single_Dis_C"
+    ,"defaultParamRemainTimes": "Default Param Remain Times"
     },
     "systemStatus": {
       "idle": "Idle",
@@ -662,7 +674,7 @@
       "energy": "kWh",
       "capacity": "Ah"
     },
-    "clusterLabels": {
+  "clusterLabels": {
       "clusterCurrent": "Cluster Current",
       "clusterVoltage": "Cluster Voltage", 
       "prechargeVoltage": "Precharge Voltage"
@@ -739,6 +751,27 @@
         "tempDiff": "Temp Diff"
       }
     }
+  },
+  "systemTotalStatus": {
+    "idle": "Idle",
+    "charge": "Charge",
+    "discharge": "Discharge",
+    "forbidCharge": "Forbid Charge",
+    "forbidDischarge": "Forbid Discharge",
+    "standby": "Standby",
+    "alarm": "Alarm",
+    "fault": "Fault",
+    "chgPowerLatch": "Charge Power Latch",
+    "dischPowerLatch": "Discharge Power Latch",
+    "chgCmd": "Charge Command",
+    "chgCmdDone": "Charge Command Done",
+    "dischCmd": "Discharge Command",
+    "dischCmdDone": "Discharge Command Done",
+    "busOffCmd": "Bus-Off Command",
+    "busOffCmdDone": "Bus-Off Command Done",
+    "maintMode": "Maintenance Mode",
+    "testMode": "Normal/Test Mode",
+    "init": "Initialization"
   },
   "versionInfo": {
     "classification": {
@@ -1418,12 +1451,16 @@
         "电池堆总数": "Block Total Number",
         "簇电压最大值": "Cluster Voltage Max Value",
         "簇电压最大值簇编号": "Cluster Voltage Max Value Cluster Number",
+        "簇电压最大值簇号": "Cluster Voltage Max Value Number",
         "簇电压最小值": "Cluster Voltage Min Value",
         "簇电压最小值簇编号": "Cluster Voltage Min Value Cluster Number",
+        "簇电压最小值簇号": "Cluster Voltage Min Value Number",
         "簇SOC最大值": "Cluster SOC Max Value",
         "簇SOC最大值簇编号": "Cluster SOC Max Value Cluster Number",
+        "簇SOC最大值簇号": "Cluster SOC Max Value Number",
         "簇SOC最小值": "Cluster SOC Min Value",
         "簇SOC最小值簇编号": "Cluster SOC Min Value Cluster Number",
+        "簇SOC最小值簇号": "Cluster SOC Min Value Number",
         "堆单体电压最大值": "Block Cell Voltage Max Value",
         "堆单体电压最大值簇号": "Block Cell Voltage Max Value Cluster Number",
         "堆单体电压最大值节号": "Block Cell Voltage Max Value Node Number",
@@ -4003,5 +4040,33 @@
     "website": "Website",
     "phone": "Phone",
     "Email": "Email"
+  },
+  "peripheral": {
+    "pcs": {
+      "title": "PCS Device",
+      "subtitle": "Power Conversion System Data Monitoring",
+      "blockSelect": "Block Select",
+      "type": "PCS Type",
+      "selectType": "Please select PCS type",
+      "commStatus": "Communication Status",
+      "fieldName": "Field Name",
+      "fieldValue": "Field Value",
+      "unknownType": "Unknown Type",
+      "noData": "No PCS data available",
+      "templateDataTip": "Currently displaying data structure template for selected PCS type"
+    },
+    "ref": {
+      "title": "Refrigeration Device",
+      "subtitle": "Refrigeration System Data Monitoring",
+      "blockSelect": "Block Select",
+      "type": "Refrigeration Device Type",
+      "selectType": "Please select refrigeration device type",
+      "commStatus": "Communication Status",
+      "fieldName": "Field Name",
+      "fieldValue": "Field Value",
+      "unknownType": "Unknown Type",
+      "noData": "No refrigeration device data available",
+      "templateDataTip": "Currently displaying the data structure template for the selected refrigeration device type"
+    }
   }
 }

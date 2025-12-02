@@ -288,7 +288,7 @@
     "batteryInfo": "电池信息",
     "clusterVersion": "簇版本信息",
     "disconnection": "掉线信息",
-    "faultOverview": "故障总览",
+    "faultOverview": "故障预览",
     "didoStatus": "DI/DO状态",
     "didoStatusNative": "DI/DO状态(原生表格)",
     "systemConfig": "系统配置",
@@ -310,9 +310,10 @@
     "blockVersion": "堆版本信息",
     "blockAlarmThreshold": "堆报警阈值",
     "blockIOStatus": "堆IO状态",
-    "blockConfigParam": "堆配置参数",
-    "blockRemoteCommand": "堆命令下设",
+    "blockConfigParam": "堆遥调参数",
+    "blockRemoteCommand": "堆遥控命令下设",
     "alarmInfo": "告警信息",
+    "faultsGroup": "故障告警",
     "bauAddressDetection": "BAU地址探测",
     "deviceManagement": "设备管理",
     "peripheralDevices": "外围设备",
@@ -472,7 +473,9 @@
       "passwordError": "密码错误",
       "operationCancelled": "已取消操作，未进入升级页面",
       "noUpgradeResult": "暂无升级结果，请先启动BCU/BMU升级",
-      "noBauUpgradeResult": "暂无BAU升级结果，请先启动BAU升级"
+      "noBauUpgradeResult": "暂无BAU升级结果，请先启动BAU升级",
+      "clusterCurrentConfigOneHeap": "当前配置：{0}簇 (堆1: {1}簇)",
+      "clusterCurrentConfigTwoHeaps": "当前配置：{0}簇 (堆1: {1}簇, 堆2: {2}簇)"
     },
     "toast": {
       "directorySelected": "目录选择成功",
@@ -673,6 +676,9 @@
       "power": "kW",
       "energy": "kWh",
       "capacity": "Ah"
+    },
+    "labels": {
+      "systemTotalStatusBits": "系统总状态位"
     },
   "clusterLabels": {
       "clusterCurrent": "簇电流",
@@ -942,6 +948,8 @@
     "loading": "正在加载故障数据...",
     "blockFaultOverview": "堆故障总览",
     "clusterFaultOverview": "簇{0}故障总览",
+    "clusterFaultOverviewTab": "簇故障预览",
+    "selectCluster": "选择簇",
     "indicatorLegend": {
       "severe": "严重",
       "general": "一般", 
@@ -2523,11 +2531,12 @@
     }
   },
   "blockConfigParamPage": {
-    "title": "堆配置参数",
+    "title": "堆遥调参数",
     "sections": {
       "batteryConfig": "系统簇端电池配置参数",
       "commDevConfig": "系统通讯设备配置参数",
-      "operateConfig": "系统操作配置参数"
+      "operateConfig": "系统操作配置参数",
+      "socConfig": "系统堆SOC配置参数"
     },
     "table": {
       "parameterName": "参数名称",
@@ -2720,7 +2729,7 @@
     }
   },
   "blockRemoteCommandPage": {
-    "title": "堆命令下设",
+    "title": "堆遥控命令下设",
     "sections": {
       "controlCommands": "遥控命令",
       "contactorStrategyResult": "接触器执行策略结果"
@@ -2782,9 +2791,11 @@
       "下设重启BAU指令": "下设重启BAU指令",
       "下设手动控制SD卡记录": "下设手动控制SD卡记录",
       "下设堆SOC": "下设堆SOC",
-      "查询接触器执行策略结果": "查询接触器执行策略结果"
+      "查询接触器执行策略结果": "查询接触器执行策略结果",
+      "复位事件记录存储器": "复位事件记录存储器"
     },
     "options": {
+      "复位": "复位",
       "设置充电吸合操作": "设置充电吸合操作",
       "设置放电吸合操作": "设置放电吸合操作",
       "设置脱离母线操作": "设置脱离母线操作",
@@ -2809,6 +2820,7 @@
       "复位系统通讯设备配置参数": "复位系统通讯设备配置参数",
       "复位系统操作配置参数": "复位系统操作配置参数",
       "复位系统堆告警安装参数": "复位系统堆告警安装参数",
+      "复位系统SOC配置参数": "复位系统SOC配置参数",
       "复位事件记录标志": "复位事件记录标志",
       "复位系统系统运行时间": "复位系统系统运行时间"
     }

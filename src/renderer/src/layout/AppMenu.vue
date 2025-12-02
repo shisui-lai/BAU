@@ -42,9 +42,22 @@ const rawMenuItems = ref([
     items: [
       { labelKey: 'menu.batteryInfo', icon: 'pi pi-home', route: '/', roles: ['admin', 'guest'] },
       { labelKey: 'menu.clusterVersion', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.disconnection', icon: 'pi pi-link', route: '/Cluster/Brokenwire', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.faultOverview', icon: 'pi pi-eye', route: '/FaultOverview', roles: ['admin', 'guest'] },
       { labelKey: 'menu.didoStatus', icon: 'pi pi-table', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
+    ]
+  },
+  {
+    labelKey: 'menu.blockSummary',
+    icon: 'pi pi-server',
+    expanded: false,
+    type: 'group',
+    roles: ['admin', 'guest'], // 部分子项所有人可见
+    items: [
+      { labelKey: 'menu.blockInfo', icon: 'pi pi-chart-bar', route: '/Block/BlockInfo', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.blockAlarmThreshold', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold', roles: ['admin'] },
+      { labelKey: 'menu.blockConfigParam', icon: 'pi pi-cog', route: '/Block/BlockConfigParam', roles: ['admin'] },
+      { labelKey: 'menu.blockRemoteCommand', icon: 'pi pi-send', route: '/Block/BlockRemoteCommand', roles: ['admin'] },
+      { labelKey: 'menu.blockIOStatus', icon: 'pi pi-server', route: '/Block/BlockIO', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.blockVersion', icon: 'pi pi-info-circle', route: '/Block/BlockVersion', roles: ['admin', 'guest'] }
     ]
   },
   {
@@ -75,27 +88,28 @@ const rawMenuItems = ref([
     ]
   },
   {
-    labelKey: 'menu.blockSummary',
-    icon: 'pi pi-server',
+    labelKey: 'menu.peripheralDevices',
+    icon: 'pi pi-sitemap',
     expanded: false,
     type: 'group',
-    roles: ['admin', 'guest'], // 部分子项所有人可见
+    roles: ['admin', 'guest'], // 所有用户可见
     items: [
-      { labelKey: 'menu.blockInfo', icon: 'pi pi-chart-bar', route: '/Block/BlockInfo', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.blockVersion', icon: 'pi pi-info-circle', route: '/Block/BlockVersion', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.blockAlarmThreshold', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold', roles: ['admin'] },
-      { labelKey: 'menu.blockIOStatus', icon: 'pi pi-server', route: '/Block/BlockIO', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.blockConfigParam', icon: 'pi pi-cog', route: '/Block/BlockConfigParam', roles: ['admin'] },
-      { labelKey: 'menu.blockRemoteCommand', icon: 'pi pi-send', route: '/Block/BlockRemoteCommand', roles: ['admin'] }
+      { labelKey: 'menu.pcsDevice', icon: 'pi pi-bolt', route: '/Peripheral/BlockPcs', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.refDevice', icon: 'pi pi-sliders-h', route: '/Peripheral/BlockRef', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.dehDevice', icon: 'pi pi-cloud', route: '/Peripheral/BlockDeh', roles: ['admin', 'guest'] }
     ]
   },
-  // 不可折叠的独立项
   {
-    labelKey: 'menu.alarmInfo',
+    labelKey: 'menu.faultsGroup',
     icon: 'pi pi-exclamation-triangle',
-    route: '/Cluster/Fault',
-    type: 'single',
-    roles: ['admin', 'guest']
+    expanded: false,
+    type: 'group',
+    roles: ['admin', 'guest'],
+    items: [
+      { labelKey: 'menu.faultOverview', icon: 'pi pi-eye', route: '/FaultOverview', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.alarmInfo', icon: 'pi pi-exclamation-triangle', route: '/Cluster/Fault', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.disconnection', icon: 'pi pi-link', route: '/Cluster/Brokenwire', roles: ['admin', 'guest'] }
+    ]
   },
   {
     labelKey: 'menu.bauAddressDetection',
@@ -110,18 +124,6 @@ const rawMenuItems = ref([
     route: '/Block/DeviceManagement',
     type: 'single',
     roles: ['admin']
-  },
-  {
-    labelKey: 'menu.peripheralDevices',
-    icon: 'pi pi-sitemap',
-    expanded: false,
-    type: 'group',
-    roles: ['admin', 'guest'], // 所有用户可见
-    items: [
-      { labelKey: 'menu.pcsDevice', icon: 'pi pi-bolt', route: '/Peripheral/BlockPcs', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.refDevice', icon: 'pi pi-sliders-h', route: '/Peripheral/BlockRef', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.dehDevice', icon: 'pi pi-cloud', route: '/Peripheral/BlockDeh', roles: ['admin', 'guest'] }
-    ]
   }
 ])
 
@@ -470,4 +472,3 @@ function onLogout() {
   }
 }
 </style>
-

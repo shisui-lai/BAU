@@ -349,6 +349,27 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
       throw new Error(`不支持的数据类型: ${config.dataType}`)
     }
 
+      const sendOnce = selectorMode === 'block' && !String(config.topic).includes('{block}')
+
+      if (sendOnce) {
+        const topic = config.topic
+        console.log(`[MQTT发送] 向设备 堆1 发送命令:`, {
+          topic,
+          payload,
+          command: config.name
+        })
+        await window.electronAPI.mqttPublish(topic, payload)
+        const successCount = 1
+        const failCount = 0
+        console.log(`[RemoteCommand] 批量命令发送完成: ${commandId}，成功: ${successCount}，失败: ${failCount}`)
+        return {
+          success: true,
+          successCount,
+          failCount,
+          commandName: config.name
+        }
+      }
+
       // 向所有选中的设备发送命令
       const promises = selectedDevices.map(async (deviceKey) => {
         let topic, logInfo

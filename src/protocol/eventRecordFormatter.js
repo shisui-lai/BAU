@@ -60,13 +60,12 @@ const EVENT_TYPE_MAP = {
   263: 'BMU地址自适应',
   264: '设置BAU时间',
   265: '重置BAU网卡',
-  266: '簇绝缘检测',
-  267: '清除堆保留故障',
-  268: '设置BAU清除事件记录数量',
-  269: '复位BAU事件记录存储器',
-  270: '下设BCP控制',
-  271: '堆绝缘检测控制',
-  272: '堆接触器自检控制',
+  266: '清除堆保留故障',
+  267: '设置BAU清除事件记录数量',
+  268: '复位BAU事件记录存储器',
+  269: '下设BCP控制',
+  270: '堆绝缘检测控制',
+  271: '堆接触器自检控制',
   // 三、参数下设事件记录类型（300–305）
   300: '系统基本参数下设',
   301: '报警参数下设',
@@ -107,22 +106,44 @@ const EVENT_TYPE_MAP = {
   379: '最小并簇数',
   380: '使能簇配置',
   381: '开路下堆电压为0使能',
-  382: '静置时堆SOC是否追随平均SOC',
-  383: '平均SOC追随阈值(0.1%)',
-  384: '堆SOC变化差值(0.1%)',
-  385: '是否存在BCP控制',
-  386: '堆SOC追赶斜率',
-  387: '簇间SOC同步开关',
-  388: '充电SOC同步点(0.1%)',
-  389: '放电SOC同步点(0.1%)',
-  390: '簇电压差值-严重报警值',
-  391: '簇电压差值-严重报警滤波时间',
-  392: '簇电压差值-严重报警恢复值',
-  393: '簇电压差值-严重报警恢复滤波时间',
-  394: '簇电流差值-严重报警值',
-  395: '簇电流差值-严重报警滤波时间',
-  396: '簇电流差值-严重报警恢复值',
-  397: '簇电流差值-严重报警恢复滤波时间'
+  382: '是否存在BCP控制',
+  383: '簇电压差值-严重报警值',
+  384: '簇电压差值-严重报警滤波时间',
+  385: '簇电压差值-严重报警恢复值',
+  386: '簇电压差值-严重报警恢复滤波时间',
+  387: '簇电流差值-严重报警值',
+  388: '簇电流差值-严重报警滤波时间',
+  389: '簇电流差值-严重报警恢复值',
+  390: '簇电流差值-严重报警恢复滤波时间',
+  391: '堆电流有效阈值',
+  392: 'BlockSOC取值阈值下限',
+  393: 'BlockSOC取值阈值上限',
+  394: '显示SOC追赶真实SOC时间',
+  395: '堆显示SOC与堆真实SOC差值范围',
+  396: '充电OCV表-参数1',
+  397: '充电OCV表-参数2',
+  398: '充电OCV表-参数3',
+  399: '充电OCV表-参数4',
+  400: '充电OCV表-参数5',
+  401: '充电OCV表-参数6',
+  402: '充电OCV表-参数7',
+  403: '充电OCV表-参数8',
+  404: '充电OCV表-参数9',
+  405: '充电OCV表-参数10',
+  406: '充电OCV表-参数11',
+  407: '充电OCV表-参数12',
+  408: '充电OCV表-参数13',
+  409: '充电OCV表-参数14',
+  410: '充电OCV表-参数15',
+  411: '充电OCV表-参数16',
+  412: '充电OCV表-参数17',
+  413: '充电OCV表-参数18',
+  414: '充电OCV表-参数19',
+  415: '充电OCV表-参数20',
+  416: '充电OCV表-参数21',
+  417: '单簇有效电芯串数',
+  418: '电芯额定容量',
+  419: '簇间SOC同步开关'
 }
 
 /**
@@ -618,11 +639,26 @@ function parseNetworkCard(raw) {
   return cardMap[raw] !== undefined ? cardMap[raw] : `${raw}(未定义)`
 }
 
+function toIPv4From16(high16, low16) {
+  const h = Number(high16) >>> 0
+  const l = Number(low16) >>> 0
+  const b1 = (h >> 8) & 0xff
+  const b2 = h & 0xff
+  const b3 = (l >> 8) & 0xff
+  const b4 = l & 0xff
+  return `${b4}.${b3}.${b2}.${b1}`
+}
+
 /**
  * 辅助函数：解析BMU编号
  */
 function parseBMUId(raw) {
   if (raw >= 1 && raw <= 16) return `第${raw}BMU`
+  return `${raw}(未定义)`
+}
+
+function parseAFEId(raw) {
+  if (raw >= 1 && raw <= 16) return `第${raw}AFE`
   return `${raw}(未定义)`
 }
 
@@ -729,7 +765,7 @@ function parseResetControlParams(raw) {
 function parseStackResetParams(raw) {
   if (raw === 0xFFFF) return '无效'
   const names = ['系统基本配置', '簇端电池配置', '端口配置', '通讯设备配置', 
-                 '操作配置', '堆告警安装', '事件记录标志', '系统运行时间']
+                 '操作配置', '堆告警安装', '系统堆SOC配置参数', '事件记录标志', '系统运行时间']
   const parts = []
   for (let i = 0; i < names.length; i++) {
     const bit = (raw >> i) & 0x1
@@ -1198,43 +1234,37 @@ const EVENT_PARAM_MAPPING = {
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  266: { // 绝缘检测
-    param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '动作', parse: parseInsulationDetect },
-    param4: { label: '/', parse: parseNull }
-  },
-  267: { // 清除堆保留故障
+  266: { // 清除堆保留故障
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '保留故障类型', parse: parseFaultClearAction },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  268: { // 设置BAU清除事件记录数量
+  267: { // 设置BAU清除事件记录数量
     param1: { label: '删除设定', parse: parseBCUEventDeleteCount },
     param2: { label: '实际删除数量', parse: (raw) => raw },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  269: { // 复位BAU事件记录存储器
+  268: { // 复位BAU事件记录存储器
     param1: { label: '复位动作', parse: parseResetAction },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  270: { // 下设BCP控制
+  269: { // 下设BCP控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: 'BCP控制', parse: parseBCPControl },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  271: { // 堆绝缘检测控制
+  270: { // 堆绝缘检测控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '控制动作', parse: parseStackInsulationControl },
     param4: { label: '/', parse: parseNull }
   },
-  272: { // 堆接触器自检控制
+  271: { // 堆接触器自检控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '控制动作', parse: parseStackContactorSelfTestControl },
@@ -1245,38 +1275,38 @@ const EVENT_PARAM_MAPPING = {
   300: { // 系统基本参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `0x${raw.toString(16).toUpperCase()}` },
-    param4: { label: '寄存器长度', parse: (raw) => raw }
+    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
   301: { // 报警参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `0x${raw.toString(16).toUpperCase()}` },
-    param4: { label: '寄存器长度', parse: (raw) => raw }
+    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
   302: { // 实时保存数据下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `0x${raw.toString(16).toUpperCase()}` },
-    param4: { label: '寄存器长度', parse: (raw) => raw }
+    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
   303: { // SOX算法配置参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `0x${raw.toString(16).toUpperCase()}` },
-    param4: { label: '寄存器长度', parse: (raw) => raw }
+    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
   304: { // SOP配置参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `0x${raw.toString(16).toUpperCase()}` },
-    param4: { label: '寄存器长度', parse: (raw) => raw }
+    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
   305: { // 出厂校正参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `0x${raw.toString(16).toUpperCase()}` },
-    param4: { label: '寄存器长度', parse: (raw) => raw }
+    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
   
   // 四、配置与系统参数变化类（350–397）
@@ -1336,13 +1366,13 @@ const EVENT_PARAM_MAPPING = {
   },
   359: { // AFE下电压数量配置
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: 'BMU编号', parse: parseBMUId },
+    param2: { label: 'AFE编号', parse: parseAFEId },
     param3: { label: '上一次参数', parse: (raw) => `上一次:${raw}` },
     param4: { label: '当前参数', parse: (raw) => `当前:${raw}` }
   },
   360: { // AFE下温感数量配置
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: 'BMU编号', parse: parseBMUId },
+    param2: { label: 'AFE编号', parse: parseAFEId },
     param3: { label: '上一次参数', parse: (raw) => `上一次:${raw}` },
     param4: { label: '当前参数', parse: (raw) => `当前:${raw}` }
   },
@@ -1359,22 +1389,22 @@ const EVENT_PARAM_MAPPING = {
     param4: { label: '当前参数', parse: (raw) => `当前:${raw}` }
   },
   363: { // 网卡1 IP地址变化
-    param1: { label: '上次IP高16', parse: (raw) => `上次高16位:${raw}` },
-    param2: { label: '上次IP低16', parse: (raw) => `上次低16位:${raw}` },
-    param3: { label: '当前IP高16', parse: (raw) => `当前高16位:${raw}` },
-    param4: { label: '当前IP低16', parse: (raw) => `当前低16位:${raw}` }
+    param1: { label: '上次IP', parse: (high16, baseConfig) => `上一次IP:${toIPv4From16(high16, Number(baseConfig.Param2))}` },
+    param2: { label: '/', parse: parseNull },
+    param3: { label: '当前IP', parse: (high16, baseConfig) => `当前IP:${toIPv4From16(high16, Number(baseConfig.Param4))}` },
+    param4: { label: '/', parse: parseNull }
   },
   364: { // 网卡2 IP地址变化
-    param1: { label: '上次IP高16', parse: (raw) => `上次高16位:${raw}` },
-    param2: { label: '上次IP低16', parse: (raw) => `上次低16位:${raw}` },
-    param3: { label: '当前IP高16', parse: (raw) => `当前高16位:${raw}` },
-    param4: { label: '当前IP低16', parse: (raw) => `当前低16位:${raw}` }
+    param1: { label: '上次IP', parse: (high16, baseConfig) => `上一次IP:${toIPv4From16(high16, Number(baseConfig.Param2))}` },
+    param2: { label: '/', parse: parseNull },
+    param3: { label: '当前IP', parse: (high16, baseConfig) => `当前IP:${toIPv4From16(high16, Number(baseConfig.Param4))}` },
+    param4: { label: '/', parse: parseNull }
   },
   365: { // MQTT配置参数变化
-    param1: { label: '上次服务器地址高16', parse: (raw) => `上次高16位:${raw}` },
-    param2: { label: '上次服务器地址低16', parse: (raw) => `上次低16位:${raw}` },
-    param3: { label: '当前服务器地址高16', parse: (raw) => `当前高16位:${raw}` },
-    param4: { label: '当前服务器地址低16', parse: (raw) => `当前低16位:${raw}` }
+    param1: { label: '上次服务器地址', parse: (high16, baseConfig) => `上次服务器地址:${toIPv4From16(high16, Number(baseConfig.Param2))}` },
+    param2: { label: '/', parse: parseNull },
+    param3: { label: '当前服务器地址', parse: (high16, baseConfig) => `当前服务器地址:${toIPv4From16(high16, Number(baseConfig.Param4))}` },
+    param4: { label: '/', parse: parseNull }
   },
   366: { // MQTT服务器PORT参数变化
     param1: { label: '上一次端口', parse: (raw) => `上一次:${raw}` },
@@ -1467,10 +1497,10 @@ const EVENT_PARAM_MAPPING = {
       parse: (raw) => {
         const numValue = Number(raw)
         if (numValue < 0 || numValue > 1023) {
-          return `上一次:${raw}`
+          return `使能簇配置1:${raw}`
         }
-        // 转换为10位二进制字符串，前面补0（与其他簇标志显示方式一致）
-        return `上一次:${numValue.toString(2).padStart(10, '0')}`
+        const bits = numValue.toString(2).padStart(10, '0')
+        return `使能簇配置1:${bits.split('').reverse().join('')}`
       }
     },
     param3: {
@@ -1478,10 +1508,10 @@ const EVENT_PARAM_MAPPING = {
       parse: (raw) => {
         const numValue = Number(raw)
         if (numValue < 0 || numValue > 1023) {
-          return `当前:${raw}`
+          return `使能簇配置2:${raw}`
         }
-        // 转换为10位二进制字符串，前面补0（与其他簇标志显示方式一致）
-        return `当前:${numValue.toString(2).padStart(10, '0')}`
+        const bits = numValue.toString(2).padStart(10, '0')
+        return `使能簇配置2:${bits.split('').reverse().join('')}`
       }
     },
     param4: { label: '/', parse: parseNull }
@@ -1492,100 +1522,232 @@ const EVENT_PARAM_MAPPING = {
     param3: { label: '当前状态', parse: (raw) => `当前:${parseEnableStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  382: { // 静置时堆SOC是否追随平均SOC
-    param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次状态', parse: (raw) => `上一次:${parseEnableStatus(raw)}` },
-    param3: { label: '当前状态', parse: (raw) => `当前:${parseEnableStatus(raw)}` },
-    param4: { label: '/', parse: parseNull }
-  },
-  383: { // 平均SOC追随阈值(0.1%)
-    param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
-    param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
-    param4: { label: '/', parse: parseNull }
-  },
-  384: { // 堆SOC变化差值(0.1%)
-    param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
-    param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
-    param4: { label: '/', parse: parseNull }
-  },
-  385: { // 是否存在BCP控制
+  382: { // 是否存在BCP控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${parseEnableStatus(raw)}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${parseEnableStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  386: { // 堆SOC追赶斜率
+  383: { // 簇电压差值-严重报警值
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  387: { // 簇间SOC同步开关
-    param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次状态', parse: (raw) => `上一次:${parseEnableStatus(raw)}` },
-    param3: { label: '当前状态', parse: (raw) => `当前:${parseEnableStatus(raw)}` },
-    param4: { label: '/', parse: parseNull }
-  },
-  388: { // 充电SOC同步点(0.1%)
+  384: { // 簇电压差值-严重报警滤波时间
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  389: { // 放电SOC同步点(0.1%)
+  385: { // 簇电压差值-严重报警恢复值
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  390: { // 簇电压差值-严重报警值
+  386: { // 簇电压差值-严重报警恢复滤波时间
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  391: { // 簇电压差值-严重报警滤波时间
+  387: { // 簇电流差值-严重报警值
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  392: { // 簇电压差值-严重报警恢复值
+  388: { // 簇电流差值-严重报警滤波时间
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  393: { // 簇电压差值-严重报警恢复滤波时间
+  389: { // 簇电流差值-严重报警恢复值
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  394: { // 簇电流差值-严重报警值
+  390: { // 簇电流差值-严重报警恢复滤波时间
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  395: { // 簇电流差值-严重报警滤波时间
+  391: {
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
-    param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  396: { // 簇电流差值-严重报警恢复值
+  392: {
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
-    param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  397: { // 簇电流差值-严重报警恢复滤波时间
+  393: {
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
-    param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  394: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  395: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  396: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  397: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  398: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  399: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  400: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  401: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  402: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  403: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  404: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  405: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  406: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  407: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  408: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  409: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  410: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  411: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  412: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  413: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  414: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  415: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  416: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  417: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  418: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次配置参数', parse: (raw) => `上一次配置参数:${raw}` },
+    param3: { label: '当前配置参数', parse: (raw) => `当前配置参数:${raw}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  419: {
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次使能状态', parse: (raw) => `上一次使能状态:${parseEnableStatus(raw)}` },
+    param3: { label: '当前使能状态', parse: (raw) => `当前使能状态:${parseEnableStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   }
 }
@@ -1763,8 +1925,8 @@ export function formatEventRecordField(fieldKey, value, baseConfig, fieldDef) {
     if (numValue < 0 || numValue > 1023) {
       return String(value)
     }
-    // 转换为10位二进制字符串，前面补0
-    return numValue.toString(2).padStart(10, '0')
+    const bits = numValue.toString(2).padStart(10, '0')
+    return bits.split('').reverse().join('')
   }
   
   // 状态字段：使用状态映射
@@ -1790,6 +1952,12 @@ export function formatEventRecordField(fieldKey, value, baseConfig, fieldDef) {
       return typeof result === 'string' ? result : String(result)
     }
     // 如果faultMap不存在，继续执行到默认返回
+  }
+
+  // 特殊字段：SOX算法版本号按10进制显示
+  if (fieldKey === 'SOXAlgorithmVersion') {
+    const numValue = parseInt(value, 16) // value是HEX字符串，需要转为10进制
+    return String(numValue)
   }
   
   // 十六进制字段：转换为0x格式

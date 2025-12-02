@@ -50,8 +50,8 @@ export const blockRemoteCommandConfig = {
   reset_block_param: {
     id: 'reset_block_param',
     name: '控制参数复位',
-    topic: 'bms/host/s2d/b{block}/reset_block_param',
-    responseTopic: 'bms/bau/d2s/b{block}/reset_block_param',
+    topic: 'bms/host/s2d/b1/reset_block_param',
+    responseTopic: 'bms/bau/d2s/b1/reset_block_param',
     dataType: 'u16', // 控制字2字节
     uiType: 'checkbox_group',
     needConfirm: true,
@@ -65,9 +65,9 @@ export const blockRemoteCommandConfig = {
       { label: '复位系统通讯设备配置参数', bit: 3, value: 8 },
       { label: '复位系统操作配置参数', bit: 4, value: 16 },
       { label: '复位系统堆告警安装参数', bit: 5, value: 32 },
-      { label: '复位事件记录标志', bit: 6, value: 64 },
-      { label: '复位系统系统运行时间', bit: 7, value: 128 }
-
+      { label: '复位系统SOC配置参数', bit: 6, value: 64 },
+      { label: '复位事件记录标志', bit: 7, value: 128 },
+      { label: '复位系统系统运行时间', bit: 8, value: 256 }
     ]
   },
 
@@ -109,8 +109,8 @@ export const blockRemoteCommandConfig = {
   reset_bau: {
     id: 'reset_bau',
     name: '下设重启BAU指令',
-    topic: 'bms/host/s2d/b{block}/reset_bau',
-    responseTopic: 'bms/bau/d2s/b{block}/reset_bau',
+    topic: 'bms/host/s2d/b1/reset_bau',
+    responseTopic: 'bms/bau/d2s/b1/reset_bau',
     dataType: 'u16', // 控制字2字节
     uiType: 'dropdown',
     needConfirm: true,
@@ -126,8 +126,8 @@ export const blockRemoteCommandConfig = {
   manual_ctrl_sd_record: {
     id: 'manual_ctrl_sd_record',
     name: '下设手动控制SD卡记录',
-    topic: 'bms/host/s2d/b{block}/manual_ctrl_sd_record',
-    responseTopic: 'bms/bau/d2s/b{block}/manual_ctrl_sd_record',
+    topic: 'bms/host/s2d/b1/manual_ctrl_sd_record',
+    responseTopic: 'bms/bau/d2s/b1/manual_ctrl_sd_record',
     dataType: 'u16', // 控制字2字节
     uiType: 'dropdown',
     needConfirm: true,
@@ -159,6 +159,23 @@ export const blockRemoteCommandConfig = {
       unit: '%',
       placeholder: '请输入SOC值 (0-100%)'
     }
+  },
+
+  // 9. 复位事件记录存储器（固定堆1，且只发送一次）
+  reset_event_record_flash: {
+    id: 'reset_event_record_flash',
+    name: '复位事件记录存储器',
+    topic: 'bms/host/s2d/b1/reset_event_record_flash',
+    responseTopic: 'bms/bau/d2s/b1/reset_event_record_flash',
+    dataType: 'u16', // 控制字2字节
+    uiType: 'dropdown',
+    needConfirm: true,
+    confirmMessage: '确定要复位事件记录存储器吗？',
+    description: '复位事件记录存储器：0x5BB5复位，其他值不执行',
+    options: [
+      { label: '复位', value: 0x5BB5 },
+      { label: '不执行', value: 0x0000 }
+    ]
   },
 
   // 6. 查询接触器执行策略结果（堆级反馈查询命令）

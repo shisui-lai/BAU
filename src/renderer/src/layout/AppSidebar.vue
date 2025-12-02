@@ -6,6 +6,9 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
+// 显示版本号
+const version = 'test-v0.3.4 12.01'
+
 // 获取MQTT store
 const mqttStore = useMqttStore()
 
@@ -30,14 +33,12 @@ function onMqttStatusClick() {
       <app-menu></app-menu>
     </div>
 
-    <!-- 底部固定区域 - 包含公司链接和MQTT状态 -->
+    <!-- 底部固定区域 - 显示版本号与MQTT状态 -->
     <div class="bottom-fixed-area">
-      <!-- 公司链接 -->
-      <div class="company-link">
-        <a href="https://risenstorage.com/" target="_blank">
-          <i class="pi pi-external-link"></i>
-          <span>{{ t('sidebar.companyLink') }}</span>
-        </a>
+      <!-- 版本号显示 -->
+      <div class="sidebar-version">
+        <i class="pi pi-info-circle"></i>
+        <span>{{ version }}</span>
       </div>
 
       <!-- MQTT连接状态 -->
@@ -76,38 +77,26 @@ function onMqttStatusClick() {
   background: transparent; /* 使用透明背景，继承侧边栏背景 */
 }
 
-.company-link {
+.sidebar-version {
   padding: 0.75rem 1rem 0.5rem 1rem;
   border-bottom: 1px solid var(--surface-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color-secondary, #6c757d);
+  font-size: 0.8rem;
+  gap: 0.5rem;
 
-  a {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-color-secondary, #6c757d);
-    text-decoration: none;
-    font-size: 0.8rem;
-    padding: 0.5rem;
-    transition: color 0.15s ease;
-    border-radius: 6px;
+  i {
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
 
-    &:hover {
-      color: var(--primary-color);
-      background-color: var(--surface-hover);
-    }
-
-    i {
-      margin-right: 0.5rem;
-      font-size: 0.75rem;
-      flex-shrink: 0;
-    }
-
-    span {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      min-width: 0;
-    }
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
   }
 }
 

@@ -1,6 +1,7 @@
 import fs from 'fs'
 import zlib from 'zlib'
 import path from 'path'
+import { exec } from 'child_process'
 let waitingForDecision = null
 export function ensureDir(dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -72,4 +73,37 @@ export function compressFileGzip(filePath) {
     input.on('error', reject)
     gzip.on('error', reject)
   })
+}
+let lastDiskCheckTime = 0
+let lastDiskFreeSpace = Number.MAX_SAFE_INTEGER
+const DISK_CHECK_INTERVAL = parseInt(process.env.DISK_CHECK_INTERVAL_MS || '60000', 10)
+export function getFreeDiskSpace(targetPath = process.cwd()) {
+  return new Promise((resolve) => {
+    const absPath = path.resolve(targetPath)
+    const driveLetter = absPath.slice(0, 2)
+    exec(
+      `wmic logicaldisk where DeviceID="${driveLetter}" get FreeSpace /value`,
+      { encoding: 'utf8' },
+      (err, stdout) => {
+        if (err) {
+          resolve(Number.MAX_SAFE_INTEGER)
+          return
+        }
+        const match = stdout.match(/FreeSpace=(\d+)/)
+        if (match) {
+          resolve(parseInt(match[1], 10))
+        } else {
+          resolve(Number.MAX_SAFE_INTEGER)
+        }
+      }
+    )
+  })
+}
+export async function getCachedFreeDiskSpace(targetPath = process.cwd()) {
+  const now = Date.now()
+  if (now - lastDiskCheckTime > DISK_CHECK_INTERVAL) {
+    lastDiskFreeSpace = await getFreeDiskSpace(targetPath)
+    lastDiskCheckTime = now
+  }
+  return lastDiskFreeSpace
 }

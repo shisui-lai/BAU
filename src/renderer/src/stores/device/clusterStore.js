@@ -1,6 +1,6 @@
 // 全局簇选择状态管理 - 统一管理所有页面的簇选择状态
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 export const useClusterStore = defineStore('cluster', () => {
   // ================== 基础状态 ==================
@@ -284,6 +284,43 @@ export const useClusterStore = defineStore('cluster', () => {
       autoSelectTimer = null
     }, 200) 
   }
+
+  // ================== 默认下发勾选（自动模式） ==================
+  // 需求：在簇级遥调页面，如果未选择下发目标，则默认勾选当前查看簇；
+  // 当用户在导航下拉切换当前簇时，若仍处于自动模式（未手动多选），则同步为新簇。
+
+  // 记录“自动模式”下的上一次查看簇，用于判断是否应跟随切换
+  let lastAutoViewCluster = null
+
+  function isAutoWriteSelection() {
+    const sel = selectedClustersForWrite.value
+    return sel.length <= 1 && (sel.length === 0 || sel[0] === lastAutoViewCluster)
+  }
+
+  // 页面类型切换到簇级遥调时，初始化默认选择
+  watch(currentPageType, (newType) => {
+    if (newType === 'cluster') {
+      // 若未选查看簇，尝试自动选择 1-1 或最小簇
+      if (!selectedClusterForView.value && availableClusters.value.length > 0) {
+        scheduleAutoSelect()
+      }
+      // 默认勾选当前查看簇（仅在未手动选择时）
+      if (selectedClusterForView.value && selectedClustersForWrite.value.length === 0) {
+        selectedClustersForWrite.value = [selectedClusterForView.value]
+        lastAutoViewCluster = selectedClusterForView.value
+      }
+    }
+  })
+
+  // 当当前查看簇变化时，自动模式下同步下发勾选为新簇
+  watch(selectedClusterForView, (newVal, oldVal) => {
+    if (!newVal) return
+    if (currentPageType.value !== 'cluster') return
+    if (isAutoWriteSelection()) {
+      selectedClustersForWrite.value = [newVal]
+      lastAutoViewCluster = newVal
+    }
+  })
 
   // ================== 选择管理 ==================
 
@@ -592,7 +629,11 @@ export const useClusterStore = defineStore('cluster', () => {
         }
 
         // 确保比较的是相同类型（都转为数字）
-        const selectedBlocks = selectedBlocksForFault.value.map(b => parseInt(b))
+        const selectedBlocks = selectedBlocksForFault.value.map(b => {
+          if (typeof b === 'number') return b
+          const s = String(b)
+          return s.startsWith('block') ? parseInt(s.replace('block', '')) : parseInt(s)
+        })
         const result = selectedBlocks.includes(blockNum)
 
 

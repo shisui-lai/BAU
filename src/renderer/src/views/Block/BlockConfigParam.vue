@@ -1,14 +1,14 @@
 <!-- 堆配置参数页面 - 包含系统簇端电池配置、系统通讯设备配置、系统操作配置三类参数 -->
 <script setup>
 import { useToast } from 'primevue/usetoast'
-import { onMounted, onUnmounted, onActivated, onDeactivated, ref, computed  } from 'vue'
+import { onMounted, onUnmounted, onActivated, onDeactivated, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { scheduleAutoRead, cancelAutoRead, registerAutoReadFunction } from '@/composables/utils/useAutoReadScheduler'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useBlockStore } from '@/stores/device/blockStore'
-import { BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R } from '../../../../main/table.js'
+import { BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_SOC_PARAM_R } from '../../../../main/table.js'
 import { DEFAULT_BLOCK_CONFIG_PARAMS } from '@/configs/parameterDefaults'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
@@ -54,11 +54,11 @@ const translateDropdownOptions = (options, parameterName) => {
   }))
 }
 
-// 声明为堆级遥调页面（显示堆选择器和下发多选）
+// 页面类型映射：本页为堆级可读写（默认显示堆选择器与下发多选）
 const { addPageTypeMapping } = usePageTypeDetection()
 addPageTypeMapping('/Block/BlockConfigParam', 'block')
 
-// 确保页面类型正确设置
+// 默认设置为堆级页面（显示选择器）；具体在切换到SOC子视图时临时隐藏
 blockStore.setCurrentPageType('block')
 
 // 计算分类范围（按 class 聚合，过滤保留）
@@ -135,8 +135,23 @@ const operateConfig = {
   }
 }
 
+const socParamClasses = buildParameterClasses(BLOCK_SOC_PARAM_R)
+const socConfig = {
+  dataSource: {
+    name: 'BLOCK_SOC_PARAM',
+    readTopicTemplate: 'bms/host/s2d/b{block}/block_soc_param_r',
+    writeTopicTemplate: 'bms/host/s2d/b{block}/block_soc_param_w',
+    parameterFields: BLOCK_SOC_PARAM_R,
+    parameterClasses: socParamClasses,
+    writeWholeTable: true,
+    dropdown: { dataType: 'block_remote_control', topicType: 'block_soc_param' },
+    parameterSerializer: (parameterDataFrame, startByteOffset, registerCount) =>
+      serializeParameterData(parameterDataFrame, BLOCK_SOC_PARAM_R, startByteOffset, registerCount, '[useBlockSocParam]', t('blockConfigParamPage.sections.socConfig'))
+  }
+}
+
 // ========== BlockConfigParam自动读取topic数组 ==========
-const allReadTopics = ['BLOCK_BATT_PARAM', 'BLOCK_COMM_DEV_CFG', 'BLOCK_OPERATE_CFG']
+const allReadTopics = ['BLOCK_BATT_PARAM', 'BLOCK_COMM_DEV_CFG', 'BLOCK_OPERATE_CFG', 'BLOCK_SOC_PARAM']
 
 // 复用通用核心（block模式由usePageTypeDetection控制）
 const {
@@ -220,6 +235,32 @@ const {
   defaultData: DEFAULT_BLOCK_CONFIG_PARAMS // 性能优化：传递默认数据
 })
 
+const {
+  isCurrentlyReading: isReadingSoc,
+  currentSelectedClass: currentSocClass,
+  currentClassParameterList: currentSocParameterList,
+  allAvailableClasses: allSocClasses,
+  switchToParameterClass: switchToSocClass,
+  startParameterReading: startSocReading,
+  stopParameterReading: stopSocReading,
+  sendCurrentClassParameters: sendSocParameters,
+  updateParameterValue: updateSocParameterValue,
+  getParameterInputValue: getSocParameterInputValue,
+  setParameterInputValue: setSocParameterInputValue,
+  getParameterDecimalPlaces: getSocParameterDecimalPlaces,
+  handleReceivedParameterData: handleSocReceivedParameterData,
+  handleParameterWriteResponse: handleSocWriteResponse,
+  handleParameterReadError: handleSocReadError,
+  sendParameterReadRequest: sendSocReadRequest,
+  isParameterDropdown: isSocParameterDropdown,
+  getParameterDropdownOptions: getSocParameterDropdownOptions,
+  updateDropdownParameterValue: updateSocDropdownParameterValue,
+  enhancedParameterList: socEnhancedParameterList
+} = useRemoteControlCore(socConfig, toastService, {
+  selectorMode: 'block',
+  defaultData: DEFAULT_BLOCK_CONFIG_PARAMS
+})
+
 // 统一的停止函数
 function stopAllReading() {
   if (isReadingBattery.value) stopBatteryReading()
@@ -249,6 +290,9 @@ function autoReadMultiTopicOnce(topics) {
       case 'BLOCK_OPERATE_CFG':
         sendOperateReadRequest()
         break
+      case 'BLOCK_SOC_PARAM':
+        sendSocReadRequest()
+        break
       default:
         console.warn('[BlockConfigParam] 未知的Topic:', topic)
     }
@@ -270,11 +314,12 @@ function startReadingWithRetry() {
 
 // 顶部导航（仅导航，无内容面板）
 const topMenuItems = computed(() => [
-  { label: t('blockConfigParamPage.sections.batteryConfig'), key: 'batt' },
+  { label: t('blockConfigParamPage.sections.operateConfig'), key: 'operate' },
   { label: t('blockConfigParamPage.sections.commDevConfig'), key: 'comm' },
-  { label: t('blockConfigParamPage.sections.operateConfig'), key: 'operate' }
+  { label: t('blockConfigParamPage.sections.socConfig'), key: 'soc' },
+  { label: t('blockConfigParamPage.sections.batteryConfig'), key: 'batt' }
 ])
-const activeType = ref('batt')
+const activeType = ref('operate')
 
 // 切换顶部菜单
 function switchToTopMenu(menuKey) {
@@ -285,13 +330,15 @@ function switchToTopMenu(menuKey) {
 const currentIsReading = computed(() =>
   activeType.value === 'batt' ? (isReadingBattery?.value ?? isReadingBattery)
   : activeType.value === 'comm' ? (isReadingCommDev?.value ?? isReadingCommDev)
-  : (isReadingOperate?.value ?? isReadingOperate)
+  : activeType.value === 'operate' ? (isReadingOperate?.value ?? isReadingOperate)
+  : (isReadingSoc?.value ?? isReadingSoc)
 )
 
 const currentParameterList = computed(() =>
   activeType.value === 'batt' ? (currentBatteryParameterList?.value ?? [])
   : activeType.value === 'comm' ? (currentCommDevParameterList?.value ?? [])
-  : (currentOperateParameterList?.value ?? [])
+  : activeType.value === 'operate' ? (currentOperateParameterList?.value ?? [])
+  : (currentSocParameterList?.value ?? [])
 )
 
 // 统一过滤：
@@ -305,6 +352,9 @@ const filteredParameterList = computed(() => {
   if (activeType.value === 'comm') {
     return list.filter(row => row && !(row.label || '').includes('预留') && !/^Reserved/i.test(String(row.key || '')))
   }
+  if (activeType.value === 'soc') {
+    return list.filter(row => row && !(row.label || '').includes('预留') && !/^Reserved/i.test(String(row.key || '')) && !(row.class || '').includes('保留') && !(row.type || '').startsWith('skip'))
+  }
   return list
 })
 
@@ -314,7 +364,9 @@ const renderParameterList = computed(() => {
     ? (battEnhancedParameterList?.value || [])
     : activeType.value === 'comm'
       ? (commEnhancedParameterList?.value || [])
-      : (operateEnhancedParameterList?.value || [])
+      : activeType.value === 'operate'
+        ? (operateEnhancedParameterList?.value || [])
+        : (socEnhancedParameterList?.value || [])
   
   console.log(`[BlockConfigParam] renderParameterList - activeType: ${activeType.value}, base length: ${base.length}`, base)
 
@@ -325,6 +377,9 @@ const renderParameterList = computed(() => {
     }
     if (activeType.value === 'comm') {
       return base.filter(row => row && !(row.label || '').includes('预留') && !/^Reserved/i.test(String(row.key || '')))
+    }
+    if (activeType.value === 'soc') {
+      return base.filter(row => row && !(row.label || '').includes('预留') && !/^Reserved/i.test(String(row.key || '')) && !(row.class || '').includes('保留') && !(row.type || '').startsWith('skip'))
     }
     return base
   })()
@@ -351,67 +406,78 @@ const renderParameterList = computed(() => {
 function updateDropdownValue(parameterKey, selectedOption){
   if (activeType.value === 'batt') return updateBattDropdownParameterValue(parameterKey, selectedOption)
   if (activeType.value === 'comm') return updateCommDropdownParameterValue(parameterKey, selectedOption)
-  return updateOperateDropdownParameterValue(parameterKey, selectedOption)
+  if (activeType.value === 'operate') return updateOperateDropdownParameterValue(parameterKey, selectedOption)
+  return updateSocDropdownParameterValue(parameterKey, selectedOption)
 }
 
 const currentAllClasses = computed(() => {
   if (activeType.value === 'comm') return (allCommDevClasses?.value ?? allCommDevClasses ?? [])
   if (activeType.value === 'operate') return (allOperateClasses?.value ?? allOperateClasses ?? [])
+  if (activeType.value === 'soc') return (allSocClasses?.value ?? allSocClasses ?? [])
   return [] // batt 无分类
 })
 
 const currentSelectedClass = computed(() => {
   if (activeType.value === 'comm') return (currentCommDevClass?.value ?? currentCommDevClass ?? null)
   if (activeType.value === 'operate') return (currentOperateClass?.value ?? currentOperateClass ?? null)
+  if (activeType.value === 'soc') return (currentSocClass?.value ?? currentSocClass ?? null)
   return null
 })
 
 function startReading(){
   if (activeType.value === 'batt') startBatteryReading()
   else if (activeType.value === 'comm') startCommDevReading()
-  else startOperateReading()
+  else if (activeType.value === 'operate') startOperateReading()
+  else startSocReading()
 }
 
 function stopReading(){
   if (activeType.value === 'batt') stopBatteryReading()
   else if (activeType.value === 'comm') stopCommDevReading()
-  else stopOperateReading()
+  else if (activeType.value === 'operate') stopOperateReading()
+  else stopSocReading()
 }
 
 function sendParameters(){
   if (activeType.value === 'batt') sendBatteryParameters()
   else if (activeType.value === 'comm') sendCommDevParameters()
-  else sendOperateParameters()
+  else if (activeType.value === 'operate') sendOperateParameters()
+  else sendSocParameters()
 }
 
 function switchClass(name){
   if (activeType.value === 'comm') switchToCommDevClass(name)
   else if (activeType.value === 'operate') switchToOperateClass(name)
+  else if (activeType.value === 'soc') switchToSocClass(name)
 }
 
 // 输入/小数位/更新统一封装
 function getInputValue(row, val){
   return activeType.value === 'batt' ? getBatteryParameterInputValue(row, val)
     : activeType.value === 'comm' ? getCommDevParameterInputValue(row, val)
-    : getOperateParameterInputValue(row, val)
+    : activeType.value === 'operate' ? getOperateParameterInputValue(row, val)
+    : getSocParameterInputValue(row, val)
 }
 
 function setInputValue(row, val){
   return activeType.value === 'batt' ? setBatteryParameterInputValue(row, val)
     : activeType.value === 'comm' ? setCommDevParameterInputValue(row, val)
-    : setOperateParameterInputValue(row, val)
+    : activeType.value === 'operate' ? setOperateParameterInputValue(row, val)
+    : setSocParameterInputValue(row, val)
 }
 
 function updateValue(key, val){
   return activeType.value === 'batt' ? updateBatteryParameterValue(key, val)
     : activeType.value === 'comm' ? updateCommDevParameterValue(key, val)
-    : updateOperateParameterValue(key, val)
+    : activeType.value === 'operate' ? updateOperateParameterValue(key, val)
+    : updateSocParameterValue(key, val)
 }
 
 function getDecimalPlaces(row){
   return activeType.value === 'batt' ? getBatteryParameterDecimalPlaces(row)
     : activeType.value === 'comm' ? getCommDevParameterDecimalPlaces(row)
-    : getOperateParameterDecimalPlaces(row)
+    : activeType.value === 'operate' ? getOperateParameterDecimalPlaces(row)
+    : getSocParameterDecimalPlaces(row)
 }
 
 
@@ -473,6 +539,22 @@ function handleOperateWriteEvent(event, mqttMessage){
   handleOperateWriteResponse(parsed)
 }
 
+function handleSocReadEvent(event, mqttMessage){
+  if (mqttMessage.dataType !== 'BLOCK_SOC_PARAM_R') return
+  retryLogic.markResponse()
+  const parsed = parseParameterReadResponse(mqttMessage, '[useBlockSocParam]', t('blockConfigParamPage.sections.socConfig'))
+  if (!parsed) return
+  if (parsed.result?.error) return handleSocReadError(parsed)
+  handleSocReceivedParameterData(parsed)
+}
+
+function handleSocWriteEvent(event, mqttMessage){
+  if (mqttMessage.dataType !== 'BLOCK_SOC_PARAM_W') return
+  const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockSocParam]', t('blockConfigParamPage.sections.socConfig'))
+  if (!parsed.className) parsed.className = t('blockConfigParamPage.sections.socConfig')
+  handleSocWriteResponse(parsed)
+}
+
 onMounted(() => {
   // 注册全局autoRead函数
   registerAutoReadFunction(autoReadMultiTopicOnce)
@@ -496,9 +578,14 @@ onMounted(() => {
     ipc.removeAllListeners?.('BLOCK_OPERATE_CFG_W')
     ipc.on('BLOCK_OPERATE_CFG_R', handleOperateReadEvent)
     ipc.on('BLOCK_OPERATE_CFG_W', handleOperateWriteEvent)
+
+    ipc.removeAllListeners?.('BLOCK_SOC_PARAM_R')
+    ipc.removeAllListeners?.('BLOCK_SOC_PARAM_W')
+    ipc.on('BLOCK_SOC_PARAM_R', handleSocReadEvent)
+    ipc.on('BLOCK_SOC_PARAM_W', handleSocWriteEvent)
   }
 
-  // 确保页面类型正确设置
+  // 初始为堆级页面（显示堆选择器与下发多选）
   blockStore.setCurrentPageType('block')
 
   // 默认选中第一个分类
@@ -509,6 +596,9 @@ onMounted(() => {
   if (allOperateClasses?.value?.length && !currentOperateClass?.value){
     switchToOperateClass(allOperateClasses.value[0].name)
   }
+  if (allSocClasses?.value?.length && !currentSocClass?.value){
+    switchToSocClass(allSocClasses.value[0].name)
+  }
 
   // 使用全局调度器避免多页面并发读取
   scheduleAutoRead(allReadTopics, 500, 'BlockConfigParam')
@@ -516,7 +606,26 @@ onMounted(() => {
 
 // keep-alive 激活时的处理
 onActivated(() => {
+  // 根据当前子视图类型调整顶部选择器显示策略
+  if (activeType.value === 'soc') {
+    blockStore.setCurrentPageType('standalone')
+    blockStore.setSelectedBlockForView('block1')
+    blockStore.setSelectedBlocksForWrite(['block1'])
+  } else {
+    blockStore.setCurrentPageType('block')
+  }
   scheduleAutoRead(allReadTopics, 500, 'BlockConfigParam')
+})
+
+// 当顶部菜单切换到“系统堆SOC配置参数”时：隐藏堆选择器与下发多选，并锁定到堆1
+watch(activeType, (val) => {
+  if (val === 'soc') {
+    blockStore.setCurrentPageType('standalone')
+    blockStore.setSelectedBlockForView('block1')
+    blockStore.setSelectedBlocksForWrite(['block1'])
+  } else {
+    blockStore.setCurrentPageType('block')
+  }
 })
 
 // keep-alive 失活时的处理
@@ -822,12 +931,6 @@ function selectAllClusters(parameterDefinition) {
   height: auto !important;
 }
 </style>
-
-
-
-
-
-
 
 
 

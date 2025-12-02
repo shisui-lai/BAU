@@ -16,7 +16,7 @@
            REAL_TIME_SAVE_R, SOX_CFG_PARAM_R, SOC_CFG_PARAM_R, SOH_CFG_PARAM_R, BLOCK_SUMMARY,
            BLOCK_VERSION, BLOCK_SYS_ABSTRACT, BLOCK_IO_STATUS, BLOCK_ANALOG_FAULT_LEVEL, BLOCK_ANALOG_FAULT_GRADE,
            BLOCK_COMMON_PARAM_R, BLOCK_TIME_CFG_R, BLOCK_PORT_CFG_R, BLOCK_DNS_PARAM_R,
-           BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_COMM_LOST, FACTORY_CALIB_PARAM_R,
+           BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_SOC_PARAM_R, BLOCK_COMM_LOST, FACTORY_CALIB_PARAM_R,
            BCU_BMU_UPGRADE_RESULT_FIELDS, BAU_UPGRADE_RESULT_FIELDS, SYS_RUN_TIME_R,
            EVENT_RECORD_FLAG_R, EVENT_RECORD_R } from '../main/table'
   export const toBuf = hex => Buffer.from(hex.replace(/\s+/g, ''), 'hex')
@@ -2343,6 +2343,36 @@ export function parseBlockOperateCfgRAW(payload) {
   return { error: false, data: baseConfig };
 }
 
+export function parseBlockSocParamRAW(payload) {
+  const buf = Buffer.isBuffer(payload)
+              ? payload
+              : Buffer.from(String(payload).replace(/\s+/g,''), 'hex');
+
+  if (buf.length === 0) return null;
+  if (buf.length === 1) {
+    const errorCode = buf.readUInt8(0);
+    return {
+      error: true,
+      baseConfig: {},
+      data: {
+        code: errorCode,
+        message: ERROR_CODES[errorCode] || '未知错误'
+      }
+    };
+  }
+
+  const dataLen = buf.readUInt16LE(0);
+  const paramsBuf = buf.slice(2);
+  if (paramsBuf.length !== dataLen) {
+    console.warn(`[parseBlockSocParamRAW] length mismatch: expected ${dataLen}, got ${paramsBuf.length}`);
+  }
+
+  const view = new DataView(paramsBuf.buffer, paramsBuf.byteOffset, paramsBuf.byteLength);
+  const { baseConfig } = parseByTable(view, BLOCK_SOC_PARAM_R);
+
+  return { error: false, data: baseConfig };
+}
+
 // ========== 地址自适应查询结果解析函数 ==========
 
 /**
@@ -2887,5 +2917,4 @@ export function parseEventRecordRAW(payload) {
     rawBuffer: records.length > 0 ? records[0].rawBuffer : null
   };
 }
-
 

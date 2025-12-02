@@ -1,5 +1,6 @@
 <template>
-  <div class="card force-upgrade">
+  <div class="force-upgrade-page">
+    <div class="card force-upgrade" :class="{ blurred: showPasswordDialog }">
     <div class="control">
       <!-- 左侧：TFTP 服务器配置部分 -->
       <div class="section1">
@@ -117,19 +118,40 @@
         </div>
       </div>
     </div>
+    </div>
+
+    <!-- 密码保护对话框 -->
+    <Dialog
+      v-model:visible="showPasswordDialog"
+      :closable="true"
+      :modal="false"
+      :header="t('password.header')"
+      :style="{ width: '25rem' }"
+    >
+      <div class="flex flex-column gap-3">
+        <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
+        <Button :label="t('password.confirm')" @click="checkPwd" style="margin-right: 0.5rem" />
+        <Button :label="t('password.cancel')" severity="danger" class="cancel-large" @click="cancelPwd" />
+        <div v-if="pwdError" style="color: red; margin-top: 0.5rem">{{ t('password.error') }}</div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onBeforeMount, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeMount, onBeforeUnmount, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import ProgressBar from 'primevue/progressbar'
+import Dialog from 'primevue/dialog'
+import { PAGE_PASSWORDS } from '@/configs/passwords'
+import { useRouter } from 'vue-router'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
+const router = useRouter()
 
 // TFTP 服务器相关
 const tftpRunning = ref(false)
@@ -144,6 +166,11 @@ const upgradeFileDir = ref('')
 const isUpgrading = ref(false)
 const commandCount = ref(0)
 const logs = ref([])
+
+// 密码保护相关
+const showPasswordDialog = ref(false)
+const inputPwd = ref('')
+const pwdError = ref(false)
 
 // IPC 监听器 ID
 let forceUpgradeSuccessListener = null
@@ -173,6 +200,128 @@ function addLog(message, type = 'info') {
   if (logs.value.length > 100) {
     logs.value = logs.value.slice(0, 100)
   }
+}
+
+function translateTftpServerMessage(res, action = 'start') {
+  const isEn = /^en/i.test(String(locale.value || ''))
+  if (res && res.messageKey) {
+    const key = res.messageKey
+    const params = res.messageParams || {}
+    if (key.startsWith('tftp.')) {
+      const reasonFromKey = (k, p) => {
+        switch (k) {
+          case 'tftp.alreadyRunning':
+            return 'TFTP server is already running'
+          case 'tftp.ipMismatch':
+            return `TFTP server IP must be ${p?.ip || TFTP_FIXED_IP}, please select the correct network card on the device connection page`
+          case 'tftp.createDirFailed':
+            return `Failed to create TFTP root directory: ${p?.message || ''}`
+          case 'tftp.startFailedIp':
+            return `TFTP server startup failed, please check if the local IP is ${p?.host || TFTP_FIXED_IP}`
+          case 'tftp.portInUse':
+            return `Port ${p?.port ?? 69} is already in use, please close the program using the port or change the port`
+          case 'tftp.permissionDenied':
+            return `Insufficient permissions to bind to port ${p?.port ?? 69}. Please try running the program as an administrator or use a port number greater than 1024`
+          case 'tftp.startFailed':
+            return `TFTP server startup failed: ${p?.message || ''}`
+          default:
+            return ''
+        }
+      }
+      const reason = reasonFromKey(key, params)
+      if (reason) {
+        return isEn
+          ? (action === 'start' ? `TFTP start failed: ${reason}` : `TFTP stop failed: ${reason}`)
+          : (action === 'start'
+              ? t('forceUpgrade.log.tftpStartFailed', { message: reason }, `TFTP启动失败: ${reason}`)
+              : t('forceUpgrade.log.tftpStopFailed', { message: reason }, `TFTP停止失败: ${reason}`))
+      }
+    }
+  }
+  const raw = res && res.message ? String(res.message) : ''
+  if (isEn) {
+    const m = raw
+    if (!m) return ''
+    if (m.includes('已在运行')) return 'TFTP start failed: TFTP server is already running'
+    if (m.includes('请检查本机IP') || m.includes('IP必须为')) {
+      const hostMatch = m.match(/(\d+\.\d+\.\d+\.\d+)/)
+      const host = (res && res.messageParams && res.messageParams.host) || (hostMatch ? hostMatch[1] : TFTP_FIXED_IP)
+      return `TFTP start failed: TFTP server startup failed, please check if the local IP is ${host}`
+    }
+    if (m.includes('端口') && m.includes('占用')) {
+      const portMatch = m.match(/\b(\d{2,5})\b/)
+      const port = (res && res.messageParams && res.messageParams.port) || (portMatch ? Number(portMatch[1]) : 69)
+      return `TFTP start failed: Port ${port} is already in use, please close the program using the port or change the port`
+    }
+    if (m.includes('权限') || m.includes('权限不足')) {
+      const port = res && res.messageParams && res.messageParams.port ? res.messageParams.port : 69
+      return `TFTP start failed: Insufficient permissions to bind to port ${port}. Please try running the program as an administrator or use a port number greater than 1024`
+    }
+    if (m.includes('创建TFTP根目录失败')) {
+      const mm = m.replace(/^.*失败[:：]\s*/, '')
+      return `TFTP start failed: Failed to create TFTP root directory: ${mm}`
+    }
+    if (m.includes('启动失败')) {
+      const mm = m.replace(/^.*失败[:：]\s*/, '')
+      return `TFTP start failed: ${mm}`
+    }
+  }
+  return raw
+}
+
+function mapKnownChineseToEnglish(text) {
+  if (!text) return ''
+  let m = String(text)
+  m = m.replace(/升级完成/g, 'Upgrade completed')
+  m = m.replace(/升级失败/g, 'Upgrade failed')
+  m = m.replace(/进度更新/g, 'Progress update')
+  m = m.replace(/设备响应错误/g, 'Device response error')
+  m = m.replace(/设备未响应/g, 'Device not responding')
+  m = m.replace(/文件不存在/g, 'File does not exist')
+  m = m.replace(/无效文件/g, 'Invalid file')
+  m = m.replace(/强制升级模块已加载/g, 'Force upgrade module loaded')
+  m = m.replace(/开始发送强制升级广播指令\.\.\./g, 'Start sending force upgrade broadcast command...')
+  m = m.replace(/已停止升级/g, 'Upgrade stopped')
+  m = m.replace(/^已选择文件:\s*/g, 'File selected: ')
+  m = m.replace(/^TFTP根目录:\s*/g, 'TFTP root directory: ')
+  m = m.replace(/^文件选择失败:\s*/g, 'File selection failed: ')
+  m = m.replace(/^TFTP服务器已停止$/g, 'TFTP server stopped')
+  m = m.replace(/^TFTP停止失败:\s*/g, 'TFTP stop failed: ')
+  m = m.replace(/^TFTP服务器已启动:\s*/g, 'TFTP server started: ')
+  m = m.replace(/^TFTP启动失败:\s*/g, 'TFTP start failed: ')
+  return m
+}
+
+function translateDeviceMessage(type, data) {
+  const isEn = /^en/i.test(String(locale.value || ''))
+  const keyByType = {
+    success: 'forceUpgrade.log.upgradeSuccess',
+    error: 'forceUpgrade.log.upgradeError',
+    failed: 'forceUpgrade.log.upgradeFailed',
+    progress: 'forceUpgrade.toast.upgradeProgress'
+  }
+  if (data && data.messageKey) {
+    const reason = t(data.messageKey, data.messageParams || {})
+    if (reason && reason !== data.messageKey) return reason
+  }
+  const raw = data && data.message ? String(data.message) : ''
+  if (isEn) {
+    const mapped = mapKnownChineseToEnglish(raw)
+    if (mapped) return mapped
+    if (type === 'success') return t('forceUpgrade.log.upgradeSuccess')
+    if (type === 'failed') return t('forceUpgrade.log.upgradeFailed')
+    if (type === 'error') return t('forceUpgrade.log.upgradeError', { error: '' }).replace(/:\s*$/, '')
+    if (type === 'progress') return 'Progress update'
+  }
+  return raw || (type === 'success' ? t('forceUpgrade.log.upgradeSuccess', '升级完成') : type === 'failed' ? t('forceUpgrade.log.upgradeFailed', '升级失败') : type === 'error' ? t('forceUpgrade.log.upgradeError', { error: '' }, '升级错误') : '升级进度更新')
+}
+
+function translateExistingLogsToEnglish() {
+  if (!/^en/i.test(String(locale.value || ''))) return
+  logs.value = logs.value.map((entry) => {
+    const translated = mapKnownChineseToEnglish(entry.message)
+    return translated ? { ...entry, message: translated } : entry
+  })
 }
 
 // 清空日志
@@ -237,11 +386,12 @@ async function toggleTftp() {
         life: 5000
       })
     } else {
-      addLog(t('forceUpgrade.log.tftpStopFailed', { message: res.message }, `TFTP停止失败: ${res.message}`), 'error')
+      const message = translateTftpServerMessage(res, 'stop')
+      addLog(message, 'error')
       toast.add({
         severity: 'error',
         summary: t('forceUpgrade.toast.tftpStopFailed', 'TFTP停止失败'),
-        detail: res.message,
+        detail: message,
         life: 5000
       })
     }
@@ -258,15 +408,16 @@ async function toggleTftp() {
       toast.add({
         severity: 'success',
         summary: t('forceUpgrade.toast.tftpStarted', 'TFTP已启动'),
-        detail: res.message,
+        detail: t('forceUpgrade.log.tftpStarted', { host: TFTP_FIXED_IP, port: tftpPort.value }),
         life: 5000
       })
     } else {
-      addLog(t('forceUpgrade.log.tftpStartFailed', { message: res.message }, `TFTP启动失败: ${res.message}`), 'error')
+      const message = translateTftpServerMessage(res, 'start')
+      addLog(message, 'error')
       toast.add({
         severity: 'error',
         summary: t('forceUpgrade.toast.tftpStartFailed', 'TFTP启动失败'),
-        detail: res.message,
+        detail: message,
         life: 5000
       })
     }
@@ -331,13 +482,14 @@ function handleUpgradeSuccess(event, data) {
   isUpgrading.value = false
   commandCount.value = 0
   
-  const logMsg = `${data.ip}${data.mac ? ' (' + data.mac + ')' : ''}: ${data.message || t('forceUpgrade.log.upgradeSuccess', '升级完成')}`
+  const msg = translateDeviceMessage('success', data)
+  const logMsg = `${data.ip}${data.mac ? ' (' + data.mac + ')' : ''}: ${msg}`
   addLog(logMsg, 'success')
   
   toast.add({
     severity: 'success',
     summary: t('forceUpgrade.toast.upgradeSuccess', '升级成功'),
-    detail: `${data.ip}: ${data.message || '升级完成'}`,
+    detail: `${data.ip}: ${msg}`,
     life: 5000
   })
 }
@@ -348,13 +500,14 @@ function handleUpgradeFailed(event, data) {
   isUpgrading.value = false
   commandCount.value = 0
   
-  const logMsg = `${data.ip}${data.mac ? ' (' + data.mac + ')' : ''}: ${data.message || t('forceUpgrade.log.upgradeFailed', '升级失败')}`
+  const msg = translateDeviceMessage('failed', data)
+  const logMsg = `${data.ip}${data.mac ? ' (' + data.mac + ')' : ''}: ${msg}`
   addLog(logMsg, 'error')
   
   toast.add({
     severity: 'error',
     summary: t('forceUpgrade.toast.upgradeFailed', '升级失败'),
-    detail: `${data.ip}: ${data.message || '升级失败'}`,
+    detail: `${data.ip}: ${msg}`,
     life: 5000
   })
 }
@@ -365,7 +518,8 @@ function handleUpgradeError(event, data) {
   isUpgrading.value = false
   commandCount.value = 0
   
-  addLog(t('forceUpgrade.log.upgradeError', { error: data.error }, `升级错误: ${data.error}`), 'error')
+  const msg = translateDeviceMessage('error', { message: data.error })
+  addLog(`${msg}: ${data.error}`, 'error')
   
   toast.add({
     severity: 'error',
@@ -379,13 +533,14 @@ function handleUpgradeError(event, data) {
 function handleUpgradeProgress(event, data) {
   console.log('升级进度:', data)
   
-  const logMsg = `${data.ip}${data.mac ? ' (' + data.mac + ')' : ''}: ${data.message || '升级进度更新'}`
+  const msg = translateDeviceMessage('progress', data)
+  const logMsg = `${data.ip}${data.mac ? ' (' + data.mac + ')' : ''}: ${msg}`
   addLog(logMsg, 'info')
   
   toast.add({
     severity: 'info',
     summary: t('forceUpgrade.toast.upgradeProgress', '升级进度'),
-    detail: `${data.ip}: ${data.message || '进度更新'}`,
+    detail: `${data.ip}: ${msg}`,
     life: 3000
   })
 }
@@ -395,42 +550,37 @@ function handleUpgradeSending(event, data) {
   commandCount.value++
 }
 
-// 组件挂载时
-onBeforeMount(async () => {
-  // 获取 TFTP 状态
+// 初始化页面（密码通过后或已通过时执行）
+async function initializePage() {
   const status = await window.electronAPI.ipc.invoke('tftp-status')
   tftpRunning.value = status.running
 
-  // TFTP IP固定为192.168.11.200，无需从后端获取
+  // 固定TFTP IP展示
   tftpIp.value = TFTP_FIXED_IP
 
   // 注册 IPC 监听器
-  forceUpgradeSuccessListener = window.electronAPI.ipc.registerListener(
-    'force-upgrade-success',
-    handleUpgradeSuccess
-  )
-  
-  forceUpgradeFailedListener = window.electronAPI.ipc.registerListener(
-    'force-upgrade-failed',
-    handleUpgradeFailed
-  )
-  
-  forceUpgradeErrorListener = window.electronAPI.ipc.registerListener(
-    'force-upgrade-error',
-    handleUpgradeError
-  )
-  
-  forceUpgradeSendingListener = window.electronAPI.ipc.registerListener(
-    'force-upgrade-sending',
-    handleUpgradeSending
-  )
-  
-  forceUpgradeProgressListener = window.electronAPI.ipc.registerListener(
-    'force-upgrade-progress',
-    handleUpgradeProgress
-  )
+  forceUpgradeSuccessListener = window.electronAPI.ipc.registerListener('force-upgrade-success', handleUpgradeSuccess)
+  forceUpgradeFailedListener = window.electronAPI.ipc.registerListener('force-upgrade-failed', handleUpgradeFailed)
+  forceUpgradeErrorListener = window.electronAPI.ipc.registerListener('force-upgrade-error', handleUpgradeError)
+  forceUpgradeSendingListener = window.electronAPI.ipc.registerListener('force-upgrade-sending', handleUpgradeSending)
+  forceUpgradeProgressListener = window.electronAPI.ipc.registerListener('force-upgrade-progress', handleUpgradeProgress)
 
-  addLog(t('forceUpgrade.log.moduleLoaded', '强制升级模块已加载'), 'info')
+  addLog(/^en/i.test(String(locale.value || '')) ? 'Force upgrade module loaded' : t('forceUpgrade.log.moduleLoaded', '强制升级模块已加载'), 'info')
+}
+
+// 组件挂载时
+onBeforeMount(async () => {
+  // 密码保护检查
+  if (sessionStorage.getItem('forceUpgradePagePassword') !== 'ok') {
+    showPasswordDialog.value = true
+    return
+  }
+  await initializePage()
+})
+
+// 监听语言切换，英文环境下把已有日志转为英文
+watch(() => locale.value, () => {
+  translateExistingLogsToEnglish()
 })
 
 // 组件卸载时清理
@@ -457,6 +607,28 @@ onBeforeUnmount(() => {
     window.electronAPI.ipc.unregisterListener(forceUpgradeProgressListener)
   }
 })
+
+// 密码相关函数
+function checkPwd() {
+  pwdError.value = false
+  if (inputPwd.value === PAGE_PASSWORDS.UPGRADE) {
+    showPasswordDialog.value = false
+    sessionStorage.setItem('forceUpgradePagePassword', 'ok')
+    pwdError.value = false
+    // 验证通过后初始化页面
+    initializePage()
+  } else {
+    pwdError.value = true
+  }
+}
+
+function cancelPwd() {
+  showPasswordDialog.value = false
+  // 返回上一页
+  setTimeout(() => {
+    router.go(-1)
+  }, 300)
+}
 </script>
 
 <style scoped>
@@ -794,5 +966,14 @@ onBeforeUnmount(() => {
 
 .sending-status :deep(.p-progressbar-value) {
   background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+.cancel-large {
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
+}
+
+.blurred {
+  filter: blur(4px);
 }
 </style>

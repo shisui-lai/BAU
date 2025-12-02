@@ -23,11 +23,11 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
   
   // 当前选中的堆和簇ID（从store的selectedBlock和selectedCluster计算得出）
   const currentBlockId = computed(() => {
-    const selected = blockStore.selectedBlockForView
+    const selected = clusterStore.selectedClusterForView
     if (!selected || typeof selected !== 'string') return 0
-    // selectedBlock格式可能是 'block1' 或 '1'
-    const match = selected.match(/\d+/)
-    return match ? parseInt(match[0]) : 0
+    // selectedCluster格式是 'blockId-clusterId'，例如 '1-1'
+    const parts = selected.split('-')
+    return parts.length === 2 ? parseInt(parts[0]) : 0
   })
   
   const currentClusterId = computed(() => {
@@ -118,7 +118,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
       const name = NAME_MAP[code]
       if (!name) continue
       const idx = rows.findIndex(r => r.label === name)
-      const show = (temp === null || temp === undefined || temp === '') ? '-℃' : `${temp}℃`
+      const show = (temp === null || temp === undefined || temp === '' || (typeof temp === 'number' && Math.abs(temp - 3276.7) < 0.05)) ? '-℃' : `${temp}℃`
       if (idx !== -1) rows[idx].value = show
       else rows.push({ label: name, value: show })
     }
@@ -132,7 +132,19 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
    */
   const groupedDiDoStatus = computed(() => {
     if (!rawData.value.data || rawData.value.data.length === 0) {
-      return {}
+      const grouped = {}
+      const DEFAULT_DI_LABELS = [
+        '主正接触器反馈','主负接触器反馈','预充接触器反馈','隔离开关反馈','断路器反馈','风扇反馈','直流供电KM反馈','门禁反馈','SPD反馈','交流电压反馈','烟感反馈','消防反馈','温感反馈','排风系统反馈','辅助断路器反馈','氢气探测器反馈','MSD反馈','急停反馈'
+      ]
+      const DEFAULT_DO_LABELS = [
+        '主正接触器高边驱动反馈','主负接触器高边驱动反馈','预充接触器高边驱动反馈','绿灯高边驱动反馈','黄灯高边驱动反馈','红灯高边驱动反馈','风扇高边驱动反馈','主断分励脱扣高边驱动反馈故障','直流供电KM高边驱动反馈','pcs封波高边驱动反馈','辅助断路器高边驱动反馈','排风系统高边驱动反馈','柜体风机高边驱动反馈'
+      ]
+
+      grouped.diSignal = DEFAULT_DI_LABELS.map(lbl => ({ label: signalNames.value[lbl] || lbl, value: 0 }))
+      grouped.doDriveFeedback = DEFAULT_DO_LABELS.map(lbl => ({ label: signalNames.value[lbl] || lbl, value: 0 }))
+      const rtData = parseRTData([], temperatureLabels.value)
+      grouped.rtData = rtData
+      return grouped
     }
 
     const grouped = {}
@@ -257,10 +269,12 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
         rawData.value = JSON.parse(cached)
-        console.log('[useDiDoStatus] 从缓存加载数据:', cacheKey)
+      } else {
+        rawData.value = { baseConfig: {}, data: [] }
       }
     } catch (e) {
       console.warn('加载DI/DO状态缓存失败:', e)
+      rawData.value = { baseConfig: {}, data: [] }
     }
   }
 
@@ -268,8 +282,12 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
    * 监听设备选择变化
    */
   watch(
-    () => [currentBlockId.value, currentClusterId.value],
+    () => currentClusterId.value,
     () => {
+      console.log('[useDiDoStatus] 设备选择变化:', {
+        currentBlock: currentBlockId.value,
+        currentCluster: currentClusterId.value
+      })
       // 设备切换时，重新加载缓存
       loadFromCache()
     },

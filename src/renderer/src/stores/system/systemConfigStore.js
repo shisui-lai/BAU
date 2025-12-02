@@ -36,6 +36,7 @@ export const useSystemConfigStore = defineStore('systemConfig', () => {
    * @param {Object} config - 系统配置参数
    */
   function handleSystemConfigUpdate(config) {
+    console.log('[SystemConfigStore-Diag] 4. handleSystemConfigUpdate 开始执行，接收到配置:', JSON.parse(JSON.stringify(config)))
     // 验证配置参数的有效性
     const { BlockCount, ClusterCount1, ClusterCount2 } = config
     
@@ -57,14 +58,17 @@ export const useSystemConfigStore = defineStore('systemConfig', () => {
     // 更新配置状态
     systemConfig.value = { ...config }
     isConfigLoaded.value = true
+    console.log('[SystemConfigStore-Diag] 5. 内部 systemConfig.value 已更新')
     
     try {
       // 更新簇store和堆store
       const clusterStore = useClusterStore()
       const blockStore = useBlockStore()
       
+      console.log('[SystemConfigStore-Diag] 6. 即将调用 blockStore 和 clusterStore 的初始化方法')
       clusterStore.initializeFromSystemConfig(config)
       blockStore.initializeFromSystemConfig(config)
+      console.log('[SystemConfigStore-Diag] 7. blockStore 和 clusterStore 初始化完成')
       
     } catch (error) {
       console.error('[SystemConfigStore] 更新store时发生错误:', error)

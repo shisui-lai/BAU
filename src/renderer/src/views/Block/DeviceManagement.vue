@@ -53,6 +53,15 @@ const deviceManagementConfig = {
   }
 }
 
+// 监听器注册防重标志（避免重复绑定导致重复toast）
+// 使用全局标志，确保跨页面切换也不会重复注册
+let ipcDMListenersRegistered = false
+try {
+  // 读取全局标志（如存在）
+  ipcDMListenersRegistered = Boolean(window.__bauDMListenersRegistered)
+} catch (_) {}
+
+
 // ====== 设备时间设置（读/写分开两行） ======
 function calcByteLength(fieldTable){
   const typeSize = { u8:1,s8:1,u16:2,s16:2,u32:4,s32:4,f32:4,ipv4:4 }
@@ -388,29 +397,36 @@ function handleDeviceManagementReadEvent(event, mqttMessage) {
 
   // 标记收到响应，停止超时检查
   retryLogic.markResponse()
-  // 【新增】同时转发给useSystemConfig处理，确保堆簇结构能及时更新
+
+  // [诊断日志] 打印原始接收数据，恢复您之前的日志
   const configData = mqttMessage.data
   if (configData && !configData.error) {
-    const config = {
-      BlockCount: configData.BlockCount || 0,
-      ClusterCount1: configData.ClusterCount1 || 0,
-      ClusterCount2: configData.ClusterCount2 || 0,
-      ClusterCount3: configData.ClusterCount3 || 0,
-      ClusterCount4: configData.ClusterCount4 || 0,
-      ClusterCount5: configData.ClusterCount5 || 0,
-      ClusterCount6: configData.ClusterCount6 || 0,
-      RealTimeDataRecordPeriod: configData.RealTimeDataRecordPeriod || 1
+    const perBlockClusters = []
+    for (let i = 1; i <= (configData.BlockCount || 0); i++) {
+      const key = `ClusterCount${i}`
+      perBlockClusters.push({ block: i, clusters: Number(configData[key] || 0) })
     }
-    handleSystemConfigUpdate(config)
+    console.log('[DeviceManagement-Diag] 1. 收到原始MQTT数据', {
+      topic: mqttMessage.topic,
+      raw: JSON.parse(JSON.stringify(configData)),
+      summary: {
+        blockCount: Number(configData.BlockCount || 0),
+        perBlockClusters
+      }
+    })
   }
+
   // 复用与配置参数页一致的解析流程
   const parsed = blockCommonParamHandler.parseBlockCommonParamReadResponse(mqttMessage)
+  console.log('[DeviceManagement-Diag] 2. 即将使用解析后的数据更新UI:', JSON.parse(JSON.stringify(parsed)))
   if (!parsed) return
   if (parsed.result?.error) {
     handleParameterReadError(parsed)
   } else if (parsed.data) {
     handleReceivedParameterData(parsed)
   }
+  console.log('[DeviceManagement-Diag] 3. UI更新函数 (handleReceivedParameterData) 已调用')
+
 }
 
 /**
@@ -462,16 +478,18 @@ onMounted(() => {
   
   // 注册MQTT事件监听器（与簇遥调页面一致，使用 window.electron.ipcRenderer）
   const ipc = window.electron?.ipcRenderer
-  if (ipc) {
-    // 预清理，避免重复绑定
-    ipc.removeAllListeners?.('BLOCK_COMMON_PARAM_R')
+  if (ipc && !ipcDMListenersRegistered) {
+
+    // 仅清理本页专用通道，避免误伤全局监听（BLOCK_COMMON_PARAM_R 保留全局监听）
     ipc.removeAllListeners?.('BLOCK_COMMON_PARAM_W')
     ipc.removeAllListeners?.('BLOCK_TIME_CFG_R')
     ipc.removeAllListeners?.('BLOCK_TIME_CFG_W')
     ipc.removeAllListeners?.('BLOCK_PORT_CFG_R')
     ipc.removeAllListeners?.('BLOCK_PORT_CFG_W')
+    // 精确移除本页的 BLOCK_COMMON_PARAM_R 处理器（不影响 systemConfigStore 的全局监听）
+    try { ipc.removeListener?.('BLOCK_COMMON_PARAM_R', handleDeviceManagementReadEvent) } catch (_) {}
 
-    console.log('[DeviceManagement] 注册监听: BLOCK_COMMON_PARAM_R / BLOCK_COMMON_PARAM_W')
+    console.log('[DeviceManagement] 注册监听: BLOCK_COMMON_PARAM_R / BLOCK_COMMON_PARAM_W / TIME / PORT')
     ipc.on('BLOCK_COMMON_PARAM_R', handleDeviceManagementReadEvent)
     ipc.on('BLOCK_COMMON_PARAM_W', handleDeviceManagementWriteEvent)
     // 时间与端口
@@ -479,7 +497,11 @@ onMounted(() => {
     ipc.on('BLOCK_TIME_CFG_W', handleTimeWriteEvent)
     ipc.on('BLOCK_PORT_CFG_R', handlePortReadEvent)
     ipc.on('BLOCK_PORT_CFG_W', handlePortWriteEvent)
-  } else {
+    ipcDMListenersRegistered = true
+    try { window.__bauDMListenersRegistered = true } catch (_) {}
+
+    // 注册完成
+  } else if (!ipc) {
     console.warn('[DeviceManagement] 未检测到 window.electron.ipcRenderer，无法注册MQTT事件监听')
     console.warn('[DeviceManagement] window.electron =', window.electron)
   }
@@ -519,14 +541,26 @@ onUnmounted(() => {
   
   // 清理MQTT事件监听器
   const ipc = window.electron?.ipcRenderer
-  if (ipc) {
-    console.log('[DeviceManagement] 取消监听: BLOCK_COMMON_PARAM_R / BLOCK_COMMON_PARAM_W')
-    ipc.removeAllListeners('BLOCK_COMMON_PARAM_R', handleDeviceManagementReadEvent)
-    ipc.removeAllListeners('BLOCK_COMMON_PARAM_W', handleDeviceManagementWriteEvent)
-    ipc.removeAllListeners('BLOCK_TIME_CFG_R', handleTimeReadEvent)
-    ipc.removeAllListeners('BLOCK_TIME_CFG_W', handleTimeWriteEvent)
-    ipc.removeAllListeners('BLOCK_PORT_CFG_R', handlePortReadEvent)
-    ipc.removeAllListeners('BLOCK_PORT_CFG_W', handlePortWriteEvent)
+  if (ipc && ipcDMListenersRegistered) {
+
+    try { ipc.removeListener?.('BLOCK_COMMON_PARAM_R', handleDeviceManagementReadEvent) } catch (_) {}
+    try { ipc.removeListener?.('BLOCK_COMMON_PARAM_W', handleDeviceManagementWriteEvent) } catch (_) {}
+    try { ipc.removeListener?.('BLOCK_TIME_CFG_R', handleTimeReadEvent) } catch (_) {}
+    try { ipc.removeListener?.('BLOCK_TIME_CFG_W', handleTimeWriteEvent) } catch (_) {}
+    try { ipc.removeListener?.('BLOCK_PORT_CFG_R', handlePortReadEvent) } catch (_) {}
+    try { ipc.removeListener?.('BLOCK_PORT_CFG_W', handlePortWriteEvent) } catch (_) {}
+
+    // 对仅本页通道做最终清理，确保不会残留重复监听
+    ipc.removeAllListeners?.('BLOCK_COMMON_PARAM_W')
+    ipc.removeAllListeners?.('BLOCK_TIME_CFG_R')
+    ipc.removeAllListeners?.('BLOCK_TIME_CFG_W')
+    ipc.removeAllListeners?.('BLOCK_PORT_CFG_R')
+    ipc.removeAllListeners?.('BLOCK_PORT_CFG_W')
+
+    ipcDMListenersRegistered = false
+    try { window.__bauDMListenersRegistered = false } catch (_) {}
+
+    // 取消完成
   }
   
   // 停止参数读取（如在轮询中）

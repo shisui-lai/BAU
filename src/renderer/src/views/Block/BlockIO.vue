@@ -22,22 +22,17 @@
                     <i class="pi pi-plug section-icon"></i>
                     <span class="section-title">{{ t('blockIOStatusPage.sections.systemDI') }}</span>
                   </div>
-                  <div class="section-items">
-                    <div v-for="item in systemDI" :key="item.key" class="io-item">
-                      <div class="io-info">
-                        <span class="io-label">{{ translateParameter(item.label) }}</span>
-                        <span class="io-remark">{{ translateRemark(item.remark) }}</span>
-                      </div>
-                      <div class="io-status-indicator">
-                        <Tag 
-                          :value="translateIOStatus(item.value)" 
-                          :severity="getIOStatusSeverity(item.value)"
-                          class="status-tag"
-                        />
-                        <div class="led-indicator" :class="getLEDClass(item.value)"></div>
-                      </div>
-                    </div>
-                  </div>
+          <div class="section-items">
+            <div v-for="item in systemDI" :key="item.key" class="io-item">
+              <div class="io-info">
+                <span class="io-label">{{ translateParameter(item.label) }}</span>
+                <span class="io-remark">{{ translateRemark(item.remark) }}</span>
+              </div>
+              <div class="io-status-indicator">
+                <div class="led-indicator" :class="getLEDClass(item.value)">{{ formatBinary(item.value) }}</div>
+              </div>
+            </div>
+          </div>
                 </div>
 
                 <!-- 系统DO状态 -->
@@ -45,22 +40,17 @@
                   <div class="section-header">
                     <span class="section-title">{{ t('blockIOStatusPage.sections.systemDO') }}</span>
                   </div>
-                  <div class="section-items">
-                    <div v-for="item in systemDO" :key="item.key" class="io-item">
-                      <div class="io-info">
-                        <span class="io-label">{{ translateParameter(item.label) }}</span>
-                        <span class="io-remark">{{ translateRemark(item.remark) }}</span>
-                      </div>
-                      <div class="io-status-indicator">
-                        <Tag 
-                          :value="translateIOStatus(item.value)" 
-                          :severity="getIOStatusSeverity(item.value)"
-                          class="status-tag"
-                        />
-                        <div class="led-indicator" :class="getLEDClass(item.value)"></div>
-                      </div>
-                    </div>
-                  </div>
+          <div class="section-items">
+            <div v-for="item in systemDO" :key="item.key" class="io-item">
+              <div class="io-info">
+                <span class="io-label">{{ translateParameter(item.label) }}</span>
+                <span class="io-remark">{{ translateRemark(item.remark) }}</span>
+              </div>
+              <div class="io-status-indicator">
+                <div class="led-indicator" :class="getLEDClass(item.value)">{{ formatBinary(item.value) }}</div>
+              </div>
+            </div>
+          </div>
                 </div>
 
                 <!-- I/O控制板DI状态 -->
@@ -69,22 +59,17 @@
                     <i class="pi pi-microchip section-icon"></i>
                     <span class="section-title">{{ t('blockIOStatusPage.sections.ioControlDI') }}</span>
                   </div>
-                  <div class="section-items">
-                    <div v-for="item in ioControlDI" :key="item.key" class="io-item">
-                      <div class="io-info">
-                        <span class="io-label">{{ translateParameter(item.label) }}</span>
-                        <span class="io-remark">{{ translateRemark(item.remark) }}</span>
-                      </div>
-                      <div class="io-status-indicator">
-                        <Tag 
-                          :value="translateIOStatus(item.value)" 
-                          :severity="getIOStatusSeverity(item.value)"
-                          class="status-tag"
-                        />
-                        <div class="led-indicator" :class="getLEDClass(item.value)"></div>
-                      </div>
-                    </div>
-                  </div>
+          <div class="section-items">
+            <div v-for="item in ioControlDI" :key="item.key" class="io-item">
+              <div class="io-info">
+                <span class="io-label">{{ translateParameter(item.label) }}</span>
+                <span class="io-remark">{{ translateRemark(item.remark) }}</span>
+              </div>
+              <div class="io-status-indicator">
+                <div class="led-indicator" :class="getLEDClass(item.value)">{{ formatBinary(item.value) }}</div>
+              </div>
+            </div>
+          </div>
                 </div>
 
                 <!-- I/O控制板DO状态 -->
@@ -92,22 +77,17 @@
                   <div class="section-header">
                     <span class="section-title">{{ t('blockIOStatusPage.sections.ioControlDO') }}</span>
                   </div>
-                  <div class="section-items">
-                    <div v-for="item in ioControlDO" :key="item.key" class="io-item">
-                      <div class="io-info">
-                        <span class="io-label">{{ translateParameter(item.label) }}</span>
-                        <span class="io-remark">{{ translateRemark(item.remark) }}</span>
-                      </div>
-                      <div class="io-status-indicator">
-                        <Tag
-                          :value="translateIOStatus(item.value)"
-                          :severity="getIOStatusSeverity(item.value)"
-                          class="status-tag"
-                        />
-                        <div class="led-indicator" :class="getLEDClass(item.value)"></div>
-                      </div>
-                    </div>
-                  </div>
+          <div class="section-items">
+            <div v-for="item in ioControlDO" :key="item.key" class="io-item">
+              <div class="io-info">
+                <span class="io-label">{{ translateParameter(item.label) }}</span>
+                <span class="io-remark">{{ translateRemark(item.remark) }}</span>
+              </div>
+              <div class="io-status-indicator">
+                <div class="led-indicator" :class="getLEDClass(item.value)">{{ formatBinary(item.value) }}</div>
+              </div>
+            </div>
+          </div>
                 </div>
 
                 <!-- I/O控制板心跳 -->
@@ -139,7 +119,6 @@ import { useBlockIO } from '@/composables/core/data-processing/block/useBlockIO'
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import { useI18n } from 'vue-i18n'
 import Card from 'primevue/card'
-import Tag from 'primevue/tag'
 import { computed } from 'vue'
 
 // 国际化
@@ -174,7 +153,7 @@ const hasData = computed(() => {
 const getLEDClass = (value) => {
   if (value === 1 || value === true) return 'led-active'
   if (value === 0 || value === false) return 'led-inactive'
-  return 'led-unknown'
+  return 'led-inactive'
 }
 
 // 翻译函数
@@ -191,6 +170,12 @@ const translateIOStatus = (value) => {
   if (value === 1 || value === true) return t('blockIOStatusPage.status.activated')
   if (value === 0 || value === false) return t('blockIOStatusPage.status.inactivated')
   return t('blockIOStatusPage.status.unknown')
+}
+
+const formatBinary = (value) => {
+  if (value === 1 || value === true) return '1'
+  if (value === 0 || value === false) return '0'
+  return '-'
 }
 </script>
 
@@ -303,8 +288,8 @@ const translateIOStatus = (value) => {
   }
   
   .section-items {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 0.5rem;
     padding-left: 0.5rem;
   }
@@ -356,33 +341,37 @@ const translateIOStatus = (value) => {
     align-items: center;
     gap: 0.75rem;
     
-    .status-tag {
-      min-width: 60px;
-      text-align: center;
-    }
-    
     .led-indicator {
-      width: 12px;
-      height: 12px;
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
       border: 2px solid var(--surface-border);
       transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      font-size: 10px;
+      line-height: 16px;
+      font-weight: 700;
 
       &.led-active {
         background: var(--green-500);
         border-color: var(--green-500);
         box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+        color: #fff;
       }
 
       &.led-inactive {
         background: var(--surface-400);
         border-color: var(--surface-400);
+        color: #333;
       }
 
       &.led-unknown {
-        background: var(--orange-500);
-        border-color: var(--orange-500);
-        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+        background: var(--surface-400);
+        border-color: var(--surface-400);
+        color: #333;
       }
     }
   }

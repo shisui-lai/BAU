@@ -77,7 +77,7 @@
   },
   "build": {
     "appId": "com.example.app",
-    "productName": "Risen-BMS-BAU",
+    "productName": "Risen BMS++ BAU Monitor System",
     "copyright": "Copyright © 2022 example.com",
     "directories": {
       "buildResources": "resources"
@@ -87,14 +87,14 @@
       "target": [
         "nsis"
       ],
-      "executableName": "Risen-BMS-BAU"
+      "executableName": "Risen BMS++ BAU MonitorSystem"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
-      "shortcutName": "Risen-BMS-BAU",
-      "uninstallDisplayName": "Risen-BMS-BAU"
+      "shortcutName": "Risen BMS++ BAU Monitor System",
+      "uninstallDisplayName": "Risen BMS++ BAU Monitor System"
     }
   }
 }

@@ -472,7 +472,9 @@
       "passwordError": "Password error",
       "operationCancelled": "Operation cancelled, did not enter upgrade page",
       "noUpgradeResult": "No upgrade results, please start BCU/BMU upgrade first",
-      "noBauUpgradeResult": "No BAU upgrade results, please start BAU upgrade first"
+      "noBauUpgradeResult": "No BAU upgrade results, please start BAU upgrade first",
+      "clusterCurrentConfigOneHeap": "Current Config: {0} clusters (Block1: {1} clusters)",
+      "clusterCurrentConfigTwoHeaps": "Current Config: {0} clusters (Block1: {1} clusters, Block2: {2} clusters)"
     },
     "toast": {
       "directorySelected": "Directory Selected Successfully",
@@ -674,6 +676,9 @@
       "energy": "kWh",
       "capacity": "Ah"
     },
+    "labels": {
+      "systemTotalStatusBits": "System Total Status Bits"
+    },
   "clusterLabels": {
       "clusterCurrent": "Cluster Current",
       "clusterVoltage": "Cluster Voltage", 
@@ -770,8 +775,11 @@
     "busOffCmd": "Bus-Off Command",
     "busOffCmdDone": "Bus-Off Command Done",
     "maintMode": "Maintenance Mode",
-    "testMode": "Normal/Test Mode",
-    "init": "Initialization"
+    "nonMaintMode": "Non Maintenance Mode",
+    "testModeNormal": "Normal Mode",
+    "testModeTest": "Test Mode",
+    "initCompleted": "Initialization Completed",
+    "initInProgress": "Initializing"
   },
   "versionInfo": {
     "classification": {
@@ -3181,7 +3189,8 @@
     "sections": {
       "batteryConfig": "System Cluster Battery Config Parameters",
       "commDevConfig": "System Communication Device Config Parameters",
-      "operateConfig": "System Operation Config Parameters"
+      "operateConfig": "System Operation Config Parameters",
+      "socConfig": "System Stack SOC Config Parameters"
     },
     "table": {
       "parameterName": "Parameter Name",
@@ -3310,9 +3319,31 @@
       "堆SOC变化差值": "Stack SOC Change Diff",
       "是否存在BCP控制": "BCP Control Exists",
       "堆SOC追赶斜率": "Stack SOC Catch Up Slope",
-      "簇间SOC同步开关": "Cluster SOC Sync Switch",
       "充电SOC同步点": "Charge SOC Sync Point",
-      "放电SOC同步点": "Discharge SOC Sync Point"
+      "放电SOC同步点": "Discharge SOC Sync Point",
+      "堆电流有效阈值": "Stack Current Valid Threshold",
+      "BlockSOC取值阈值下限": "Block SOC Lower Threshold",
+      "BlockSOC取值阈值上限": "Block SOC Upper Threshold",
+      "显示SOC追赶真实SOC时间": "Display SOC Catch-up Time",
+      "堆显示SOC与堆真实SOC差值范围": "Stack Display SOC vs Real SOC Diff Range",
+      "簇欠压阈值": "Cluster Undervoltage Threshold",
+      "簇过压阈值": "Cluster Overvoltage Threshold",
+      "SOH循环次数下发": "SOH Cycle Count Set",
+      "低端平台区下限电压": "Low Platform Lower Voltage",
+      "低端平台区上限电压": "Low Platform Upper Voltage",
+      "高端平台区下限电压": "High Platform Lower Voltage",
+      "高端平台区上限电压": "High Platform Upper Voltage",
+      "低端平台边界值SOC": "Low Platform Boundary SOC",
+      "高端平台边界值SOC": "High Platform Boundary SOC",
+      "斜率区间下限电压": "Slope Region Lower Voltage",
+      "斜率区间上限电压": "Slope Region Upper Voltage",
+      "开启平台校准策略": "Enable Platform Calibration Strategy",
+      "充电平均电压阈值": "Charge Average Voltage Threshold",
+      "放电平均电压阈值": "Discharge Average Voltage Threshold",
+      "预留": "Reserved",
+      "单簇有效电芯串数": "Valid Cell Series Count",
+      "电芯额定容量": "Cell Rated Capacity",
+      "簇间SOC同步开关": "Cluster SOC Sync Switch"
     },
     "remarks": {
       "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；": "Each AFE can have different cell count; Total cells under BMU shall not exceed 128;",
@@ -3372,6 +3403,10 @@
         "存在": "Exists"
       },
       "簇间SOC同步开关": {
+        "不使能": "Disabled",
+        "使能": "Enabled"
+      },
+      "开启平台校准策略": {
         "不使能": "Disabled",
         "使能": "Enabled"
       }
@@ -3440,9 +3475,11 @@
       "下设重启BAU指令": "Restart BAU",
       "下设手动控制SD卡记录": "Manual SD Card Record Control",
       "下设堆SOC": "Set Stack SOC",
-      "查询接触器执行策略结果": "Query Contactor Strategy Result"
+      "查询接触器执行策略结果": "Query Contactor Strategy Result",
+      "复位事件记录存储器": "Reset Event Record Flash"
     },
     "options": {
+      "复位": "Reset",
       "设置充电吸合操作": "Set Charge Close",
       "设置放电吸合操作": "Set Discharge Close",
       "设置脱离母线操作": "Set Bus Disconnect",
@@ -3467,6 +3504,7 @@
       "复位系统通讯设备配置参数": "Reset Communication Device Config",
       "复位系统操作配置参数": "Reset Operation Config",
       "复位系统堆告警安装参数": "Reset Stack Alarm Install Params",
+      "复位系统SOC配置参数": "Reset System SOC Config",
       "复位事件记录标志": "Reset Event Record Flag",
       "复位系统系统运行时间": "Reset System Runtime"
     }

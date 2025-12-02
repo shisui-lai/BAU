@@ -1,7 +1,7 @@
 <script setup>
 import { useToast } from 'primevue/usetoast'
 import { onMounted, onUnmounted, onActivated, onDeactivated, ref, computed, watch, nextTick } from 'vue'
-import { scheduleAutoRead, cancelAutoRead } from '@/composables/utils/useAutoReadScheduler'
+import { scheduleAutoRead, cancelAutoRead, registerAutoReadFunction } from '@/composables/utils/useAutoReadScheduler'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { useAlarmThreshold } from '@/composables/core/data-processing/parameter-management/useAlarmThreshold'
@@ -233,6 +233,11 @@ function handleCellAlarmWriteEvent(event, mqttMessage) {
 }
 
 onMounted(() => {
+  // 注册页面局部的 autoRead 函数，确保统一调度调用的是本页实例
+  registerAutoReadFunction((topics) => {
+    autoReadMultiTopicOnce(topics)
+  })
+
   // 先清理可能存在的旧监听器（防止快速切换导致的残留）
   window.electron.ipcRenderer.removeAllListeners('CLUSTER_DNS_PARAM_R')
   window.electron.ipcRenderer.removeAllListeners('PACK_DNS_PARAM_R')
@@ -255,6 +260,18 @@ onMounted(() => {
 // keep-alive 激活时的处理
 onActivated(() => {
   scheduleAutoRead(allReadTopics, 500, 'AlarmThreshold')
+})
+
+// 切簇自动读取：轻量一次性读取，避免并发轮询下的重复请求
+let clusterSwitchDebounceTimer = null
+watch(selectedCluster, (newVal, oldVal) => {
+  if (!newVal || newVal === oldVal) return
+  // 正在轮询时不触发一次性读取，避免并发
+  if (isCurrentlyReading?.value) return
+  clearTimeout(clusterSwitchDebounceTimer)
+  clusterSwitchDebounceTimer = setTimeout(() => {
+    autoReadMultiTopicOnce(allReadTopics)
+  }, 300)
 })
 
 // keep-alive 失活时的处理
@@ -280,6 +297,12 @@ onUnmounted(() => {
 
   // 清理重试逻辑资源
   retryLogic.cleanup()
+
+  // 清理切簇防抖定时器
+  if (clusterSwitchDebounceTimer) {
+    clearTimeout(clusterSwitchDebounceTimer)
+    clusterSwitchDebounceTimer = null
+  }
 })
 
 // 性能优化：已移除分批渲染逻辑，改用DataTable内置虚拟滚动

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useLayout } from '@/layout/composables/layout'
 import { useClusterStore } from '@/stores/device/clusterStore'
 import { useBlockStore } from '@/stores/device/blockStore'
@@ -25,8 +25,7 @@ const dataReceptionStore = useDataReceptionStore()
 // 获取MQTT连接store
 const mqttStore = useMqttStore()
 
-// 版本信息
-const version = 'test-v0.2.9 11.19'
+
 
 
 
@@ -108,6 +107,18 @@ watch(() => mqttStore.isConnected, (val) => {
   if (val) {
     sendExportConfig()
   }
+})
+
+// 监听清理事件：磁盘不足时用户选择停止或倒计时结束，统一取消勾选
+function handleClearStorageEnabled() {
+  storageEnabled.value = []
+  sendExportConfig()
+}
+onMounted(() => {
+  window.addEventListener('clear-storage-enabled', handleClearStorageEnabled)
+})
+onUnmounted(() => {
+  window.removeEventListener('clear-storage-enabled', handleClearStorageEnabled)
 })
 
 
@@ -199,11 +210,6 @@ watch(() => mqttStore.isConnected, (val) => {
 
     <!-- 右侧：请求/接收帧、其它信息及菜单按钮 -->
     <div class="right-section">
-      <!-- 版本信息 -->
-      <div class="version-info">
-        <i>{{ version }}</i>
-      </div>
-
       <!-- 【合并显示】通信状态和数据速率 -->
       <div
         class="combined-status-indicator"

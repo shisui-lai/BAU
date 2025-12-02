@@ -891,7 +891,7 @@ onUnmounted(() => {
 <!-- BAU设备升级界面 -->
 <template>
   <div class="page-wrapper">
-    <div class="card">
+    <div class="card" :class="{ blurred: showPasswordDialog }">
     <div class="upgrade-container">
       <!-- 左右布局：左侧(FTP配置+版本信息) + 右侧(设备升级) -->
       <div class="grid">
@@ -1015,8 +1015,17 @@ onUnmounted(() => {
                 <div class="cluster-config-info mb-3" v-if="clusterLimits.totalClusters > 0">
                   <i class="pi pi-info-circle mr-2 text-blue-500"></i>
                   <span class="text-sm text-gray-600">
-                    当前配置：{{ clusterLimits.totalClusters }}簇
-                    (堆1: {{ clusterLimits.heap1Clusters }}簇<span v-if="clusterLimits.heap2Clusters > 0">, 堆2: {{ clusterLimits.heap2Clusters }}簇</span>)
+                    {{ clusterLimits.heap2Clusters > 0
+                      ? t('deviceUpgrade.messages.clusterCurrentConfigTwoHeaps', [
+                          clusterLimits.totalClusters,
+                          clusterLimits.heap1Clusters,
+                          clusterLimits.heap2Clusters
+                        ])
+                      : t('deviceUpgrade.messages.clusterCurrentConfigOneHeap', [
+                          clusterLimits.totalClusters,
+                          clusterLimits.heap1Clusters
+                        ])
+                    }}
                   </span>
                 </div>
 
@@ -1271,21 +1280,21 @@ onUnmounted(() => {
   <!-- 密码保护对话框 -->
   <Dialog
     v-model:visible="showPasswordDialog"
-    :closable="false"
-    :modal="true"
+    :closable="true"
+    :modal="false"
     :header="t('password.header')"
     :style="{ width: '25rem' }"
   >
     <div class="flex flex-column gap-3">
       <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
       <Button :label="t('password.confirm')" @click="checkPwd" style="margin-right: 0.5rem" />
-      <Button :label="t('password.cancel')" severity="secondary" @click="cancelPwd" />
+      <Button :label="t('password.cancel')" severity="danger" class="cancel-large" @click="cancelPwd" />
       <div v-if="pwdError" style="color: red; margin-top: 0.5rem">{{ t('deviceUpgrade.messages.passwordError') }}</div>
     </div>
   </Dialog>
 
     <!-- 取消提示 -->
-    <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
+    <Dialog v-model:visible="showCancelTip" :closable="false" :modal="false" :style="{ width: '20rem' }">
       <span>{{ t('deviceUpgrade.messages.operationCancelled') }}</span>
     </Dialog>
   </div>
@@ -1563,5 +1572,14 @@ onUnmounted(() => {
   padding: 16px 0;
   text-align: center;
   color: var(--text-color-secondary);
+}
+
+.cancel-large {
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
+}
+
+.blurred {
+  filter: blur(4px);
 }
 </style>

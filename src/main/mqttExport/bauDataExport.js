@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { ensureDir, formatFileSuffix, formatDateTime, appendFileWithRetry } from './utils'
+import { ensureDir, formatFileSuffix, formatDateTime, appendFileWithRetry, getCachedFreeDiskSpace } from './utils'
 import { ALARM_MAP, BLOCK_SUMMARY } from '../table.js'
 import { RUN_EXPORT_DIR, getDeviceDirSuffix } from './paths'
 const latest = { cellVoltage: {}, cellTemperature: {}, cellSOC: {}, cellSOH: {}, clusterSummary: {}, packSummary: {}, blockSummary: {} }
@@ -11,6 +11,13 @@ const configSnapshotMap = new Map()
 const pendingNewHeader = new Set()
 const daySnapshotMap = new Map()
 const FILE_SIZE_LIMIT = parseInt(process.env.EXPORT_FILE_SIZE_LIMIT || String(500 * 1024 * 1024), 10)
+const MIN_FREE_SPACE = parseInt(process.env.MIN_FREE_SPACE || String(5 * 1024 * 1024 * 1024), 10)
+const DISK_WARNING_COOLDOWN_MS = parseInt(process.env.DISK_WARNING_COOLDOWN_MS || '10000', 10)
+let lastDiskWarningTs = 0
+let bypassLowDiskCheck = false
+export function setDiskSpaceBypass(enabled) {
+  bypassLowDiskCheck = !!enabled
+}
 function parseDevice(id) {
   const [bStr, cStr] = String(id).split('-')
   const block = parseInt(bStr) || 0
@@ -33,6 +40,24 @@ let saveTimer = null
 export function startSaveTimerSemantic() {
   if (saveTimer) return
   saveTimer = setInterval(async () => {
+    ensureDir(RUN_EXPORT_DIR)
+    const free = await getCachedFreeDiskSpace(RUN_EXPORT_DIR)
+    if (free < MIN_FREE_SPACE && !bypassLowDiskCheck) {
+      const nowTs = Date.now()
+      if (nowTs - lastDiskWarningTs > DISK_WARNING_COOLDOWN_MS) {
+        try { if (process.connected) { process.send({ API: 'disk-space-warning' }) } } catch {}
+        lastDiskWarningTs = nowTs
+      }
+      return
+    }
+    if (free < MIN_FREE_SPACE && bypassLowDiskCheck) {
+      const nowTs = Date.now()
+      if (nowTs - lastDiskWarningTs > DISK_WARNING_COOLDOWN_MS) {
+        try { if (process.connected) { process.send({ API: 'disk-space-warning' }) } } catch {}
+        lastDiskWarningTs = nowTs
+      }
+      // 继续执行保存流程，不阻断
+    }
     const now = Date.now()
     Object.keys(latest).forEach((label) => {
       Object.keys(latest[label]).forEach((id) => {
@@ -488,3 +513,12 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
   await appendFileWithRetry(filePath, row)
   await rotateIfNeeded(filePath, deviceId, basename, key, header)
 }
+// 监听来自主进程的磁盘空间决策（继续/停止）
+try {
+  process.on('message', (msg) => {
+    if (msg && msg.API === 'disk-space-decision') {
+      setDiskSpaceBypass(msg.decision === 'continue')
+      try { console.log('[Semantic] disk-space-decision:', msg.decision) } catch {}
+    }
+  })
+} catch {}

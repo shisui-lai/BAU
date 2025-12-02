@@ -15,6 +15,15 @@
             <div class="fault-content">
               <!-- 指示灯说明 -->
               <div class="indicator-legend">
+                <div class="selector-inline">
+                  <span>选择堆：</span>
+                  <Dropdown
+                    v-model="selectedBlock"
+                    :options="blockOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                  />
+                </div>
                 <div class="legend-item">
                   <div class="indicator-light severe"></div>
                   <span>{{ t('faultOverview.indicatorLegend.severe') }}</span>
@@ -44,15 +53,20 @@
             </div>
           </TabPanel>
           
-          <!-- 簇级故障标签页 -->
-          <TabPanel 
-            v-for="cluster in clusterData" 
-            :key="cluster.id"
-            :header="t('faultOverview.clusterFaultOverview', [cluster.id])"
-          >
+          <!-- 簇级故障标签页：单页签，通过下拉切换选中簇 -->
+          <TabPanel :header="t('faultOverview.clusterFaultOverviewTab')">
             <div class="fault-content">
-              <!-- 指示灯说明 -->
               <div class="indicator-legend">
+                <div class="selector-inline">
+                  <span>{{ t('faultOverview.selectCluster') }}：</span>
+                  <Dropdown
+                    v-model="selectedClusterKey"
+                    :options="clusterOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    :placeholder="t('faultOverview.selectCluster')"
+                  />
+                </div>
                 <div class="legend-item">
                   <div class="indicator-light severe"></div>
                   <span>{{ t('faultOverview.indicatorLegend.severe') }}</span>
@@ -70,10 +84,9 @@
                   <span>{{ t('faultOverview.indicatorLegend.normal') }}</span>
                 </div>
               </div>
-              
-              <!-- 故障项网格 -->
+
               <div class="fault-items-grid">
-                <div v-for="fault in cluster.overview" :key="fault.name" 
+                <div v-for="fault in selectedClusterOverview" :key="fault.name" 
                      class="fault-indicator">
                   <div :class="['indicator-light', fault.color]"></div>
                   <span class="fault-name">{{ fault.name }}</span>
@@ -88,13 +101,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, watch, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useFaultOverview } from '../../composables/core/data-processing/common/useFaultOverview'
 import { useBlockSelect } from '../../composables/core/device-selection/useBlockSelect'
 import { useBlockStore } from '../../stores/device/blockStore'
+import { useClusterStore } from '../../stores/device/clusterStore'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
+import Dropdown from 'primevue/dropdown'
 
 const { t } = useI18n()
 
@@ -138,6 +153,8 @@ const { blockOptions, selectedBlock } = useBlockSelect()
 
 // 使用堆store
 const blockStore = useBlockStore()
+// 使用簇store（用于全局堆簇配置驱动下拉）
+const clusterStore = useClusterStore()
 
 const {
   blockGradeData,
@@ -162,6 +179,55 @@ const clusterData = computed(() => {
       name: FAULT_NAMES_MAP.value[fault.name] || fault.name
     }))
   }))
+})
+
+// 页面内簇选择（仅添加下拉框，不改样式）：与标签页联动
+const activeClusterIndex = ref(0)
+// 下拉选中键（统一使用全局配置的复合键，如 '2-3'）
+const selectedClusterKey = ref(null)
+// 页面内部仍保留簇号用于渲染数据（与 useFaultOverview 保持兼容）
+const selectedClusterId = ref(null)
+// 簇下拉选项改为系统配置驱动，展示所有堆簇
+const clusterOptions = computed(() => {
+  return clusterStore.availableClusters.map(opt => ({
+    label: t('cluster.blockCluster', [opt.block, opt.cluster]),
+    value: opt.value // 'block-cluster' 键，例如 '2-3'
+  }))
+})
+const selectedClusterOverview = computed(() => {
+  const cid = selectedClusterId.value
+  const found = clusterData.value.find(c => c.id === cid)
+  return found ? found.overview : []
+})
+// 当全局配置下拉选择变化时，解析并同步到页面的堆选择与簇编号
+watch(selectedClusterKey, (key) => {
+  if (!key) return
+  const [bStr, cStr] = String(key).split('-')
+  const b = parseInt(bStr)
+  const c = parseInt(cStr)
+  if (!isNaN(b)) {
+    selectedBlock.value = `block${b}`
+  }
+  if (!isNaN(c)) {
+    selectedClusterId.value = c
+  }
+})
+
+// 当当前堆的簇数据更新时，如果尚未选择具体簇，默认选择该堆的第一个簇的总览
+watch(clusterData, (newVal) => {
+  if (newVal && newVal.length) {
+    const idx = Math.min(activeClusterIndex.value, newVal.length - 1)
+    if (selectedClusterId.value == null) {
+      selectedClusterId.value = newVal[idx].id
+    }
+  } else {
+    selectedClusterId.value = null
+    activeClusterIndex.value = 0
+  }
+})
+watch(selectedClusterId, (val) => {
+  const idx = clusterData.value.findIndex(c => c.id === val)
+  if (idx >= 0) activeClusterIndex.value = idx
 })
 
 // 加载状态
@@ -346,6 +412,12 @@ watch(selectedBlock, handleBlockChange)
   gap: 12px;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+}
+
+.selector-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .legend-item {

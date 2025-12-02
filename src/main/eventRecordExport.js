@@ -568,6 +568,20 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
   const csvHeaders = ['ID']
   const csvFieldKeys = [] // 保存字段key，用于数据行提取
   const csvFieldDefs = [] // 保存字段定义，用于格式化
+  // 额外：建立字段到原始寄存器索引的映射，用于 300–305 特殊处理时按原始寄存器值输出
+  const fieldRawIndexMap = new Map()
+  {
+    let regIndex = 0
+    for (const field of EVENT_RECORD_R) {
+      // bit字段不占用新的寄存器索引（依附于父寄存器），但我们也不需要映射它们
+      if (field.type === 'bit') {
+        continue
+      }
+      // 记录非bit字段在原始寄存器序列中的索引
+      fieldRawIndexMap.set(field.key, regIndex)
+      regIndex++
+    }
+  }
 
   // 时间字段列表（需要合并为一个时间戳字段）
   const timeFields = ['Year', 'Month', 'Day', 'Week', 'Hour', 'Minute', 'Second']
@@ -709,6 +723,7 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
   let writtenCount = 0
   for (const [recordIndex, recordData] of sortedRecords) {
     const baseConfig = recordData.baseConfig || {}
+    const rawRegisters = Array.isArray(recordData.rawRegisters) ? recordData.rawRegisters : []
 
     // 如果baseConfig为空，跳过
     if (!baseConfig || Object.keys(baseConfig).length === 0) {
@@ -726,6 +741,15 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
     for (let i = 0; i < csvFieldKeys.length; i++) {
       const fieldKey = csvFieldKeys[i]
       const fieldDef = csvFieldDefs[i]
+      const eventType = Number(baseConfig.EventType || 0)
+      // 标记：是否已处理过 Param4（后续字段为“Param1-4之后”）
+      // 通过遍历时判断当前字段是否已经超过 Param4
+      // 注意：我们不能依赖索引位置，因为表头可能包含合并字段，所以以key判断
+      // 这里通过闭包变量在循环内维护
+      if (i === 0) {
+        // 在每行开始时初始化标志
+        var afterParam4 = false
+      }
 
       // 处理时间戳字段（合并时间字段）
       if (fieldKey === 'Timestamp') {
@@ -747,6 +771,42 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
           row.push(`"${escapedValue}"`)
         } else {
           // 如果时间字段不完整，使用"/"占位
+          row.push('"/"')
+        }
+        continue
+      }
+
+      // 特殊处理：当事件类型为 300–305 且当前字段位于 Param4 之后
+      if (eventType >= 300 && eventType <= 305 && afterParam4) {
+        // 如果是合并字段（如簇汇总模拟量三级告警、簇/堆硬件故障），改为输出对应原始寄存器的十六进制快照
+        if (fieldDef.isMerged) {
+          let mergedFields = []
+          if (fieldDef.isClusterAnalogAlarm && fieldDef.mergeGroup) {
+            mergedFields = clusterAnalogAlarmFieldsMap.get(fieldDef.mergeGroup) || []
+          } else if (fieldDef.class) {
+            mergedFields = mergeableFieldsMap.get(fieldDef.class) || []
+          }
+          const parts = []
+          for (const f of mergedFields) {
+            const idx = fieldRawIndexMap.get(f.key)
+            if (idx === undefined) continue
+            const v = rawRegisters[idx]
+            if (typeof v === 'number') {
+              parts.push('0x' + v.toString(16).toUpperCase().padStart(4, '0'))
+            }
+          }
+          const mergedCellValue = parts.length > 0 ? parts.join(',') : '无'
+          const escapedValue = mergedCellValue.replace(/"/g, '""')
+          row.push(`"${escapedValue}"`)
+          continue
+        }
+        // 普通字段：改为输出该字段对应寄存器的原始十六进制值
+        const idx = fieldRawIndexMap.get(fieldKey)
+        if (idx !== undefined && rawRegisters[idx] !== undefined) {
+          const hexVal = '0x' + Number(rawRegisters[idx]).toString(16).toUpperCase().padStart(4, '0')
+          const escapedValue = hexVal.replace(/"/g, '""')
+          row.push(`"${escapedValue}"`)
+        } else {
           row.push('"/"')
         }
         continue
@@ -821,9 +881,30 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
         cellValue = String(cellValue)
       }
 
-      // CSV转义：将双引号转义为两个双引号，然后用双引号包裹（参考reference项目）
-      const escapedValue = cellValue.replace(/"/g, '""')
-      row.push(`"${escapedValue}"`)
+      if (
+        fieldKey === 'EnableClusterFlag1' ||
+        fieldKey === 'EnableClusterFlag2' ||
+        fieldKey === 'ExitClusterFlag1' ||
+        fieldKey === 'ExitClusterFlag2'
+      ) {
+        const bits = String(cellValue)
+        if (/^[01]{10}$/.test(bits)) {
+          const zwsPrefixed = '\u200B' + bits
+          const escapedValue = zwsPrefixed.replace(/"/g, '""')
+          row.push(`"${escapedValue}"`)
+        } else {
+          const escapedValue = bits.replace(/"/g, '""')
+          row.push(`"${escapedValue}"`)
+        }
+      } else {
+        const escapedValue = cellValue.replace(/"/g, '""')
+        row.push(`"${escapedValue}"`)
+      }
+
+      // 更新标志：当本次处理的是 Param4，后续字段进入“Param1-4之后”阶段
+      if (fieldKey === 'Param4') {
+        afterParam4 = true
+      }
     }
 
     // 添加CRC校验结果到行末尾

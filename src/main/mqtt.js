@@ -11,7 +11,7 @@ import { processPackSummaryRAW ,processIoStatusRAW, /*processHardwareFaultRAW,*/
     parseBlockSummaryRAW, parseBlockVersionRAW, parseBlockSysAbstractRAW, processBlockIoStatusRAW,
     parseCluAnalogFaultLevelSumRAW, parseBlockAnalogFaultLevelRAW, parseBlockAnalogFaultGradeRAW,
     parseCluAnalogFaultGradeRAW, parseBlockCommonParamRAW, parseBlockTimeCfgRAW, parseBlockPortCfgRAW, parseBlockDnsParamRAW,
-    parseBlockBattParamRAW, parseBlockCommDevCfgRAW, parseBlockOperateCfgRAW,
+    parseBlockBattParamRAW, parseBlockCommDevCfgRAW, parseBlockOperateCfgRAW, parseBlockSocParamRAW,
     processBcuAdaptiveQueryResult, processBmuAdaptiveQueryResult,
     processCellVoltageRAW, processCellTemperatureRAW, processCellSocRAW, processCellSohRAW, parseFactoryCalibrationRAW,
     parseSysRunTimeRAW,
@@ -480,6 +480,10 @@ function withResponseCheck(fn) {
     // 系统操作配置参数
     block_operate_cfg_r: withResponseCheck(hex => parseBlockOperateCfgRAW(hex)),
     block_operate_cfg_w: parseWriteResponse,
+
+    // 系统堆SOC配置参数
+    block_soc_param_r: withResponseCheck(hex => parseBlockSocParamRAW(hex)),
+    block_soc_param_w: parseWriteResponse,
 
     // 堆PCS数据
     block_pcs: processBlockPcsData,

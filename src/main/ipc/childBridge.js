@@ -5,6 +5,12 @@ export function createMessageHandler(processManager, mainWindow) {
   let pendingSetImmediateCount = 0
 
   return (msg) => {
+    if (msg.API === 'disk-space-warning') {
+      try {
+        mainWindow.webContents.send('disk-space-warning')
+      } catch {}
+      return
+    }
     if (msg.API === 'save-excel') {
       if (busyDialogShowing) return
       busyDialogShowing = true
@@ -100,4 +106,18 @@ export function createMessageHandler(processManager, mainWindow) {
       })
     }
   }
+}
+
+// 渲染端磁盘空间决策：继续/停止
+export function registerDiskSpaceDecisionForwarder(processManager) {
+  ipcMain.on('disk-space-decision', (_event, decision) => {
+    try {
+      const currentTask = processManager.getMQTTTask()
+      if (currentTask && !currentTask.killed) {
+        currentTask.send({ API: 'disk-space-decision', decision })
+      } else {
+        // no child task available
+      }
+    } catch {}
+  })
 }

@@ -44,8 +44,8 @@
       <!-- 系统Logo和标题 -->
       <div class="login-header">
         <div class="brand-container">
-          <img src="../../../images/icon.ico" alt="RISEN BMS" class="brand-image" />
-          <span class="brand-text">RISEN BMS</span>
+          <img src="../../../images/icon.ico" alt="Risen BMS++ BAU Monitor System" class="brand-image" />
+          <span class="brand-text">Risen BMS++ BAU Monitor System</span>
         </div>
         <h2>{{ t('login.title') }}</h2>
       </div>
@@ -756,5 +756,4 @@ onMounted(() => {
   }
 }
 </style>
-
 

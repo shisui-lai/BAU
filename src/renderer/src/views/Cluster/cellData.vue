@@ -17,7 +17,7 @@ import { pickPack           } from '@/composables/core/data-processing/cluster/p
 import { parsePackSummary }    from '@/composables/core/data-processing/cluster/parsePackSummary'
 import { parseClusterSummary }    from '@/composables/core/data-processing/cluster/parseClusterSummary'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
   function onPackSummary (_e, msg) {
     parsePackSummary(msg)
@@ -268,11 +268,11 @@ const CELL_CHANNELS = [
   'CELL_SOH',
 ]
 
-function onCellMsg (_e, msg) { 
+function onCellMsg (_e, msg) {
+  // PACK_SUMMARY 和 CLUSTER_SUMMARY 由独立的监听器处理，
+  // onCellMsg 只负责处理 CELL_* 相关消息，统一交由 handler 进行节流。
   handler(_e, msg)
-  if (msg.dataType === 'PACK_SUMMARY')       { parsePackSummary(msg); return }
-  if (msg.dataType === 'CLUSTER_SUMMARY')    { parseClusterSummary(msg); return }
-}  // 保留原 handler
+}
 
 onMounted(() => {
   const mountStartTime = performance.now()
@@ -701,28 +701,28 @@ watch(activeView, (newView, oldView) => {
     '温感数': t('batteryInfo.clusterInfo.tempSensorNum'),
     '系统状态': t('batteryInfo.clusterInfo.systemStatus'),
     '故障等级': t('batteryInfo.clusterInfo.faultLevel'),
-    '簇电压': t('batteryInfo.clusterInfo.clusterVoltage'),
-    '预充电压': t('batteryInfo.clusterInfo.prechargeVoltage'),
-    '簇电流': t('batteryInfo.clusterInfo.clusterCurrent'),
-    '绝缘 R+': t('batteryInfo.clusterInfo.insulationRPlus'),
-    '绝缘 R-': t('batteryInfo.clusterInfo.insulationRMinus'),
-    '温度1': t('batteryInfo.clusterInfo.temperature1'),
-    '温度2': t('batteryInfo.clusterInfo.temperature2'),
-    '温度3': t('batteryInfo.clusterInfo.temperature3'),
-    '温度4': t('batteryInfo.clusterInfo.temperature4'),
-    '温度5': t('batteryInfo.clusterInfo.temperature5'),
-    '簇SOC': t('batteryInfo.clusterInfo.clusterSOC'),
-    '簇SOH': t('batteryInfo.clusterInfo.clusterSOH'),
-    '簇SOE': t('batteryInfo.clusterInfo.clusterSOE'),
+    '簇电压(V)': t('batteryInfo.clusterInfo.clusterVoltage'),
+    '预充电压(V)': t('batteryInfo.clusterInfo.prechargeVoltage'),
+    '簇电流(A)': t('batteryInfo.clusterInfo.clusterCurrent'),
+    '绝缘 R+(kΩ)': t('batteryInfo.clusterInfo.insulationRPlus'),
+    '绝缘 R-(kΩ)': t('batteryInfo.clusterInfo.insulationRMinus'),
+    '温度1(℃)': t('batteryInfo.clusterInfo.temperature1'),
+    '温度2(℃)': t('batteryInfo.clusterInfo.temperature2'),
+    '温度3(℃)': t('batteryInfo.clusterInfo.temperature3'),
+    '温度4(℃)': t('batteryInfo.clusterInfo.temperature4'),
+    '温度5(℃)': t('batteryInfo.clusterInfo.temperature5'),
+    '簇SOC(%)': t('batteryInfo.clusterInfo.clusterSOC'),
+    '簇SOH(%)': t('batteryInfo.clusterInfo.clusterSOH'),
+    '簇SOE(%)': t('batteryInfo.clusterInfo.clusterSOE'),
     '真实SOC(%)': t('batteryInfo.clusterInfo.clusterRealSOC'),
     'OCV执行次数': t('batteryInfo.clusterInfo.ocvExecCount'),
     '默认参数剩余次数': t('batteryInfo.clusterInfo.defaultParamRemainTimes'),
-    '最大允充功率': t('batteryInfo.clusterInfo.maxChargePower'),
-    '最大允放功率': t('batteryInfo.clusterInfo.maxDischargePower'),
-    '单次充电电量': t('batteryInfo.clusterInfo.singleChargeEnergy'),
-    '单次放电电量': t('batteryInfo.clusterInfo.singleDischargeEnergy'),
-    '单次充电容量': t('batteryInfo.clusterInfo.singleChargeCapacity'),
-    '单次放电容量': t('batteryInfo.clusterInfo.singleDischargeCapacity')
+    '最大允充功率(kW)': t('batteryInfo.clusterInfo.maxChargePower'),
+    '最大允放功率(kW)': t('batteryInfo.clusterInfo.maxDischargePower'),
+    '单次充电电量(kWh)': t('batteryInfo.clusterInfo.singleChargeEnergy'),
+    '单次放电电量(kWh)': t('batteryInfo.clusterInfo.singleDischargeEnergy'),
+    '单次充电容量(Ah)': t('batteryInfo.clusterInfo.singleChargeCapacity'),
+    '单次放电容量(Ah)': t('batteryInfo.clusterInfo.singleDischargeCapacity')
   }));
 
   // 反向映射：翻译后标签到原始中文标签的映射
@@ -787,29 +787,47 @@ watch(activeView, (newView, oldView) => {
 
     const result = []
     ele.filter(it => targetLabels.includes(it.label)).forEach(it => {
-      // 双标签字段：根据 raw 显示两种状态标签并高亮激活的一个
       if (it.label === '运维模式' && it.value && typeof it.value === 'object') {
         const isMaint = it.value.raw === 1
-        result.push({ label: '运维模式', active: isMaint, text: '运维模式' })
-        result.push({ label: '非运维模式', active: !isMaint, text: '非运维模式' })
+        result.push({ label: '运维模式', active: isMaint, text: locale.value === 'zh' ? '运维模式' : t('systemTotalStatus.maintMode') })
+        result.push({ label: '非运维模式', active: !isMaint, text: locale.value === 'zh' ? '非运维模式' : t('systemTotalStatus.nonMaintMode') })
         return
       }
       if (it.label === '正常模式/测试模式' && it.value && typeof it.value === 'object') {
         const isTest = it.value.raw === 1
-        result.push({ label: '正常模式', active: !isTest, text: '正常模式' })
-        result.push({ label: '测试模式', active: isTest, text: '测试模式' })
+        result.push({ label: '正常模式', active: !isTest, text: locale.value === 'zh' ? '正常模式' : t('systemTotalStatus.testModeNormal') })
+        result.push({ label: '测试模式', active: isTest, text: locale.value === 'zh' ? '测试模式' : t('systemTotalStatus.testModeTest') })
         return
       }
       if (it.label === '初始化' && it.value && typeof it.value === 'object') {
         const isInit = it.value.raw === 1
-        result.push({ label: '初始化完成', active: !isInit, text: '初始化完成' })
-        result.push({ label: '初始化中',   active: isInit,  text: '初始化中' })
+        result.push({ label: '初始化完成', active: !isInit, text: locale.value === 'zh' ? '初始化完成' : t('systemTotalStatus.initCompleted') })
+        result.push({ label: '初始化中',   active: isInit,  text: locale.value === 'zh' ? '初始化中' : t('systemTotalStatus.initInProgress') })
         return
       }
 
-      // 单标签位（Boolean）：直接显示该位标签，active 取值为 true/false
       const active = Boolean(it.value)
-      result.push({ label: it.label, active, text: it.label })
+      const map = {
+        '静止': 'idle',
+        '充电': 'charge',
+        '放电': 'discharge',
+        '禁充': 'forbidCharge',
+        '禁放': 'forbidDischarge',
+        '待机': 'standby',
+        '告警': 'alarm',
+        '故障': 'fault',
+        '充电功率锁存': 'chgPowerLatch',
+        '放电功率锁存': 'dischPowerLatch',
+        '充电指令': 'chgCmd',
+        '充电指令完成': 'chgCmdDone',
+        '放电指令': 'dischCmd',
+        '放电指令完成': 'dischCmdDone',
+        '脱离母线指令': 'busOffCmd',
+        '脱离母线指令完成': 'busOffCmdDone'
+      }
+      const key = map[it.label]
+      const text = key ? (locale.value === 'zh' ? it.label : t(`systemTotalStatus.${key}`)) : it.label
+      result.push({ label: it.label, active, text })
     })
 
     return result
@@ -988,7 +1006,7 @@ watch(activeView, (newView, oldView) => {
     <div class="cluster-divider"></div>
     <div class="system-fault-row">
       <div class="property-card system-fault-card normal-item">
-        <div class="label">系统总状态位</div>
+        <div class="label">{{ t('batteryInfo.labels.systemTotalStatusBits') }}</div>
         <div class="value">
           <div class="system-states-container">
             <div class="states-grid">

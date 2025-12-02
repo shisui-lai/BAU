@@ -1,7 +1,11 @@
 // 故障总览数据处理逻辑
 import { ref, computed } from 'vue'
+import { useBlockStore } from '@/stores/device/blockStore'
+import { useClusterStore } from '@/stores/device/clusterStore'
 
 export function useFaultOverview() {
+  const blockStore = useBlockStore()
+  const clusterStore = useClusterStore()
   
   // 原始数据存储 - 只保留FAULT_GRADE相关数据
   const blockGradeData = ref({})
@@ -186,9 +190,26 @@ export function useFaultOverview() {
     // 如果没有数据，提供默认的簇数据（默认1个簇）
     if (!clusterGradeData.value.data) {
       const defaultClusters = []
-      const clusterCount = 1  // 默认1个簇
+      // 优化：根据当前选中堆的系统配置簇数生成默认簇列表
+      // 1) 优先使用消息里携带的 baseConfig.clusterCount
+      // 2) 其次使用全局 clusterStore 的 availableClusters 中该堆的簇数量
+      // 3) 最后兜底为 1
+      let clusterCount = 1
+      const msgClusterCount = clusterGradeData.value.baseConfig?.clusterCount
+      if (typeof msgClusterCount === 'number' && msgClusterCount > 0) {
+        clusterCount = msgClusterCount
+      } else {
+        const selectedBlockKey = blockStore.selectedBlockForView
+        const selectedBlockNum = selectedBlockKey ? parseInt(String(selectedBlockKey).replace('block', '')) : null
+        if (selectedBlockNum && !isNaN(selectedBlockNum)) {
+          const cfgCount = clusterStore.availableClusters.filter(opt => opt.block === selectedBlockNum).length
+          if (cfgCount > 0) {
+            clusterCount = cfgCount
+          }
+        }
+      }
 
-    for (let i = 1; i <= clusterCount; i++) {
+      for (let i = 1; i <= clusterCount; i++) {
         const clusterFaults = Object.values(clusterFaultGradeNames).map(name => ({
           name: name,
           level: 0,  // 正常状态
@@ -196,7 +217,7 @@ export function useFaultOverview() {
         }))
 
         defaultClusters.push({
-        id: i,
+          id: i,
           faults: clusterFaults
         })
       }

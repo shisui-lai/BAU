@@ -600,7 +600,9 @@ function applyMqttConfig() {
     <Dialog
       v-model:visible="showPasswordDialog"
       :header="passwordDialog.title"
-      modal
+      :modal="false"
+      :closable="true"
+      @hide="cancelPassword"
       class="password-dialog"
       :style="{ width: '400px' }"
     >
@@ -623,7 +625,8 @@ function applyMqttConfig() {
         <Button
           :label="t('bauAddressDetectionPage.buttons.cancel')"
           icon="pi pi-times"
-          severity="secondary"
+          severity="danger"
+          class="cancel-large"
           outlined
           @click="cancelPassword"
         />
@@ -695,6 +698,11 @@ function applyMqttConfig() {
   font-weight: 600;
   border-bottom: 1px solid var(--surface-border);
   box-shadow: 0 2px 8px rgba(0, 122, 217, 0.2);
+}
+
+.cancel-large {
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
 }
 
 .table-content {

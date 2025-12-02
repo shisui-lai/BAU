@@ -220,7 +220,20 @@ export const DROPDOWN_CONFIGS = {
         { label: '自动控制', value: 1 },
         { label: '远程控制', value: 2 }
       ]
+    },
+    block_soc_param: {
+      '簇间SOC同步开关': [
+        { label: '不使能', value: 0 },
+        { label: '使能', value: 1 }
+      ]
     }
+  },
+
+  block_soc_param: {
+    '簇间SOC同步开关': [
+      { label: '不使能', value: 0 },
+      { label: '使能', value: 1 }
+    ]
   },
 
   // ========== 堆遥调数据配置（预留） ==========
@@ -294,6 +307,18 @@ export const DROPDOWN_CONFIGS = {
         { label: '存在', value: 1 }
       ],
       '簇间SOC同步开关': [
+        { label: '不使能', value: 0 },
+        { label: '使能', value: 1 }
+      ]
+    }
+    ,
+    // 4) 系统堆SOC配置参数
+    block_soc_param: {
+      '簇间SOC同步开关': [
+        { label: '不使能', value: 0 },
+        { label: '使能', value: 1 }
+      ],
+      '开启平台校准策略': [
         { label: '不使能', value: 0 },
         { label: '使能', value: 1 }
       ]

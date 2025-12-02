@@ -737,7 +737,7 @@ onUnmounted(() => {
 
 <template>
   <div class="page-wrapper">
-    <div class="card">
+    <div class="card" :class="{ blurred: showPasswordDialog }">
     <!-- 校准类型选择区 -->
     <div class="mb-4">
       <label for="kb-select" class="form-label">{{ t('analogCalibration.selectLabel') }}</label>
@@ -894,21 +894,21 @@ onUnmounted(() => {
   <!-- 密码保护对话框 -->
   <Dialog
     v-model:visible="showPasswordDialog"
-    :closable="false"
-    :modal="true"
+    :closable="true"
+    :modal="false"
     :header="t('analogCalibration.password.title')"
     :style="{ width: '25rem' }"
   >
     <div class="flex flex-column gap-3">
       <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
       <Button :label="t('analogCalibration.password.confirm')" @click="checkPwd" style="margin-right: 0.5rem" />
-      <Button :label="t('analogCalibration.password.cancel')" severity="secondary" @click="cancelPwd" />
+      <Button :label="t('analogCalibration.password.cancel')" severity="danger" class="cancel-large" @click="cancelPwd" />
       <div v-if="pwdError" style="color: red; margin-top: 0.5rem">{{ t('analogCalibration.password.error') }}</div>
     </div>
   </Dialog>
 
     <!-- 取消提示 -->
-    <Dialog v-model:visible="showCancelTip" :closable="false" :modal="true" :style="{ width: '20rem' }">
+    <Dialog v-model:visible="showCancelTip" :closable="false" :modal="false" :style="{ width: '20rem' }">
       <span>{{ t('analogCalibration.password.cancelTip') }}</span>
     </Dialog>
   </div>
@@ -952,5 +952,14 @@ onUnmounted(() => {
 .p-datatable-sm :deep(.p-datatable-thead > tr > th) {
   padding: 0.75rem 0.5rem;
   font-size: 0.875rem;
+}
+
+.cancel-large {
+  font-size: 0.95rem;
+  padding: 0.6rem 1rem;
+}
+
+.blurred {
+  filter: blur(4px);
 }
 </style>

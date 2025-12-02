@@ -3672,15 +3672,50 @@ export const BLOCK_OPERATE_CFG_R = [
   { class: '系统操作配置参数', key: 'EnableClusterConfig1', label: '使能簇配置1', type: 'u16', scale: 1, clusterRange: [1, 10], remarks: 'Bit0~9配置第1~10簇(0x3FF为第1~10簇全部使能)（就地+全部簇开路下才可设置）' },
   { class: '系统操作配置参数', key: 'EnableClusterConfig2', label: '使能簇配置2', type: 'u16', scale: 1, clusterRange: [11, 20], remarks: 'Bit0~9配置第11~20簇(0x3FF为第11~20簇全部使能)（就地+全部簇开路下才可设置）' },
   { class: '系统操作配置参数', key: 'IsStackVoltageZeroWhenAllOpen', label: '全部开路时堆电压是否为0', type: 'u16', scale: 1, remarks: '0-不开启1-开启' },
-  { class: '系统操作配置参数', key: 'DoesStackSOCFollowAvgSOCWhenIdle', label: '静置时堆SOC是否追随平均SOC', type: 'u16', scale: 1, remarks: '0-不开启1-开启' },
-  { class: '系统操作配置参数', key: 'AvgSOCFollowThreshold', label: '平均SOC追随阈值', type: 'u16', scale: 10, unit: '%' },
-  { class: '系统操作配置参数', key: 'StackSOCChangeDiff', label: '堆SOC变化差值', type: 'u16', scale: 10, unit: '%' },
   { class: '系统操作配置参数', key: 'BCPControlExists', label: '是否存在BCP控制', type: 'u16', scale: 1, remarks: '0-不存在1-存在' },
-  { class: '系统操作配置参数', key: 'StackSOCCatchUpSlope', label: '堆SOC追赶斜率', type: 'u16', scale: 1, unit: 'ms', remarks: '堆SOC追0.1%时间' },
-  { class: '系统操作配置参数', key: 'ClusterSOCSyncSwitch', label: '簇间SOC同步开关', type: 'u16', scale: 1, remarks: '0-不使能1-使能' },
-  { class: '系统操作配置参数', key: 'ChargeSOCSyncPoint', label: '充电SOC同步点', type: 'u16', scale: 10, unit: '%' },
-  { class: '系统操作配置参数', key: 'DischargeSOCSyncPoint', label: '放电SOC同步点', type: 'u16', scale: 10, unit: '%' },
-  { class: '保留', key: '_skip', type: 'skip16' }
+  { class: '保留', key: '_skip', type: 'skip30' }
+];
+
+
+// 系统堆SOC配置参数表 (49个参数)
+// topic: block_soc_param_r/w
+export const BLOCK_SOC_PARAM_R = [
+  { class: '系统堆SOC配置参数', key: 'StackCurrentValidThreshold', label: '堆电流有效阈值', type: 'u16', scale: 10, unit: 'A' },
+  { class: '系统堆SOC配置参数', key: 'BlockSOCLowerThreshold', label: 'BlockSOC取值阈值下限', type: 'u16', scale: 10, unit: '%' },
+  { class: '系统堆SOC配置参数', key: 'BlockSOCUpperThreshold', label: 'BlockSOC取值阈值上限', type: 'u16', scale: 10, unit: '%' },
+  { class: '系统堆SOC配置参数', key: 'DisplaySocCatchUpTime', label: '显示SOC追赶真实SOC时间', type: 'u16', scale: 10, unit: 's' },
+  { class: '系统堆SOC配置参数', key: 'DisplaySocDiffRange', label: '堆显示SOC与堆真实SOC差值范围', type: 'u16', scale: 10, unit: '%' },
+
+  // ===== 充电OCV表（1~16为具体字段，17~21为预留） =====
+  { class: '系统堆SOC配置参数', key: 'ClusterUnderVoltThreshold', label: '簇欠压阈值', type: 'u16', scale: 10, unit: 'V' },
+  { class: '系统堆SOC配置参数', key: 'ClusterOverVoltThreshold', label: '簇过压阈值', type: 'u16', scale: 10, unit: 'V' },
+  { class: '系统堆SOC配置参数', key: 'SohCycleCountSet', label: 'SOH循环次数下发', type: 'u16', scale: 1 },
+  { class: '系统堆SOC配置参数', key: 'LowPlatformLowerVolt', label: '低端平台区下限电压', type: 'u16', scale: 1, unit: 'mV' },
+  { class: '系统堆SOC配置参数', key: 'LowPlatformUpperVolt', label: '低端平台区上限电压', type: 'u16', scale: 1, unit: 'mV' },
+  { class: '系统堆SOC配置参数', key: 'HighPlatformLowerVolt', label: '高端平台区下限电压', type: 'u16', scale: 1, unit: 'mV' },
+  { class: '系统堆SOC配置参数', key: 'HighPlatformUpperVolt', label: '高端平台区上限电压', type: 'u16', scale: 1, unit: 'mV' },
+  { class: '系统堆SOC配置参数', key: 'LowPlatformBoundarySoc1', label: '低端平台边界值SOC', type: 'u16', scale: 10, unit: '%' },
+  { class: '系统堆SOC配置参数', key: 'LowPlatformBoundarySoc2', label: '低端平台边界值SOC', type: 'u16', scale: 10, unit: '%' },
+  { class: '系统堆SOC配置参数', key: 'HighPlatformBoundarySoc1', label: '高端平台边界值SOC', type: 'u16', scale: 10, unit: '%' },
+  { class: '系统堆SOC配置参数', key: 'HighPlatformBoundarySoc2', label: '高端平台边界值SOC', type: 'u16', scale: 10, unit: '%' },
+  { class: '系统堆SOC配置参数', key: 'SlopeRegionLowerVolt', label: '斜率区间下限电压', type: 'u16', scale: 1, unit: 'mV' },
+  { class: '系统堆SOC配置参数', key: 'SlopeRegionUpperVolt', label: '斜率区间上限电压', type: 'u16', scale: 1, unit: 'mV' },
+  { class: '系统堆SOC配置参数', key: 'EnablePlatformCalibStrategy', label: '开启平台校准策略', type: 'u16', scale: 1, remarks: '0；不使能 1；使能' },
+  { class: '系统堆SOC配置参数', key: 'ChargeAverageVoltThreshold', label: '充电平均电压阈值', type: 'u16', scale: 1, unit: 'mV' },
+  { class: '系统堆SOC配置参数', key: 'DischargeAverageVoltThreshold', label: '放电平均电压阈值', type: 'u16', scale: 1, unit: 'mV' },
+
+  // 预留(17~21)
+  { class: '系统堆SOC配置参数', key: 'Reserved17', label: '预留', type: 'u16', scale: 1 },
+  { class: '系统堆SOC配置参数', key: 'Reserved18', label: '预留', type: 'u16', scale: 1 },
+  { class: '系统堆SOC配置参数', key: 'Reserved19', label: '预留', type: 'u16', scale: 1 },
+  { class: '系统堆SOC配置参数', key: 'Reserved20', label: '预留', type: 'u16', scale: 1 },
+  { class: '系统堆SOC配置参数', key: 'Reserved21', label: '预留', type: 'u16', scale: 1 },
+
+  { class: '系统堆SOC配置参数', key: 'ValidCellSeriesCount', label: '单簇有效电芯串数', type: 'u16', scale: 1 },
+  { class: '系统堆SOC配置参数', key: 'CellRatedCapacity', label: '电芯额定容量', type: 'u16', scale: 1, unit: 'Ah' },
+  { class: '系统堆SOC配置参数', key: 'ClusterSocSyncSwitch', label: '簇间SOC同步开关', type: 'u16', scale: 1, remarks: '0；不使能 1；使能' },
+
+  { class: '保留', key: '_skip', type: 'skip40' }
 ];
 
 
@@ -4293,7 +4328,7 @@ export const EVENT_RECORD_R = [
   
   // 字段27-33：堆电压、堆电流、堆SOC、堆SOH、堆SOE、堆充电SOP、堆放电SOP（7个寄存器）
   { class: '事件记录数据', key: 'StackVoltage', label: '堆电压', type: 'u16', scale: 10, unit: 'V' },
-  { class: '事件记录数据', key: 'StackCurrent', label: '堆电流', type: 'u16', scale: 10, unit: 'A' },
+  { class: '事件记录数据', key: 'StackCurrent', label: '堆电流', type: 's16', scale: 10, unit: 'A' },
   { class: '事件记录数据', key: 'StackSOC', label: '堆SOC', type: 'u16', scale: 10, unit: '%' },
   { class: '事件记录数据', key: 'StackSOH', label: '堆SOH', type: 'u16', scale: 10, unit: '%' },
   { class: '事件记录数据', key: 'StackSOE', label: '堆SOE', type: 'u16', scale: 10, unit: '%' },
@@ -4318,11 +4353,11 @@ export const EVENT_RECORD_R = [
   { class: '事件记录数据', key: 'ClusterVoltageMinClusterNo', label: '簇电压最小值簇号', type: 'u8', scale: 1 },
   
   // 字段42-43：簇电流最大值、簇电流最大值簇号
-  { class: '事件记录数据', key: 'ClusterCurrentMax', label: '簇电流最大值', type: 'u16', scale: 10, unit: 'A' },
+  { class: '事件记录数据', key: 'ClusterCurrentMax', label: '簇电流最大值', type: 's16', scale: 10, unit: 'A' },
   { class: '事件记录数据', key: 'ClusterCurrentMaxClusterNo', label: '簇电流最大值簇号', type: 'u8', scale: 1 },
   
   // 字段44-45：簇电流最小值、簇电流最小值簇号
-  { class: '事件记录数据', key: 'ClusterCurrentMin', label: '簇电流最小值', type: 'u16', scale: 10, unit: 'A' },
+  { class: '事件记录数据', key: 'ClusterCurrentMin', label: '簇电流最小值', type: 's16', scale: 10, unit: 'A' },
   { class: '事件记录数据', key: 'ClusterCurrentMinClusterNo', label: '簇电流最小值簇号', type: 'u8', scale: 1 },
   
   // 字段46-47：簇SOC最大值、簇SOC最大值簇号

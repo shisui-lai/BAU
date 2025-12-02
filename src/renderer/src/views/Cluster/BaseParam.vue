@@ -225,6 +225,24 @@ watch([selectedCluster, clusterOptions], ([newSelectedCluster]) => {
   }
 }, { immediate: true })
 
+// 切簇自动读取：轻量一次性读取，避免并发轮询下的重复请求
+let clusterSwitchDebounceTimer = null
+watch(selectedCluster, (newVal, oldVal) => {
+  if (!newVal || newVal === oldVal) return
+  // 正在轮询时不触发一次性读取，避免并发
+  if ((systemIsCurrentlyReading?.value) || (isFactoryCalibReading?.value)) return
+  clearTimeout(clusterSwitchDebounceTimer)
+  clusterSwitchDebounceTimer = setTimeout(() => {
+    if (isFactoryCalibMode.value) {
+      // 出厂校正模式：只读该topic
+      factoryCalibAutoReadMultiTopicOnce(['FACTORY_CALIB_PARAM'])
+    } else {
+      // 系统参数模式：触发两类一次性读取
+      autoReadMultiTopicOnce(allReadTopics)
+    }
+  }, 300)
+})
+
 // 统一重试逻辑
 const retryLogic = useRetryLogic(toastService, () => {
   if (isFactoryCalibMode.value) {
@@ -703,6 +721,12 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('FACTORY_CALIB_PARAM_R')
   window.electron.ipcRenderer.removeAllListeners('FACTORY_CALIB_PARAM_W')
 
+  // 清理切簇防抖定时器
+  if (clusterSwitchDebounceTimer) {
+    clearTimeout(clusterSwitchDebounceTimer)
+    clusterSwitchDebounceTimer = null
+  }
+
   // 清理重试逻辑资源
   retryLogic.cleanup()
 })
@@ -916,4 +940,3 @@ onUnmounted(() => {
   box-shadow: 0 0 0 0.2rem rgba(239, 68, 68, 0.25) !important;
 }
 </style>
-

@@ -25,8 +25,8 @@ export function usePageTypeDetection() {
     '/cluster/brokenwire': 'clusterread',      // 掉线信息页面（备用路由）
     '/Cluster/Fault': 'clusterread',           // 故障页面
     '/cluster/fault': 'clusterread',           // 故障页面（备用路由）
-    '/FaultOverview': 'blockread',             // 故障总览页面（堆级只读页面，显示堆选择器）
-    '/fault-overview': 'blockread',            // 故障总览页面（备用路由）
+    '/FaultOverview': 'standalone',             // 故障总览页面（独立页面：不显示顶栏选择器，在页面内提供选择器）
+    '/fault-overview': 'standalone',            // 故障总览页面（备用路由）
     // 设备管理页面（独立页面：固定topic，无选择器）
     '/Block/DeviceManagement': 'standalone',
     // BAU地址探测页面（独立页面：无选择器）

@@ -325,10 +325,6 @@ const rawFaultData = markRaw(
   new Map<string, Map<string, FaultRecord>>()   // Map<clusterKey , Map<label , rec>>
 )
 
-// 添加数据清理机制
-const MAX_FAULT_AGE = 4 * 60 * 60 * 1000 // 4小时清理过期数据
-const CLEANUP_INTERVAL = 10 * 60 * 1000 // 10分钟清理一次
-
 export const faultTick = shallowRef(0)
 
 /* ---------- 节流机制 - 防止内存泄漏的关键 ---------- */
@@ -365,44 +361,6 @@ let sortedCache: (FaultRecord & { cluster: string })[] = []
 
 
 // 定期清理过期数据
-function cleanupOldFaults() {
-  const now = Date.now()
-  let cleanedCount = 0
-  
-  for (const [clusterKey, faultMap] of rawFaultData.entries()) {
-    for (const [label, record] of faultMap.entries()) {
-      if (now - record.ts > MAX_FAULT_AGE) {
-        faultMap.delete(label)
-        cleanedCount++
-      }
-    }
-    // 如果集群为空，删除整个集群
-    if (faultMap.size === 0) {
-      rawFaultData.delete(clusterKey)
-    }
-  }
-  
-  if (cleanedCount > 0) {
-    throttledUpdate() // 使用节流更新
-  }
-}
-
-// 启动定期清理
-let cleanupTimer: NodeJS.Timeout | null = null
-
-function startCleanupTimer() {
-  if (cleanupTimer) {
-    clearInterval(cleanupTimer)
-  }
-  cleanupTimer = setInterval(cleanupOldFaults, CLEANUP_INTERVAL)
-}
-
-function stopCleanupTimer() {
-  if (cleanupTimer) {
-    clearInterval(cleanupTimer)
-    cleanupTimer = null
-  }
-}
 
 /* ---------- 响应式更新 - 使用分层级指纹检测 ---------- */
 watch(
@@ -840,8 +798,6 @@ export function parseFault (msg: any) {
   throttledUpdate()
 }
 
-// 启动清理定时器
-startCleanupTimer()
 
 /* ---------- 根据系统配置清理无效堆簇的故障数据 ---------- */
 /**

@@ -39,6 +39,31 @@ const pageSize = 200      // 每页条数（固定200条）
 /* ---------- 手动排序状态 ---------- */
 const sortOrder = ref<'none' | 'asc' | 'desc'>('none') // none: 无排序, asc: 轻微到严重, desc: 严重到轻微
 
+/* ---------- BMU上限（仅故障页面使用） ---------- */
+const bmuLimitByBlock = ref<Record<number, number>>({})
+
+function onBattParamRead(_e: unknown, msg: any) {
+  if (!msg || msg.dataType !== 'BLOCK_BATT_PARAM_R') return
+  const blockId = Number(msg.blockId)
+  let limit: number | undefined
+  // 平铺对象形态
+  if (msg.data && typeof msg.data === 'object' && !Array.isArray(msg.data)) {
+    limit = Number(msg.data.BmuTotalNum)
+  } else if (Array.isArray(msg.data)) {
+    // 分组数组形态
+    const battSection = msg.data.find((d: any) => d && d.class === '系统簇端电池配置参数')
+    const item = battSection?.element?.find((e: any) => e && (e.key === 'BmuTotalNum' || e.label === 'BMU总数量'))
+    limit = Number(item?.value)
+  }
+  if (!Number.isFinite(limit) || limit! <= 0 || isNaN(blockId)) {
+    console.warn('[Fault.vue] BMU上限解析失败或无效:', { blockId, raw: msg.data, limit })
+    return
+  }
+  const prev = bmuLimitByBlock.value[blockId]
+  bmuLimitByBlock.value[blockId] = limit!
+  console.log(`[Fault.vue] 更新BMU上限: 堆=${blockId}, 上限=${limit}, 旧值=${prev ?? '无'}`)
+}
+
 /* ---------- MQTT 监听 ---------- */
 const FAULT_CHANNELS = [
   //协议修改删除 - HARDWARE_FAULT不再使用，改为TOTAL_FAULT中的接触器详细故障
@@ -94,12 +119,15 @@ onMounted(() => {
     FAULT_CHANNELS.forEach(ch =>
       window.electron.ipcRenderer.on(ch, onFaultMsg)
     )
+    window.electron.ipcRenderer.on('BLOCK_BATT_PARAM_R', onBattParamRead)
     attached = true
     console.log('[debug] Fault listeners attached')
   }
   // 初始化筛选选项
   nextTick(() => {
     clusterStore.updateFaultOptions(sortedAllFaults.value)
+    // 主动读取各堆的BMU配置上限，避免仅写不读导致页面无上限信息
+    requestBmuLimitRead()
   })
 })
 
@@ -126,6 +154,9 @@ onBeforeUnmount(() => {
         console.warn(`清理监听器失败: ${ch}`, error)
       }
     })
+    try {
+      window.electron.ipcRenderer.removeAllListeners('BLOCK_BATT_PARAM_R', onBattParamRead)
+    } catch {}
     attached = false
     console.log('[debug] Fault listeners removed')
   }
@@ -133,7 +164,28 @@ onBeforeUnmount(() => {
 
 /* ---------- 筛选数据计算 ---------- */
 const filteredFaults = computed(() => {
+  // 计算用于展示的故障列表：
+  // 1) 先按堆/簇筛选（clusterStore.filterFaultData）
+  // 2) 再依据 BMU 上限对“有BMU序号的定位型故障”进行过滤（仅显示层，不修改存储）
   let faults = clusterStore.filterFaultData(sortedAllFaults.value)
+
+  // 应用BMU上限过滤（仅显示层，不改存储）
+  const before = faults.length
+  faults = faults.filter(f => {
+    const hasBmu = typeof f.bmu === 'number' && Number.isFinite(f.bmu as number)
+    if (!hasBmu) return true
+    // 从 cluster 解析堆号
+    const clusterStr = String(f.cluster || '')
+    const parts = clusterStr.split('-')
+    const blockId = Number(parts[0])
+    const limit = bmuLimitByBlock.value[blockId]
+    if (!Number.isFinite(limit)) return true
+    return (f.bmu as number) <= limit
+  })
+  const after = faults.length
+  if (after !== before) {
+    console.log(`[Fault.vue] 应用BMU上限过滤: ${before} -> ${after}`)
+  }
 
   // 手动排序：根据故障等级排序
   if (sortOrder.value !== 'none') {
@@ -214,6 +266,22 @@ watch([
 /* ---------- 筛选操作方法 ---------- */
 function setFilterMode(mode: 'all' | 'block' | 'cluster') {
   clusterStore.setFaultFilterMode(mode)
+}
+
+// 主动请求BMU上限读取（按当前堆配置）
+function requestBmuLimitRead() {
+  try {
+    const blocks = Array.isArray(blockStore.availableBlocks) ? blockStore.availableBlocks : []
+    blocks.forEach(opt => {
+      const blockId = Number((opt as any).block || String((opt as any).value).replace('block', ''))
+      if (!Number.isFinite(blockId) || blockId <= 0) return
+      const topic = `bms/host/s2d/b${blockId}/block_batt_param_r`
+      ;(window as any).electronAPI?.mqttPublish?.(topic, 'ff')
+      console.log(`[Fault.vue] 请求BMU上限读取: ${topic}`)
+    })
+  } catch (e) {
+    console.warn('[Fault.vue] 请求BMU上限读取失败:', e)
+  }
 }
 
 /* ---------- 掉线信息动态翻译函数 ---------- */

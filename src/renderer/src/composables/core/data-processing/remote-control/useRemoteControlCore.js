@@ -1231,15 +1231,28 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     if (!needDeviceForWrite) {
       targetKeys = ['__standalone__']
     }
-    // 如果没有选择批量下发目标，直接提示用户选择
+    // 如果没有选择批量下发目标，尝试使用当前查看设备作为默认目标
     if (needDeviceForWrite && targetKeys.length === 0) {
-      toastService.add({
-        severity: 'error',
-        summary: t('toast.commandIssue.executeFailed'),
-        detail: t('toast.commandIssue.selectTargetDevice'),
-        life: 5000
-      })
-      return
+      const autoKey = selectedKeyRef?.value
+      if (autoKey) {
+        targetKeys = [autoKey]
+        // 同步到全局store以更新导航栏勾选
+        if (selectorMode === 'cluster') {
+          const cs = useClusterStore()
+          cs.setSelectedClustersForWrite([autoKey])
+        } else {
+          const bs = useBlockStore()
+          bs.setSelectedBlocksForWrite([autoKey])
+        }
+      } else {
+        toastService.add({
+          severity: 'error',
+          summary: t('toast.commandIssue.executeFailed'),
+          detail: t('toast.commandIssue.selectTargetDevice'),
+          life: 5000
+        })
+        return
+      }
     }
 
     try {
@@ -1480,6 +1493,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
    * @param {Object} receivedData - 接收到的数据对象，格式: {frameKey, data}
    */
   function handleReceivedParameterData(receivedData) {
+    console.log('[RemoteControlCore-Diag] 8. handleReceivedParameterData 开始执行，接收到数据:', JSON.parse(JSON.stringify(receivedData)))
     const normalized = normalizeReadData(receivedData)
     // 调试日志移除（保留接口位置便于后续排查）
     const { frameKey, data } = normalized  // 簇: "1-1"，堆: "1"
@@ -1495,6 +1509,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     
     // 同时按数据源和簇进行区分
     const clusterDataKey = `${dataSourceName}_${frameKey}` // "SYS_BASE_PARAM_1-1"
+    console.log(`[RemoteControlCore-Diag] 9. 即将更新 originalDataMap，Key: ${clusterDataKey}`)
     
     // 初始化数据存储结构
     if (!originalDataMap.value[clusterDataKey]) {
@@ -1520,6 +1535,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       ...originalDataMap.value,
       [clusterDataKey]: newData
     }
+    console.log(`[RemoteControlCore-Diag] 10. originalDataMap 已更新，当前值:`, JSON.parse(JSON.stringify(originalDataMap.value)))
 
     // 读取设备数据时，强制更新所有参数值，确保界面显示设备实际值
     // 确保 editableDataMap 中存在对应的键
@@ -1572,6 +1588,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
         life: 4000
       })
     }
+    console.log('[RemoteControlCore-Diag] 11. handleReceivedParameterData 执行完毕')
   }
   
   // 事件去重管理 - 防止重复弹窗

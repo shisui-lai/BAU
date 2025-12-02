@@ -31,7 +31,7 @@ import {
 let mainWindow
 let quitting = false;
 import forkPath1 from './mqtt.js?modulePath'
-import { createMessageHandler } from './ipc/childBridge.js'
+import { createMessageHandler, registerDiskSpaceDecisionForwarder } from './ipc/childBridge.js'
 
 // 默认导出目录
 let DEFAULT_EXPORT_DIR = join(process.cwd(), 'EventExports')
@@ -537,8 +537,10 @@ function createWindow() {
 
   mainWindow.webContents.once('did-finish-load', () => {
     processManager.setMessageHandler(createMessageHandler(processManager, mainWindow))
+    registerDiskSpaceDecisionForwarder(processManager)
   }
   )
+
 
     // MQTT发布消息
     ipcMain.handle('mqttPublish', (_e, topic, payloadHex) => {

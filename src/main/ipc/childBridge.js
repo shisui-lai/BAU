@@ -58,6 +58,15 @@ export function createMessageHandler(processManager, mainWindow) {
       return
     }
 
+    if (msg.type === 'readEventRecentFinal') {
+      pendingSetImmediateCount++
+      setImmediate(() => {
+        mainWindow.webContents.send('readEventRecentFinal', msg.data)
+        pendingSetImmediateCount--
+      })
+      return
+    }
+
     if (msg.type === 'readEventError') {
       pendingSetImmediateCount++
       setImmediate(() => {

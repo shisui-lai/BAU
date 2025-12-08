@@ -23,9 +23,11 @@ const { t } = useI18n()
 
 // 密码保护相关
 const showPasswordDialog = ref(false)
+const isBlurred = ref(false)
 const inputPwd = ref('')
 const pwdError = ref(false)
 const showCancelTip = ref(false)
+const pwdConfirmed = ref(false)
 const { selectedCluster } = useClusterSelect()
 
 // 使用出厂校正参数处理器
@@ -654,7 +656,9 @@ const stopPeriodicReading = () => {
 const checkPwd = () => {
   pwdError.value = false
   if (inputPwd.value === PAGE_PASSWORDS.CALIBRATION) {
+    pwdConfirmed.value = true
     showPasswordDialog.value = false
+    isBlurred.value = false
     sessionStorage.setItem('calibrationPagePassword', 'ok')
     pwdError.value = false
     
@@ -685,8 +689,12 @@ const initializePage = () => {
 // 取消密码输入
 const cancelPwd = () => {
   showPasswordDialog.value = false
+  if (pwdConfirmed.value) {
+    pwdConfirmed.value = false
+    return
+  }
   showCancelTip.value = true
-  // 返回上一页
+  isBlurred.value = true
   setTimeout(() => {
     router.go(-1)
   }, 500)
@@ -706,6 +714,7 @@ onMounted(() => {
   if (passwordStatus !== 'ok') {
     // console.log('[Calibration Debug] 密码验证未通过，显示密码对话框')
     showPasswordDialog.value = true
+    isBlurred.value = true
     return
   }
 
@@ -737,7 +746,7 @@ onUnmounted(() => {
 
 <template>
   <div class="page-wrapper">
-    <div class="card" :class="{ blurred: showPasswordDialog }">
+    <div class="card" :class="{ blurred: isBlurred }">
     <!-- 校准类型选择区 -->
     <div class="mb-4">
       <label for="kb-select" class="form-label">{{ t('analogCalibration.selectLabel') }}</label>
@@ -898,6 +907,7 @@ onUnmounted(() => {
     :modal="false"
     :header="t('analogCalibration.password.title')"
     :style="{ width: '25rem' }"
+    @hide="cancelPwd"
   >
     <div class="flex flex-column gap-3">
       <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />

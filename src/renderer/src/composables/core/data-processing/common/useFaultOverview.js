@@ -9,7 +9,9 @@ export function useFaultOverview() {
   
   // 原始数据存储 - 只保留FAULT_GRADE相关数据
   const blockGradeData = ref({})
+  const enClusterHardwareSumData = ref({})
   const clusterGradeData = ref({})
+  
 
   // 故障等级颜色映射
   const getFaultLevelColor = (level) => {
@@ -183,6 +185,112 @@ export function useFaultOverview() {
     return faults
   })
 
+  const processedEnClusterHardwareSum = computed(() => {
+    if (!enClusterHardwareSumData.value.data) return []
+    const hwData = enClusterHardwareSumData.value.data
+    const faults = []
+    const skipLabel = (lbl) => /预留/.test(lbl)
+    const HIDE_KEYS = new Set([
+      'MainPosHighSideFeedbackFault2',
+      'MainNegHighSideFeedbackFault2',
+      'PrechargeHighSideFeedbackFault2',
+      'BMUDeviceCommFault2',
+      'BCUCommFault22',
+      'SingleCellDropped2',
+      'SingleTempProbeDropped2',
+      'AFECommLost2'
+    ])
+    const labelToKeyMap = {
+      '主正接触器反馈故障': 'MainPosContactorFeedbackFault',
+      '主正高边驱动反馈故障': 'MainPosHighSideFeedbackFault',
+      '主正氧化': 'MainPosOxidation',
+      '主正黏连': 'MainPosAdhesion',
+      '主正接触器故障 汇总': 'MainPosContactorFaultSummary',
+      '主负接触器反馈故障': 'MainNegContactorFeedbackFault',
+      '主负高边驱动反馈故障': 'MainNegHighSideFeedbackFault',
+      '主负氧化': 'MainNegOxidation',
+      '主负黏连': 'MainNegAdhesion',
+      '主负接触器故障 汇总': 'MainNegContactorFaultSummary',
+      '预充接触器反馈故障': 'PrechargeContactorFeedbackFault',
+      '预充高边驱动反馈故障': 'PrechargeHighSideFeedbackFault',
+      '预充氧化': 'PrechargeOxidation',
+      '预充黏连': 'PrechargeAdhesion',
+      '预充接触器故障 汇总': 'PrechargeContactorFaultSummary',
+      '汇总的故障': 'ContactorFaultSummary',
+      '隔离开关反馈故障': 'IsolationSwitchFeedbackFault',
+      '断路器反馈故障': 'CircuitBreakerFeedbackFault',
+      '风扇反馈故障': 'FanFeedbackFault',
+      '直流供电KM反馈故障': 'DCPowerKMFeedbackFault',
+      '门禁反馈故障': 'AccessControlFeedbackFault',
+      'SPD反馈故障': 'SPDFeedbackFault',
+      '交流电压反馈故障': 'ACVoltageFeedbackFault',
+      '烟感反馈故障': 'SmokeSensorFeedbackFault',
+      '消防释放信号': 'FireReleaseSignal',
+      '温感反馈故障': 'TempSensorFeedbackFault',
+      '排风系统反馈故障': 'ExhaustSystemFeedbackFault',
+      '辅助断路器反馈故障': 'AuxCircuitBreakerFeedbackFault',
+      '氢气探测器反馈故障': 'HydrogenDetectorFeedbackFault',
+      'MSD反馈故障': 'MSDFeedbackFault',
+      '急停反馈故障': 'EmergencyStopFeedbackFault',
+      '主正高边驱动反馈故障': 'MainPosHighSideFeedbackFault2',
+      '主负高边驱动反馈故障': 'MainNegHighSideFeedbackFault2',
+      '预充高边驱动反馈故障': 'PrechargeHighSideFeedbackFault2',
+      '红灯高边驱动反馈故障': 'RedLampHighSideFeedbackFault',
+      '黄灯高边驱动反馈故障': 'YellowLampHighSideFeedbackFault',
+      '绿灯高边驱动反馈故障': 'GreenLampHighSideFeedbackFault',
+      '风机高边驱动反馈故障': 'FanHighSideFeedbackFault2',
+      '主断分励高边驱动反馈故障': 'MainBreakerShuntHighSideFeedbackFault',
+      '直流供电KM高边驱动反馈故障': 'DCPowerKMHighSideFeedbackFault2',
+      'pcs封波高边驱动反馈故障': 'PCSSealedWaveHighSideFeedbackFault',
+      '辅助断路器控制高边驱动反馈故障': 'AuxCircuitBreakerControlHighSideFeedbackFault',
+      '排风系统控制高边驱动反馈故障': 'ExhaustSystemControlHighSideFeedbackFault',
+      '制冷设备通信故障': 'CoolingDeviceCommFault2',
+      'PCS设备通信故障': 'PCSCommFault2',
+      '除湿机通信故障': 'DehumidifierCommFault2',
+      '消防设备通信故障': 'FireDeviceCommFault2',
+      'BMU通信故障': 'BMUCommFault2',
+      'CAN霍尔通信故障': 'CANHallCommFault2',
+      'BCU通信故障': 'BCUCommFault2',
+      '菊花链通信故障': 'DaisyChainCommFault',
+      'afe通信故障': 'AFECommFault2',
+      'bcu环境传感器故障': 'BCUEnvSensorFault2',
+      'B+传感器故障': 'BPosSensorFault2',
+      'B-传感器故障': 'BNegSensorFault2',
+      'P+传感器故障': 'PPosSensorFault2',
+      'P-传感器故障': 'PNegSensorFault2',
+      '熔断器1传感器故障': 'Fuse1TempSensorFault2',
+      '熔断器2传感器故障': 'Fuse2TempSensorFault2',
+      '霍尔故障': 'HallFault2',
+      '存在无效数据': 'InvalidDataPresent2',
+      '铁电存储器故障': 'FRAMFault2',
+      'eeprom存储器故障': 'EEPROMFault2',
+      'flash存储器故障': 'FlashFault2',
+      '电压采集断线': 'VoltageAcqDisconnected2',
+      '温度采集断线': 'TempAcqDisconnected2',
+      '保留故障': 'ReservedFault2',
+      'BMU设备通讯故障': 'BMUDeviceCommFault2',
+      '单体电池掉线': 'SingleCellDropped2',
+      '单体温度探头掉线': 'SingleTempProbeDropped2',
+      'BMU 1号 动力接插件温度断线': 'BMU1PowerConnectorTempDisconnected2',
+      'BMU 2号 动力接插件温度断线': 'BMU2PowerConnectorTempDisconnected2',
+      'AFE通讯失联': 'AFECommLost2',
+      'BCU通讯故障': 'BCUCommFault22'
+    }
+    
+    hwData.forEach(section => {
+      if (section.element && Array.isArray(section.element)) {
+        section.element.forEach(item => {
+          if (skipLabel(item.label)) return
+          const key = labelToKeyMap[item.label] || item.label
+          if (HIDE_KEYS.has(key)) return
+          const level = item.value ? 1 : 0
+          faults.push({ name: key, level, color: getFaultLevelColor(level) })
+        })
+      }
+    })
+    return faults
+  })
+
   // ========== 簇级数据处理 ==========
   
   // 故障最高等级总览 - 使用 *_FAULT_GRADE 数据
@@ -316,29 +424,26 @@ export function useFaultOverview() {
     return clusters
   })
 
+
   // 合并簇级数据 - 简化版本
   const processedClusterData = computed(() => {
     const gradeData = processedClusterGradeOverview.value
-    
-    return gradeData.map(gradeCluster => {
-      return {
-        id: gradeCluster.id,
-        overview: gradeCluster.faults  // 只保留故障最高等级总览数据
-      }
-    })
+    return gradeData.map(gradeCluster => ({ id: gradeCluster.id, overview: gradeCluster.faults }))
   })
 
   return {
     // 原始数据 - 只保留FAULT_GRADE相关
     blockGradeData,
+    enClusterHardwareSumData,
     clusterGradeData,
     
     // 处理后的数据
-    processedBlockGradeOverview,      // 堆级故障最高等级总览
+    processedBlockGradeOverview,
+    processedEnClusterHardwareSum,
     processedClusterData,             // 簇级完整数据（只包含overview）
     
     // 工具函数
     getFaultLevelColor,
     getFaultGradeName
   }
-} 
+}

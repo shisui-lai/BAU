@@ -4,6 +4,7 @@ import { useToast } from 'primevue/usetoast'
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
+import { useRawInputCache, isNumericType, validateNumericInput } from '@/composables/utils/useParameterInput'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useBlockStore } from '@/stores/device/blockStore'
@@ -11,7 +12,7 @@ import { BLOCK_DNS_PARAM_R } from '../../../../main/table.js'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import InputNumber from 'primevue/inputnumber'
+import InputText from 'primevue/inputtext'
 
 const toastService = useToast()
 const blockStore = useBlockStore()
@@ -119,6 +120,69 @@ function startParameterReadingWithRetry() {
   startParameterReading()
 }
 
+// ===== 原文缓存（复用 composable）：保留用户输入的字符串（包括非法数值） =====
+const { setRawInput, getRawInput, clearAll: clearRawInputCache, getInputDisplay } = useRawInputCache('BLOCK_DNS_PARAM')
+
+// ===== 数值校验（复用 composable） =====
+
+// ===== 下发（带校验） =====
+function sendParametersWithValidation() {
+  if (isCurrentlyReading.value || !currentSelectedClass?.value) return
+
+  // 只校验当前分类的参数
+  const params = translatedParameterList.value.filter(p => p.class === currentSelectedClass.value.name)
+
+  const errors = []
+  const updates = []
+
+  for (const p of params) {
+    // 非数值型直接跳过（下拉/位段/IPv4/hex）
+    if (!isNumericType(p)) continue
+
+    const raw = getRawInput(p)
+    if (raw !== undefined) {
+      const res = validateNumericInput(p, raw, { t, te })
+      if (!res.valid) {
+        errors.push(`${p.label}: ${res.message}`)
+        continue
+      }
+      updates.push({ key: p.key, value: res.value })
+      continue
+    }
+
+    const val = getParameterInputValue(p, p.currentValue)
+    if (val === undefined || val === null || !Number.isFinite(Number(val))) {
+      const msg = te('toast.remoteControl.invalidNumberEmpty') ? t('toast.remoteControl.invalidNumberEmpty') : '输入为空'
+      errors.push(`${p.label}: ${msg}`)
+      continue
+    }
+    const res = validateNumericInput(p, String(val), { t, te })
+    if (!res.valid) {
+      errors.push(`${p.label}: ${res.message}`)
+      continue
+    }
+    updates.push({ key: p.key, value: res.value })
+  }
+
+  if (errors.length > 0) {
+    toastService.add({
+      severity: 'error',
+      summary: te('toast.remoteControl.parameterValidationFailed') ? t('toast.remoteControl.parameterValidationFailed') : '参数校验失败',
+      detail: errors.join('\n'),
+      life: 8000
+    })
+    return
+  }
+
+  // 校验通过：先“同步写模型”，再下发（避免两次点击）
+  for (const u of updates) {
+    updateParameterValue(u.key, u.value, { immediate: true })
+  }
+
+  // 执行实际下发
+  sendCurrentClassParameters()
+}
+
 // 事件处理（子进程事件名 = topic后缀大写）
 function handleReadEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_FAULT_DNS_R') return
@@ -136,6 +200,8 @@ function handleReadEvent(event, mqttMessage){
     }
   } catch (_) {}
   handleReceivedParameterData(parsed)
+  // 读取成功后清理原文缓存，显示设备实际值
+  clearRawInputCache()
 }
 function handleWriteEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_FAULT_DNS_W') return
@@ -207,7 +273,7 @@ function getParameterRemarkText(){ return '' }
                 size="small"
                 @click="isCurrentlyReading ? stopParameterReading() : startParameterReadingWithRetry()" />
         <Button :label="t('blockAlarmThresholdPage.buttons.sendParameters')" severity="warning" size="small" :disabled="isCurrentlyReading || !currentSelectedClass"
-                @click="sendCurrentClassParameters" />
+                @click="sendParametersWithValidation" />
       </div>
     </div>
 
@@ -240,14 +306,10 @@ function getParameterRemarkText(){ return '' }
 
       <Column :header="t('blockAlarmThresholdPage.table.parameterValue')" style="width: 160px">
         <template #body="{ data }">
-          <InputNumber
-            :model-value="getParameterInputValue(data, data.currentValue)"
-            @update:model-value="val => updateParameterValue(data.key, setParameterInputValue(data, val))"
+          <InputText
+            :value="getInputDisplay(data, data.currentValue, getParameterInputValue)"
+            @input="(e) => setRawInput(data.key, e?.target?.value ?? '')"
             :disabled="isCurrentlyReading"
-            :step="data.scale ? 1 / data.scale : 1"
-            :min-fraction-digits="getParameterDecimalPlaces(data)"
-            :max-fraction-digits="getParameterDecimalPlaces(data)"
-            size="small"
             class="w-full"
           />
         </template>
@@ -275,6 +337,3 @@ function getParameterRemarkText(){ return '' }
 .class-tabs{ display:flex; flex-wrap:wrap; gap:8px }
 .class-tab-button{ min-width:100px }
 </style>
-
-
-

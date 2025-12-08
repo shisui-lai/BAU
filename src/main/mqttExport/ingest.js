@@ -120,6 +120,21 @@ export function processPackSummary({ topic, hex, blockId, clusterId, baseConfig,
   const deviceId = `${blockId}-${clusterId || 0}`
   cacheSampleSemantic('packSummary', data || [], deviceId, Date.now(), baseConfig)
 }
+export function processAlarmSemantic({ topic, hex, blockId, clusterId, baseConfig, data }) {
+  const deviceId = `${blockId}-${clusterId || 0}`
+  const categories = []
+  for (const group of (data || [])) {
+    const cls = group && group.class ? group.class : ''
+    const arr = []
+    const elements = group && group.element ? group.element : []
+    for (const el of elements) {
+      const item = { fault: el.label, faultZh: el.label, level: (typeof el.value === 'object' && el.value && 'txt' in el.value) ? el.value.txt : '', actionValue: '', bmuIndex: (el.bmuIndex || el.bmu || ''), cellIndex: (el.cellIndex || el.cell || ''), cellIndexRelative: (el.cellIndexRelative || ''), timestamp: Date.now() }
+      arr.push(item)
+    }
+    categories.push({ classification: cls, element: arr })
+  }
+  cacheSampleSemantic('alarm', categories, deviceId, Date.now(), baseConfig)
+}
 
 export function processBlockSummary({ topic, hex, blockId, clusterId, baseConfig, data }) {
   const deviceId = `${blockId}-${clusterId || 0}`

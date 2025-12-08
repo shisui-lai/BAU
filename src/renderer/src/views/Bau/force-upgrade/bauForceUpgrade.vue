@@ -1,6 +1,6 @@
 <template>
   <div class="force-upgrade-page">
-    <div class="card force-upgrade" :class="{ blurred: showPasswordDialog }">
+    <div class="card force-upgrade" :class="{ blurred: isBlurred }">
     <div class="control">
       <!-- 左侧：TFTP 服务器配置部分 -->
       <div class="section1">
@@ -120,21 +120,22 @@
     </div>
     </div>
 
-    <!-- 密码保护对话框 -->
-    <Dialog
-      v-model:visible="showPasswordDialog"
-      :closable="true"
-      :modal="false"
-      :header="t('password.header')"
-      :style="{ width: '25rem' }"
-    >
-      <div class="flex flex-column gap-3">
-        <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
-        <Button :label="t('password.confirm')" @click="checkPwd" style="margin-right: 0.5rem" />
-        <Button :label="t('password.cancel')" severity="danger" class="cancel-large" @click="cancelPwd" />
-        <div v-if="pwdError" style="color: red; margin-top: 0.5rem">{{ t('password.error') }}</div>
-      </div>
-    </Dialog>
+  <!-- 密码保护对话框 -->
+  <Dialog
+    v-model:visible="showPasswordDialog"
+    :closable="true"
+    :modal="false"
+    :header="t('password.header')"
+    :style="{ width: '25rem' }"
+    @hide="cancelPwd"
+  >
+    <div class="flex flex-column gap-3">
+      <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
+      <Button :label="t('password.confirm')" @click="checkPwd" style="margin-right: 0.5rem" />
+      <Button :label="t('password.cancel')" severity="danger" class="cancel-large" @click="cancelPwd" />
+      <div v-if="pwdError" style="color: red; margin-top: 0.5rem">{{ t('password.error') }}</div>
+    </div>
+  </Dialog>
   </div>
 </template>
 
@@ -169,8 +170,10 @@ const logs = ref([])
 
 // 密码保护相关
 const showPasswordDialog = ref(false)
+const isBlurred = ref(false)
 const inputPwd = ref('')
 const pwdError = ref(false)
+const pwdConfirmed = ref(false)
 
 // IPC 监听器 ID
 let forceUpgradeSuccessListener = null
@@ -573,6 +576,7 @@ onBeforeMount(async () => {
   // 密码保护检查
   if (sessionStorage.getItem('forceUpgradePagePassword') !== 'ok') {
     showPasswordDialog.value = true
+    isBlurred.value = true
     return
   }
   await initializePage()
@@ -612,7 +616,9 @@ onBeforeUnmount(() => {
 function checkPwd() {
   pwdError.value = false
   if (inputPwd.value === PAGE_PASSWORDS.UPGRADE) {
+    pwdConfirmed.value = true
     showPasswordDialog.value = false
+    isBlurred.value = false
     sessionStorage.setItem('forceUpgradePagePassword', 'ok')
     pwdError.value = false
     // 验证通过后初始化页面
@@ -624,7 +630,11 @@ function checkPwd() {
 
 function cancelPwd() {
   showPasswordDialog.value = false
-  // 返回上一页
+  if (pwdConfirmed.value) {
+    pwdConfirmed.value = false
+    return
+  }
+  isBlurred.value = true
   setTimeout(() => {
     router.go(-1)
   }, 300)

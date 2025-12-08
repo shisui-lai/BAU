@@ -222,104 +222,96 @@ onUnmounted(() => {
 
 <template>
   <div class="version-info-container">
-    <!-- 版本信息 -->
-    <div class="cluster-selection-section">
-      <h4>{{ t('deviceUpgrade.sections.versionInfo', '版本信息') }}</h4>
+    <!-- BAU版本信息 - 只显示软件版本 -->
+    <div class="version-section-inline">
+      <div class="version-item-inline">
+        <label>{{ t('deviceUpgrade.version.bauVersion', 'BAU版本') }}：</label>
+        <span>{{ bauVersionInfo['BAU软件版本号'] }}</span>
+      </div>
+    </div>
 
-      <!-- BAU版本信息 - 只显示软件版本 -->
-      <div class="version-section-inline">
-        <div class="version-item-inline">
-          <label>{{ t('deviceUpgrade.version.bauVersion', 'BAU版本') }}：</label>
-          <span>{{ bauVersionInfo['BAU软件版本号'] }}</span>
-        </div>
+    <!-- 簇版本信息选择器 -->
+    <div class="version-section-inline">
+      <h5>{{ t('deviceUpgrade.version.clusterVersions', '簇版本信息') }}</h5>
+      <div class="flex align-items-center gap-2 mb-2">
+        <Dropdown
+          v-model="selectedClusterForVersion"
+          :options="availableClusterOptions"
+          optionLabel="label"
+          optionValue="value"
+          :placeholder="t('deviceUpgrade.version.selectCluster', '选择簇')"
+          class="flex-1"
+          style="min-width: 120px;"
+        />
       </div>
 
-      <!-- 簇版本信息选择器 -->
-      <div class="version-section-inline">
-        <h5>{{ t('deviceUpgrade.version.clusterVersions', '簇版本信息') }}</h5>
-        <div class="flex align-items-center gap-2 mb-2">
-          <Dropdown
-            v-model="selectedClusterForVersion"
-            :options="availableClusterOptions"
-            optionLabel="label"
-            optionValue="value"
-            :placeholder="t('deviceUpgrade.version.selectCluster', '选择簇')"
-            class="flex-1"
-            style="min-width: 120px;"
-          />
+      <!-- 固定高度的版本信息显示区域 -->
+      <div class="cluster-version-display-fixed">
+        <!-- 单个簇版本信息 -->
+        <div v-if="selectedClusterVersions && selectedClusterVersions.type === 'single'" class="cluster-version-content">
+          <!-- BCU版本 -->
+          <div class="version-item-inline">
+            <label>{{ selectedClusterVersions.clusterLabel }} BCU版本：</label>
+            <span>{{ selectedClusterVersions.bcuVersion || '–' }}</span>
+          </div>
+
+          <!-- BMU版本列表 - 固定高度滚动区域 -->
+          <div class="bmu-versions-container">
+            <div v-if="selectedClusterVersions.bmuVersions && selectedClusterVersions.bmuVersions.length > 0" class="bmu-versions-grid">
+              <div
+                v-for="bmu in selectedClusterVersions.bmuVersions"
+                :key="bmu.label"
+                class="version-item-inline"
+              >
+                <label>{{ bmu.label }}：</label>
+                <span>{{ bmu.version }}</span>
+              </div>
+            </div>
+            <div v-else class="no-bmu-versions">
+              <span class="text-xs text-color-secondary">{{ t('deviceUpgrade.version.noBmuVersions', '暂无BMU版本信息') }}</span>
+            </div>
+          </div>
         </div>
 
-        <!-- 固定高度的版本信息显示区域 -->
-        <div class="cluster-version-display-fixed">
-          <!-- 单个簇版本信息 -->
-          <div v-if="selectedClusterVersions && selectedClusterVersions.type === 'single'" class="cluster-version-content">
-            <!-- BCU版本 -->
-            <div class="version-item-inline">
-              <label>{{ selectedClusterVersions.clusterLabel }} BCU版本：</label>
-              <span>{{ selectedClusterVersions.bcuVersion || '–' }}</span>
-            </div>
-
-            <!-- BMU版本列表 - 固定高度滚动区域 -->
-            <div class="bmu-versions-container">
-              <div v-if="selectedClusterVersions.bmuVersions && selectedClusterVersions.bmuVersions.length > 0" class="bmu-versions-grid">
-                <div
-                  v-for="bmu in selectedClusterVersions.bmuVersions"
-                  :key="bmu.label"
-                  class="version-item-inline"
-                >
-                  <label>{{ bmu.label }}：</label>
-                  <span>{{ bmu.version }}</span>
-                </div>
+        <!-- 所有簇版本信息 -->
+        <div v-else-if="selectedClusterVersions && selectedClusterVersions.type === 'all'" class="all-clusters-version-content">
+          <div class="all-clusters-container">
+            <div
+              v-for="cluster in selectedClusterVersions.allVersions"
+              :key="cluster.clusterValue"
+              class="cluster-version-item"
+            >
+              <div class="cluster-header">
+                <span class="cluster-name">{{ cluster.clusterLabel }}</span>
               </div>
-              <div v-else class="no-bmu-versions">
-                <span class="text-xs text-color-secondary">{{ t('deviceUpgrade.version.noBmuVersions', '暂无BMU版本信息') }}</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- 所有簇版本信息 -->
-          <div v-else-if="selectedClusterVersions && selectedClusterVersions.type === 'all'" class="all-clusters-version-content">
-            <div class="all-clusters-header">
-              <span class="text-xs font-semibold">{{ t('deviceUpgrade.version.allClustersVersions', '所有簇版本信息') }}</span>
-            </div>
-            <div class="all-clusters-container">
-              <div
-                v-for="cluster in selectedClusterVersions.allVersions"
-                :key="cluster.clusterValue"
-                class="cluster-version-item"
-              >
-                <div class="cluster-header">
-                  <span class="cluster-name">{{ cluster.clusterLabel }}</span>
+              <div class="cluster-versions">
+                <!-- BCU版本 -->
+                <div class="version-item-compact">
+                  <label>BCU：</label>
+                  <span>{{ cluster.bcuVersion || '–' }}</span>
                 </div>
-                <div class="cluster-versions">
-                  <!-- BCU版本 -->
-                  <div class="version-item-compact">
-                    <label>BCU：</label>
-                    <span>{{ cluster.bcuVersion || '–' }}</span>
+                <!-- BMU版本 -->
+                <div v-if="cluster.bmuVersions && cluster.bmuVersions.length > 0" class="bmu-versions-compact">
+                  <div
+                    v-for="bmu in cluster.bmuVersions"
+                    :key="bmu.label"
+                    class="version-item-compact"
+                  >
+                    <label>{{ bmu.label }}：</label>
+                    <span>{{ bmu.version }}</span>
                   </div>
-                  <!-- BMU版本 -->
-                  <div v-if="cluster.bmuVersions && cluster.bmuVersions.length > 0" class="bmu-versions-compact">
-                    <div
-                      v-for="bmu in cluster.bmuVersions"
-                      :key="bmu.label"
-                      class="version-item-compact"
-                    >
-                      <label>{{ bmu.label }}：</label>
-                      <span>{{ bmu.version }}</span>
-                    </div>
-                  </div>
-                  <div v-else class="no-bmu-compact">
-                    <span class="text-xs text-color-secondary">{{ t('deviceUpgrade.version.noBmuVersions', '暂无BMU版本信息') }}</span>
-                  </div>
+                </div>
+                <div v-else class="no-bmu-compact">
+                  <span class="text-xs text-color-secondary">{{ t('deviceUpgrade.version.noBmuVersions', '暂无BMU版本信息') }}</span>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- 未选择簇时的提示 -->
-          <div v-else class="cluster-version-placeholder">
-            <span class="text-xs text-color-secondary">{{ t('deviceUpgrade.version.selectClusterToView', '请选择簇查看版本信息') }}</span>
-          </div>
+        <!-- 未选择簇时的提示 -->
+        <div v-else class="cluster-version-placeholder">
+          <span class="text-xs text-color-secondary">{{ t('deviceUpgrade.version.selectClusterToView', '请选择簇查看版本信息') }}</span>
         </div>
       </div>
     </div>
@@ -328,6 +320,10 @@ onUnmounted(() => {
 
 <style scoped>
 /* 版本信息展示区域 - 内联版本（整合到FTP Card中） */
+.version-info-container {
+  display: block;
+}
+
 .version-section-inline {
   margin-top: 8px;
 }
@@ -346,22 +342,22 @@ onUnmounted(() => {
 .version-item-inline {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   margin-bottom: 4px;
-  font-size: 10px;
+  font-size: 12px; /* 放大版本号整体字号 */
 }
 
 .version-item-inline label {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-color);
-  min-width: 60px;
-  font-size: 9px;
+  min-width: 56px;
+  font-size: 11px; /* 标签稍大，保持清晰 */
 }
 
 .version-item-inline span {
-  color: var(--text-color-secondary);
+  color: var(--text-color);
   font-family: 'Courier New', monospace;
-  font-size: 9px;
+  font-size: 12px; /* 版本号放大 */
   word-break: break-all;
 }
 
@@ -376,7 +372,7 @@ onUnmounted(() => {
 /* 簇版本信息显示区域 - 固定高度版本 */
 .cluster-version-display-fixed {
   margin-top: 8px;
-  height: 120px; /* 固定高度 */
+  height: 195px;
   background: var(--surface-card);
   border-radius: 4px;
   border: 1px solid var(--surface-border);
@@ -472,7 +468,7 @@ onUnmounted(() => {
 .cluster-name {
   font-weight: 600;
   color: var(--text-color);
-  font-size: 9px;
+  font-size: 12px; /* 与其他版本号字号保持一致 */
 }
 
 .cluster-versions {
@@ -485,20 +481,20 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 8px;
+  font-size: 12px; /* 与单簇视图保持一致的字号 */
 }
 
 .version-item-compact label {
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-color);
   min-width: 30px;
-  font-size: 8px;
+  font-size: 11px; /* 与inline标签字号一致 */
 }
 
 .version-item-compact span {
-  color: var(--text-color-secondary);
+  color: var(--text-color);
   font-family: 'Courier New', monospace;
-  font-size: 8px;
+  font-size: 12px; /* 与inline数值字号一致 */
   word-break: break-all;
 }
 

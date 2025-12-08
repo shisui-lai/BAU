@@ -33,7 +33,7 @@ import mqtt from 'mqtt'
 import { startSaveTimerSemantic, stopSaveTimerSemantic } from './mqttExport/bauDataExport'
 // 原始报文两秒节拍写入
  
-import { processCellVolt, processCellTemp, processCellSoc, processCellSoh, processClusterSummary, processPackSummary, processBlockSummary } from './mqttExport/ingest'
+import { processCellVolt, processCellTemp, processCellSoc, processCellSoh, processClusterSummary, processPackSummary, processBlockSummary, processAlarmSemantic } from './mqttExport/ingest'
 import { logAnyMessage } from './mqttExport/mqttRawLogger'
  
   import {
@@ -78,6 +78,7 @@ import { logAnyMessage } from './mqttExport/mqttRawLogger'
            BLOCK_TOTAL_FAULT,       // 堆总故障
            BLOCK_COMM_LOST,         // 簇通讯失联
            DI_DO_TEMP_STATUS,       // 协议修改新增 - DI/DO/温度状态
+           EN_CLUSTER_HARDWARE_SUM,
         } from './table.js'
 
   const util = require('util');
@@ -281,10 +282,11 @@ function withResponseCheck(fn) {
   const processFaultLevel1Data   = hex => parseConfigSection(hex, FAULT_LEVEL1,   '常规一级故障');
   //协议修改新增 - DI/DO/温度状态处理函数
   const processDIDoTempStatusData = hex => parseConfigSection(hex, DI_DO_TEMP_STATUS, 'DI/DO/温度状态');
-  //协议修改新增 - 故障map处理函数
-  const processOutFaultMapData = hex => parseConfigSection(hex, OUT_FAULT_MAP, '输出的故障map');
+    //协议修改新增 - 故障map处理函数
+    const processOutFaultMapData = hex => parseConfigSection(hex, OUT_FAULT_MAP, '输出的故障map');
 
   const processSavedFaultMapData = hex => parseConfigSection(hex, SAVED_FAULT_MAP, '保留故障map');
+  const processEnClusterHardwareSumData = hex => parseConfigSection(hex, EN_CLUSTER_HARDWARE_SUM, '使能簇硬件故障汇总');
   
   // 堆故障处理函数
   const processBlockHardwareFaultData = hex => parseConfigSection(hex, BLOCK_HARDWARE_FAULT, '堆硬件故障');
@@ -432,6 +434,7 @@ function withResponseCheck(fn) {
     //协议修改新增 - 故障map
     output_fault_map: processOutFaultMapData,
     saved_fault_map: processSavedFaultMapData,
+    en_cluster_hardware_sum: processEnClusterHardwareSumData,
     fault_level1:  processFaultLevel1Data,
     fault_level2:  processSecondFaultRAW,
     
@@ -1037,6 +1040,18 @@ function withResponseCheck(fn) {
       }
       if (suffix === 'block_summary') {
         processBlockSummary({ topic, hex, blockId, clusterId, baseConfig, data })
+      }
+      if (
+        suffix === 'fault_level1' ||
+        suffix === 'fault_level2' ||
+        suffix === 'total_fault' ||
+        suffix === 'en_cluster_hardware_sum' ||
+        suffix === 'di_do_temp_status' ||
+        suffix === 'block_hardware_fault' ||
+        suffix === 'block_total_fault' ||
+        suffix === 'brokenwire'
+      ) {
+        processAlarmSemantic({ topic, hex, blockId, clusterId, baseConfig, data })
       }
 
       // ========== 事件记录数据特殊处理 ==========

@@ -89,6 +89,10 @@
               <span class="info-label">{{ t('blockVersionPage.labels.soxAlgorithmVersion') }}</span>
               <span class="info-value">{{ getVersionValue('BAU-SOX算法版本号') }}</span>
             </div>
+            <div class="info-item">
+              <span class="info-label">{{ t('blockVersionPage.labels.mergeSplitAlgorithmVersion') }}</span>
+              <span class="info-value">{{ getVersionValue('BAU-退并簇算法版本号') }}</span>
+            </div>
           </div>
         </template>
       </Card>
@@ -118,7 +122,8 @@ const FIELD_TEMPLATES = {
     'BAU-上位机协议版本号',
     'BAU-BCU协议版本号',
     'BAU事件记录版本号',
-    'BAU-SOX算法版本号'
+    'BAU-SOX算法版本号',
+    'BAU-退并簇算法版本号'
   ]
 }
 

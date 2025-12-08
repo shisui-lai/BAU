@@ -39,6 +39,8 @@ export const DROPDOWN_CONFIGS = {
         { label: '科诺威水冷机', value: 1 },
         { label: '英维克', value: 2 },
         { label: '埃森特交流空调', value: 3 },
+        { label: '英维克-EMW30-50-80', value: 4 },
+        { label: '均能水冷机-1', value: 5 },
       ],
       '除湿机设备类型': [
         { label: '无除湿机设备', value: 65535 },
@@ -163,6 +165,16 @@ export const DROPDOWN_CONFIGS = {
         { label: '磷酸铁锂电池', value: 0 },
         { label: '钛酸锂电池', value: 1 },
         { label: '锰酸锂电池', value: 2 }
+      ],
+
+      '电池厂家': [
+        { label: '宁德280Ah(CB310)', value: 0 },
+        { label: '海辰280Ah(LFP71173207)', value: 1 },
+        { label: '兰280Ah(PC-0B1-72174L4-AH)', value: 2 },
+        { label: '宁德280Ah(CB2W0)', value: 3 },
+        { label: '海辰280Ah(ST280P100A)', value: 4 },
+        { label: '亿纬314Ah(MB31)', value: 5 },
+        { label: '海辰314Ah(ST314P050A)', value: 6 }
       ],
 
 

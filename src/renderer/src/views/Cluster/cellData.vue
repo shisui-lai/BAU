@@ -21,10 +21,18 @@ const { t, locale } = useI18n()
 
   function onPackSummary (_e, msg) {
     parsePackSummary(msg)
+    const current = selectedCluster.value
+    if (current && current === `${msg.blockId}-${msg.clusterId}`) {
+      updateTrigger.value++
+    }
   }
 
   function onClusterSummary (_e, msg) {
     parseClusterSummary(msg)
+    const current = selectedCluster.value
+    if (current && current === `${msg.blockId}-${msg.clusterId}`) {
+      updateTrigger.value++
+    }
   }
 
 /* ────────── 常量 ────────── */
@@ -778,7 +786,7 @@ watch(activeView, (newView, oldView) => {
     const blocks = pickCluster(selectedCluster.value, ['系统信息'])
     const ele = blocks.find(b => b.class === '系统信息')?.element || []
     const targetLabels = [
-      '静止','充电','放电','禁充','禁放','待机','告警','故障',
+      '静止','充电','放电','禁充','禁放','禁充禁放','告警','故障',
       '充电功率锁存','放电功率锁存',
       '充电指令','充电指令完成','放电指令','放电指令完成',
       '脱离母线指令','脱离母线指令完成',
@@ -813,7 +821,7 @@ watch(activeView, (newView, oldView) => {
         '放电': 'discharge',
         '禁充': 'forbidCharge',
         '禁放': 'forbidDischarge',
-        '待机': 'standby',
+        '禁充禁放': 'forbidChargeDischarge',
         '告警': 'alarm',
         '故障': 'fault',
         '充电功率锁存': 'chgPowerLatch',
@@ -832,6 +840,8 @@ watch(activeView, (newView, oldView) => {
 
     return result
   })
+
+  
 
 
 
@@ -891,6 +901,8 @@ watch(activeView, (newView, oldView) => {
       return { label: fieldLabel, value: displayValue }
     })
   });
+
+  
 
   const orderedRows3 = computed(() => {
     const arr = orderedElems.value

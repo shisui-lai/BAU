@@ -23,6 +23,7 @@ import { useBlockStore } from '@/stores/device/blockStore'
 
 // 版本信息组件
 import VersionInfo from './VersionInfo.vue'
+import NewUploadPanel from './NewUploadPanel.vue'
 
 const toast = useToast()
 const router = useRouter()
@@ -127,9 +128,11 @@ function startUpgradeResultPollingByType() {
 
 // 密码保护相关
 const showPasswordDialog = ref(false)
+const isBlurred = ref(false)
 const inputPwd = ref('')
 const pwdError = ref(false)
 const showCancelTip = ref(false)
+const pwdConfirmed = ref(false)
 const upgradeStore = useUpgradeStore()
 
 // FTP文件管理功能
@@ -177,6 +180,8 @@ const updateFile = computed({
   get: () => upgradeStore.upgradeFile,
   set: (value) => upgradeStore.setUpgradeFile(value)
 })
+//1、原本样式 2、嵌入式设备样式
+const uploadUiMode = ref(1)
 
 // 选择的升级文件状态
 const selectedFileStatus = computed(() => {
@@ -373,25 +378,7 @@ const translatedBmuUpgradeOptions = computed(() => {
   }))
 })
 
-// 翻译后的升级状态文本
-const translatedUpgradeStatusText = computed(() => {
-  const status = upgradeStore.upgradeStatus.status
-  if (!status) {
-    return translateStatus('notStarted')
-  }
-  
-  // 根据状态映射到翻译键
-  const statusMap = {
-    'sending': 'upgrading',
-    'sent': 'upgrading', 
-    'success': 'success',
-    'error': 'error',
-    'stopped': 'stopped'
-  }
-  
-  const statusKey = statusMap[status] || status
-  return translateStatus(statusKey)
-})
+// 已移除升级状态显示相关计算属性，保留升级逻辑不变
 
 // 升级执行结果（Map结构）
 const bcuBmuUpgradeResultsMap = computed(() => {
@@ -754,7 +741,9 @@ watch(ftpServerRunning, async (newValue) => {
 const checkPwd = () => {
   pwdError.value = false
   if (inputPwd.value === PAGE_PASSWORDS.UPGRADE) {
+    pwdConfirmed.value = true
     showPasswordDialog.value = false
+    isBlurred.value = false
     sessionStorage.setItem('upgradePagePassword', 'ok')
     pwdError.value = false
     // 验证通过后初始化页面
@@ -767,8 +756,12 @@ const checkPwd = () => {
 // 取消密码输入
 const cancelPwd = () => {
   showPasswordDialog.value = false
+  if (pwdConfirmed.value) {
+    pwdConfirmed.value = false
+    return
+  }
   showCancelTip.value = true
-  // 返回上一页
+  isBlurred.value = true
   setTimeout(() => {
     router.go(-1)
   }, 500)
@@ -865,6 +858,7 @@ onMounted(async () => {
   // 密码保护检查
   if (sessionStorage.getItem('upgradePagePassword') !== 'ok') {
     showPasswordDialog.value = true
+    isBlurred.value = true
     return
   }
 
@@ -891,7 +885,7 @@ onUnmounted(() => {
 <!-- BAU设备升级界面 -->
 <template>
   <div class="page-wrapper">
-    <div class="card" :class="{ blurred: showPasswordDialog }">
+    <div class="card" :class="{ blurred: isBlurred }">
     <div class="upgrade-container">
       <!-- 左右布局：左侧(FTP配置+版本信息) + 右侧(设备升级) -->
       <div class="grid">
@@ -901,80 +895,91 @@ onUnmounted(() => {
           <div class="content-card">
             <h3>{{ t('deviceUpgrade.sections.ftpServer') }}</h3>
             <div class="card-content">
-              <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.serverIP') }}</label>
-                <InputText v-model="ftpHost" :placeholder="t('deviceUpgrade.placeholders.serverIP')" class="flex-1" />
+              <!-- 两列固定等分：第一行服务器IP(左) + 端口(右)，第二行用户名(左) + 密码(右) -->
+              <div v-if="uploadUiMode === 1" class="ftp-two-col">
+                <div class="ftp-field">
+                  <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.serverIP') }}</label>
+                  <InputText v-model="ftpHost" :placeholder="t('deviceUpgrade.placeholders.serverIP')" class="flex-1" :disabled="ftpServerRunning" />
+                </div>
+                <div class="ftp-field">
+                  <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.port') }}</label>
+                  <InputText v-model="ftpPort" :placeholder="t('deviceUpgrade.placeholders.port')" class="flex-1" :disabled="ftpServerRunning" />
+                </div>
+                <div class="ftp-field">
+                  <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.username') }}</label>
+                  <InputText v-model="ftpUser" :placeholder="t('deviceUpgrade.placeholders.username')" class="flex-1" :disabled="ftpServerRunning" />
+                </div>
+                <div class="ftp-field">
+                  <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.password') }}</label>
+                  <InputText v-model="ftpPassword" type="password" :placeholder="t('deviceUpgrade.placeholders.password')" class="flex-1" :disabled="ftpServerRunning" />
+                </div>
               </div>
-              <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.port') }}</label>
-                <InputText v-model="ftpPort" :placeholder="t('deviceUpgrade.placeholders.port')" class="flex-1" />
-              </div>
-              <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.username') }}</label>
-                <InputText v-model="ftpUser" :placeholder="t('deviceUpgrade.placeholders.username')" class="flex-1" />
-              </div>
-              <div class="flex align-items-center mb-3 gap-3">
-                <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.password') }}</label>
-                <InputText v-model="ftpPassword" type="password" :placeholder="t('deviceUpgrade.placeholders.password')" class="flex-1" />
-              </div>
-              <div class="flex align-items-center mb-3 gap-3">
+              <div v-if="uploadUiMode === 1" class="flex align-items-center mb-3 compact-gap">
                 <label class="w-6rem font-semibold text-sm">{{ t('deviceUpgrade.labels.rootDirectory') }}</label>
-                <div class="flex gap-2 flex-1">
-                  <InputText v-model="ftpRoot" readonly class="flex-1" />
-                  <Button :label="t('deviceUpgrade.buttons.selectDirectory')" @click="chooseFtpDir" />
+                <div class="ftp-root-row">
+                  <InputText v-model="ftpRoot" readonly class="ftp-root-input" />
+                  <Button :label="t('deviceUpgrade.buttons.selectDirectory')" @click="chooseFtpDir" :disabled="ftpServerRunning" />
+                  <Button
+                    :label="ftpServerRunning ? t('deviceUpgrade.buttons.stopFTP') : t('deviceUpgrade.buttons.startFTP')"
+                    :severity="ftpServerRunning ? 'danger' : 'success'"
+                    @click="toggleFtpServer"
+                  />
                 </div>
               </div>
-              <div class="flex justify-content-end mb-1">
-                <Button
-                  :label="ftpServerRunning ? t('deviceUpgrade.buttons.stopFTP') : t('deviceUpgrade.buttons.startFTP')"
-                  :severity="ftpServerRunning ? 'danger' : 'success'"
-                  @click="toggleFtpServer"
-                />
-              </div>
 
-              <!-- 文件升级状态 -->
-              <div class="cluster-selection-section">
+              <!-- 文件升级状态：一行展示 文件名 / 状态 / 大小 -->
+              <div v-if="uploadUiMode === 1" class="cluster-selection-section">
                 <h4>{{ t('deviceUpgrade.sections.fileUpgradeStatus') }}</h4>
-                <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.fileName') }}</label>
-                  <div class="flex-1 p-2 border-1 border-round" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
-                    <span class="text-sm">
-                      {{ !ftpServerRunning ? t('deviceUpgrade.messages.pleaseStartFTP') : (updateFile || t('deviceUpgrade.messages.noFileSelected')) }}
-                    </span>
-                  </div>
-                </div>
-                <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.status') }}</label>
-                  <div class="flex-1 p-2 border-1 border-round flex align-items-center gap-2" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
-                    <template v-if="!ftpServerRunning">
-                      <span class="text-sm">-</span>
-                    </template>
-                    <template v-else>
-                      <i :class="selectedFileStatus.exists ? 'pi pi-check-circle text-green-600' : 'pi pi-exclamation-triangle text-orange-600'"></i>
-                      <span class="text-sm" :class="selectedFileStatus.exists ? 'text-green-700' : 'text-orange-700'">
-                        {{ selectedFileStatus.exists ? translateStatus('ready') : translateStatus('notFound') }}
+                <div class="file-status-row">
+                  <!-- 文件名 -->
+                  <div class="status-item">
+                    <label class="status-label font-semibold text-sm">{{ t('deviceUpgrade.labels.fileName') }}</label>
+                    <div class="flex-1 p-2 border-1 border-round" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
+                      <span class="text-sm">
+                        {{ !ftpServerRunning ? t('deviceUpgrade.messages.pleaseStartFTP') : (updateFile || t('deviceUpgrade.messages.noFileSelected')) }}
                       </span>
-                      <Tag
-                        v-if="selectedFileStatus.exists && selectedFileStatus.fileInfo"
-                        :value="selectedFileStatus.isValid ? translateStatus('valid') : translateStatus('invalid')"
-                        :severity="selectedFileStatus.isValid ? 'success' : 'warning'"
-                        class="text-xs"
-                      />
-                    </template>
+                    </div>
                   </div>
-                </div>
-                <div class="flex align-items-center mb-3 gap-3">
-                  <label class="w-8rem font-semibold text-sm">{{ t('deviceUpgrade.labels.size') }}</label>
-                  <div class="flex-1 p-2 border-1 border-round" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
-                    <span class="text-sm">
-                      {{ !ftpServerRunning ? '-' : (selectedFileStatus.exists && selectedFileStatus.fileInfo ? selectedFileStatus.fileInfo.sizeFormatted : '-') }}
-                    </span>
+                  <!-- 状态 -->
+                  <div class="status-item">
+                    <label class="status-label font-semibold text-sm">{{ t('deviceUpgrade.labels.status') }}</label>
+                    <div class="flex-1 p-2 border-1 border-round flex align-items-center gap-2" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
+                      <template v-if="!ftpServerRunning">
+                        <span class="text-sm">-</span>
+                      </template>
+                      <template v-else>
+                        <i :class="selectedFileStatus.exists ? 'pi pi-check-circle text-green-600' : 'pi pi-exclamation-triangle text-orange-600'"></i>
+                        <span class="text-sm" :class="selectedFileStatus.exists ? 'text-green-700' : 'text-orange-700'">
+                          {{ selectedFileStatus.exists ? translateStatus('ready') : translateStatus('notFound') }}
+                        </span>
+                        <Tag
+                          v-if="selectedFileStatus.exists && selectedFileStatus.fileInfo"
+                          :value="selectedFileStatus.isValid ? translateStatus('valid') : translateStatus('invalid')"
+                          :severity="selectedFileStatus.isValid ? 'success' : 'warning'"
+                          class="text-xs"
+                        />
+                      </template>
+                    </div>
+                  </div>
+                  <!-- 大小 -->
+                  <div class="status-item">
+                    <label class="status-label font-semibold text-sm">{{ t('deviceUpgrade.labels.size') }}</label>
+                    <div class="flex-1 p-2 border-1 border-round" :class="!ftpServerRunning ? 'file-status-disabled' : 'file-status-enabled'">
+                      <span class="text-sm">
+                        {{ !ftpServerRunning ? '-' : (selectedFileStatus.exists && selectedFileStatus.fileInfo ? selectedFileStatus.fileInfo.sizeFormatted : '-') }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- 版本信息组件 -->
-              <VersionInfo />
+              <NewUploadPanel v-else-if="uploadUiMode === 2" />
+
+              <!-- 版本信息 -->
+              <div class="cluster-selection-section version-info-fill">
+                <h4>{{ t('deviceUpgrade.sections.versionInfo') }}</h4>
+                <VersionInfo />
+              </div>
             </div>
           </div>
 
@@ -1138,22 +1143,9 @@ onUnmounted(() => {
                   :disabled="!canStartUpgrade"
                   size="small"
                 />
-                <Button
-                  :label="t('deviceUpgrade.buttons.stopUpgrade')"
-                  severity="danger"
-                  @click="stopUpgrade"
-                  :disabled="!upgradeStore.upgradeStatus.isUpgrading"
-                  size="small"
-                />
               </div>
 
-              <!-- 升级状态 -->
-              <div class="upgrade-status">
-                <p>{{ t('deviceUpgrade.labels.status') }} {{ translatedUpgradeStatusText }}</p>
-                <p v-if="upgradeStore.upgradeStatus.lastUpdate">
-                  {{ t('deviceUpgrade.messages.lastUpdate') }} {{ upgradeStore.upgradeStatus.lastUpdate.toLocaleString() }}
-                </p>
-              </div>
+              <!-- 升级状态已移除，根据需求不在设备升级卡片内显示 -->
             </div>
           </div>
         </div>
@@ -1192,6 +1184,8 @@ onUnmounted(() => {
               <span class="text-sm text-color-secondary">{{ t('deviceUpgrade.messages.noBauUpgradeResult', '暂无BAU升级结果，请先启动BAU升级') }}</span>
             </div>
           </div>
+
+          <div class="result-divider"></div>
 
           <!-- BCU/BMU升级执行结果详情 -->
           <div class="upgrade-result-section">
@@ -1284,6 +1278,7 @@ onUnmounted(() => {
     :modal="false"
     :header="t('password.header')"
     :style="{ width: '25rem' }"
+    @hide="cancelPwd"
   >
     <div class="flex flex-column gap-3">
       <InputText v-model="inputPwd" type="password" @keyup.enter="checkPwd" autofocus />
@@ -1359,6 +1354,10 @@ onUnmounted(() => {
   border-left: 4px solid var(--primary-color);
 }
 
+.version-info-fill {
+  display: block;
+}
+
 .cluster-selection-section h4,
 .bmu-params-section h4 {
   margin: 0 0 16px 0;
@@ -1426,20 +1425,7 @@ onUnmounted(() => {
   font-weight: 500;
 }
 
-.upgrade-status {
-  padding: 8px;
-  background: var(--surface-section);
-  border-radius: 8px;
-  border-left: 4px solid var(--primary-color);
-  margin-top: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.upgrade-status p {
-  margin: 4px 0;
-  font-size: 0.9rem;
-  color: var(--text-color);
-}
+/* 升级状态样式已移除 */
 
 /* 禁用状态样式 */
 .cluster-checkbox-compact:has(input:disabled) {
@@ -1474,12 +1460,10 @@ onUnmounted(() => {
 
 /* 升级结果展示区域 */
 .upgrade-result-section {
-  margin-top: 16px;
-  padding: 12px;
-  background: var(--surface-section);
-  border-radius: 8px;
-  border: 1px solid var(--surface-border);
-  border-left: 4px solid var(--primary-color);
+  margin-top: 12px;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
 }
 
 .upgrade-result-section h4 {
@@ -1552,7 +1536,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px; /* 适当增大字体，避免过小 */
 }
 
 .version-item label {
@@ -1582,4 +1566,95 @@ onUnmounted(() => {
 .blurred {
   filter: blur(4px);
 }
+/* FTP双列布局 */
+.ftp-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ftp-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ftp-field > label {
+  width: 4.75rem !important;
+  flex-shrink: 0;
+}
+
+.ftp-field :deep(.p-inputtext) {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .ftp-two-col { grid-template-columns: 1fr; }
+}
+
+/* 根目录与按钮同一行，缩小根目录宽度 */
+.ftp-root-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.ftp-root-input :deep(input) {
+  width: 100%;
+}
+
+.ftp-root-input {
+  flex: 0 1 420px; /* 进一步缩小显示宽度，约420px */
+  min-width: 200px; /* 保证在较窄时仍可展示 */
+}
+
+/* 保持按钮文字不换行，维持原视觉尺寸 */
+.ftp-root-row :deep(.p-button) {
+  white-space: nowrap;
+  min-width: 96px; /* 防止中文标签换行 */
+}
+
+/* 文件升级状态：三列紧凑布局 */
+.file-status-row {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr; /* 文件名列适当更宽，后两列等分 */
+  gap: 12px 12px; /* 列间距适当缩小，为文件名让出空间 */
+  align-items: center;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* 让标签更贴近其对应显示框 */
+  min-width: 0;
+}
+
+.status-label {
+  min-width: auto; /* 取消固定最小宽度，贴近显示框 */
+  width: auto;
+  white-space: nowrap;
+}
+
+.result-divider {
+  border-top: 1px solid var(--surface-border);
+  margin: 10px 0;
+}
+
+.compact-gap {
+  gap: 5px;
+}
+
+.compact-gap > label {
+  width: 4.75rem !important;
+  flex-shrink: 0;
+}
+
+/* 缩小标签固定宽度（仅限本组件） */
+/* 恢复标签宽度为原有类，不再强制重写 */
 </style>

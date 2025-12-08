@@ -55,6 +55,14 @@ export const useUpgradeStore = defineStore('upgrade', () => {
   }
   
   const updateFtpConfig = (config) => {
+    // 当FTP服务器正在运行时，不允许修改服务器相关参数
+    if (ftpServerRunning.value) {
+      const blockedKeys = ['host', 'port', 'user', 'password']
+      const hasBlocked = Object.keys(config || {}).some(k => blockedKeys.includes(k))
+      if (hasBlocked) {
+        return
+      }
+    }
     ftpConfig.value = { ...ftpConfig.value, ...config }
   }
   

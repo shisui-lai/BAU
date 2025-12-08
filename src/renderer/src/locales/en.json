@@ -36,6 +36,10 @@
       "sendingToTargets": "{className} is being sent to {count} targets, please wait for device response...",
       "parameterSendSuccess": "Parameter Send Success",
       "parameterSendFailed": "Parameter Send Failed",
+      "parameterValidationFailed": "Parameter validation failed",
+      "invalidNumberEmpty": "Input is empty",
+      "invalidNumberFormat": "Please enter a valid number",
+      "outOfRange": "Out of range: {range}",
       "parameterWriteSuccess": "{device}: {className} parameters successfully written to device (Response code: {code})",
       "parameterWriteFailed": "{device}: {className} parameter write failed (Response code: {code})",
       "startReadingParameters": "Start Reading Parameters",
@@ -763,7 +767,7 @@
     "discharge": "Discharge",
     "forbidCharge": "Forbid Charge",
     "forbidDischarge": "Forbid Discharge",
-    "standby": "Standby",
+    "forbidChargeDischarge": "Forbid Charge & Discharge",
     "alarm": "Alarm",
     "fault": "Fault",
     "chgPowerLatch": "Charge Power Latch",
@@ -960,6 +964,10 @@
       "minor": "Minor", 
       "normal": "Normal"
     },
+    "hardwareLegend": {
+      "faultOn": "Red means fault present",
+      "faultOff": "Green means no fault"
+    },
     "faultNames": {
       "clusterInterVoltageDiffFaultGrade": "Cluster Inter Voltage Diff Fault",
       "clusterInterCurrentDiffFaultGrade": "Cluster Inter Current Diff Fault",
@@ -991,7 +999,81 @@
       "cellDischargeOvertempFaultGrade": "Cell Discharge Overtemp Fault",
       "cellDischargeUndertempFaultGrade": "Cell Discharge Undertemp Fault",
       "cellSocTooHighFaultGrade": "Cell SOC Too High Fault",
-      "cellSocTooLowFaultGrade": "Cell SOC Too Low Fault"
+      "cellSocTooLowFaultGrade": "Cell SOC Too Low Fault",
+      "MainPosContactorFeedbackFault": "Main Positive Contactor Feedback Fault",
+      "MainPosHighSideFeedbackFault": "Main Positive High-Side Driver Feedback Fault",
+      "MainPosOxidation": "Main Positive Oxidation",
+      "MainPosAdhesion": "Main Positive Adhesion",
+      "MainPosContactorFaultSummary": "Main Positive Contactor Fault Summary",
+      "MainNegContactorFeedbackFault": "Main Negative Contactor Feedback Fault",
+      "MainNegHighSideFeedbackFault": "Main Negative High-Side Driver Feedback Fault",
+      "MainNegOxidation": "Main Negative Oxidation",
+      "MainNegAdhesion": "Main Negative Adhesion",
+      "MainNegContactorFaultSummary": "Main Negative Contactor Fault Summary",
+      "PrechargeContactorFeedbackFault": "Precharge Contactor Feedback Fault",
+      "PrechargeHighSideFeedbackFault": "Precharge High-Side Driver Feedback Fault",
+      "PrechargeOxidation": "Precharge Oxidation",
+      "PrechargeAdhesion": "Precharge Adhesion",
+      "PrechargeContactorFaultSummary": "Precharge Contactor Fault Summary",
+      "ContactorFaultSummary": "Contactor Fault Summary",
+      "IsolationSwitchFeedbackFault": "Isolation Switch Feedback Fault",
+      "CircuitBreakerFeedbackFault": "Circuit Breaker Feedback Fault",
+      "FanFeedbackFault": "Fan Feedback Fault",
+      "DCPowerKMFeedbackFault": "DC Power KM Feedback Fault",
+      "AccessControlFeedbackFault": "Door Access Feedback Fault",
+      "SPDFeedbackFault": "SPD Feedback Fault",
+      "ACVoltageFeedbackFault": "AC Voltage Feedback Fault",
+      "SmokeSensorFeedbackFault": "Smoke Sensor Feedback Fault",
+      "FireReleaseSignal": "Fire Release Signal",
+      "TempSensorFeedbackFault": "Temperature Sensor Feedback Fault",
+      "ExhaustSystemFeedbackFault": "Exhaust System Feedback Fault",
+      "AuxCircuitBreakerFeedbackFault": "Auxiliary Breaker Feedback Fault",
+      "HydrogenDetectorFeedbackFault": "Hydrogen Detector Feedback Fault",
+      "MSDFeedbackFault": "MSD Feedback Fault",
+      "EmergencyStopFeedbackFault": "Emergency Stop Feedback Fault",
+      "MainPosHighSideFeedbackFault2": "Main Positive High-Side Driver Feedback Fault",
+      "MainNegHighSideFeedbackFault2": "Main Negative High-Side Driver Feedback Fault",
+      "PrechargeHighSideFeedbackFault2": "Precharge High-Side Driver Feedback Fault",
+      "RedLampHighSideFeedbackFault": "Red Lamp High-Side Driver Feedback Fault",
+      "YellowLampHighSideFeedbackFault": "Yellow Lamp High-Side Driver Feedback Fault",
+      "GreenLampHighSideFeedbackFault": "Green Lamp High-Side Driver Feedback Fault",
+      "FanHighSideFeedbackFault2": "Fan High-Side Driver Feedback Fault",
+      "MainBreakerShuntHighSideFeedbackFault": "Main Breaker Shunt High-Side Driver Feedback Fault",
+      "DCPowerKMHighSideFeedbackFault2": "DC Power KM High-Side Driver Feedback Fault",
+      "PCSSealedWaveHighSideFeedbackFault": "PCS Sealed-Wave High-Side Driver Feedback Fault",
+      "AuxCircuitBreakerControlHighSideFeedbackFault": "Auxiliary Breaker Control High-Side Driver Feedback Fault",
+      "ExhaustSystemControlHighSideFeedbackFault": "Exhaust System Control High-Side Driver Feedback Fault",
+      "CoolingDeviceCommFault2": "Cooling Device Communication Fault",
+      "PCSCommFault2": "PCS Communication Fault",
+      "DehumidifierCommFault2": "Dehumidifier Communication Fault",
+      "FireDeviceCommFault2": "Fire Device Communication Fault",
+      "BMUCommFault2": "BMU Communication Fault",
+      "CANHallCommFault2": "CAN Hall Communication Fault",
+      "BCUCommFault2": "BCU Communication Fault",
+      "DaisyChainCommFault": "Daisy Chain Communication Fault",
+      "AFECommFault2": "AFE Communication Fault",
+      "BCUEnvSensorFault2": "BCU Environmental Sensor Fault",
+      "BPosSensorFault2": "B+ Sensor Fault",
+      "BNegSensorFault2": "B- Sensor Fault",
+      "PPosSensorFault2": "P+ Sensor Fault",
+      "PNegSensorFault2": "P- Sensor Fault",
+      "Fuse1TempSensorFault2": "Fuse1 Temperature Sensor Fault",
+      "Fuse2TempSensorFault2": "Fuse2 Temperature Sensor Fault",
+      "HallFault2": "Hall Sensor Fault",
+      "InvalidDataPresent2": "Invalid Data Present",
+      "FRAMFault2": "FRAM Fault",
+      "EEPROMFault2": "EEPROM Fault",
+      "FlashFault2": "Flash Memory Fault",
+      "VoltageAcqDisconnected2": "Voltage Acquisition Disconnected",
+      "TempAcqDisconnected2": "Temperature Acquisition Disconnected",
+      "ReservedFault2": "Reserved Fault",
+      "BMUDeviceCommFault2": "BMU Device Communication Fault",
+      "SingleCellDropped2": "Single Cell Dropped",
+      "SingleTempProbeDropped2": "Single Temp Probe Dropped",
+      "BMU1PowerConnectorTempDisconnected2": "BMU 1 Power Connector Temp Disconnected",
+      "BMU2PowerConnectorTempDisconnected2": "BMU 2 Power Connector Temp Disconnected",
+      "AFECommLost2": "AFE Communication Lost",
+      "BCUCommFault22": "BCU Communication Fault"
     }
   },
   "didoStatus": {
@@ -1071,7 +1153,16 @@
       "batteryInfo": "Battery Information",
       "clusterRatedParams": "Cluster Rated Parameters",
       "balanceParams": "Balance Parameters",
-      "deviceFactoryInfo": "Device Factory Information"
+      "tempControlStrategy": "Temperature Control Strategy",
+      "deviceFactoryInfo": "Device Factory Information",
+      
+      "bmuAfeCountConfig": "BMU/AFE Count Config",
+      "typeSystemDeviceConfig": "System & Device Types Config",
+      "basicFilterConfig": "Cell Voltage/Temperature Filter Config",
+      "delayConfig": "Delay Config",
+      "tempDeviceConfig": "Device Temperature Config",
+      "currentSensorConfig": "Current Sensor Config",
+      "batteryParamConfig": "Battery Param Config"
     },
     "errors": {
       "ipFormatError": "IP Address Format Error",
@@ -1111,12 +1202,23 @@
         "无制冷设备": "No Cooling Device",
         "科诺威水冷机": "Konov Water Cooler",
         "英维克": "Envicool",
-        "埃森特交流空调": "Essent AC Air Conditioner"
+        "埃森特交流空调": "Essent AC Air Conditioner",
+        "英维克-EMW30-50-80": "Envicool EMW30/50/80",
+        "均能水冷机-1": "Juneng Water Cooler - 1"
+      },
+      "电池厂家": {
+        "宁德280Ah(CB310)": "CATL 280Ah (CB310)",
+        "海辰280Ah(LFP71173207)": "Hithium 280Ah (LFP71173207)",
+        "兰280Ah(PC-0B1-72174L4-AH)": "Lan 280Ah (PC-0B1-72174L4-AH)",
+        "宁德280Ah(CB2W0)": "CATL 280Ah (CB2W0)",
+        "海辰280Ah(ST280P100A)": "Hithium 280Ah (ST280P100A)",
+        "亿纬314Ah(MB31)": "EVE 314Ah (MB31)",
+        "海辰314Ah(ST314P050A)": "Hithium 314Ah (ST314P050A)"
       },
       "除湿机设备类型": {
         "无除湿机设备": "No Dehumidifier",
         "除湿机-01": "Dehumidifier-01",
-        "02-除湿机-E-J-000113": "Dehumidifier-E-J-000113"
+        "02-除湿机-E-J-000113": "Dehumidifier E-J-000113"
       },
       "消防控制器类型": {
         "无消防控制器": "No Fire Controller",
@@ -1284,6 +1386,9 @@
       "remarks": "Remarks"
     },
     "noData": "No data available",
+    "messages": {
+      "validationFailed": "Parameter validation failed"
+    },
     "parameterClasses": {
       "clusterVoltage": "Cluster Voltage",
       "clusterTemperature": "Cluster Temperature",
@@ -1308,6 +1413,9 @@
       "startReading": "Start Reading",
       "stopReading": "Stop Reading",
       "sendParameters": "Set Parameters"
+    },
+    "messages": {
+      "validationFailed": "Parameter validation failed"
     },
     "table": {
       "parameterName": "Parameter Name",
@@ -1553,6 +1661,12 @@
       }
     },
     "clusterConfigParam": {
+      "remarks": {
+        "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克；3：埃森特交流空调；4：英维克-EMW30-50-80；5：均能水冷机-1": "0xFFFF: No Cooling Device; 1: Konow Water Cooler; 2: Envicool; 3: Essent AC; 4: Envicool EMW30/50/80; 5: Juneng Water Cooler - 1",
+        "0xFFFF：无除湿机设备；1：除湿机-01；2：02-除湿机-E-J-000113": "0xFFFF: No Dehumidifier; 1: Dehumidifier-01; 2: Dehumidifier E-J-000113"
+      }
+    },
+    "clusterConfigParam": {
       "label": {
         "BMU总数量": "Total Number of BMUs",
         "BMU下AFE数量": "Number of AFEs per BMU",
@@ -1633,6 +1747,26 @@
         "BMU温度数据类型": "BMU Temperature Data Type",
         "禁止使能簇": "Disable Cluster Enable",
         "簇压模式": "Cluster Pressure Mode",
+        "运行模式-制冷条件1-最大单体温度限制值": "Run Mode - Cooling Condition 1 - Max Cell Temp Limit",
+        "运行模式-制冷条件2-平均单体温度限制值": "Run Mode - Cooling Condition 2 - Avg Cell Temp Limit",
+        "运行模式-制冷点温度值": "Run Mode - Cooling Set Point",
+        "运行模式-制冷点回差值": "Run Mode - Cooling Hysteresis",
+        "运行模式-制热条件1-最小单体温度限制值": "Run Mode - Heating Condition 1 - Min Cell Temp Limit",
+        "运行模式-制热条件2-平均单体温度限制值": "Run Mode - Heating Condition 2 - Avg Cell Temp Limit",
+        "运行模式-制热点温度值": "Run Mode - Heating Set Point",
+        "运行模式-制热点回差值": "Run Mode - Heating Hysteresis",
+        "非运行模式-制冷条件1-最大单体温度限制值": "Idle Mode - Cooling Condition 1 - Max Cell Temp Limit",
+        "非运行模式-制冷条件2-平均单体温度限制值": "Idle Mode - Cooling Condition 2 - Avg Cell Temp Limit",
+        "非运行模式-制冷点温度值": "Idle Mode - Cooling Set Point",
+        "非运行模式-制冷点回差值": "Idle Mode - Cooling Hysteresis",
+        "非运行模式-制热条件1-最小单体温度限制值": "Idle Mode - Heating Condition 1 - Min Cell Temp Limit",
+        "非运行模式-制热条件2-平均单体温度限制值": "Idle Mode - Heating Condition 2 - Avg Cell Temp Limit",
+        "非运行模式-制热点温度值": "Idle Mode - Heating Set Point",
+        "非运行模式-制热点回差值": "Idle Mode - Heating Hysteresis",
+        "停机条件1-单体温差限制值": "Shutdown Condition 1 - Cell Temp Difference Limit",
+        "停机条件2-最大单体温度限制值": "Shutdown Condition 2 - Max Cell Temp Limit",
+        "风扇开启温度": "Fan Start Temperature",
+        "风扇停止温度": "Fan Stop Temperature",
         "单体电压滤波差值": "Cell Voltage Filter Difference",
         "单体电压权重系数": "Cell Voltage Weight Coefficient",
         "单体温度滤波差值": "Cell Temperature Filter Difference",
@@ -2686,6 +2820,9 @@
       "doParam": "DO Parameter",
       "doStatus": "DO Status"
     },
+    "messages": {
+      "validationFailed": "Parameter validation failed"
+    },
     "buttons": {
       "send": "Send",
       "executing": "Executing",
@@ -2897,7 +3034,8 @@
       "hostProtocol": "Host Protocol",
       "bcuProtocol": "BCU Protocol",
       "eventRecordVersion": "Event Record Version",
-      "soxAlgorithmVersion": "SOX Algorithm Version"
+      "soxAlgorithmVersion": "SOX Algorithm Version",
+      "mergeSplitAlgorithmVersion": "Merge/Split Cluster Algorithm Version"
     },
     "fields": {
       "sdCardTotalCapacity": "SD Card Total Capacity",
@@ -2910,7 +3048,8 @@
       "bauHostProtocolVersion": "BAU-Host Protocol Version",
       "bauBcuProtocolVersion": "BAU-BCU Protocol Version",
       "bauEventRecordVersion": "BAU Event Record Version",
-      "bauSoxAlgorithmVersion": "BAU-SOX Algorithm Version"
+      "bauSoxAlgorithmVersion": "BAU-SOX Algorithm Version",
+      "bauMergeSplitAlgorithmVersion": "BAU-Merge/Split Cluster Algorithm Version"
     },
     "status": {
       "sdCardPathNotExists": "SD Card Path Not Exists",
@@ -3188,9 +3327,11 @@
     "title": "Block Config Parameters",
     "sections": {
       "batteryConfig": "System Cluster Battery Config Parameters",
-      "commDevConfig": "System Communication Device Config Parameters",
+      "commDevConfig": "System Peripheral Device Config Parameters",
       "operateConfig": "System Operation Config Parameters",
-      "socConfig": "System Stack SOC Config Parameters"
+      "socConfig": "System Stack SOC Config Parameters",
+      "portConfig": "System Port Config Parameters",
+      "commonConfig": "Block Basic Config"
     },
     "table": {
       "parameterName": "Parameter Name",
@@ -3211,7 +3352,10 @@
       "readSuccess": "Parameters read successfully",
       "readError": "Failed to read parameters",
       "sendSuccess": "Parameters sent successfully",
-      "sendError": "Failed to send parameters"
+      "sendError": "Failed to send parameters",
+      "validationFailed": "Parameter validation failed",
+      "ipFormatError": "Invalid IP address format",
+      "ipFormatErrorDetail": "The following IP addresses are invalid. Please correct them before sending:\n{0}"
     },
     "parameterTypes": {
       "battery": "Battery Config",
@@ -3234,6 +3378,8 @@
       "ipAddress": "192.168.1.1"
     },
     "parameters": {
+      "实时数据记录周期": "Real-time Data Record Period",
+      "当前堆数": "Current Block Count",
       "BMU总数量": "Total BMU Count",
       "BMU下AFE数": "AFE Count under BMU",
       "AFE1下电池数量": "AFE1 Cell Count",
@@ -3349,8 +3495,8 @@
       "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；": "Each AFE can have different cell count; Total cells under BMU shall not exceed 128;",
       "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；": "Each AFE can have different temp count; Total temps under BMU shall not exceed 128;",
       "0-无PCS 1-双一力PCS": "0-No PCS 1-Dual One Power PCS",
-      "0-无制冷设备 1-三河同飞": "0-No Cooling Device 1-Sanhe Tongfei",
-      "0-无除湿空调 1-三河同飞": "0-No Dehumidifier 1-Sanhe Tongfei",
+      "0-无制冷设备 1-科诺威水冷机 2-英维克 3-埃森特交流空调 4-英维克-EMW30-50-80 5-均能水冷机-1": "0-No Cooling Device 1-Konow Water Cooler 2-Envicool 3-Essent AC 4-Envicool EMW30/50/80 5-Juneng Water Cooler - 1",
+      "0-无除湿空调 1-除湿机-01 2-02-除湿机-E-J-000113": "0-No Dehumidifier 1-Dehumidifier-01 2-Dehumidifier E-J-000113",
       "0-无I/O控制板 1-艾莫讯": "0-No I/O Controller 1-AimoXun",
       "0-网卡1 1-网卡2": "0-Network Card 1 1-Network Card 2",
       "0-不开启1-开启": "0-Disabled 1-Enabled",
@@ -3989,7 +4135,7 @@
     "title1": "System Times & Record",
     "title2": "Platform Time",
     "title3": "Device Time",
-    "buttonLable1": "Set Platform Time",
+    "buttonLable1": "Sync Platform Time",
     "title4": "System Boot Count",
     "title5": {
       "第1次系统记录": "First System Record",

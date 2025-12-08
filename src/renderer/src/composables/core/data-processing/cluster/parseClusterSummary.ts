@@ -22,8 +22,11 @@ export function parseClusterSummary(msg: any) {
     newData[sec.class] = [...sec.element]
   })
 
-  // 直接赋值，触发响应式更新
-  clusterCache.value[key] = newData
+  // 替换根对象，确保引用身份变化，触发响应式更新
+  clusterCache.value = { ...clusterCache.value, [key]: newData }
+
+  // 兼容的更新触发器（供部分页面建立依赖使用）
+  try { clusterSummaryTick.value++ } catch {}
 
   // 【已禁用】动态发现机制，改用配置驱动方式
   // ensureClusterOption(key)

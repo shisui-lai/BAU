@@ -3,8 +3,8 @@ import path from 'path'
 import { ensureDir, formatFileSuffix, formatDateTime, appendFileWithRetry, getCachedFreeDiskSpace } from './utils'
 import { ALARM_MAP, BLOCK_SUMMARY } from '../table.js'
 import { RUN_EXPORT_DIR, getDeviceDirSuffix } from './paths'
-const latest = { cellVoltage: {}, cellTemperature: {}, cellSOC: {}, cellSOH: {}, clusterSummary: {}, packSummary: {}, blockSummary: {} }
-const lastWritten = { cellVoltage: {}, cellTemperature: {}, cellSOC: {}, cellSOH: {}, clusterSummary: {}, packSummary: {}, blockSummary: {} }
+const latest = { cellVoltage: {}, cellTemperature: {}, cellSOC: {}, cellSOH: {}, clusterSummary: {}, packSummary: {}, blockSummary: {}, alarm: {} }
+const lastWritten = { cellVoltage: {}, cellTemperature: {}, cellSOC: {}, cellSOH: {}, clusterSummary: {}, packSummary: {}, blockSummary: {}, alarm: {} }
 const currentFileMap = new Map()
 const deviceOrder = new Map()
 const configSnapshotMap = new Map()
@@ -18,6 +18,8 @@ let bypassLowDiskCheck = false
 export function setDiskSpaceBypass(enabled) {
   bypassLowDiskCheck = !!enabled
 }
+const storedAlarms = new Map()
+const alarmStatusCache = new Map()
 function parseDevice(id) {
   const [bStr, cStr] = String(id).split('-')
   const block = parseInt(bStr) || 0
@@ -26,10 +28,22 @@ function parseDevice(id) {
 }
 function getCsvFilePath(deviceId, basename) {
   const { block, cluster } = parseDevice(deviceId)
-  const dirSuffix = getDeviceDirSuffix(deviceId)
-  const dir = path.join(RUN_EXPORT_DIR, `Block${block}_Cluster${cluster}_${dirSuffix}`)
+  const baseKey = cluster === 0 ? `${block}-0` : deviceId
+  const dirSuffix = getDeviceDirSuffix(baseKey)
+  const dir = cluster === 0
+    ? path.join(RUN_EXPORT_DIR, `Block${block}_${dirSuffix}`)
+    : path.join(RUN_EXPORT_DIR, `Block${block}_Cluster${cluster}_${dirSuffix}`)
   ensureDir(dir)
   const fileSuffix = formatFileSuffix(new Date())
+  return path.join(dir, `${basename}_${fileSuffix}.csv`)
+}
+function getAlarmCsvFilePath(deviceId) {
+  const { block } = parseDevice(deviceId)
+  const dirSuffix = getDeviceDirSuffix(`${block}-0`)
+  const dir = path.join(RUN_EXPORT_DIR, `Block${block}_${dirSuffix}`)
+  ensureDir(dir)
+  const fileSuffix = formatFileSuffix(new Date())
+  const basename = 'ErrorData'
   return path.join(dir, `${basename}_${fileSuffix}.csv`)
 }
 export function cacheSampleSemantic(label, dataList, deviceId, ts, meta) {
@@ -87,6 +101,7 @@ export function startSaveTimerSemantic() {
           if (label === 'clusterSummary') saveClusterSummarySemantic(dataListToWrite, id, now, metaToUse)
           if (label === 'packSummary') savePackSummarySemantic(dataListToWrite, id, now, metaToUse)
           if (label === 'blockSummary') saveBlockSummarySemantic(dataListToWrite, id, now, metaToUse)
+          if (label === 'alarm') saveAlarmSemantic(dataListToWrite, id, now)
           lastWritten[label][id] = { timestamp: newTs, dataList: dataListToWrite, meta: metaToUse }
         }
       })
@@ -464,7 +479,12 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
   }
   const filePath = currentFileMap.get(key) || getCsvFilePath(deviceId, basename)
   currentFileMap.set(key, filePath)
-  const fields = BLOCK_SUMMARY.filter((f) => typeof f.type === 'string' && !f.type.startsWith('skip'))
+  const fields = BLOCK_SUMMARY.filter((f) => {
+    const t = typeof f.type === 'string' ? f.type : ''
+    if (t.startsWith('skip')) return false
+    if ('bitsOf' in f || t === 'bit') return false
+    return true
+  })
   const header = ['ID', '导出时间', ...fields.map((f) => f.unit ? `${f.label}(${f.unit})` : f.label)].join(',')
   const stats = await fs.promises.stat(filePath).catch(() => null)
   if (!stats) {
@@ -479,6 +499,18 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
   const nowStr = formatDateTime(new Date(ts))
   const fmt = (f, v) => {
     const n = Number(v)
+    if (
+      f.key === 'EnableClusterStatus1' ||
+      f.key === 'EnableClusterStatus2' ||
+      f.key === 'CutoutClusterStatus1' ||
+      f.key === 'CutoutClusterStatus2'
+    ) {
+      if (Number.isFinite(n)) {
+        const bits = (n & 0x3FF).toString(2).padStart(10, '0')
+        return '\u200B' + bits
+      }
+      return v == null ? '/' : String(v)
+    }
     if (f.key === 'stackFaultStatus') {
       const m = { 0: '无故障', 1: '轻微', 2: '一般', 3: '严重' }
       return m[n] ?? String(v)
@@ -511,6 +543,141 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
   const idVal = nextId(key)
   const row = [idVal, nowStr, ...values].join(',') + '\r\n'
   await appendFileWithRetry(filePath, row)
+  await rotateIfNeeded(filePath, deviceId, basename, key, header)
+}
+function generateAlarmKey(deviceId, classification, bmuIndex, cellIndex, fault, level, cellIndexRelative) {
+  const safeCellIndex = cellIndex || cellIndexRelative || ''
+  return `${deviceId}:${classification}:${bmuIndex}:${safeCellIndex}:${fault}:${level}`
+}
+function generateAlarmKeyWithoutLevel(deviceId, classification, bmuIndex, cellIndex, fault, cellIndexRelative) {
+  const safeCellIndex = cellIndex || cellIndexRelative || ''
+  return `${deviceId}:${classification}:${bmuIndex}:${safeCellIndex}:${fault}`
+}
+function hasAlarmStatusChanged(deviceId, classification, bmuIndex, cellIndex, fault, level, actionValue, cellIndexRelative) {
+  const alarmKey = generateAlarmKey(deviceId, classification, bmuIndex, cellIndex, fault, level, cellIndexRelative)
+  const currentStatus = JSON.stringify({ classification, bmuIndex, cellIndex, fault, level })
+  const cachedStatus = alarmStatusCache.get(alarmKey)
+  if (!cachedStatus) {
+    alarmStatusCache.set(alarmKey, currentStatus)
+    return { isNew: true, isRecovered: false, hasChanged: false }
+  }
+  if (level === '恢复告警') {
+    return { isNew: false, isRecovered: false, hasChanged: false }
+  }
+  if (cachedStatus !== currentStatus) {
+    alarmStatusCache.set(alarmKey, currentStatus)
+    return { isNew: false, isRecovered: false, hasChanged: true }
+  }
+  return { isNew: false, isRecovered: false, hasChanged: false }
+}
+const ALARM_LEVEL_ORDER = { '严重': 3, '一般': 2, '轻微': 1 }
+export async function saveAlarmSemantic(dataList, deviceId, ts) {
+  const basename = 'ErrorData'
+  const key = `${deviceId}:${basename}`
+  if (isNewDay(key)) {
+    const np = getAlarmCsvFilePath(deviceId)
+    currentFileMap.set(key, np)
+    idCounters.set(key, 0)
+  }
+  const filePath = currentFileMap.get(key) || getAlarmCsvFilePath(deviceId)
+  currentFileMap.set(key, filePath)
+  const header = ['ID', '导出时间', '故障产生时间', '告警', '告警等级', '动作值', 'BMU编号', 'Cell/Temp绝对索引', 'Cell/Temp相对索引'].join(',')
+  const stats = await fs.promises.stat(filePath).catch(() => null)
+  if (!stats) {
+    await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
+  }
+  const nowStr = formatDateTime(new Date(ts))
+  const flatAlarms = []
+  for (const category of dataList) {
+    if (!category || !Array.isArray(category.element)) continue
+    for (const item of category.element) {
+      flatAlarms.push({ ...item, classification: category.classification })
+    }
+  }
+  const currentAlarmMap = new Map()
+  for (const item of flatAlarms) {
+    const keyNoLevel = generateAlarmKeyWithoutLevel(deviceId, item.classification, item.bmuIndex, item.cellIndex, item.fault, item.cellIndexRelative)
+    if (!currentAlarmMap.has(keyNoLevel)) currentAlarmMap.set(keyNoLevel, [])
+    currentAlarmMap.get(keyNoLevel).push(item)
+  }
+  const alarmsToStore = []
+  const baseTime = Date.now()
+  let timeOffset = 0
+  const getPreciseTime = () => baseTime + timeOffset++
+  for (const item of flatAlarms) {
+    const keyNoLevel = generateAlarmKeyWithoutLevel(deviceId, item.classification, item.bmuIndex, item.cellIndex, item.fault, item.cellIndexRelative)
+    const alarmKey = generateAlarmKey(deviceId, item.classification, item.bmuIndex, item.cellIndex, item.fault, item.level, item.cellIndexRelative)
+    let oldEntry = null
+    const possibleLevels = ['严重', '一般', '轻微']
+    for (const level of possibleLevels) {
+      const testKey = `${keyNoLevel}:${level}`
+      if (storedAlarms.has(testKey)) {
+        oldEntry = [testKey, storedAlarms.get(testKey)]
+        break
+      }
+    }
+    if (oldEntry) {
+      const [oldKey, oldAlarm] = oldEntry
+      const oldLevel = oldAlarm.level
+      const newLevel = item.level
+      const oldOrder = ALARM_LEVEL_ORDER[oldLevel] || 0
+      const newOrder = ALARM_LEVEL_ORDER[newLevel] || 0
+      if (oldLevel !== newLevel) {
+        if (newOrder > oldOrder) {
+          const currentTime = getPreciseTime()
+          alarmsToStore.push({ ...oldAlarm, level: `${oldLevel}→${newLevel} (升阶)`, levelValue: 0, timestamp: oldAlarm.timestamp || currentTime, alarmStatus: '告警升阶', actionValue: item.actionValue || '' })
+          storedAlarms.delete(oldKey)
+          alarmStatusCache.delete(oldKey)
+          storedAlarms.set(alarmKey, { ...item, classification: item.classification, timestamp: currentTime })
+          alarmStatusCache.set(alarmKey, JSON.stringify({ classification: item.classification, bmuIndex: item.bmuIndex, cellIndex: item.cellIndex, fault: item.fault, level: item.level }))
+          continue
+        } else if (newOrder < oldOrder) {
+          const currentTime = getPreciseTime()
+          alarmsToStore.push({ ...oldAlarm, level: `${oldLevel}-告警恢复`, levelValue: 0, timestamp: oldAlarm.timestamp || currentTime, alarmStatus: '已恢复', actionValue: item.actionValue || '' })
+          storedAlarms.delete(oldKey)
+          alarmStatusCache.delete(oldKey)
+          alarmsToStore.push({ ...item, alarmStatus: '新告警', actionValue: item.actionValue || '', timestamp: currentTime })
+          storedAlarms.set(alarmKey, { ...item, classification: item.classification, timestamp: currentTime })
+          alarmStatusCache.set(alarmKey, JSON.stringify({ classification: item.classification, bmuIndex: item.bmuIndex, cellIndex: item.cellIndex, fault: item.fault, level: item.level }))
+          continue
+        }
+      }
+    }
+    const status = hasAlarmStatusChanged(deviceId, item.classification, item.bmuIndex, item.cellIndex, item.fault, item.level, item.actionValue, item.cellIndexRelative)
+    if (status.isNew) {
+      const currentTime = getPreciseTime()
+      alarmsToStore.push({ ...item, alarmStatus: '新告警', actionValue: item.actionValue || '', timestamp: currentTime })
+      storedAlarms.set(alarmKey, { ...item, classification: item.classification, timestamp: currentTime })
+    } else if (status.hasChanged) {
+      const currentTime = getPreciseTime()
+      alarmsToStore.push({ ...item, alarmStatus: '新告警', actionValue: item.actionValue || '', timestamp: currentTime })
+      const existingAlarm = storedAlarms.get(alarmKey)
+      if (existingAlarm) {
+        alarmsToStore.push({ ...existingAlarm, level: (existingAlarm.level || '') + '-告警恢复', levelValue: 0, timestamp: existingAlarm.timestamp || currentTime, alarmStatus: '已恢复', actionValue: item.actionValue || '' })
+      }
+      storedAlarms.set(alarmKey, { ...item, classification: item.classification, timestamp: currentTime })
+    } else {
+      if (item.level === '恢复告警') {
+        const currentTime = getPreciseTime()
+        alarmsToStore.push({ ...item, alarmStatus: '已恢复', actionValue: item.actionValue || '', timestamp: currentTime })
+        storedAlarms.delete(alarmKey)
+        alarmStatusCache.delete(alarmKey)
+      } else {
+        const existingAlarm = storedAlarms.get(alarmKey)
+        if (existingAlarm) {
+          const currentTime = getPreciseTime()
+          storedAlarms.set(alarmKey, { ...existingAlarm, actionValue: item.actionValue, timestamp: currentTime })
+        }
+      }
+    }
+  }
+  alarmsToStore.sort((a, b) => a.timestamp - b.timestamp)
+  for (const item of alarmsToStore) {
+    const idVal = nextId(key)
+    const occur = formatDateTime(new Date(item.timestamp))
+    const row = [idVal, nowStr, occur, item.faultZh || item.fault, item.level || '', item.actionValue || '', item.bmuIndex || '', item.cellIndex || '', item.cellIndexRelative || ''].join(',') + '\r\n'
+    await appendFileWithRetry(filePath, row)
+  }
   await rotateIfNeeded(filePath, deviceId, basename, key, header)
 }
 // 监听来自主进程的磁盘空间决策（继续/停止）

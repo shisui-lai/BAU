@@ -499,12 +499,51 @@ function stopReadingEvent(blockId, wasCanceled = false, hasError = false) {
         console.warn(`[MQTT Child] 事件记录读取部分成功: blockId=${savedBlockId}, 缓存数据=${cachedCount}/${eventReadingTotal}`)
       }
 
-      // 生成CSV文件
       try {
         generateEventRecordCSV(savedBlockId, currentSaveDir, cachedCount)
       } catch (csvError) {
         console.error(`[MQTT Child] CSV文件生成失败: ${csvError.message}`, csvError)
-        // CSV生成失败不影响完成通知的发送
+      }
+
+      try {
+        const sorted = Array.from(eventRecordDataCache.entries()).sort((a, b) => a[0] - b[0])
+        const tail = sorted.slice(Math.max(0, sorted.length - 100))
+        const rows = []
+        let idCounter = 1
+        const pad2 = (n) => String(n).padStart(2, '0')
+        for (const [, rec] of tail) {
+          const bc = rec.baseConfig || {}
+          const ts = (bc.Year !== undefined && bc.Month !== undefined && bc.Day !== undefined && bc.Hour !== undefined && bc.Minute !== undefined && bc.Second !== undefined)
+            ? `${bc.Year}-${bc.Month}-${bc.Day}-${pad2(bc.Hour)}:${pad2(bc.Minute)}:${pad2(bc.Second)}`
+            : '/'
+          const eventTypeNum = Number(bc.EventType || 0)
+          const row = {
+            ID: idCounter++,
+            Timestamp: ts,
+            EventType: formatEventRecordField('EventType', bc.EventType, bc),
+            Param1: formatEventRecordField('Param1', bc.Param1, bc),
+            Param2: formatEventRecordField('Param2', bc.Param2, bc),
+            Param3: formatEventRecordField('Param3', bc.Param3, bc),
+            Param4: formatEventRecordField('Param4', bc.Param4, bc),
+            SoftwareVersion: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('SoftwareVersion', bc.SoftwareVersion, bc),
+            SOXAlgorithmVersion: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('SOXAlgorithmVersion', bc.SOXAlgorithmVersion, bc),
+            ClusterExitMergeAlgorithmVersion: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('ClusterExitMergeAlgorithmVersion', bc.ClusterExitMergeAlgorithmVersion, bc),
+            NetworkCard2IPAddress: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('NetworkCard2IPAddress', bc.NetworkCard2IPAddress, bc),
+            StackRunStatus: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('StackRunStatus', bc.StackRunStatus, bc),
+            StackTotalFault: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('StackTotalFault', bc.StackTotalFault, bc),
+            StackChargeDischargeStatus: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('StackChargeDischargeStatus', bc.StackChargeDischargeStatus, bc)
+          }
+          rows.push(row)
+        }
+        process.send({
+          type: 'readEventRecentFinal',
+          data: {
+            blockId: savedBlockId,
+            rows
+          }
+        })
+      } catch (e) {
+        console.warn('[MQTT Child] 生成最近100条事件数据失败', e)
       }
 
       process.send({

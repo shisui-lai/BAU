@@ -22,8 +22,11 @@ export function parsePackSummary(msg: any) {
     newData[sec.class] = [...sec.element]
   })
 
-  // 直接赋值，触发响应式更新
-  packCache.value[key] = newData
+  // 替换根对象，确保引用身份变化，触发响应式更新
+  packCache.value = { ...packCache.value, [key]: newData }
+
+  // 兼容触发器（供部分页面建立依赖使用）
+  try { packSummaryTick.value++ } catch {}
 
   /* 维护堆簇下拉 */
   // 【已禁用】动态发现机制，改用配置驱动方式

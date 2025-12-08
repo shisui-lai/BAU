@@ -17,15 +17,22 @@
           </div>
         </div>
         <!-- 系统当前时间 -->
-        <div class="time-card" v-if="realTime">
+        <div class="time-card" v-if="realTime || blockTimeReadText">
           <div class="card-header">
             <i class="pi pi-history mr-2"></i>
             <span class="text-lg font-medium">{{ t('eventTime.title3') }}</span>
           </div>
-          <div class="card-content">
+          <div class="card-content time-read-content">
             <span class="ml-2 text-xl cursor-pointer">
-              {{ realTime }}
+              {{  realTime }}
             </span>
+            <Button
+              class="p-button-sm p-button-outlined"
+              :label="t('eventTime.buttonLable1')"
+              icon="pi pi-sync"
+              @click="syncDeviceTime"
+              style="min-width: 4rem; margin-left: auto; margin-right: 12px;"
+            />
           </div>
         </div>
         <!-- 系统启动次数 -->
@@ -37,6 +44,30 @@
           <div class="card-content">
             <span class="ml-2 text-xl">{{ bootCount.value }}</span>
           </div>
+        </div>
+      </div>
+
+      <!-- 设备时间设置 -->
+      <div class="time-card">
+        <div class="card-header">
+          <i class="pi pi-clock mr-2"></i>
+          <span class="text-lg font-medium">{{ t('config.deviceManagementPage.labels.setTime') }}</span>
+        </div>
+        <div class="card-content time-set-content">
+          <InputNumber class="time-input" v-model="timeSetData.Year" :useGrouping="false" />
+          <span>{{ t('config.deviceManagementPage.labels.year') }}</span>
+          <InputNumber class="time-input" v-model="timeSetData.Month" :useGrouping="false" />
+          <span>{{ t('config.deviceManagementPage.labels.month') }}</span>
+          <InputNumber class="time-input" v-model="timeSetData.Day" :useGrouping="false" />
+          <span>{{ t('config.deviceManagementPage.labels.day') }}</span>
+          <InputNumber class="time-input" v-model="timeSetData.Hour" :useGrouping="false" />
+          <span>{{ t('config.deviceManagementPage.labels.hour') }}</span>
+          <InputNumber class="time-input" v-model="timeSetData.Minute" :useGrouping="false" />
+          <span>{{ t('config.deviceManagementPage.labels.minute') }}</span>
+          <InputNumber class="time-input" v-model="timeSetData.Second" :useGrouping="false" />
+          <span>{{ t('config.deviceManagementPage.labels.second') }}</span>
+          <Button :label="t('config.deviceManagementPage.buttons.readCurrent')" size="small" severity="info" @click="loadCurrentTimeToSet" />
+          <Button :label="t('config.deviceManagementPage.buttons.set')" size="small" severity="warning" @click="sendTimeSet" />
         </div>
       </div>
 
@@ -85,7 +116,7 @@
     </div>
 
     <!-- 事件记录读取 -->
-    <div class="card readEvent p-4 mb-6">
+    <div class="card readEvent p-4 mb-3">
       <h5>{{ t('eventTime.title6') }}</h5>
       <!-- 导出操作卡片 -->
       <div class="export-card mb-3 p-4 rounded-lg">
@@ -177,6 +208,27 @@
         </DataTable>
       </div>
     </div>
+    <div class="card p-4 mt-1">
+      <h5>最近100条事件</h5>
+      <div class="event-data-table-wrapper">
+        <DataTable :value="recentStore.list" showGridlines scrollable scrollHeight="640px">
+          <Column field="ID" header="序号" />
+          <Column field="Timestamp" header="时间戳" />
+          <Column field="EventType" header="事件类型" />
+          <Column field="Param1" header="参数1" />
+          <Column field="Param2" header="参数2" />
+          <Column field="Param3" header="参数3" />
+          <Column field="Param4" header="参数4" />
+          <Column field="SoftwareVersion" header="软件版本号" />
+          <Column field="SOXAlgorithmVersion" header="SOX算法版本号" />
+          <Column field="ClusterExitMergeAlgorithmVersion" header="退并簇算法版本号" />
+          <Column field="NetworkCard2IPAddress" header="网卡2 IP地址" />
+          <Column field="StackRunStatus" header="堆运行状态" />
+          <Column field="StackTotalFault" header="堆总故障" />
+          <Column field="StackChargeDischargeStatus" header="允充允放状态" />
+        </DataTable>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -187,7 +239,11 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import { useBlockStore } from '@/stores/device/blockStore'
 import { useEventStore } from '@/stores/eventStore'
+import { useRecentEventsStore } from '@/stores/recentEventsStore'
+import { parseParameterReadResponse, parseParameterWriteResponse, serializeParameterData } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
+import { BLOCK_TIME_CFG_R } from '../../../../../main/table.js'
 import Button from 'primevue/button'
+import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import Checkbox from 'primevue/checkbox'
 import DataTable from 'primevue/datatable'
@@ -199,6 +255,7 @@ const toast = useToast()
 const confirm = useConfirm()
 const blockStore = useBlockStore()
 const exportStore = useEventStore()
+const recentStore = useRecentEventsStore()
 
 // 缓存Key
 const LS_TIME_KEY = 'eventTime:times'
@@ -207,8 +264,8 @@ const LS_EVENT_KEY = 'eventTime:events'
 // 实时时间
 const currentTime = ref('')
 let timer = null
-const updateTime = () => {
-  currentTime.value = new Date().toLocaleString('zh-CN', {
+  const updateTime = () => {
+    currentTime.value = new Date().toLocaleString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -219,9 +276,48 @@ const updateTime = () => {
   })
 }
 
+// 同步设备时间到平台时间（将电脑当前时间写入设备）
+const syncDeviceTime = async () => {
+  try {
+    loadCurrentTimeToSet()
+    await sendTimeSet()
+    // 写入后主动读取一次设备时间以刷新显示
+    await requestBlockTimeRead()
+  } catch (error) {
+    // 失败提示在 sendTimeSet 的 IPC 回调中已处理，此处不重复提示
+    console.error('[EventTime] 同步设备时间失败:', error)
+  }
+}
+
 // 主数据存储
 const timeElements = ref([])
 const eventData = ref([])
+
+// 设备时间读取回显（来自 BLOCK_TIME_CFG_R）
+const blockTimeReadText = ref('')
+
+// 设备时间设置数据与电脑时间同步
+const nowForSet = new Date()
+const timeSetData = ref({
+  Year: nowForSet.getFullYear(),
+  Month: nowForSet.getMonth() + 1,
+  Day: nowForSet.getDate(),
+  Hour: nowForSet.getHours(),
+  Minute: nowForSet.getMinutes(),
+  Second: nowForSet.getSeconds()
+})
+
+const loadCurrentTimeToSet = () => {
+  const n = new Date()
+  timeSetData.value = {
+    Year: n.getFullYear(),
+    Month: n.getMonth() + 1,
+    Day: n.getDate(),
+    Hour: n.getHours(),
+    Minute: n.getMinutes(),
+    Second: n.getSeconds()
+  }
+}
 
 // ========== 导出相关变量 ==========
 // 导出数量
@@ -444,6 +540,38 @@ const requestSysRunTime = async () => {
   }
 }
 
+// 设备时间读取（BLOCK_TIME_CFG_R）
+const requestBlockTimeRead = async () => {
+  try {
+    const topic = buildTopic('bms/host/s2d/b{block}/block_time_cfg_r')
+    const ipc = window.electron?.ipcRenderer
+    ipc?.once('BLOCK_TIME_CFG_R', (_, mqttMessage) => {
+      const parsed = parseParameterReadResponse(mqttMessage, '[EventPage][BlockTimeCfg]', '设备时间设置')
+      if (!parsed) return
+      if (parsed.result?.error) {
+        const deviceName = mqttMessage.blockId ? `堆${mqttMessage.blockId}` : ''
+        toast.add({ severity: 'error', summary: t('toast.common.executeFailed'), detail: `${deviceName}: ${parsed.result.message || t('toast.common.unknownError')}`, life: 4000 })
+        return
+      }
+      const data = parsed.data || {}
+      const pad = (n) => String(n).padStart(2, '0')
+      const txt = `${data.Year}-${data.Month}-${data.Day}-${pad(data.Hour)}:${pad(data.Minute)}:${pad(data.Second)}`
+      blockTimeReadText.value = txt
+    })
+    await window.electronAPI.mqttPublish(topic, 'ff')
+  } catch (error) {
+    console.error('[EventTime] 设备时间读取失败:', error)
+    if (error.message !== '请先选择堆') {
+      toast.add({
+        severity: 'error',
+        summary: '请求失败',
+        detail: error.message,
+        life: 3000
+      })
+    }
+  }
+}
+
 // 请求事件记录标志位数据
 const requestEventRecordFlag = async () => {
   try {
@@ -535,6 +663,99 @@ const registerListener = () => {
   }
   
   window.electron.ipcRenderer.on('SYS_RUN_TIME_R', listener)
+}
+
+// 设备时间 IPC 事件监听（BLOCK_TIME_CFG_R/W）
+let timeCfgReadListener = null
+let timeCfgWriteListener = null
+let ipcEventTimeListenersRegistered = false
+try { ipcEventTimeListenersRegistered = Boolean(window.__bauEventTimeListenersRegistered) } catch (_) {}
+const registerBlockTimeCfgListeners = () => {
+  const ipc = window.electron?.ipcRenderer
+  if (!ipc) return
+
+  if (timeCfgReadListener) ipc.removeListener('BLOCK_TIME_CFG_R', timeCfgReadListener)
+  if (timeCfgWriteListener) ipc.removeListener('BLOCK_TIME_CFG_W', timeCfgWriteListener)
+  if (ipcEventTimeListenersRegistered) {
+    try {
+      const prevRead = window.__bauEventTimeCfgReadListener
+      if (prevRead) ipc.removeListener('BLOCK_TIME_CFG_R', prevRead)
+    } catch (_) {}
+    try {
+      const prevWrite = window.__bauEventTimeCfgWriteListener
+      if (prevWrite) ipc.removeListener('BLOCK_TIME_CFG_W', prevWrite)
+    } catch (_) {}
+  }
+
+  timeCfgReadListener = (_, mqttMessage) => {
+    const parsed = parseParameterReadResponse(mqttMessage, '[EventPage][BlockTimeCfg]', '设备时间设置')
+    if (!parsed) return
+    if (parsed.result?.error) {
+      const deviceName = mqttMessage.blockId ? `堆${mqttMessage.blockId}` : ''
+      toast.add({
+        severity: 'error',
+        summary: t('toast.common.executeFailed'),
+        detail: `${deviceName}: ${parsed.result.message || t('toast.common.unknownError')}`,
+        life: 4000
+      })
+      return
+    }
+    const data = parsed.data || {}
+    const pad = (n) => String(n).padStart(2, '0')
+    const txt = `${data.Year}-${data.Month}-${data.Day}-${pad(data.Hour)}:${pad(data.Minute)}:${pad(data.Second)}`
+    blockTimeReadText.value = txt
+  }
+
+  ipc.on('BLOCK_TIME_CFG_R', timeCfgReadListener)
+  ipcEventTimeListenersRegistered = true
+  try {
+    window.__bauEventTimeCfgReadListener = timeCfgReadListener
+    window.__bauEventTimeListenersRegistered = true
+  } catch (_) {}
+}
+
+// 设置设备时间（BLOCK_TIME_CFG_W）
+const sendTimeSet = async () => {
+  const blockInfo = getCurrentBlockInfo()
+  if (!blockInfo) {
+    toast.add({
+      severity: 'error',
+      summary: t('toast.common.executeFailed'),
+      detail: t('toast.remoteControl.selectTargetBlock'),
+      life: 3000
+    })
+    return
+  }
+  try {
+    const startOffset = 0
+    const registerCount = Math.ceil(Object.keys(timeSetData.value).length * 2 / 2)
+    const payloadHex = serializeParameterData(timeSetData.value, BLOCK_TIME_CFG_R, startOffset, registerCount, '[EventPage][BlockTimeCfg]', '设备时间设置')
+    const offsetHex = '0000'
+    const byteLen = payloadHex.length / 2
+    const lengthHexLE = ((byteLen & 0xFF).toString(16).padStart(2, '0')) + (((byteLen >> 8) & 0xFF).toString(16).padStart(2, '0'))
+    const finalPayload = `${offsetHex}${lengthHexLE}${payloadHex}`
+    const topic = buildTopic('bms/host/s2d/b{block}/block_time_cfg_w')
+    const ipc = window.electron?.ipcRenderer
+    ipc?.once('BLOCK_TIME_CFG_W', (_, mqttMessage) => {
+      const parsed = parseParameterWriteResponse(mqttMessage, '[EventPage][BlockTimeCfg]', '设备时间设置')
+      const deviceName = mqttMessage.blockId ? `堆${mqttMessage.blockId}` : ''
+      if (parsed?.result?.success) {
+        toast.add({ severity: 'success', summary: t('toast.common.executeSuccess'), detail: `${deviceName}: ${t('config.deviceManagementPage.sections.timeSettings')}`, life: 3000 })
+      } else {
+        const codeHex = mqttMessage?.data?.code !== undefined ? ` (0x${Number(mqttMessage.data.code).toString(16).toUpperCase()})` : ''
+        toast.add({ severity: 'error', summary: t('toast.common.executeFailed'), detail: `${deviceName}: ${parsed?.result?.message || t('toast.common.unknownError')}${codeHex}`, life: 5000 })
+      }
+    })
+    await window.electronAPI.mqttPublish(topic, finalPayload)
+  } catch (error) {
+    console.error('[EventTime] 设备时间设置失败:', error)
+    toast.add({
+      severity: 'error',
+      summary: t('toast.common.executeFailed'),
+      detail: error.message,
+      life: 3000
+    })
+  }
 }
 
 // 事件记录标志位 IPC 事件监听
@@ -819,6 +1040,10 @@ window.electron.ipcRenderer.on('export-completed', (_, data) => {
     })
   }
 })
+window.electron.ipcRenderer.on('readEventRecentFinal', (_, payload) => {
+  const { blockId, rows } = payload || {}
+  recentStore.setRows(blockId, Array.isArray(rows) ? rows : [])
+})
 
 // 监听导出取消
 window.electron.ipcRenderer.on('export-canceled', (_, data) => {
@@ -963,9 +1188,12 @@ onMounted(async () => {
   updateTime()
   timer = setInterval(updateTime, 1000)
 
+  recentStore.restore()
+
   // 注册IPC监听器
   registerListener()
   registerEventFlagListener()
+  registerBlockTimeCfgListeners()
 
   // 如果有选中的堆，启动周期性读取
   if (blockStore.selectedBlockForView) {
@@ -984,6 +1212,18 @@ onBeforeUnmount(() => {
     window.electron.ipcRenderer.removeListener('SYS_RUN_TIME_R', listener)
     listener = null
   }
+  if (timeCfgReadListener) {
+    window.electron.ipcRenderer.removeListener('BLOCK_TIME_CFG_R', timeCfgReadListener)
+    timeCfgReadListener = null
+  }
+  if (timeCfgWriteListener) {
+    window.electron.ipcRenderer.removeListener('BLOCK_TIME_CFG_W', timeCfgWriteListener)
+    timeCfgWriteListener = null
+  }
+  try {
+    window.__bauEventTimeListenersRegistered = false
+    window.__bauEventTimeCfgReadListener = null
+    } catch (_) {}
   if (eventFlagListener) {
     window.electron.ipcRenderer.removeListener('EVENT_RECORD_FLAG_R', eventFlagListener)
     eventFlagListener = null
@@ -997,8 +1237,16 @@ onBeforeUnmount(() => {
   // 清理删除事件记录应答监听器
   window.electron.ipcRenderer.removeAllListeners('CLEAR_EVENT_RECORD_NUM')
   window.electron.ipcRenderer.removeAllListeners('update-readEventProgress')
+  window.electron.ipcRenderer.removeAllListeners('readEventRecentFinal')
 })
 </script>
+
+<style scoped>
+.time-input { width: 46px; }
+.time-input :deep(input) { width: 100% !important; text-align: left !important; }
+.time-set-card { border: 1px solid var(--surface-border); border-radius: 8px; }
+.time-card .time-set-content { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-start; }
+</style>
 
 <style lang="less" scoped>
 /* 页面容器 - 防止内容溢出导致页面左移 */
@@ -1046,7 +1294,15 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     padding: 1rem;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+    min-height: 56px;
+    box-sizing: border-box;
+    > span { display: flex; align-items: center; line-height: 1; }
+    .time-read-content {
+      justify-content: space-between;
+    }
   }
 }
 

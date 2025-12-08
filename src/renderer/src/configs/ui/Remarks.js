@@ -15,8 +15,8 @@ export const BASE_PARAM_REMARKS = {
   'InternalMode': '0:自动均衡；1:手动均衡',
   'RunMode': '0x5BB5运维模式；0x1221非运维模式（默认）',
   'PcsType': '0xFFFF：无PCS；1：星星PCS；2：双一力PCS-01；3：科华PCS',
-  'CoolDeviceType': '0xFFFF：无制冷设备；1：柯诺威水冷机；2：英维克；3：埃森特交流空调',
-  'DehumidifyType': '0xFFFF：无除湿机设备；1：除湿机-01',
+  'CoolDeviceType': '0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克；3：埃森特交流空调；4：英维克-EMW30-50-80；5：均能水冷机-1',
+  'DehumidifyType': '0xFFFF：无除湿机设备；1：除湿机-01；2：02-除湿机-E-J-000113',
   'FireCtrlType': '0xFFFF：无消防控制器；1：三沃力源（sanvalor）',
   
   // 基础设置备注

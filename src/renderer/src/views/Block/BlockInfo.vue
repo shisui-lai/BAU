@@ -4,14 +4,11 @@
       <!-- 使用标签页代替手风琴 -->
       <TabView v-model:activeIndex="activeTabIndex" class="block-info-tabs">
         <!-- 堆汇总信息标签页 -->
-        <TabPanel :header="t('config.blockInfoPage.sections.summaryInfo')">
+      <TabPanel :header="t('config.blockInfoPage.sections.summaryInfo')">
           <div class="info-content" v-if="activeTabIndex === 0">
-            <!-- 空数据提示 -->
             <div v-if="processedSummaryData.length === 0" class="empty-message">
               {{ selectedBlock ? t('config.blockInfoPage.messages.noData') : t('config.blockInfoPage.messages.selectBlock') }}
             </div>
-            
-            <!-- 轻量级原生表格 -->
             <div v-else class="table-wrapper">
               <table class="lightweight-table block-summary-table">
                 <thead>
@@ -27,10 +24,30 @@
                 <tbody>
                   <tr v-for="(row, index) in processedSummaryData" :key="index" :class="{ 'striped': index % 2 === 1 }">
                     <td class="font-medium">{{ row.leftLabelTranslated }}</td>
-                    <td>{{ row.leftValueFormatted }}</td>
+                    <td>
+                      <div v-if="row.leftRenderType === 'cluster-bits'" class="cluster-bits">
+                        <div v-for="(checked, i) in row.leftBits" :key="i" class="cluster-bit-item">
+                          <label>
+                            <input type="checkbox" :checked="checked" disabled />
+                            <span class="bit-label">{{ (row.leftRangeStart || 1) + i }}</span>
+                          </label>
+                        </div>
+                      </div>
+                      <span v-else>{{ row.leftValueFormatted }}</span>
+                    </td>
                     <td>{{ row.leftUnitDisplay }}</td>
                     <td class="font-medium">{{ row.rightLabelTranslated }}</td>
-                    <td>{{ row.rightValueFormatted }}</td>
+                    <td>
+                      <div v-if="row.rightRenderType === 'cluster-bits'" class="cluster-bits">
+                        <div v-for="(checked, i) in row.rightBits" :key="i" class="cluster-bit-item">
+                          <label>
+                            <input type="checkbox" :checked="checked" disabled />
+                            <span class="bit-label">{{ (row.rightRangeStart || 1) + i }}</span>
+                          </label>
+                        </div>
+                      </div>
+                      <span v-else>{{ row.rightValueFormatted }}</span>
+                    </td>
                     <td>{{ row.rightUnitDisplay }}</td>
                   </tr>
                 </tbody>
@@ -42,12 +59,9 @@
         <!-- 堆系统概要信息标签页 -->
         <TabPanel :header="t('config.blockInfoPage.sections.systemAbstract')">
           <div class="info-content" v-if="activeTabIndex === 1">
-            <!-- 空数据提示 -->
             <div v-if="processedSysAbstractData.length === 0" class="empty-message">
               {{ selectedBlock ? t('config.blockInfoPage.messages.noData') : t('config.blockInfoPage.messages.selectBlock') }}
             </div>
-            
-            <!-- 轻量级原生表格 -->
             <div v-else class="table-wrapper">
               <table class="lightweight-table sys-abstract-table">
                 <thead>
@@ -138,12 +152,19 @@ const processedSummaryData = computed(() => {
     leftLabelTranslated: translateParameterName(row.leftLabel),
     leftValueFormatted: formatValue(row.leftValue, row.leftScale, row.leftLabel),
     leftUnitDisplay: getFieldUnit(row.leftLabel) || '-',
+    leftRenderType: row.leftRenderType,
+    leftBits: row.leftBits,
+    leftRangeStart: row.leftRangeStart,
     // 右侧列数据
     rightLabelTranslated: row.rightLabel ? translateParameterName(row.rightLabel) : '',
     rightValueFormatted: row.rightLabel ? formatValue(row.rightValue, row.rightScale, row.rightLabel) : '-',
-    rightUnitDisplay: row.rightLabel ? (getFieldUnit(row.rightLabel) || '-') : '-'
+    rightUnitDisplay: row.rightLabel ? (getFieldUnit(row.rightLabel) || '-') : '-',
+    rightRenderType: row.rightRenderType,
+    rightBits: row.rightBits,
+    rightRangeStart: row.rightRangeStart
   }))
 })
+
 
 // 预处理堆系统概要数据（避免模板中重复调用函数）
 const processedSysAbstractData = computed(() => {
@@ -153,6 +174,10 @@ const processedSysAbstractData = computed(() => {
     unitDisplay: getFieldUnit(row.label) || '-'
   }))
 })
+
+
+ 
+
 
 // 获取堆显示名称
 const getBlockDisplayName = (blockKey) => {
@@ -422,6 +447,19 @@ const updateBlockSummaryData = () => {
       }
     })
     
+    // 提取并移除需要聚合显示的寄存器
+    const takeByLabel = (lbl) => {
+      const idx = allItems.findIndex(it => it.label === lbl)
+      if (idx >= 0) return allItems.splice(idx, 1)[0]
+      return null
+    }
+    const enable1 = takeByLabel('使能簇状态1')
+    const enable2 = takeByLabel('使能簇状态2')
+    const cutout1 = takeByLabel('切出簇状态1')
+    const cutout2 = takeByLabel('切出簇状态2')
+
+    const buildBits = (val) => Array.from({ length: 10 }, (_, i) => Boolean(((Number(val) || 0) >> i) & 1))
+
     // 将数据转换为左右两列的格式
     const tableData = []
     for (let i = 0; i < allItems.length; i += 2) {
@@ -435,6 +473,32 @@ const updateBlockSummaryData = () => {
         rightLabel: rightItem ? rightItem.label : '',
         rightValue: rightItem ? rightItem.value : null,
         rightScale: rightItem ? rightItem.scale : 1
+      })
+    }
+
+    // 追加聚合显示的两行（使能簇状态 / 切出簇状态）
+    if (enable1 || enable2) {
+      tableData.push({
+        leftLabel: '使能簇状态1',
+        leftRenderType: 'cluster-bits',
+        leftBits: buildBits(enable1 ? enable1.value : 0),
+        leftRangeStart: 1,
+        rightLabel: '使能簇状态2',
+        rightRenderType: 'cluster-bits',
+        rightBits: buildBits(enable2 ? enable2.value : 0),
+        rightRangeStart: 11
+      })
+    }
+    if (cutout1 || cutout2) {
+      tableData.push({
+        leftLabel: '切出簇状态1',
+        leftRenderType: 'cluster-bits',
+        leftBits: buildBits(cutout1 ? cutout1.value : 0),
+        leftRangeStart: 1,
+        rightLabel: '切出簇状态2',
+        rightRenderType: 'cluster-bits',
+        rightBits: buildBits(cutout2 ? cutout2.value : 0),
+        rightRangeStart: 11
       })
     }
     
@@ -618,6 +682,22 @@ watch(selectedBlock, handleBlockChange)
   color: var(--text-color);
 }
 
+.cluster-bits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.cluster-bit-item {
+  display: inline-flex;
+  align-items: center;
+}
+.cluster-bit-item input[type="checkbox"] {
+  margin-right: 4px;
+}
+:deep(.bit-label) {
+  font-size: 12px;
+  color: var(--text-color-secondary);
+}
 :deep(.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link) {
   background: var(--surface-card);
   color: var(--primary-color);
@@ -646,19 +726,18 @@ watch(selectedBlock, handleBlockChange)
   font-size: 12px; /* 再缩小提示文字 */
 }
 
-/* 表格容器 */
+/* 数据表容器 */
 .table-wrapper {
   overflow-x: auto;
   border-radius: 6px;
   border: 1px solid var(--surface-border);
 }
 
-/* 轻量级表格样式 */
 .lightweight-table {
   width: 100%;
   border-collapse: collapse;
   background: var(--surface-card);
-  font-size: 11px; /* 再缩小字体：12px → 11px */
+  font-size: 11px;
 }
 
 .lightweight-table thead {
@@ -667,20 +746,20 @@ watch(selectedBlock, handleBlockChange)
 }
 
 .lightweight-table th {
-  padding: 8px 12px; /* 再缩小内边距 */
+  padding: 8px 12px;
   text-align: left;
   font-weight: 600;
   color: var(--text-color);
   border-bottom: 1px solid var(--surface-border);
   white-space: nowrap;
-  font-size: 11px; /* 表头字体 */
+  font-size: 11px;
 }
 
 .lightweight-table td {
-  padding: 8px 12px; /* 再缩小内边距 */
+  padding: 8px 12px;
   border-bottom: 1px solid var(--surface-border);
   color: var(--text-color);
-  font-size: 11px; /* 单元格字体 */
+  font-size: 11px;
 }
 
 .lightweight-table tbody tr {
@@ -705,6 +784,8 @@ watch(selectedBlock, handleBlockChange)
 }
 
 /* 响应式设计 */
+ 
+
 @media (max-width: 768px) {
   .block-info {
     max-width: 100%;
@@ -720,12 +801,11 @@ watch(selectedBlock, handleBlockChange)
   }
   
   .lightweight-table {
-    font-size: 10px; /* 移动端进一步缩小 */
+    font-size: 10px;
   }
-  
   .lightweight-table th,
   .lightweight-table td {
-    padding: 6px 8px; /* 移动端缩小内边距 */
+    padding: 6px 8px;
   }
 }
 
@@ -738,4 +818,4 @@ watch(selectedBlock, handleBlockChange)
     opacity: 1;
   }
 }
-</style> 
+</style>

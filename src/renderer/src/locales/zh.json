@@ -764,7 +764,7 @@
     "discharge": "放电",
     "forbidCharge": "禁充",
     "forbidDischarge": "禁放",
-    "standby": "待机",
+    "forbidChargeDischarge": "禁充禁放",
     "alarm": "告警",
     "fault": "故障",
     "chgPowerLatch": "充电功率锁存",
@@ -952,9 +952,13 @@
     "selectCluster": "选择簇",
     "indicatorLegend": {
       "severe": "严重",
-      "general": "一般", 
+      "general": "一般",
       "minor": "轻微",
       "normal": "正常"
+    },
+    "hardwareLegend": {
+      "faultOn": "有故障",
+      "faultOff": "无故障"
     },
     "faultNames": {
       "clusterInterVoltageDiffFaultGrade": "簇间压差过大故障",
@@ -987,7 +991,81 @@
       "cellDischargeOvertempFaultGrade": "单体电池放电过温故障",
       "cellDischargeUndertempFaultGrade": "单体电池放电欠温故障",
       "cellSocTooHighFaultGrade": "单体SOC过高故障",
-      "cellSocTooLowFaultGrade": "单体SOC过低故障"
+      "cellSocTooLowFaultGrade": "单体SOC过低故障",
+      "MainPosContactorFeedbackFault": "主正接触器反馈故障",
+      "MainPosHighSideFeedbackFault": "主正高边驱动反馈故障",
+      "MainPosOxidation": "主正氧化",
+      "MainPosAdhesion": "主正黏连",
+      "MainPosContactorFaultSummary": "主正接触器故障汇总",
+      "MainNegContactorFeedbackFault": "主负接触器反馈故障",
+      "MainNegHighSideFeedbackFault": "主负高边驱动反馈故障",
+      "MainNegOxidation": "主负氧化",
+      "MainNegAdhesion": "主负黏连",
+      "MainNegContactorFaultSummary": "主负接触器故障汇总",
+      "PrechargeContactorFeedbackFault": "预充接触器反馈故障",
+      "PrechargeHighSideFeedbackFault": "预充高边驱动反馈故障",
+      "PrechargeOxidation": "预充氧化",
+      "PrechargeAdhesion": "预充黏连",
+      "PrechargeContactorFaultSummary": "预充接触器故障汇总",
+      "ContactorFaultSummary": "接触器故障汇总",
+      "IsolationSwitchFeedbackFault": "隔离开关反馈故障",
+      "CircuitBreakerFeedbackFault": "断路器反馈故障",
+      "FanFeedbackFault": "风扇反馈故障",
+      "DCPowerKMFeedbackFault": "直流供电KM反馈故障",
+      "AccessControlFeedbackFault": "门禁反馈故障",
+      "SPDFeedbackFault": "SPD反馈故障",
+      "ACVoltageFeedbackFault": "交流电压反馈故障",
+      "SmokeSensorFeedbackFault": "烟感反馈故障",
+      "FireReleaseSignal": "消防释放信号",
+      "TempSensorFeedbackFault": "温感反馈故障",
+      "ExhaustSystemFeedbackFault": "排风系统反馈故障",
+      "AuxCircuitBreakerFeedbackFault": "辅助断路器反馈故障",
+      "HydrogenDetectorFeedbackFault": "氢气探测器反馈故障",
+      "MSDFeedbackFault": "MSD反馈故障",
+      "EmergencyStopFeedbackFault": "急停反馈故障",
+      "MainPosHighSideFeedbackFault2": "主正高边驱动反馈故障",
+      "MainNegHighSideFeedbackFault2": "主负高边驱动反馈故障",
+      "PrechargeHighSideFeedbackFault2": "预充高边驱动反馈故障",
+      "RedLampHighSideFeedbackFault": "红灯高边驱动反馈故障",
+      "YellowLampHighSideFeedbackFault": "黄灯高边驱动反馈故障",
+      "GreenLampHighSideFeedbackFault": "绿灯高边驱动反馈故障",
+      "FanHighSideFeedbackFault2": "风机高边驱动反馈故障",
+      "MainBreakerShuntHighSideFeedbackFault": "主断分励高边驱动反馈故障",
+      "DCPowerKMHighSideFeedbackFault2": "直流供电KM高边驱动反馈故障",
+      "PCSSealedWaveHighSideFeedbackFault": "pcs封波高边驱动反馈故障",
+      "AuxCircuitBreakerControlHighSideFeedbackFault": "辅助断路器控制高边驱动反馈故障",
+      "ExhaustSystemControlHighSideFeedbackFault": "排风系统控制高边驱动反馈故障",
+      "CoolingDeviceCommFault2": "制冷设备通信故障",
+      "PCSCommFault2": "PCS设备通信故障",
+      "DehumidifierCommFault2": "除湿机通信故障",
+      "FireDeviceCommFault2": "消防设备通信故障",
+      "BMUCommFault2": "BMU通信故障",
+      "CANHallCommFault2": "CAN霍尔通信故障",
+      "BCUCommFault2": "BCU通信故障",
+      "DaisyChainCommFault": "菊花链通信故障",
+      "AFECommFault2": "AFE通信故障",
+      "BCUEnvSensorFault2": "BCU环境传感器故障",
+      "BPosSensorFault2": "B+传感器故障",
+      "BNegSensorFault2": "B-传感器故障",
+      "PPosSensorFault2": "P+传感器故障",
+      "PNegSensorFault2": "P-传感器故障",
+      "Fuse1TempSensorFault2": "熔断器1传感器故障",
+      "Fuse2TempSensorFault2": "熔断器2传感器故障",
+      "HallFault2": "霍尔故障",
+      "InvalidDataPresent2": "存在无效数据",
+      "FRAMFault2": "铁电存储器故障",
+      "EEPROMFault2": "EEPROM存储器故障",
+      "FlashFault2": "Flash存储器故障",
+      "VoltageAcqDisconnected2": "电压采集断线",
+      "TempAcqDisconnected2": "温度采集断线",
+      "ReservedFault2": "保留故障",
+      "BMUDeviceCommFault2": "BMU设备通讯故障",
+      "SingleCellDropped2": "单体电池掉线",
+      "SingleTempProbeDropped2": "单体温度探头掉线",
+      "BMU1PowerConnectorTempDisconnected2": "BMU 1号 动力接插件温度断线",
+      "BMU2PowerConnectorTempDisconnected2": "BMU 2号 动力接插件温度断线",
+      "AFECommLost2": "AFE通讯失联",
+      "BCUCommFault22": "BCU通讯故障"
     }
   },
   "didoStatus": {
@@ -1057,6 +1135,9 @@
       "remarks": "备注说明"
     },
     "noData": "暂无数据",
+    "messages": {
+      "validationFailed": "参数校验失败"
+    },
     "parameterClasses": {
       "bmuConfig": "BMU配置",
       "typeSelection": "类型选择",
@@ -1067,7 +1148,15 @@
       "batteryInfo": "电池信息",
       "clusterRatedParams": "簇额定参数",
       "balanceParams": "均衡参数",
-      "deviceFactoryInfo": "设备出厂信息"
+      "tempControlStrategy": "温控策略",
+      "deviceFactoryInfo": "设备出厂信息",
+      "bmuAfeCountConfig": "BMU/AFE数量配置",
+      "typeSystemDeviceConfig": "系统及设备类型配置",
+      "basicFilterConfig": "单体电压温度滤波配置",
+      "delayConfig": "延时配置",
+      "tempDeviceConfig": "设备温度配置",
+      "currentSensorConfig": "电流传感器配置",
+      "batteryParamConfig": "电池参数配置"
     },
     "errors": {
       "ipFormatError": "IP地址格式错误",
@@ -1107,12 +1196,14 @@
         "无制冷设备": "无制冷设备",
         "科诺威水冷机": "科诺威水冷机",
         "英维克": "英维克",
-        "埃森特交流空调": "埃森特交流空调"
+        "埃森特交流空调": "埃森特交流空调",
+        "英维克-EMW30-50-80": "英维克-EMW30-50-80",
+        "均能水冷机-1": "均能水冷机-1"
       },
       "除湿机设备类型": {
         "无除湿机设备": "无除湿机设备",
         "除湿机-01": "除湿机-01",
-        "除湿机-E-J-000113": "除湿机-E-J-000113"
+        "02-除湿机-E-J-000113": "02-除湿机-E-J-000113"
       },
       "消防控制器类型": {
         "无消防控制器": "无消防控制器",
@@ -1264,6 +1355,15 @@
         "15mV": "15mV",
         "150mV": "150mV",
         "20mV": "20mV"
+      },
+      "电池厂家": {
+        "宁德280Ah(CB310)": "宁德280Ah(CB310)",
+        "海辰280Ah(LFP71173207)": "海辰280Ah(LFP71173207)",
+        "兰280Ah(PC-0B1-72174L4-AH)": "兰280Ah(PC-0B1-72174L4-AH)",
+        "宁德280Ah(CB2W0)": "宁德280Ah(CB2W0)",
+        "海辰280Ah(ST280P100A)": "海辰280Ah(ST280P100A)",
+        "亿纬314Ah(MB31)": "亿纬314Ah(MB31)",
+        "海辰314Ah(ST314P050A)": "海辰314Ah(ST314P050A)"
       }
     }
   },
@@ -1272,6 +1372,9 @@
       "startReading": "开始读取",
       "stopReading": "停止读取",
       "sendParameters": "下发参数"
+    },
+    "messages": {
+      "validationFailed": "参数校验失败"
     },
     "table": {
       "parameterName": "参数名称",
@@ -1304,6 +1407,9 @@
       "startReading": "开始读取",
       "stopReading": "停止读取",
       "sendParameters": "下发参数"
+    },
+    "messages": {
+      "validationFailed": "参数校验失败"
     },
     "table": {
       "parameterName": "参数名称",
@@ -1666,7 +1772,9 @@
         "最多支持32个BMU": "最多支持32个BMU",
         "1个BMU下最多支持16个AFE": "1个BMU下最多支持16个AFE",
         "单个AFE下电池数量可以为空，但BMU下总电池数不能超过128": "单个AFE下电池数量可以为空，但BMU下总电池数不能超过128",
-        "格式：YYYYMMDDNNNN（12位数字）": "格式：YYYYMMDDNNNN（12位数字）"
+        "格式：YYYYMMDDNNNN（12位数字）": "格式：YYYYMMDDNNNN（12位数字）",
+        "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克；3：埃森特交流空调；4：英维克-EMW30-50-80；5：均能水冷机-1": "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克；3：埃森特交流空调；4：英维克-EMW30-50-80；5：均能水冷机-1",
+        "0xFFFF：无除湿机设备；1：除湿机-01；2：02-除湿机-E-J-000113": "0xFFFF：无除湿机设备；1：除湿机-01；2：02-除湿机-E-J-000113"
       }
     },
     "alarmThreshold": {
@@ -2243,7 +2351,8 @@
       "hostProtocol": "上位机协议",
       "bcuProtocol": "BCU协议",
       "eventRecordVersion": "事件记录版本",
-      "soxAlgorithmVersion": "SOX算法版本"
+      "soxAlgorithmVersion": "SOX算法版本",
+      "mergeSplitAlgorithmVersion": "退并簇算法版本"
     },
     "fields": {
       "sdCardTotalCapacity": "SD卡总容量",
@@ -2256,7 +2365,8 @@
       "bauHostProtocolVersion": "BAU-上位机协议版本号",
       "bauBcuProtocolVersion": "BAU-BCU协议版本号",
       "bauEventRecordVersion": "BAU事件记录版本号",
-      "bauSoxAlgorithmVersion": "BAU-SOX算法版本号"
+      "bauSoxAlgorithmVersion": "BAU-SOX算法版本号",
+      "bauMergeSplitAlgorithmVersion": "BAU-退并簇算法版本号"
     },
     "status": {
       "sdCardPathNotExists": "SD卡路径不存在",
@@ -2534,9 +2644,11 @@
     "title": "堆遥调参数",
     "sections": {
       "batteryConfig": "系统簇端电池配置参数",
-      "commDevConfig": "系统通讯设备配置参数",
+      "commDevConfig": "系统外围设备配置参数",
       "operateConfig": "系统操作配置参数",
-      "socConfig": "系统堆SOC配置参数"
+      "socConfig": "系统堆SOC配置参数",
+      "portConfig": "系统端口配置参数",
+      "commonConfig": "堆系统基本配置"
     },
     "table": {
       "parameterName": "参数名称",
@@ -2557,7 +2669,10 @@
       "readSuccess": "参数读取成功",
       "readError": "参数读取失败",
       "sendSuccess": "参数下发成功",
-      "sendError": "参数下发失败"
+      "sendError": "参数下发失败",
+      "validationFailed": "参数校验失败",
+      "ipFormatError": "IP地址格式错误",
+      "ipFormatErrorDetail": "以下IP地址格式不正确，请修正后再下发：\n{0}"
     },
     "parameterTypes": {
       "battery": "电池配置",
@@ -2673,8 +2788,8 @@
       "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；": "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；",
       "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；": "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；",
       "0-无PCS 1-双一力PCS": "0-无PCS 1-双一力PCS",
-      "0-无制冷设备 1-三河同飞": "0-无制冷设备 1-三河同飞",
-      "0-无除湿空调 1-三河同飞": "0-无除湿空调 1-三河同飞",
+      "0-无制冷设备 1-科诺威水冷机 2-英维克 3-埃森特交流空调 4-英维克-EMW30-50-80 5-均能水冷机-1": "0-无制冷设备 1-科诺威水冷机 2-英维克 3-埃森特交流空调 4-英维克-EMW30-50-80 5-均能水冷机-1",
+      "0-无除湿空调 1-除湿机-01 2-02-除湿机-E-J-000113": "0-无除湿空调 1-除湿机-01 2-02-除湿机-E-J-000113",
       "0-无I/O控制板 1-艾莫讯": "0-无I/O控制板 1-艾莫讯",
       "0-网卡1 1-网卡2": "0-网卡1 1-网卡2",
       "PCS数量范围：0-65535": "PCS数量范围：0-65535",
@@ -3311,7 +3426,7 @@
     "title1": "系统时间与记录",
     "title2": "平台时间",
     "title3": "设备时间",
-    "buttonLable1": "下设平台时间",
+    "buttonLable1": "同步平台时间",
     "title4": "系统启动次数",
     "title5": {
       "第1次系统记录": "第1次系统记录",

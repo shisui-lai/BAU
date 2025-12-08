@@ -7,7 +7,7 @@ const RAW_HEADER = ['ID', '时间', '方向', '主题', '设备', 'PayloadHex'].
 
 let globalIdCounter = 0
 const FILE_SIZE_LIMIT = 500 * 1024 * 1024
-const MIN_FREE_SPACE = parseInt(process.env.MIN_FREE_SPACE || String(90 * 1024 * 1024 * 1024), 10)
+const MIN_FREE_SPACE = parseInt(process.env.MIN_FREE_SPACE || String(5 * 1024 * 1024 * 1024), 10)
 const DISK_WARNING_COOLDOWN_MS = parseInt(process.env.DISK_WARNING_COOLDOWN_MS || '10000', 10)
 let lastDiskWarningTs = 0
 let bypassLowDiskCheck = false

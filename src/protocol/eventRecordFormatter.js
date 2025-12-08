@@ -885,31 +885,31 @@ const EVENT_PARAM_MAPPING = {
   },
   104: { // 堆系统状态切换
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次系统状态', parse: parseSysStatus },
-    param3: { label: '当前系统状态', parse: parseSysStatus },
+    param2: { label: '上一次系统状态', parse: (raw) => `上一次:${parseSysStatus(raw)}` },
+    param3: { label: '当前系统状态', parse: (raw) => `当前:${parseSysStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
   105: { // 远方就地场景切换
-    param1: { label: '上一次场景', parse: parseRemoteLocalScene },
-    param2: { label: '当前场景', parse: parseRemoteLocalScene },
+    param1: { label: '上一次场景', parse: (raw) => `上一次:${parseRemoteLocalScene(raw)}` },
+    param2: { label: '当前场景', parse: (raw) => `当前:${parseRemoteLocalScene(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
   106: { // SD卡插卡状态
-    param1: { label: '上一次插卡状态', parse: parseCardStatus },
-    param2: { label: '当前插卡状态', parse: parseCardStatus },
+    param1: { label: '上一次插卡状态', parse: (raw) => `上一次:${parseCardStatus(raw)}` },
+    param2: { label: '当前插卡状态', parse: (raw) => `当前:${parseCardStatus(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
   107: { // SD卡挂载状态
-    param1: { label: '上一次挂载状态', parse: parseMountStatus },
-    param2: { label: '当前挂载状态', parse: parseMountStatus },
+    param1: { label: '上一次挂载状态', parse: (raw) => `上一次:${parseMountStatus(raw)}` },
+    param2: { label: '当前挂载状态', parse: (raw) => `当前:${parseMountStatus(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
   108: { // SD卡写入状态变化
-    param1: { label: '上一次写入状态', parse: parseWriteStatus },
-    param2: { label: '当前写入状态', parse: parseWriteStatus },
+    param1: { label: '上一次写入状态', parse: (raw) => `上一次:${parseWriteStatus(raw)}` },
+    param2: { label: '当前写入状态', parse: (raw) => `当前:${parseWriteStatus(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
@@ -928,31 +928,31 @@ const EVENT_PARAM_MAPPING = {
   111: { // BCU通讯状态变化
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '上一次通讯状态', parse: parseCommStatus },
-    param4: { label: '当前通讯状态', parse: parseCommStatus }
+    param3: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
+    param4: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` }
   },
   112: { // EMS通讯状态变化
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次通讯状态', parse: parseCommStatus },
-    param3: { label: '当前通讯状态', parse: parseCommStatus },
+    param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
+    param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
   113: { // PCS通讯状态变化 - 同112
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次通讯状态', parse: parseCommStatus },
-    param3: { label: '当前通讯状态', parse: parseCommStatus },
+    param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
+    param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
   114: { // 水冷机通讯状态变化 - 同112
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次通讯状态', parse: parseCommStatus },
-    param3: { label: '当前通讯状态', parse: parseCommStatus },
+    param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
+    param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
   115: { // I/O模块通讯状态变化 - 同112
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次通讯状态', parse: parseCommStatus },
-    param3: { label: '当前通讯状态', parse: parseCommStatus },
+    param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
+    param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
   
@@ -1090,14 +1090,14 @@ const EVENT_PARAM_MAPPING = {
   },
   253: { // 下设周期性绝缘检测指令
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次', parse: parseContactorSelfTest },
-    param3: { label: '当前', parse: parseContactorSelfTest },
+    param2: { label: '上一次', parse: (raw) => `上一次:${parseContactorSelfTest(raw)}` },
+    param3: { label: '当前', parse: (raw) => `当前:${parseContactorSelfTest(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
   254: { // 下设接触器自检指令
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次', parse: parseContactorSelfTest },
-    param3: { label: '当前', parse: parseContactorSelfTest },
+    param2: { label: '上一次', parse: (raw) => `上一次:${parseContactorSelfTest(raw)}` },
+    param3: { label: '当前', parse: (raw) => `当前:${parseContactorSelfTest(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
   255: { // 下设复位BAU

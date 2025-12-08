@@ -21,6 +21,7 @@ import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import { useRawInputCache, isNumericType, validateNumericInput, validateIPv4 } from '@/composables/utils/useParameterInput'
 
 const { t, locale, te } = useI18n()
 
@@ -79,52 +80,46 @@ const systemBaseParamConfig = {
     parameterClasses: [                                                 // 参数分类配置
       {
         name: 'BMU配置',
-        nameKey: 'clusterConfigParam.parameterClasses.bmuConfig',
-        byteOffset: 0,      // 起始字节偏移：寄存器0开始
-        byteLength: 132,    // 字节长度：BMU配置 + 虚拟电池位移，总共66个u16寄存器 = 132字节
+        nameKey: 'clusterConfigParam.parameterClasses.bmuAfeCountConfig',
+        byteOffset: 0,
+        byteLength: 132,
       },
       {
         name: '类型选择',
-        nameKey: 'clusterConfigParam.parameterClasses.typeSelection',
-        byteOffset: 164,    // 起始字节偏移：跳过32字节预留 = 寄存器82开始
-        byteLength: 20,     // 字节长度：10个类型选择参数，每个u16 = 20字节
-        hiddenFields: ['SpecialFuncEnable']  // 隐藏特殊功能使能位配置寄存器，只显示解析出的bit位字段
+        nameKey: 'clusterConfigParam.parameterClasses.typeSystemDeviceConfig',
+        byteOffset: 164,
+        byteLength: 20,
+        hiddenFields: ['SpecialFuncEnable']
       },
       {
         name: '基础设置',
-        nameKey: 'clusterConfigParam.parameterClasses.basicSettings',
-        byteOffset: 186,    // 起始字节偏移：跳过4字节预留 = 寄存器93开始
-        byteLength: 16      // 字节长度：8个基础设置参数，每个u16 = 16字节
+        nameKey: 'clusterConfigParam.parameterClasses.basicFilterConfig',
+        byteOffset: 186,
+        byteLength: 8
       },
       {
-        name: '空调阈值',
-        nameKey: 'clusterConfigParam.parameterClasses.airConditioningThreshold',
-        byteOffset: 210,    // 起始字节偏移：跳过8字节预留 = 寄存器105开始
-        byteLength: 12      // 字节长度：6个温度阈值参数，每个s16 = 12字节
+        name: '延时配置',
+        nameKey: 'clusterConfigParam.parameterClasses.delayConfig',
+        byteOffset: 194,
+        byteLength: 8
       },
       {
-        name: '通信设置',
-        nameKey: 'clusterConfigParam.parameterClasses.communicationSettings',
-        byteOffset: 230,    // 起始字节偏移：跳过8字节预留 = 寄存器115开始
-        byteLength: 18      // 字节长度：9个通信参数，每个u16 = 18字节
+        name: '温控策略',
+        nameKey: 'clusterConfigParam.parameterClasses.tempDeviceConfig',
+        byteOffset: 210,
+        byteLength: 46
       },
       {
         name: '电流传感器',
-        nameKey: 'clusterConfigParam.parameterClasses.currentSensor',
-        byteOffset: 256,    // 起始字节偏移：跳过8字节预留 = 寄存器128开始
-        byteLength: 8       // 字节长度：4个传感器参数，每个u16 = 8字节
+        nameKey: 'clusterConfigParam.parameterClasses.currentSensorConfig',
+        byteOffset: 256,
+        byteLength: 8
       },
       {
-        name: '电池信息',
-        nameKey: 'clusterConfigParam.parameterClasses.batteryInfo',
-        byteOffset: 268,    // 起始字节偏移：跳过4字节预留 = 寄存器134开始
-        byteLength: 6       // 字节长度：3个电池信息参数，每个u16 = 6字节
-      },
-      {
-        name: '簇额定参数',
-        nameKey: 'clusterConfigParam.parameterClasses.clusterRatedParams',
-        byteOffset: 274,    // 起始字节偏移：紧接电池信息，寄存器137开始
-        byteLength: 16      // 字节长度：1个u16 + 3个u32 = 2+12 = 14字节
+        name: '电池参数配置',
+        nameKey: 'clusterConfigParam.parameterClasses.batteryParamConfig',
+        byteOffset: 268,
+        byteLength: 22
       },
       {
         name: '均衡参数',
@@ -252,19 +247,11 @@ const retryLogic = useRetryLogic(toastService, () => {
   }
 })
 
-// IPv4格式验证函数
-function validateIPv4(ip) {
-  if (!ip || typeof ip !== 'string') return false
+// 原文缓存：根据模式与分类区分前缀
+const cachePrefix = () => `${isFactoryCalibMode.value ? 'FACTORY_CALIB_PARAM' : 'SYS_BASE_PARAM'}:${currentSelectedClass.value?.name || ''}`
+const { setRawInput, getRawInput, getInputDisplay, clearByPrefix } = useRawInputCache(cachePrefix)
 
-  const ipRegex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
-  if (!ipRegex.test(ip)) return false
-
-  const parts = ip.split('.')
-  return parts.every(part => {
-    const num = parseInt(part, 10)
-    return num >= 0 && num <= 255
-  })
-}
+// 使用通用composable提供的 validateIPv4
 
 // 获取IPv4输入框的CSS类
 function getIPv4InputClass(value) {
@@ -430,39 +417,57 @@ const isCurrentlyReading = computed(() => {
   return systemIsCurrentlyReading.value
 })
 
-// 带IPv4验证的下发参数函数
-const sendCurrentClassParameters = () => {
-  // 验证所有IPv4字段格式
-  const ipv4Errors = []
+// 统一校验并下发（IPv4 + 数值）
+const sendParametersWithValidation = () => {
+  // 与堆报警阈值页面一致：使用已翻译的增强参数列表，确保英文模式下错误明细显示英文标签
+  const list = enhancedParameterList.value || []
+  const errors = []
+  const numericUpdates = []
 
-  // 获取当前参数列表
-  const currentParameterList = isFactoryCalibMode.value
-    ? factoryCalibEnhancedParameterList.value
-    : systemEnhancedParameterList.value
-
-  currentParameterList.forEach(param => {
-    if (param.type === 'ipv4') {
-      const value = param.currentValue
-
-      // 检查IPv4格式（排除默认值0.0.0.0）
-      if (value && value !== '0.0.0.0' && !validateIPv4(value)) {
-        ipv4Errors.push(`${param.label || param.key}: "${value}"`)
+  for (const p of list) {
+    if (!p) continue
+    // 下拉框、字符串、hex16不走数值校验
+    if (p.inputType === 'dropdown' || p.type === 'string' || p.type === 'hex16') continue
+    // IPv4校验：使用原文缓存或现值
+    if (p.type === 'ipv4') {
+      const v = getRawInput(p) ?? getParameterInputValue(p, p.currentValue)
+      if (v && v !== '0.0.0.0' && !validateIPv4(String(v))) {
+        errors.push(`${p.label || p.key}: "${v}"`)
+      } else {
+        // 校验通过后同步写模型，再下发
+        const writeVal = setParameterInputValue(p, v)
+        updateParameterValue(p.key, writeVal, { immediate: true })
       }
+      continue
     }
-  })
+    // 簇使能位（u16 + clusterRange）不按数值校验
+    if (p.type === 'u16' && p.clusterRange) continue
 
-  // 如果有格式错误，显示错误信息并阻止下发
-  if (ipv4Errors.length > 0) {
-    toastService.add({
-      severity: 'error',
-      summary: t('clusterConfigParam.errors.ipFormatError'),
-      detail: `${t('clusterConfigParam.errors.ipFormatErrorDetail')}\n${ipv4Errors.join('\n')}`,
-      life: 8000
-    })
+    if (isNumericType(p)) {
+      const raw = getRawInput(p)
+      const src = raw !== undefined ? String(raw) : String(getParameterInputValue(p, p.currentValue) ?? '')
+      const res = validateNumericInput(p, src, { t, te })
+      if (!res.valid) {
+        errors.push(`${p.label || p.key}: ${res.message}`)
+        continue
+      }
+      const writeVal = setParameterInputValue(p, res.value)
+      numericUpdates.push({ key: p.key, value: writeVal })
+    }
+  }
+
+  if (errors.length > 0) {
+    const summary = t('clusterConfigParam.messages.validationFailed')
+    toastService.add({ severity: 'error', summary, detail: errors.join('\n'), life: 8000 })
     return
   }
 
-  // 格式验证通过，执行正常的参数下发
+  // 先同步写入模型，避免两次点击
+  for (const u of numericUpdates) {
+    updateParameterValue(u.key, u.value, { immediate: true })
+  }
+
+  // 调用原始下发
   if (isFactoryCalibMode.value) {
     factoryCalibSendCurrentClassParameters()
   } else {
@@ -492,7 +497,7 @@ const isParameterDropdown = (parameter) => {
 }
 
 //协议修改新增 - 统一的参数值更新函数
-const updateParameterValue = (parameterKey, value) => {
+const updateParameterValue = (parameterKey, value, options) => {
   if (isFactoryCalibMode.value) {
     // 特殊处理：生产编码的拆分逻辑
     if (parameterKey === 'productionCode') {
@@ -520,9 +525,9 @@ const updateParameterValue = (parameterKey, value) => {
       return
     }
     // 其他出厂校正参数的常规处理
-    factoryCalibUpdateParameterValue(parameterKey, value)
+    factoryCalibUpdateParameterValue(parameterKey, value, options)
   } else {
-    systemUpdateParameterValue(parameterKey, value)
+    systemUpdateParameterValue(parameterKey, value, options)
   }
 }
 
@@ -604,6 +609,8 @@ function handleSystemReadEvent(event, mqttMessage) {
   }
   if (parsedReadData.data) {
     handleReceivedParameterData(parsedReadData)
+    // 读取成功后清理当前分类的原文缓存以显示设备值
+    clearByPrefix(cachePrefix())
   }
 }
 
@@ -632,6 +639,7 @@ function handleFactoryReadEvent(event, mqttMessage) {
       ...mqttMessage,
       ...parsedReadData
     })
+    clearByPrefix(cachePrefix())
   }
 }
 
@@ -761,7 +769,7 @@ onUnmounted(() => {
             />
             <Button
               :label="t('clusterConfigParam.buttons.sendParameters')"
-              @click="sendCurrentClassParameters"
+              @click="sendParametersWithValidation"
               :disabled="isCurrentlyReading || !currentSelectedClass"
               severity="warning"
               size="small"
@@ -772,16 +780,16 @@ onUnmounted(() => {
 
       <!-- 参数分类切换标签（包含出厂校正参数） -->
       <div class="class-tabs">
-        <Button
-          v-for="parameterClass in allAvailableClasses"
-          :key="parameterClass.name"
-          :label="parameterClass.nameKey ? t(parameterClass.nameKey) : parameterClass.name"
-          @click="switchToParameterClass(parameterClass.name)"
-          :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
-          :outlined="currentSelectedClass?.name !== parameterClass.name"
-          size="small"
-          class="class-tab-button"
-        />
+          <Button
+            v-for="parameterClass in allAvailableClasses"
+            :key="parameterClass.name"
+            :label="parameterClass.nameKey ? t(parameterClass.nameKey) : parameterClass.name"
+            @click="switchToParameterClass(parameterClass.name)"
+            :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
+            :outlined="currentSelectedClass?.name !== parameterClass.name"
+            size="small"
+            class="class-tab-button"
+          />
       </div>
     </div>
       <!-- 当前分类的参数数据表格 - 使用增强列表支持下拉框 -->
@@ -818,10 +826,9 @@ onUnmounted(() => {
           <!-- IPv4 地址输入框 -->
           <InputText
             v-else-if="slotProps.data.type === 'ipv4'"
-            :model-value="slotProps.data.currentValue"
-            @update:model-value="(inputValue) => updateParameterValue(slotProps.data.key, inputValue)"
+            :model-value="getInputDisplay(slotProps.data, slotProps.data.currentValue, getParameterInputValue)"
+            @update:model-value="(inputValue) => setRawInput(slotProps.data, inputValue)"
             :disabled="isCurrentlyReading"
-            size="small"
             :class="['w-full', getIPv4InputClass(slotProps.data.currentValue)]"
             placeholder="0.0.0.0"
           />
@@ -830,9 +837,8 @@ onUnmounted(() => {
           <InputText
             v-else-if="slotProps.data.type === 'hex16'"
             :model-value="slotProps.data.currentValue"
-            @update:model-value="(inputValue) => updateParameterValue(slotProps.data.key, inputValue)"
+            @update:model-value="(inputValue) => updateParameterValue(slotProps.data.key, inputValue, { immediate: true })"
             :disabled="isCurrentlyReading"
-            size="small"
             class="w-full"
           />
 
@@ -840,23 +846,18 @@ onUnmounted(() => {
           <InputText
             v-else-if="slotProps.data.type === 'string'"
             :model-value="slotProps.data.currentValue"
-            @update:model-value="(inputValue) => updateParameterValue(slotProps.data.key, inputValue)"
+            @update:model-value="(inputValue) => updateParameterValue(slotProps.data.key, inputValue, { immediate: true })"
             :disabled="isCurrentlyReading"
-            size="small"
             class="w-full"
             :placeholder="slotProps.data.key === 'productionCode' ? t('clusterConfigParam.productionCode.placeholder') : ''"
           />
 
           <!-- 普通数字输入框参数 -->
-          <InputNumber
+          <InputText
             v-else
-            :model-value="getParameterInputValue(slotProps.data, slotProps.data.currentValue)"
-            @update:model-value="(inputValue) => updateParameterValue(slotProps.data.key, setParameterInputValue(slotProps.data, inputValue))"
+            :model-value="getInputDisplay(slotProps.data, slotProps.data.currentValue, getParameterInputValue)"
+            @update:model-value="(v) => setRawInput(slotProps.data, v)"
             :disabled="isCurrentlyReading"
-            :step="slotProps.data.scale ? 1/slotProps.data.scale : 1"
-            :min-fraction-digits="getParameterDecimalPlaces(slotProps.data)"
-            :max-fraction-digits="getParameterDecimalPlaces(slotProps.data)"
-            size="small"
             class="w-full"
           />
         </template>

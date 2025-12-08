@@ -13,7 +13,6 @@
           <!-- 堆级故障标签页 -->
           <TabPanel :header="t('faultOverview.blockFaultOverview')">
             <div class="fault-content">
-              <!-- 指示灯说明 -->
               <div class="indicator-legend">
                 <div class="selector-inline">
                   <span>选择堆：</span>
@@ -45,6 +44,25 @@
               <!-- 故障项网格 -->
               <div class="fault-items-grid">
                 <div v-for="fault in blockGradeOverview" :key="fault.name" 
+                     class="fault-indicator">
+                  <div :class="['indicator-light', fault.color]"></div>
+                  <span class="fault-name">{{ fault.name }}</span>
+                </div>
+              </div>
+
+              <!-- 使能簇硬件故障汇总：与等级项分开展示 -->
+              <div class="indicator-legend" style="margin-top: 12px;">
+                <div class="legend-item">
+                  <div class="indicator-light severe"></div>
+                  <span>{{ t('faultOverview.hardwareLegend.faultOn') }}</span>
+                </div>
+                <div class="legend-item">
+                  <div class="indicator-light normal"></div>
+                  <span>{{ t('faultOverview.hardwareLegend.faultOff') }}</span>
+                </div>
+              </div>
+              <div class="fault-items-grid">
+                <div v-for="fault in enClusterHardwareSumOverview" :key="fault.name" 
                      class="fault-indicator">
                   <div :class="['indicator-light', fault.color]"></div>
                   <span class="fault-name">{{ fault.name }}</span>
@@ -146,6 +164,81 @@ const FAULT_NAMES_MAP = computed(() => ({
     'CellDischargeUndertempFaultGrade': t('faultOverview.faultNames.cellDischargeUndertempFaultGrade'),
     'CellSocTooHighFaultGrade': t('faultOverview.faultNames.cellSocTooHighFaultGrade'),
     'CellSocTooLowFaultGrade': t('faultOverview.faultNames.cellSocTooLowFaultGrade')
+    ,
+    'MainPosContactorFeedbackFault': t('faultOverview.faultNames.MainPosContactorFeedbackFault'),
+    'MainPosHighSideFeedbackFault': t('faultOverview.faultNames.MainPosHighSideFeedbackFault'),
+    'MainPosOxidation': t('faultOverview.faultNames.MainPosOxidation'),
+    'MainPosAdhesion': t('faultOverview.faultNames.MainPosAdhesion'),
+    'MainPosContactorFaultSummary': t('faultOverview.faultNames.MainPosContactorFaultSummary'),
+    'MainNegContactorFeedbackFault': t('faultOverview.faultNames.MainNegContactorFeedbackFault'),
+    'MainNegHighSideFeedbackFault': t('faultOverview.faultNames.MainNegHighSideFeedbackFault'),
+    'MainNegOxidation': t('faultOverview.faultNames.MainNegOxidation'),
+    'MainNegAdhesion': t('faultOverview.faultNames.MainNegAdhesion'),
+    'MainNegContactorFaultSummary': t('faultOverview.faultNames.MainNegContactorFaultSummary'),
+    'PrechargeContactorFeedbackFault': t('faultOverview.faultNames.PrechargeContactorFeedbackFault'),
+    'PrechargeHighSideFeedbackFault': t('faultOverview.faultNames.PrechargeHighSideFeedbackFault'),
+    'PrechargeOxidation': t('faultOverview.faultNames.PrechargeOxidation'),
+    'PrechargeAdhesion': t('faultOverview.faultNames.PrechargeAdhesion'),
+    'PrechargeContactorFaultSummary': t('faultOverview.faultNames.PrechargeContactorFaultSummary'),
+    'ContactorFaultSummary': t('faultOverview.faultNames.ContactorFaultSummary'),
+    'IsolationSwitchFeedbackFault': t('faultOverview.faultNames.IsolationSwitchFeedbackFault'),
+    'CircuitBreakerFeedbackFault': t('faultOverview.faultNames.CircuitBreakerFeedbackFault'),
+    'FanFeedbackFault': t('faultOverview.faultNames.FanFeedbackFault'),
+    'DCPowerKMFeedbackFault': t('faultOverview.faultNames.DCPowerKMFeedbackFault'),
+    'AccessControlFeedbackFault': t('faultOverview.faultNames.AccessControlFeedbackFault'),
+    'SPDFeedbackFault': t('faultOverview.faultNames.SPDFeedbackFault'),
+    'ACVoltageFeedbackFault': t('faultOverview.faultNames.ACVoltageFeedbackFault'),
+    'SmokeSensorFeedbackFault': t('faultOverview.faultNames.SmokeSensorFeedbackFault'),
+    'FireReleaseSignal': t('faultOverview.faultNames.FireReleaseSignal'),
+    'TempSensorFeedbackFault': t('faultOverview.faultNames.TempSensorFeedbackFault'),
+    'ExhaustSystemFeedbackFault': t('faultOverview.faultNames.ExhaustSystemFeedbackFault'),
+    'AuxCircuitBreakerFeedbackFault': t('faultOverview.faultNames.AuxCircuitBreakerFeedbackFault'),
+    'HydrogenDetectorFeedbackFault': t('faultOverview.faultNames.HydrogenDetectorFeedbackFault'),
+    'MSDFeedbackFault': t('faultOverview.faultNames.MSDFeedbackFault'),
+    'EmergencyStopFeedbackFault': t('faultOverview.faultNames.EmergencyStopFeedbackFault'),
+    'MainPosHighSideFeedbackFault2': t('faultOverview.faultNames.MainPosHighSideFeedbackFault2'),
+    'MainNegHighSideFeedbackFault2': t('faultOverview.faultNames.MainNegHighSideFeedbackFault2'),
+    'PrechargeHighSideFeedbackFault2': t('faultOverview.faultNames.PrechargeHighSideFeedbackFault2'),
+    'RedLampHighSideFeedbackFault': t('faultOverview.faultNames.RedLampHighSideFeedbackFault'),
+    'YellowLampHighSideFeedbackFault': t('faultOverview.faultNames.YellowLampHighSideFeedbackFault'),
+    'GreenLampHighSideFeedbackFault': t('faultOverview.faultNames.GreenLampHighSideFeedbackFault'),
+    'FanHighSideFeedbackFault2': t('faultOverview.faultNames.FanHighSideFeedbackFault2'),
+    'MainBreakerShuntHighSideFeedbackFault': t('faultOverview.faultNames.MainBreakerShuntHighSideFeedbackFault'),
+    'DCPowerKMHighSideFeedbackFault2': t('faultOverview.faultNames.DCPowerKMHighSideFeedbackFault2'),
+    'PCSSealedWaveHighSideFeedbackFault': t('faultOverview.faultNames.PCSSealedWaveHighSideFeedbackFault'),
+    'AuxCircuitBreakerControlHighSideFeedbackFault': t('faultOverview.faultNames.AuxCircuitBreakerControlHighSideFeedbackFault'),
+    'ExhaustSystemControlHighSideFeedbackFault': t('faultOverview.faultNames.ExhaustSystemControlHighSideFeedbackFault'),
+    'CoolingDeviceCommFault2': t('faultOverview.faultNames.CoolingDeviceCommFault2'),
+    'PCSCommFault2': t('faultOverview.faultNames.PCSCommFault2'),
+    'DehumidifierCommFault2': t('faultOverview.faultNames.DehumidifierCommFault2'),
+    'FireDeviceCommFault2': t('faultOverview.faultNames.FireDeviceCommFault2'),
+    'BMUCommFault2': t('faultOverview.faultNames.BMUCommFault2'),
+    'CANHallCommFault2': t('faultOverview.faultNames.CANHallCommFault2'),
+    'BCUCommFault2': t('faultOverview.faultNames.BCUCommFault2'),
+    'DaisyChainCommFault': t('faultOverview.faultNames.DaisyChainCommFault'),
+    'AFECommFault2': t('faultOverview.faultNames.AFECommFault2'),
+    'BCUEnvSensorFault2': t('faultOverview.faultNames.BCUEnvSensorFault2'),
+    'BPosSensorFault2': t('faultOverview.faultNames.BPosSensorFault2'),
+    'BNegSensorFault2': t('faultOverview.faultNames.BNegSensorFault2'),
+    'PPosSensorFault2': t('faultOverview.faultNames.PPosSensorFault2'),
+    'PNegSensorFault2': t('faultOverview.faultNames.PNegSensorFault2'),
+    'Fuse1TempSensorFault2': t('faultOverview.faultNames.Fuse1TempSensorFault2'),
+    'Fuse2TempSensorFault2': t('faultOverview.faultNames.Fuse2TempSensorFault2'),
+    'HallFault2': t('faultOverview.faultNames.HallFault2'),
+    'InvalidDataPresent2': t('faultOverview.faultNames.InvalidDataPresent2'),
+    'FRAMFault2': t('faultOverview.faultNames.FRAMFault2'),
+    'EEPROMFault2': t('faultOverview.faultNames.EEPROMFault2'),
+    'FlashFault2': t('faultOverview.faultNames.FlashFault2'),
+    'VoltageAcqDisconnected2': t('faultOverview.faultNames.VoltageAcqDisconnected2'),
+    'TempAcqDisconnected2': t('faultOverview.faultNames.TempAcqDisconnected2'),
+    'ReservedFault2': t('faultOverview.faultNames.ReservedFault2'),
+    'BMUDeviceCommFault2': t('faultOverview.faultNames.BMUDeviceCommFault2'),
+    'SingleCellDropped2': t('faultOverview.faultNames.SingleCellDropped2'),
+    'SingleTempProbeDropped2': t('faultOverview.faultNames.SingleTempProbeDropped2'),
+    'BMU1PowerConnectorTempDisconnected2': t('faultOverview.faultNames.BMU1PowerConnectorTempDisconnected2'),
+    'BMU2PowerConnectorTempDisconnected2': t('faultOverview.faultNames.BMU2PowerConnectorTempDisconnected2'),
+    'AFECommLost2': t('faultOverview.faultNames.AFECommLost2'),
+    'BCUCommFault22': t('faultOverview.faultNames.BCUCommFault22')
   }))
 
 // 使用堆选择composable
@@ -158,14 +251,23 @@ const clusterStore = useClusterStore()
 
 const {
   blockGradeData,
+  enClusterHardwareSumData,
   clusterGradeData,
   processedBlockGradeOverview: rawBlockGradeOverview,
+  processedEnClusterHardwareSum: rawEnClusterHardwareSum,//使能簇硬件故障汇总
   processedClusterData: rawClusterData
 } = useFaultOverview()
 
 // 处理后的数据 - 应用翻译
 const blockGradeOverview = computed(() => {
   return rawBlockGradeOverview.value.map(fault => ({
+    ...fault,
+    name: FAULT_NAMES_MAP.value[fault.name] || fault.name
+  }))
+})
+
+const enClusterHardwareSumOverview = computed(() => {
+  return rawEnClusterHardwareSum.value.map(fault => ({
     ...fault,
     name: FAULT_NAMES_MAP.value[fault.name] || fault.name
   }))
@@ -243,6 +345,7 @@ const handleBlockChange = () => {
   
   // 堆选择变化时，清空当前数据，等待新堆的数据
   blockGradeData.value = {}
+  enClusterHardwareSumData.value = {}
   clusterGradeData.value = {}
 }
 
@@ -253,7 +356,8 @@ const subscribeToMqttTopics = () => {
     // 'BLOCK_ANALOG_FAULT_LEVEL',
     'BLOCK_ANALOG_FAULT_GRADE', 
     // 'CLU_ANALOG_FAULT_LEVEL_SUM',
-    'CLU_ANALOG_FAULT_GRADE'
+    'CLU_ANALOG_FAULT_GRADE',
+    'EN_CLUSTER_HARDWARE_SUM'
   ]
   
   faultTopics.forEach(topic => {
@@ -268,7 +372,8 @@ const unsubscribeFromMqttTopics = () => {
     // 'BLOCK_ANALOG_FAULT_LEVEL',
     'BLOCK_ANALOG_FAULT_GRADE', 
     // 'CLU_ANALOG_FAULT_LEVEL_SUM',
-    'CLU_ANALOG_FAULT_GRADE'
+    'CLU_ANALOG_FAULT_GRADE',
+    'EN_CLUSTER_HARDWARE_SUM'
   ]
   
   faultTopics.forEach(topic => {
@@ -307,6 +412,9 @@ const handleFaultData = (_e, msg) => {
         data: msg.data,
         baseConfig: { clusterCount: msg.baseConfig?.clusterCount || 0 }
       }
+      break
+    case 'EN_CLUSTER_HARDWARE_SUM':
+      enClusterHardwareSumData.value = { data: msg.data }
       break
   }
 }

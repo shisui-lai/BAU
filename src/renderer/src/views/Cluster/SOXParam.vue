@@ -10,8 +10,9 @@ import { DEFAULT_SOX_PARAMS } from '@/configs/parameterDefaults'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import InputNumber from 'primevue/inputnumber'
+import InputText from 'primevue/inputtext'
 import { useI18n } from 'vue-i18n'
+import { useRawInputCache, isNumericType, validateNumericInput } from '@/composables/utils/useParameterInput'
 
 const toastService = useToast()
 const soxParamHandler = useSOXParam()
@@ -20,8 +21,9 @@ const { t, locale, te } = useI18n()
 // 直接使用label翻译函数
 const getLabelTranslation = (label) => {
   if (locale.value === 'zh') return label
-  return te(`config.soxParam.label.${label}`) 
-    ? t(`config.soxParam.label.${label}`) 
+  // 使用现有命名空间：config.soxParam.label
+  return te(`config.soxParam.label.${label}`)
+    ? t(`config.soxParam.label.${label}`)
     : label
 }
 
@@ -204,6 +206,46 @@ function startMultiTopicReadingWithRetry() {
   startMultiTopicReading(allReadTopics)
 }
 
+// 原文缓存：按分类区分
+const { setRawInput, getRawInput, getInputDisplay, clearByPrefix } = useRawInputCache(() => `SOX_PARAM:${currentSelectedClass.value?.name || ''}`)
+
+// 统一校验并下发（数值型）
+function sendParametersWithValidation() {
+  // 使用已翻译的参数列表，确保英文模式下错误明细为英文标签
+  const list = translatedParameterList?.value || []
+  const errors = []
+  const numericUpdates = []
+
+  for (const p of list) {
+    if (!p) continue
+    // 仅校验数值类型
+    if (isNumericType(p)) {
+      const raw = getRawInput(p)
+      const src = raw !== undefined ? String(raw) : String(getParameterInputValue(p, p.currentValue) ?? '')
+      const res = validateNumericInput(p, src, { t, te })
+      if (!res.valid) {
+        errors.push(`${p.label || p.key}: ${res.message}`)
+        continue
+      }
+      const writeVal = setParameterInputValue(p, res.value)
+      numericUpdates.push({ key: p.key, value: writeVal })
+    }
+  }
+
+  if (errors.length > 0) {
+    const summary = t('soxParam.messages.validationFailed')
+    toastService.add({ severity: 'error', summary, detail: errors.join('\n'), life: 8000 })
+    return
+  }
+
+  for (const u of numericUpdates) {
+    updateParameterValue(u.key, u.value, { immediate: true })
+  }
+
+  // 原始逻辑：调用核心下发
+  sendCurrentClassParameters()
+}
+
 // MQTT事件处理 - 实时SOX数据
 function handleRealTimeSaveReadEvent(event, mqttMessage) {
   // 标记收到响应，停止超时检查（任意topic响应即可）
@@ -223,6 +265,8 @@ function handleRealTimeSaveReadEvent(event, mqttMessage) {
       ...mqttMessage,
       ...parsedReadData
     })
+    // 读取成功后清理当前分类的原文缓存以显示设备值
+    clearByPrefix(`SOX_PARAM:${currentSelectedClass.value?.name || ''}`)
   }
 }
 
@@ -251,6 +295,7 @@ function handleSOXCfgParamReadEvent(event, mqttMessage) {
       ...mqttMessage,
       ...parsedReadData
     })
+    clearByPrefix(`SOX_PARAM:${currentSelectedClass.value?.name || ''}`)
   }
 }
 
@@ -279,6 +324,7 @@ function handleSOCCfgParamReadEvent(event, mqttMessage) {
       ...mqttMessage,
       ...parsedReadData
     })
+    clearByPrefix(`SOX_PARAM:${currentSelectedClass.value?.name || ''}`)
   }
 }
 
@@ -307,6 +353,7 @@ function handleSOHCfgParamReadEvent(event, mqttMessage) {
       ...mqttMessage,
       ...parsedReadData
     })
+    clearByPrefix(`SOX_PARAM:${currentSelectedClass.value?.name || ''}`)
   }
 }
 
@@ -427,31 +474,29 @@ function getParameterRemarkText(parameterKey) {
                 }
               }"
               :severity="isCurrentlyReading ? 'danger' : 'primary'"
-              size="small"
-            />
+              />
             <Button
               :label="t('soxParam.buttons.sendParameters')"
-              @click="sendCurrentClassParameters"
+              @click="sendParametersWithValidation"
               :disabled="isCurrentlyReading || !currentSelectedClass"
               severity="warning"
-              size="small"
-            />
+              />
           </div>
         </div>
       </div>
 
       <!-- 第二行：参数分类切换按钮 -->
       <div class="class-tabs">
-        <Button
-          v-for="parameterClass in allAvailableClasses"
-          :key="parameterClass.name"
-          :label="t('soxParam.parameterClasses.' + parameterClass.name)"
-          @click="switchToParameterClass(parameterClass.name)"
-          :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
-          :outlined="currentSelectedClass?.name !== parameterClass.name"
-          size="small"
-          class="class-tab-button"
-        />
+          <Button
+            v-for="parameterClass in allAvailableClasses"
+            :key="parameterClass.name"
+            :label="t('soxParam.parameterClasses.' + parameterClass.name)"
+            @click="switchToParameterClass(parameterClass.name)"
+            :severity="currentSelectedClass?.name === parameterClass.name ? 'primary' : 'secondary'"
+            :outlined="currentSelectedClass?.name !== parameterClass.name"
+            size="small"
+            class="class-tab-button"
+          />
       </div>
     </div>
 
@@ -473,14 +518,10 @@ function getParameterRemarkText(parameterKey) {
       <!-- 参数值编辑列 -->
       <Column :header="t('soxParam.table.parameterValue')" style="width: 150px">
         <template #body="slotProps">
-          <InputNumber
-            :model-value="getParameterInputValue(slotProps.data, slotProps.data.currentValue)"
-            @update:model-value="(inputValue) => updateParameterValue(slotProps.data.key, setParameterInputValue(slotProps.data, inputValue))"
+          <InputText
+            :model-value="getInputDisplay(slotProps.data, slotProps.data.currentValue, getParameterInputValue)"
+            @update:model-value="(v) => setRawInput(slotProps.data, v)"
             :disabled="isCurrentlyReading"
-            :step="slotProps.data.scale ? 1/slotProps.data.scale : 1"
-            :min-fraction-digits="getParameterDecimalPlaces(slotProps.data)"
-            :max-fraction-digits="getParameterDecimalPlaces(slotProps.data)"
-            size="small"
             class="w-full"
           />
         </template>

@@ -13,11 +13,10 @@
           <div class="command-section">
             <h3 class="section-title">{{ t('blockRemoteCommandPage.sections.controlCommands') }}</h3>
             <div class="command-grid">
-              <div 
-                v-for="command in controlCommandTableData" 
-                :key="command.id"
-                class="command-item"
-              >
+              <template v-for="command in controlCommandTableData" :key="command.id">
+                <div 
+                  class="command-item"
+                >
                 <div class="command-label">
                   {{ getCommandDisplayName(command.name) }}
                   <Tag
@@ -87,33 +86,35 @@
                     :loading="executingCommands.has(command.id)"
                   />
                 </div>
-              </div>
+                </div>
+
+                <!-- 接触器执行策略结果紧跟在“下设电池堆控制开关”之后显示 -->
+                <div v-if="command.id === 'batt_stack_ctrl_switch'" class="command-item">
+                  <div class="command-label">
+                    {{ t('blockRemoteCommandPage.sections.contactorStrategyResult') }}
+                  </div>
+                  <div class="flex align-items-center gap-2 flex-1 justify-content-end">
+                    <div 
+                      v-for="item in feedbackStatusData" 
+                      :key="item.id"
+                      class="flex align-items-center gap-2"
+                    >
+                      <Tag 
+                        :value="getStatusDisplay(item.value)" 
+                        :severity="item.severity"
+                        class="status-tag"
+                      />
+                    </div>
+                  </div>
+                  <div class="flex justify-content-end"></div>
+                </div>
+              </template>
             </div>
           </div>
           
           <!-- 分隔线 -->
           <div class="section-divider"></div>
           
-          <!-- 接触器执行策略结果区域 -->
-          <div class="result-section">
-            <h3 class="section-title">{{ t('blockRemoteCommandPage.sections.contactorStrategyResult') }}</h3>
-            <div class="result-grid">
-              <div 
-                v-for="item in feedbackStatusData" 
-                :key="item.id"
-                class="result-item"
-              >
-                <div class="result-label">{{ getFeedbackLabel(item.id, item.name) }}</div>
-                <div class="result-value">
-                  <Tag 
-                    :value="getStatusDisplay(item.value)" 
-                    :severity="item.severity"
-                    class="status-tag"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

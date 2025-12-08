@@ -198,7 +198,6 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     // 只处理当前选中的堆和簇的数据
     if (blockId === currentBlockId.value && 
         clusterId === currentClusterId.value) {
-      
       rawData.value = {
         baseConfig: baseConfig || {},
         data: data || []
@@ -211,6 +210,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
       } catch (e) {
         console.warn('缓存DI/DO状态数据失败:', e)
       }
+
     }
   }
 
@@ -246,15 +246,21 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
       }
     )
 
+
     listenerId = (event, msg) => {
-      // 安全检查：确保 throttledHandler 存在且是函数
-      if (throttledHandler && typeof throttledHandler === 'function') {
-        throttledHandler(event, msg)
+      if (!msg) return
+      const { blockId, clusterId } = msg
+      const currB = currentBlockId.value
+      const currC = currentClusterId.value
+      if (blockId === currB && clusterId === currC) {
+        if (throttledHandler && typeof throttledHandler === 'function') {
+          throttledHandler(event, msg)
+        }
       }
     }
 
     window.electron.ipcRenderer.on('DI_DO_TEMP_STATUS', listenerId)
-    console.log('[useDiDoStatus] 已注册IPC监听器: DI_DO_TEMP_STATUS (节流间隔: 1秒)')
+    
   }
 
   /**
@@ -269,8 +275,10 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
         rawData.value = JSON.parse(cached)
+        
       } else {
         rawData.value = { baseConfig: {}, data: [] }
+        
       }
     } catch (e) {
       console.warn('加载DI/DO状态缓存失败:', e)
@@ -284,10 +292,6 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
   watch(
     () => currentClusterId.value,
     () => {
-      console.log('[useDiDoStatus] 设备选择变化:', {
-        currentBlock: currentBlockId.value,
-        currentCluster: currentClusterId.value
-      })
       // 设备切换时，重新加载缓存
       loadFromCache()
     },
@@ -300,6 +304,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
   onBeforeMount(() => {
     loadFromCache()
     registerListener()
+    
   })
 
   /**

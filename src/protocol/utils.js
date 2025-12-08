@@ -2072,6 +2072,7 @@ export function parseCluAnalogFaultLevelSumRAW(payload) {
   };
 }
 
+
 // 解析堆模拟量故障三级汇总原始数据
 export function parseBlockAnalogFaultLevelRAW(payload) {
   const buf = Buffer.isBuffer(payload)
@@ -2917,4 +2918,3 @@ export function parseEventRecordRAW(payload) {
     rawBuffer: records.length > 0 ? records[0].rawBuffer : null
   };
 }
-

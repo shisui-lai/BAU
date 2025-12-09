@@ -635,8 +635,19 @@ export function processThirdFaultRAW(hex, kind) {
    */
 export function locateCell (label, cfg = {}) {
     // ① 解析 BMU 与在 BMU 内的 cell 序号
-    const bmu        = +(label.match(/^BMU(\d+)/)?.[1] || 0);
-    const cellInBmu  = +(label.match(/第\s*(\d+)\s*节/)?.[1] || 0);
+    // 支持多种格式：
+    // 1. "BMU1 第 28 节" -> cellInBmu = 28
+    // 2. "BMU1 Cell28" -> cellInBmu = 28
+    // 3. "BMU1 Temp3" -> cellInBmu = 3 (虽然是温度，但也提取为相对索引)
+    const bmu        = +(label.match(/^BMU(\d+)/i)?.[1] || 0);
+    
+    // 尝试匹配 "第 x 节"
+    let cellInBmu = +(label.match(/第\s*(\d+)\s*节/)?.[1] || 0);
+    
+    // 如果没匹配到，尝试匹配 "Cell x" 或 "Temp x"
+    if (cellInBmu === 0) {
+      cellInBmu = +(label.match(/(?:Cell|Temp)\s*(\d+)/i)?.[1] || 0);
+    }
 
     // ② 如果没有cell序号，说明是BMU级别故障，AFE和cell应该为null
     if (cellInBmu === 0) {

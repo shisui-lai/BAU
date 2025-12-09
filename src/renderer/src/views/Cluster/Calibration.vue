@@ -746,7 +746,7 @@ onUnmounted(() => {
 
 <template>
   <div class="page-wrapper">
-    <div class="card" :class="{ blurred: isBlurred }">
+    <div class="card" v-if="!showPasswordDialog">
     <!-- 校准类型选择区 -->
     <div class="mb-4">
       <label for="kb-select" class="form-label">{{ t('analogCalibration.selectLabel') }}</label>
@@ -969,7 +969,5 @@ onUnmounted(() => {
   padding: 0.6rem 1rem;
 }
 
-.blurred {
-  filter: blur(4px);
-}
+
 </style>

@@ -885,7 +885,7 @@ onUnmounted(() => {
 <!-- BAU设备升级界面 -->
 <template>
   <div class="page-wrapper">
-    <div class="card" :class="{ blurred: isBlurred }">
+    <div class="card" v-if="!showPasswordDialog">
     <div class="upgrade-container">
       <!-- 左右布局：左侧(FTP配置+版本信息) + 右侧(设备升级) -->
       <div class="grid">
@@ -1563,9 +1563,7 @@ onUnmounted(() => {
   padding: 0.6rem 1rem;
 }
 
-.blurred {
-  filter: blur(4px);
-}
+
 /* FTP双列布局 */
 .ftp-two-col {
   display: grid;

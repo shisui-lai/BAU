@@ -1,6 +1,6 @@
 <template>
   <div class="force-upgrade-page">
-    <div class="card force-upgrade" :class="{ blurred: isBlurred }">
+    <div class="card force-upgrade" v-if="!showPasswordDialog">
     <div class="control">
       <!-- 左侧：TFTP 服务器配置部分 -->
       <div class="section1">
@@ -983,7 +983,5 @@ function cancelPwd() {
   padding: 0.6rem 1rem;
 }
 
-.blurred {
-  filter: blur(4px);
-}
+
 </style>

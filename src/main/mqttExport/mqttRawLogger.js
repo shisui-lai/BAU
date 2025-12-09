@@ -1,3 +1,14 @@
+/**
+ * 原始 MQTT 报文记录（CSV）
+ *
+ * 职责：
+ * - 在 RAW_EXPORT_DIR 下按会话后缀生成 Raw_Messages_<suffix>.csv
+ * - 超过大小限制自动轮转并 gzip 压缩，更新后缀以生成新文件
+ * - 表头一次性初始化（hasValidHeader/ensureGlobalHeader），写入采用串行链保证顺序
+ *
+ * 维护提示：
+ * - currentFileSuffix 在轮转后更新，避免文件名冲突；磁盘空间不足时发送警告消息
+ */
 import fs from 'fs'
 import path from 'path'
 import { appendFileWithRetry, ensureDir, compressFileGzip, formatDateTime, getCachedFreeDiskSpace } from './utils'
@@ -25,9 +36,18 @@ function getDir() {
   ensureDir(dir)
   return dir
 }
+/**
+ * 获取当前原始报文CSV文件路径
+ * @returns {string} 文件绝对路径
+ */
 function getFile() {
   return path.join(getDir(), `Raw_Messages_${currentFileSuffix}.csv`)
 }
+/**
+ * 判断文件是否已包含有效表头（含 BOM）
+ * @param {string} p - 文件路径
+ * @returns {Promise<boolean>} 是否包含有效表头
+ */
 async function hasValidHeader(p) {
   try {
     const fd = await fs.promises.open(p, 'r')
@@ -40,6 +60,11 @@ async function hasValidHeader(p) {
     return false
   }
 }
+/**
+ * 按文件大小限制进行轮转与压缩
+ * @param {string} p - 文件路径
+ * @returns {Promise<void>}
+ */
 async function rotateIfNeeded(p) {
   try {
     const s = await fs.promises.stat(p)
@@ -59,7 +84,11 @@ async function rotateIfNeeded(p) {
     }
   } catch {}
 }
-
+/**
+ * 确保全局原始报文文件写入表头（只初始化一次）
+ * @param {string} p - 文件路径
+ * @returns {Promise<void>}
+ */
 async function ensureGlobalHeader(p) {
   if (headerInitPromise && headerInitPath === p) return headerInitPromise
   headerInitPath = p
@@ -84,7 +113,11 @@ function formatDirectionText(dir) {
   if (dir === 'd2s') return 'BAU->上位机'
   return String(dir || '')
 }
-
+/**
+ * 将单向原始消息记录到CSV
+ * @param {{topic:string,payloadHex:string,clientId:string|number,ts:number}} params - 消息参数
+ * @returns {Promise<void>}
+ */
 export async function logMessage({ topic, payloadHex, clientId, ts }) {
   let p = getFile()
   const job = async () => {
@@ -133,7 +166,11 @@ export async function logMessage({ topic, payloadHex, clientId, ts }) {
   }
   await (writeChain = writeChain.then(job))
 }
-
+/**
+ * 将任意方向原始消息记录到CSV
+ * @param {{topic:string,payloadHex:string,clientId:string|number,ts:number,direction:'s2d'|'d2s'|string}} params - 消息参数
+ * @returns {Promise<void>}
+ */
 export async function logAnyMessage({ topic, payloadHex, clientId, ts, direction }) {
   let p = getFile()
   const job = async () => {

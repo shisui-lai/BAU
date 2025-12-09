@@ -1049,7 +1049,23 @@ function withResponseCheck(fn) {
         suffix === 'di_do_temp_status' ||
         suffix === 'block_hardware_fault' ||
         suffix === 'block_total_fault' ||
-        suffix === 'brokenwire'
+        suffix === 'brokenwire' ||
+        // Level 3 故障补全
+        suffix === 'cell_ov_fault_level3' ||
+        suffix === 'cell_uv_fault_level3' ||
+        suffix === 'chg_ot_fault_level3' ||
+        suffix === 'chg_ut_fault_level3' ||
+        suffix === 'dsg_ot_fault_level3' ||
+        suffix === 'dsg_ut_fault_level3' ||
+        suffix === 'soc_over_fault_level3' ||
+        suffix === 'soc_under_fault_level3' ||
+        // 其他故障补全
+        suffix === 'block_comm_lost' ||
+        suffix === 'output_fault_map' ||
+        suffix === 'saved_fault_map' ||
+        suffix === 'block_analog_fault_level' ||
+        suffix === 'block_analog_fault_grade' ||
+        suffix === 'clu_analog_fault_grade'
       ) {
         processAlarmSemantic({ topic, hex, blockId, clusterId, baseConfig, data })
       }

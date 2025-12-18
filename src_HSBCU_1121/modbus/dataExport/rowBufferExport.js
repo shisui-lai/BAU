@@ -31,17 +31,17 @@ function getBcuNumber(ip) {
   if (ipBcuNumberCache.has(ip)) {
     return ipBcuNumberCache.get(ip)
   }
-  
+
   const clients = getModbusClients()
   const ipList = Object.keys(clients).sort() // 按IP地址排序
   const bcuIndex = ipList.indexOf(ip)
   const bcuNumber = bcuIndex >= 0 ? bcuIndex + 1 : 1
-  
+
   // 缓存BCU序号
   if (bcuIndex >= 0) {
     ipBcuNumberCache.set(ip, bcuNumber)
   }
-  
+
   return bcuNumber
 }
 
@@ -270,7 +270,7 @@ async function appendToCSV(lines, ip = null) {
   } catch (err) {
     console.error(`[CSV] ${ip ? `IP ${ip} ` : ''}写入失败:`, err)
   }
-  
+
   // ✅ 完全移除了互斥锁，因为文件写入本身已经是原子操作
   // Node.js的fs操作在操作系统层面是安全的
 }

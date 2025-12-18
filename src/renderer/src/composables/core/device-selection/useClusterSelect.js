@@ -3,25 +3,25 @@ import { computed } from 'vue'
 import { useClusterStore } from '@/stores/device/clusterStore'
 
 /**
- * 簇选择composable 
+ * 簇选择composable
  * 内部使用全局clusterStore，但保持原有API不变
  * 这样可以确保现有代码无需修改即可使用新的全局状态管理
  */
 export function useClusterSelect() {
   const clusterStore = useClusterStore()
-  
+
   // 提供原有的响应式引用
   const clusterOptions = computed(() => clusterStore.availableClusters)
   const selectedCluster = computed({
     get: () => clusterStore.selectedClusterForView,
     set: (value) => clusterStore.setSelectedClusterForView(value)
   })
-  
+
   return {
     clusterOptions,
     selectedCluster,
     ensureClusterOption: clusterStore.ensureClusterOption,
-    replaceClusterOptions: clusterStore.replaceClusterOptions,
+    replaceClusterOptions: clusterStore.replaceClusterOptions
   }
 }
 
@@ -40,7 +40,10 @@ export const selectedCluster = computed({
     console.log('🔄 [useClusterSelect] selectedCluster.set 被调用:', {
       value,
       timestamp: new Date().toISOString(),
-      stack: new Error().stack.split('\n').slice(1, 4).map(line => line.trim())
+      stack: new Error().stack
+        .split('\n')
+        .slice(1, 4)
+        .map((line) => line.trim())
     })
     const clusterStore = useClusterStore()
     clusterStore.setSelectedClusterForView(value)
@@ -55,4 +58,4 @@ export function ensureClusterOption(key) {
 export function replaceClusterOptions(opts) {
   const clusterStore = useClusterStore()
   clusterStore.replaceClusterOptions(opts)
-} 
+}

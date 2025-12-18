@@ -8,14 +8,14 @@ import { useBlockStore } from '@/stores/device/blockStore'
  */
 export function useBlockSelect() {
   const blockStore = useBlockStore()
-  
+
   // 为了向后兼容，提供响应式引用
   const blockOptions = computed(() => blockStore.availableBlocks)
   const selectedBlock = computed({
     get: () => blockStore.selectedBlockForView,
     set: (value) => blockStore.setSelectedBlockForView(value)
   })
-  
+
   return {
     blockOptions,
     selectedBlock,
@@ -25,7 +25,7 @@ export function useBlockSelect() {
     replaceBlockOptions: blockStore.replaceBlockOptions,
     setSelectedBlocksForWrite: blockStore.setSelectedBlocksForWrite,
     selectAllBlocks: blockStore.selectAllBlocks,
-    clearSelectedBlocks: blockStore.clearSelectedBlocks,
+    clearSelectedBlocks: blockStore.clearSelectedBlocks
   }
 }
 
@@ -54,4 +54,4 @@ export function ensureBlockOption(key) {
 export function replaceBlockOptions(opts) {
   const blockStore = useBlockStore()
   blockStore.replaceBlockOptions(opts)
-} 
+}

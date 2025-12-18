@@ -131,6 +131,11 @@ onUnmounted(() => {
       <button class="p-link layout-menu-button layout-topbar-button" @click="onMenuToggle()">
         <i class="pi pi-bars"></i>
       </button>
+
+      <!-- 首页按钮 -->
+      <button class="p-link layout-topbar-button home-button" @click="$router.push('/dashboard')" title="返回首页">
+        <i class="pi pi-th-large"></i>
+      </button>
       
       <!-- 簇选择器区域 - 根据页面类型显示 -->
       <div class="cluster-selector-area" v-if="clusterStore.showClusterSelector">
@@ -262,6 +267,11 @@ onUnmounted(() => {
 .right-section {
   display: flex;
   align-items: center;
+}
+
+/* 首页按钮样式 */
+.home-button {
+  margin-left: 0.5rem;
 }
 
 /* 簇选择器区域 */

@@ -8,11 +8,11 @@ export function useRetryLogic(toastService, stopFunction = null, options = {}) {
     timeout = 10000, // 默认6秒超时
     message = '设备无响应，请检查设备连接状态'
   } = options
-  
+
   // 状态变量
   let hasResponse = false
   let timeoutId = null
-  
+
   /**
    * 开始重试检查
    * 启动超时计时器，如果在指定时间内没有收到响应则显示超时提示
@@ -20,9 +20,9 @@ export function useRetryLogic(toastService, stopFunction = null, options = {}) {
   function startRetry() {
     hasResponse = false
     clearTimeout(timeoutId)
-    
+
     // console.log('[useRetryLogic] 开始超时检查，超时时间:', timeout + 'ms')
-    
+
     timeoutId = setTimeout(() => {
       if (!hasResponse) {
         console.log('[useRetryLogic] 检测到超时，显示提示并停止读取')
@@ -45,7 +45,7 @@ export function useRetryLogic(toastService, stopFunction = null, options = {}) {
       }
     }, timeout)
   }
-  
+
   /**
    * 标记已收到响应
    * 停止超时检查，清除计时器
@@ -57,7 +57,7 @@ export function useRetryLogic(toastService, stopFunction = null, options = {}) {
       clearTimeout(timeoutId)
     }
   }
-  
+
   /**
    * 清理资源
    * 页面卸载时调用，清除计时器和重置状态
@@ -68,7 +68,7 @@ export function useRetryLogic(toastService, stopFunction = null, options = {}) {
     hasResponse = false
     timeoutId = null
   }
-  
+
   return {
     startRetry,
     markResponse,

@@ -10,7 +10,6 @@ import {
 // 注意：不需要导入parseFactoryCalibrationRAW，因为MQTT消息已经包含解析后的数据
 
 export function useFactoryCalibParam() {
-    
   /**
    * 创建出厂校正参数的默认数据对象
    * 根据FACTORY_CALIB_PARAM_R表定义初始化所有参数的默认值
@@ -21,9 +20,9 @@ export function useFactoryCalibParam() {
     // 性能优化：使用markRaw避免Vue深度响应式跟踪
     return createDefaultParameterData(markRaw(FACTORY_CALIB_PARAM_R), '[useFactoryCalibParam]')
   }
-  
+
   // ================== MQTT消息解析功能 ==================
-  
+
   /**
    * 解析出厂校正参数读取响应消息
    * 处理从设备返回的读取数据，包括成功和错误情况
@@ -53,7 +52,6 @@ export function useFactoryCalibParam() {
       }
 
       return result
-
     } catch (error) {
       console.error('[useFactoryCalibParam] 解析出厂校正参数读取响应失败:', error)
       return null
@@ -83,20 +81,19 @@ export function useFactoryCalibParam() {
    */
   const serializeFactoryCalibParamData = (parameterDataFrame, startByteOffset, registerCount) => {
     // 调用通用序列化函数
-    const fieldDefinitionTable = FACTORY_CALIB_PARAM_R    // 使用明确的变量名
-    const logPrefix = '[useFactoryCalibParam]'            // 使用明确的变量名
-    const dataTypeName = '出厂校正参数'                    // 使用明确的变量名
-    
+    const fieldDefinitionTable = FACTORY_CALIB_PARAM_R // 使用明确的变量名
+    const logPrefix = '[useFactoryCalibParam]' // 使用明确的变量名
+    const dataTypeName = '出厂校正参数' // 使用明确的变量名
+
     return serializeParameterData(
-      parameterDataFrame,      
-      fieldDefinitionTable,    
-      startByteOffset,         
-      registerCount,           
-      logPrefix,               
-      dataTypeName             
+      parameterDataFrame,
+      fieldDefinitionTable,
+      startByteOffset,
+      registerCount,
+      logPrefix,
+      dataTypeName
     )
   }
-
 
   // ================== 返回接口 ==================
   return {

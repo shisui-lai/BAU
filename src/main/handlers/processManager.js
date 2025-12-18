@@ -1,51 +1,51 @@
 /**
  * MQTT子进程管理器
- * 
+ *
  * 【文件用途】
  * 解决上位机系统长时间运行后出现的MQTT子进程异常导致的通讯中断问题。
  * 原问题：子进程异常退出后，系统显示"重连中"但实际无法恢复，需要手动重启应用。
- * 
+ *
  * 【主要功能】
  * 1. 子进程生命周期管理：启动、监控、重启、清理
  * 2. 健康检查机制：10秒间隔心跳检测，及时发现异常
  * 3. 智能重启策略：频率限制、次数限制、渐进式重启
  * 4. 错误日志记录：详细记录异常信息，便于问题诊断
  * 5. 状态透明化：提供实时的进程状态和健康信息
- * 
+ *
  * 【解决的问题】
  * - 子进程异常退出导致的通讯中断
  * - 长时间运行后的系统卡顿
  * - 需要手动重启应用的问题
  * - 缺乏进程健康监控的问题
- * 
+ *
  * 【使用方法】
  * ```javascript
  * import { processManager } from './handlers/processManager.js'
- * 
+ *
  * // 初始化
  * processManager.initialize(forkPath1, mainWindow)
  * processManager.startMQTTProcess()
- * 
+ *
  * // 设置消息处理器
  * processManager.setMessageHandler((msg) => {
  *   // 处理消息
  * })
- * 
+ *
  * // 获取当前子进程（保持兼容性）
  * const mqttTask = processManager.getMQTTTask()
  * ```
- * 
+ *
  * 【注意事项】
  * 1. 该管理器会自动处理子进程异常，无需手动干预
  * 2. 最大自动重启次数为5次，超过后需要手动处理
  * 3. 重启间隔最少30秒，避免重启风暴
  * 4. 心跳超时阈值为20秒（2倍检查间隔）
- * 
+ *
  * 【维护要点】
  * - 定期检查错误日志，分析异常模式
  * - 根据实际运行情况调整重启策略参数
  * - 监控重启频率，如果频繁重启需要排查根本原因
- * 
+ *
  * @author 系统优化
  * @date 2024-12-26
  * @version 1.0.0
@@ -60,24 +60,24 @@ class MQTTProcessManager {
     this.forkPath = null
     this.mainWindow = null
     this.messageHandler = null
-    
+
     // 重启策略
     this.restartCount = 0
     this.maxRestarts = 5
     this.lastRestartTime = 0
     this.minRestartInterval = 30000 // 30秒最小重启间隔
-    
+
     // 健康检查
     this.healthCheckInterval = 10000 // 10秒健康检查间隔
     this.heartbeatTimeout = 20000 // 20秒心跳超时
     this.lastHeartbeat = 0
     this.healthCheckTimer = null
-    
+
     // 状态管理
     this.isInitialized = false
     this.isStarting = false
     this.startTime = 0
-    
+
     console.log('[ProcessManager] 进程管理器已创建')
   }
 
@@ -112,7 +112,7 @@ class MQTTProcessManager {
 
     try {
       console.log('[ProcessManager] 正在启动MQTT子进程...')
-      
+
       // 清理旧进程
       if (this.mqttTask && !this.mqttTask.killed) {
         this.mqttTask.kill('SIGTERM')
@@ -124,15 +124,14 @@ class MQTTProcessManager {
 
       // 设置进程监控
       this.setupProcessMonitoring()
-      
+
       // 不再由processManager主动发送健康检查请求
       // 改为监听mqtt.js子进程主动发送的心跳消息
       // mqtt.js会在连接成功后自己启动定时心跳
       // this.startHealthCheck()
-      
+
       this.isStarting = false
       return true
-
     } catch (error) {
       console.error('[ProcessManager] 启动MQTT子进程失败:', error)
       this.logError('startup_failed', error)
@@ -199,12 +198,12 @@ class MQTTProcessManager {
 
   /**
    * 启动健康检查（已废弃 - 改为被动接收心跳）
-   * 
+   *
    * 新架构说明：
    * - processManager不再主动发送健康检查请求
    * - mqtt.js子进程在连接成功后会主动发送心跳
    * - processManager只需被动接收心跳并更新lastHeartbeat
-   * 
+   *
    * 优势：
    * - 子进程自主管理，逻辑更清晰
    * - 只在真正需要时（连接成功）才发送心跳
@@ -218,7 +217,7 @@ class MQTTProcessManager {
 
   /**
    * 执行健康检查（已废弃）
-   * 
+   *
    * 说明：不再需要主动检查，mqtt.js会主动发送心跳
    */
   performHealthCheck() {
@@ -288,14 +287,14 @@ class MQTTProcessManager {
    */
   restartProcess(reason) {
     console.log(`[ProcessManager] 重启MQTT子进程，原因: ${reason}`)
-    
+
     // 清理旧进程
     this.cleanup(false)
-    
+
     // 更新重启统计
     this.restartCount++
     this.lastRestartTime = Date.now()
-    
+
     // 延迟重启，给系统恢复时间
     setTimeout(() => {
       this.startMQTTProcess()
@@ -319,7 +318,7 @@ class MQTTProcessManager {
         uptime: this.startTime ? Date.now() - this.startTime : 0
       }
     }
-    
+
     console.error('[ProcessManager] 错误日志:', JSON.stringify(errorLog, null, 2))
     // TODO: 可以在这里添加错误日志持久化到文件
   }
@@ -402,13 +401,13 @@ class MQTTProcessManager {
    */
   cleanup(stopHealthCheck = true) {
     console.log('[ProcessManager] 清理进程资源')
-    
+
     // 停止健康检查
     if (stopHealthCheck && this.healthCheckTimer) {
       clearInterval(this.healthCheckTimer)
       this.healthCheckTimer = null
     }
-    
+
     // 终止子进程
     if (this.mqttTask && !this.mqttTask.killed) {
       this.mqttTask.kill('SIGTERM')

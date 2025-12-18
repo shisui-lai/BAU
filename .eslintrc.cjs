@@ -4,9 +4,13 @@ module.exports = {
     // 设置为 "script" (默认)或"module"（如果你的代码是 ECMAScript 模块)
     sourceType: 'module',
     //emcaVersion用来指定你想要使用的 ECMAScript 版本
-    ecmaVersion: 6,
-    // 解析器
-    parser: 'babel-eslint'
+    ecmaVersion: 'latest',
+    // 解析器 - 使用 @babel/eslint-parser 替代过时的 babel-eslint
+    parser: '@babel/eslint-parser',
+    requireConfigFile: false,
+    babelOptions: {
+      presets: ['@babel/preset-env']
+    }
   },
   // eslint的环境
   env: {
@@ -18,6 +22,20 @@ module.exports = {
   extends: ['plugin:vue/essential', 'eslint:recommended', '@vue/prettier'],
   // required to lint *.vue files
   plugins: ['html', 'vue'],
+  // 为不同文件类型配置不同的解析器
+  overrides: [
+    {
+      files: ['*.vue'],
+      parser: 'vue-eslint-parser',
+      parserOptions: {
+        parser: '@babel/eslint-parser',
+        requireConfigFile: false,
+        babelOptions: {
+          presets: ['@babel/preset-env']
+        }
+      }
+    }
+  ],
   // add your custom rules here
   rules: {
     semi: [0, 'always'], //强制语句分号结尾
@@ -44,4 +62,4 @@ module.exports = {
       }
     ]
   }
-};
+}

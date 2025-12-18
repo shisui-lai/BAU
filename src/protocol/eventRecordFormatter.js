@@ -152,7 +152,7 @@ const EVENT_TYPE_MAP = {
  */
 const FAULT_BIT_MAPS = {
   // 簇汇总模拟量三级告警
-  'ClusterAnalogAlarm_Severe1': [
+  ClusterAnalogAlarm_Severe1: [
     '单体压差上限告警',
     '单体温差上限告警',
     '单体SOC差异过大告警',
@@ -170,7 +170,7 @@ const FAULT_BIT_MAPS = {
     'BCU RT5过温告警',
     '预留'
   ],
-  'ClusterAnalogAlarm_Severe2': [
+  ClusterAnalogAlarm_Severe2: [
     '电池包电压上限告警',
     '电池包电压下限告警',
     '电池包温度上限告警',
@@ -188,7 +188,7 @@ const FAULT_BIT_MAPS = {
     '簇间压差上限告警',
     '预留'
   ],
-  'ClusterAnalogAlarm_Moderate1': [
+  ClusterAnalogAlarm_Moderate1: [
     '单体压差上限告警',
     '单体温差上限告警',
     '单体SOC差异过大告警',
@@ -206,7 +206,7 @@ const FAULT_BIT_MAPS = {
     'BCU RT5过温告警',
     '预留'
   ],
-  'ClusterAnalogAlarm_Moderate2': [
+  ClusterAnalogAlarm_Moderate2: [
     '电池包电压上限告警',
     '电池包电压下限告警',
     '电池包温度上限告警',
@@ -224,7 +224,7 @@ const FAULT_BIT_MAPS = {
     '预留',
     '预留'
   ],
-  'ClusterAnalogAlarm_Mild1': [
+  ClusterAnalogAlarm_Mild1: [
     '单体压差上限告警',
     '单体温差上限告警',
     '单体SOC差异过大告警',
@@ -242,7 +242,7 @@ const FAULT_BIT_MAPS = {
     'BCU RT5过温告警',
     '预留'
   ],
-  'ClusterAnalogAlarm_Mild2': [
+  ClusterAnalogAlarm_Mild2: [
     '电池包电压上限告警',
     '电池包电压下限告警',
     '电池包温度上限告警',
@@ -260,9 +260,9 @@ const FAULT_BIT_MAPS = {
     '预留',
     '预留'
   ],
-  
+
   // 簇汇总硬件故障
-  'ClusterHardwareFault_Word1': [
+  ClusterHardwareFault_Word1: [
     '预充高边驱动反馈故障',
     '主正高边驱动反馈故障',
     '主正氧化',
@@ -280,7 +280,7 @@ const FAULT_BIT_MAPS = {
     '预充接触器故障汇总',
     '汇总的故障'
   ],
-  'ClusterHardwareFault_Word2': [
+  ClusterHardwareFault_Word2: [
     '隔离开关反馈故障',
     '断路器反馈故障',
     '风扇反馈故障',
@@ -298,84 +298,84 @@ const FAULT_BIT_MAPS = {
     '急停反馈故障',
     '预留'
   ],
-  'ClusterHardwareFault_Word3': [
-    '主正高边驱动反馈故障',           // Bit0
-    '主负高边驱动反馈故障',           // Bit1
-    '预充高边驱动反馈故障',           // Bit2
-    '红灯高边驱动反馈故障',           // Bit3
-    '黄灯高边驱动反馈故障',           // Bit4
-    '绿灯高边驱动反馈故障',           // Bit5
-    '风机高边驱动反馈故障',           // Bit6
-    '主断分励高边驱动反馈故障',       // Bit7
-    '直流供电KM高边驱动反馈故障',     // Bit8
-    'pcs封波高边驱动反馈故障',        // Bit9 
-    '辅助断路器控制高边驱动反馈故障',  // Bit10
-    '排风系统控制高边驱动反馈故障',    // Bit11
-    '预留',                           // Bit12
-    '预留',                           // Bit13
-    '预留',                           // Bit14
-    '预留'                            // Bit15
+  ClusterHardwareFault_Word3: [
+    '主正高边驱动反馈故障', // Bit0
+    '主负高边驱动反馈故障', // Bit1
+    '预充高边驱动反馈故障', // Bit2
+    '红灯高边驱动反馈故障', // Bit3
+    '黄灯高边驱动反馈故障', // Bit4
+    '绿灯高边驱动反馈故障', // Bit5
+    '风机高边驱动反馈故障', // Bit6
+    '主断分励高边驱动反馈故障', // Bit7
+    '直流供电KM高边驱动反馈故障', // Bit8
+    'pcs封波高边驱动反馈故障', // Bit9
+    '辅助断路器控制高边驱动反馈故障', // Bit10
+    '排风系统控制高边驱动反馈故障', // Bit11
+    '预留', // Bit12
+    '预留', // Bit13
+    '预留', // Bit14
+    '预留' // Bit15
   ],
 
-  'ClusterHardwareFault_Word4': [
-    '制冷设备通信故障',              // Bit0
-    'PCS设备通信故障',              // Bit1
-    '除湿机通信故障',               // Bit2
-    '消防设备通信故障',             // Bit3
-    'BMU通信故障',                  // Bit4
-    'CAN霍尔通信故障',              // Bit5
-    'BCU通信故障',                  // Bit6
-    '菊花链通信故障',               // Bit7
-    'AFE通信故障',                  // Bit8
-    '预留',                         // Bit9
-    '预留',                         // Bit10
-    '预留',                         // Bit11
-    '预留',                         // Bit12
-    '预留',                         // Bit13
-    '预留',                         // Bit14
-    '预留'                          // Bit15
+  ClusterHardwareFault_Word4: [
+    '制冷设备通信故障', // Bit0
+    'PCS设备通信故障', // Bit1
+    '除湿机通信故障', // Bit2
+    '消防设备通信故障', // Bit3
+    'BMU通信故障', // Bit4
+    'CAN霍尔通信故障', // Bit5
+    'BCU通信故障', // Bit6
+    '菊花链通信故障', // Bit7
+    'AFE通信故障', // Bit8
+    '预留', // Bit9
+    '预留', // Bit10
+    '预留', // Bit11
+    '预留', // Bit12
+    '预留', // Bit13
+    '预留', // Bit14
+    '预留' // Bit15
   ],
 
-  'ClusterHardwareFault_Word5': [
-    'bcu环境传感器故障',            // Bit0 (table.js中是小写)
-    'B+传感器故障',                // Bit1
-    'B-传感器故障',                // Bit2
-    'P+传感器故障',                // Bit3
-    'P-传感器故障',                // Bit4
-    '熔断器1传感器故障',           // Bit5
-    '熔断器2传感器故障',           // Bit6
-    '预留',                        // Bit7
-    '预留',                        // Bit8
-    '预留',                        // Bit9
-    '预留',                        // Bit10
-    '预留',                        // Bit11
-    '预留',                        // Bit12
-    '预留',                        // Bit13
-    '预留',                        // Bit14
-    '预留'                         // Bit15
+  ClusterHardwareFault_Word5: [
+    'bcu环境传感器故障', // Bit0 (table.js中是小写)
+    'B+传感器故障', // Bit1
+    'B-传感器故障', // Bit2
+    'P+传感器故障', // Bit3
+    'P-传感器故障', // Bit4
+    '熔断器1传感器故障', // Bit5
+    '熔断器2传感器故障', // Bit6
+    '预留', // Bit7
+    '预留', // Bit8
+    '预留', // Bit9
+    '预留', // Bit10
+    '预留', // Bit11
+    '预留', // Bit12
+    '预留', // Bit13
+    '预留', // Bit14
+    '预留' // Bit15
   ],
 
-  'ClusterHardwareFault_Word6': [
-    '霍尔故障',                    // Bit0
-    '存在无效数据',                // Bit1
-    '铁电存储器故障',              // Bit2
-    'eeprom存储器故障',            // Bit3 (table.js中是小写)
-    'flash存储器故障',             // Bit4 (table.js中是小写)
-    '电压采集断线',                // Bit5
-    '温度采集断线',                // Bit6
-    '保留故障',                    // Bit7
-    '预留',                        // Bit8
-    '预留',                        // Bit9
-    '预留',                        // Bit10
-    '预留',                        // Bit11
-    '预留',                        // Bit12
-    '预留',                        // Bit13
-    '预留',                        // Bit14
-    '预留'                         // Bit15
+  ClusterHardwareFault_Word6: [
+    '霍尔故障', // Bit0
+    '存在无效数据', // Bit1
+    '铁电存储器故障', // Bit2
+    'eeprom存储器故障', // Bit3 (table.js中是小写)
+    'flash存储器故障', // Bit4 (table.js中是小写)
+    '电压采集断线', // Bit5
+    '温度采集断线', // Bit6
+    '保留故障', // Bit7
+    '预留', // Bit8
+    '预留', // Bit9
+    '预留', // Bit10
+    '预留', // Bit11
+    '预留', // Bit12
+    '预留', // Bit13
+    '预留', // Bit14
+    '预留' // Bit15
   ],
-  
+
   // 堆硬件故障
-  'StackHardwareFault_Word1': [
+  StackHardwareFault_Word1: [
     '消防报警',
     '消防故障',
     '急停信号',
@@ -393,7 +393,7 @@ const FAULT_BIT_MAPS = {
     '预留',
     '预留'
   ],
-  'StackHardwareFault_Word2': [
+  StackHardwareFault_Word2: [
     '铁电存储器故障',
     '制冷设备通讯故障',
     'PCS通讯故障',
@@ -432,7 +432,7 @@ function parseBlockId(raw) {
  * 辅助函数：解析簇序号
  */
 function parseClusterId(raw) {
-  if (raw === 0xFF) return '全部簇'
+  if (raw === 0xff) return '全部簇'
   if (raw >= 1 && raw <= 20) return `第${raw}簇`
   return `${raw}(未定义)`
 }
@@ -503,7 +503,7 @@ function parseContactorAction(raw) {
  * 辅助函数：解析强制消除故障类型
  */
 function parseFaultClearAction(raw) {
-  if (raw === 0xFFFF) return '无效'
+  if (raw === 0xffff) return '无效'
   const actionMap = {
     0: '清除所有故障',
     1: '清除充电过流严重告警',
@@ -520,7 +520,7 @@ function parseFaultClearAction(raw) {
  */
 function parseBCUEventDeleteCount(raw) {
   if (raw === 0x0000) return '不删除'
-  if (raw === 0xFFFF) return '删除全部'
+  if (raw === 0xffff) return '删除全部'
   return `删除指定数量(${raw})条`
 }
 
@@ -528,7 +528,7 @@ function parseBCUEventDeleteCount(raw) {
  * 辅助函数：解析模式设置
  */
 function parseModeSetting(raw) {
-  if (raw === 0x5BB5) return '测试模式'
+  if (raw === 0x5bb5) return '测试模式'
   if (raw === 0x1221) return '正常模式'
   return `未知(${raw})`
 }
@@ -537,7 +537,7 @@ function parseModeSetting(raw) {
  * 辅助函数：解析掉线检测功能使能
  */
 function parseOfflineDetectEnable(raw) {
-  if (raw === 0x5BB5) return '开启（默认）'
+  if (raw === 0x5bb5) return '开启（默认）'
   if (raw === 0x1221) return '关闭'
   return `未知(${raw})`
 }
@@ -546,7 +546,7 @@ function parseOfflineDetectEnable(raw) {
  * 辅助函数：解析绝缘检测启停
  */
 function parseInsulationDetect(raw) {
-  if (raw === 0x5BB5) return '启动绝缘电阻检测'
+  if (raw === 0x5bb5) return '启动绝缘电阻检测'
   if (raw === 0x1221) return '停止绝缘电阻检测'
   return `未知(${raw})`
 }
@@ -555,7 +555,7 @@ function parseInsulationDetect(raw) {
  * 辅助函数：解析执行复位指令
  */
 function parseResetAction(raw) {
-  if (raw === 0x5BB5) return '执行'
+  if (raw === 0x5bb5) return '执行'
   return '不执行'
 }
 
@@ -680,7 +680,8 @@ function parseDisconnectReason(raw) {
     11: '启动接触器自检',
     12: '停止接触器自检',
     13: '无故障且0功率',
-    14: '一般故障且0功率'
+    14: '一般故障且0功率',
+    15: '单簇切出失败冗余处理'
   }
   return reasonMap[raw] !== undefined ? reasonMap[raw] : `${raw}(未定义)`
 }
@@ -689,7 +690,14 @@ function parseDisconnectReason(raw) {
  * 辅助函数：解析接触器控制位域（209）
  */
 function parseContactorControl(raw) {
-  const names = ['主正接触器', '预充接触器', '主负接触器', '主断分励脱扣', '风扇控制', '直流供电KM控制']
+  const names = [
+    '主正接触器',
+    '预充接触器',
+    '主负接触器',
+    '主断分励脱扣',
+    '风扇控制',
+    '直流供电KM控制'
+  ]
   const parts = []
   for (let i = 0; i < names.length; i++) {
     const bit = (raw >> i) & 0x1
@@ -746,9 +754,21 @@ function parseDIDOControl(raw) {
  * 辅助函数：解析控制参数复位位域（206）
  */
 function parseResetControlParams(raw) {
-  if (raw === 0xFFFF) return '无效'
-  const names = ['系统基本参数', '电芯校准参数', '簇诊断参数', 'pack诊断参数', '电芯诊断参数',
-                 '实时保存数据', 'sox参数', 'sop map', '出厂校准参数', '事件记录标志', '系统运行时间']
+  if (raw === 0xffff) return '无效'
+  const names = [
+    '系统基本参数',
+    '电芯校准参数',
+    '簇诊断参数',
+    'pack诊断参数',
+    '电芯诊断参数',
+    '实时保存数据',
+    'sox参数',
+    'sop map',
+    '出厂校准参数',
+    '事件记录标志',
+    '系统运行时间',
+    '配置参数(硬件/故障映射配置)'
+  ]
   const parts = []
   for (let i = 0; i < names.length; i++) {
     const bit = (raw >> i) & 0x1
@@ -763,9 +783,18 @@ function parseResetControlParams(raw) {
  * 辅助函数：解析堆参数复位位域（252）
  */
 function parseStackResetParams(raw) {
-  if (raw === 0xFFFF) return '无效'
-  const names = ['系统基本配置', '簇端电池配置', '端口配置', '通讯设备配置', 
-                 '操作配置', '堆告警安装', '系统堆SOC配置参数', '事件记录标志', '系统运行时间']
+  if (raw === 0xffff) return '无效'
+  const names = [
+    '系统基本配置',
+    '簇端电池配置',
+    '端口配置',
+    '通讯设备配置',
+    '操作配置',
+    '堆告警安装',
+    '系统堆SOC配置参数',
+    '事件记录标志',
+    '系统运行时间'
+  ]
   const parts = []
   for (let i = 0; i < names.length; i++) {
     const bit = (raw >> i) & 0x1
@@ -799,7 +828,7 @@ function parseContactorIndependent(raw) {
  * 辅助函数：解析簇选中状态
  */
 function parseClusterSelection(raw) {
-  if (raw === 0x3FF) {
+  if (raw === 0x3ff) {
     // 根据上下文判断是第1-10簇还是第11-20簇
     // 这里暂时返回通用格式
     return '全部簇使能'
@@ -819,10 +848,10 @@ function parseHex(raw) {
  */
 function parseIPAddress(high16, low16) {
   const ip = ((high16 << 16) | low16) >>> 0
-  const a = (ip >>> 24) & 0xFF
-  const b = (ip >>> 16) & 0xFF
-  const c = (ip >>> 8) & 0xFF
-  const d = ip & 0xFF
+  const a = (ip >>> 24) & 0xff
+  const b = (ip >>> 16) & 0xff
+  const c = (ip >>> 8) & 0xff
+  const d = ip & 0xff
   return `${a}.${b}.${c}.${d}`
 }
 
@@ -856,211 +885,246 @@ function parseDehumidType(raw) {
  */
 const EVENT_PARAM_MAPPING = {
   // 一、系统状态触发记录类型（100–115）
-  100: { // 系统启动
+  100: {
+    // 系统启动
     param1: { label: '/', parse: parseNull },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  101: { // 事件记录异常复位
+  101: {
+    // 事件记录异常复位
     param1: {
       label: '复位原因',
-      parse: (raw) => raw === 1 ? '事件版本不一致复位' : raw === 2 ? '索引信息异常复位' : `未知(${raw})`
+      parse: (raw) =>
+        raw === 1 ? '事件版本不一致复位' : raw === 2 ? '索引信息异常复位' : `未知(${raw})`
     },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  102: { // 事件记录溢出清除
+  102: {
+    // 事件记录溢出清除
     param1: { label: '清除事件数量', parse: (raw) => raw },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  103: { // 存储器第一次使用参数复位
+  103: {
+    // 存储器第一次使用参数复位
     param1: { label: '/', parse: parseNull },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  104: { // 堆系统状态切换
+  104: {
+    // 堆系统状态切换
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次系统状态', parse: (raw) => `上一次:${parseSysStatus(raw)}` },
     param3: { label: '当前系统状态', parse: (raw) => `当前:${parseSysStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  105: { // 远方就地场景切换
+  105: {
+    // 远方就地场景切换
     param1: { label: '上一次场景', parse: (raw) => `上一次:${parseRemoteLocalScene(raw)}` },
     param2: { label: '当前场景', parse: (raw) => `当前:${parseRemoteLocalScene(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  106: { // SD卡插卡状态
+  106: {
+    // SD卡插卡状态
     param1: { label: '上一次插卡状态', parse: (raw) => `上一次:${parseCardStatus(raw)}` },
     param2: { label: '当前插卡状态', parse: (raw) => `当前:${parseCardStatus(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  107: { // SD卡挂载状态
+  107: {
+    // SD卡挂载状态
     param1: { label: '上一次挂载状态', parse: (raw) => `上一次:${parseMountStatus(raw)}` },
     param2: { label: '当前挂载状态', parse: (raw) => `当前:${parseMountStatus(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  108: { // SD卡写入状态变化
+  108: {
+    // SD卡写入状态变化
     param1: { label: '上一次写入状态', parse: (raw) => `上一次:${parseWriteStatus(raw)}` },
     param2: { label: '当前写入状态', parse: (raw) => `当前:${parseWriteStatus(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  109: { // BCU复位
+  109: {
+    // BCU复位
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  110: { // BAU下电
+  110: {
+    // BAU下电
     param1: { label: '/', parse: parseNull },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  111: { // BCU通讯状态变化
+  111: {
+    // BCU通讯状态变化
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
     param4: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` }
   },
-  112: { // EMS通讯状态变化
+  112: {
+    // EMS通讯状态变化
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
     param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  113: { // PCS通讯状态变化 - 同112
+  113: {
+    // PCS通讯状态变化 - 同112
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
     param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  114: { // 水冷机通讯状态变化 - 同112
+  114: {
+    // 水冷机通讯状态变化 - 同112
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
     param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  115: { // I/O模块通讯状态变化 - 同112
+  115: {
+    // I/O模块通讯状态变化 - 同112
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
     param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  
+
   // 二、下设控制触发记录类型（200–270）
-  200: { // 下设接触器执行策略
+  200: {
+    // 下设接触器执行策略
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '执行策略', parse: parseContactorAction },
     param4: { label: '/', parse: parseNull }
   },
-  201: { // 下设接触器独立执行
+  201: {
+    // 下设接触器独立执行
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '位域', parse: parseContactorIndependent },
     param4: { label: '/', parse: parseNull }
   },
-  202: { // 下设绝缘电阻检测指令
+  202: {
+    // 下设绝缘电阻检测指令
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '动作', parse: parseInsulationDetect },
     param4: { label: '/', parse: parseNull }
   },
-  203: { // 设置系统运行模式
+  203: {
+    // 设置系统运行模式
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '设置模式', parse: parseModeSetting },
     param4: { label: '/', parse: parseNull }
   },
-  204: { // 掉线检测功能使能
+  204: {
+    // 掉线检测功能使能
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '动作', parse: parseOfflineDetectEnable },
     param4: { label: '/', parse: parseNull }
   },
-  205: { // 强制消除BCU故障
+  205: {
+    // 强制消除BCU故障
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '清除动作', parse: parseFaultClearAction },
     param4: { label: '/', parse: parseNull }
   },
-  206: { // 控制参数复位
+  206: {
+    // 控制参数复位
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '位标志', parse: parseResetControlParams },
     param4: { label: '/', parse: parseNull }
   },
-  207: { // 设置清除BCU事件记录数量
+  207: {
+    // 设置清除BCU事件记录数量
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '删除动作', parse: parseBCUEventDeleteCount },
     param4: { label: '/', parse: parseNull }
   },
-  208: { // 复位BCU事件记录存储器
+  208: {
+    // 复位BCU事件记录存储器
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '复位动作', parse: parseResetAction },
     param4: { label: '/', parse: parseNull }
   },
-  209: { // 接触器控制
+  209: {
+    // 接触器控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '控制位域', parse: parseContactorControl },
     param4: { label: '/', parse: parseNull }
   },
-  210: { // 高低边控制
+  210: {
+    // 高低边控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '控制位域', parse: parseHLSideControl },
     param4: { label: '/', parse: parseNull }
   },
-  211: { // 其他IO控制
+  211: {
+    // 其他IO控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '控制位域', parse: parseDIDOControl },
     param4: { label: '/', parse: parseNull }
   },
-  212: { // 强制OCV
+  212: {
+    // 强制OCV
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '动作', parse: parseResetAction },
     param4: { label: '/', parse: parseNull }
   },
-  213: { // 复位BCU
+  213: {
+    // 复位BCU
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '动作', parse: parseResetAction },
     param4: { label: '/', parse: parseNull }
   },
-  214: { // SOH权重校准
+  214: {
+    // SOH权重校准
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '动作', parse: parseResetAction },
     param4: { label: '/', parse: parseNull }
   },
-  215: { // SOH强制校准
+  215: {
+    // SOH强制校准
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '动作', parse: parseResetAction },
     param4: { label: '/', parse: parseNull }
   },
-  216: { // 上电SOH存储标志位复位
+  216: {
+    // 上电SOH存储标志位复位
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '动作', parse: parseResetAction },
     param4: { label: '/', parse: parseNull }
   },
   // 217–249 预留
-  250: { // 下设堆接触器执行策略
+  250: {
+    // 下设堆接触器执行策略
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '执行策略', parse: parseContactorAction },
@@ -1076,64 +1140,75 @@ const EVENT_PARAM_MAPPING = {
       }
     }
   },
-  251: { // 清除所有簇保留故障
+  251: {
+    // 清除所有簇保留故障
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '清除动作', parse: parseFaultClearAction },
     param4: { label: '/', parse: parseNull }
   },
-  252: { // 下设堆参数复位
+  252: {
+    // 下设堆参数复位
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '位标志', parse: parseStackResetParams },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  253: { // 下设周期性绝缘检测指令
+  253: {
+    // 下设周期性绝缘检测指令
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次', parse: (raw) => `上一次:${parseContactorSelfTest(raw)}` },
     param3: { label: '当前', parse: (raw) => `当前:${parseContactorSelfTest(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  254: { // 下设接触器自检指令
+  254: {
+    // 下设接触器自检指令
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次', parse: (raw) => `上一次:${parseContactorSelfTest(raw)}` },
     param3: { label: '当前', parse: (raw) => `当前:${parseContactorSelfTest(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  255: { // 下设复位BAU
+  255: {
+    // 下设复位BAU
     param1: { label: '/', parse: parseNull },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  256: { // 手动启动/停止SD卡记录
+  256: {
+    // 手动启动/停止SD卡记录
     param1: {
       label: '动作',
-      parse: (raw) => raw === 1 ? '手动停止SD卡记录' : raw === 2 ? '手动重新开始SD卡记录' : `未知(${raw})`
+      parse: (raw) =>
+        raw === 1 ? '手动停止SD卡记录' : raw === 2 ? '手动重新开始SD卡记录' : `未知(${raw})`
     },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  257: { // 下设堆SOC
+  257: {
+    // 下设堆SOC
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次SOC', parse: (raw) => `上一次SOC值:${raw}` },
     param3: { label: '设置SOC', parse: (raw) => `设置SOC值:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  258: { // 下设簇SOC
+  258: {
+    // 下设簇SOC
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '上一次SOC', parse: (raw) => `上一次SOC值:${raw}` },
     param4: { label: '设置SOC', parse: (raw) => `设置SOC值:${raw}` }
   },
-  259: { // BAU固件升级
+  259: {
+    // BAU固件升级
     param1: { label: '/', parse: parseNull },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  260: { // BCU固件升级
+  260: {
+    // BCU固件升级
     param1: {
       label: '簇选中状态1',
       parse: (raw) => {
@@ -1161,7 +1236,8 @@ const EVENT_PARAM_MAPPING = {
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  261: { // BMU固件升级
+  261: {
+    // BMU固件升级
     param1: {
       label: '簇选中状态1',
       parse: (raw) => {
@@ -1190,307 +1266,391 @@ const EVENT_PARAM_MAPPING = {
     param4: {
       label: '起始地址/数量',
       parse: (raw) => {
-        const startAddr = (raw >> 8) & 0xFF
-        const count = raw & 0xFF
+        const startAddr = (raw >> 8) & 0xff
+        const count = raw & 0xff
         return `起始地址:${startAddr}, 数量:${count}`
       }
     }
   },
-  262: { // BCU地址自适应
+  262: {
+    // BCU地址自适应
     param1: { label: '起始地址', parse: (raw) => raw },
     param2: { label: '分配数量', parse: (raw) => raw },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  263: { // BMU地址自适应
+  263: {
+    // BMU地址自适应
     param1: { label: '簇序号', parse: parseClusterId },
     param2: { label: '起始地址', parse: (raw) => raw },
     param3: { label: '分配数量', parse: (raw) => raw },
     param4: { label: '/', parse: parseNull }
   },
-  264: { // 设置BAU时间
-    param1: { label: '年', parse: (raw) => raw },
-    param2: {
-      label: '月/日',
-      parse: (raw) => {
-        const month = (raw >> 8) & 0xFF
-        const day = raw & 0xFF
-        return `${month}月${day}日`
+  264: {
+    // 设置BAU时间
+    param1: {
+      label: '设置时间',
+      parse: (raw, record) => {
+        const year = raw
+        const p2 = Number(record.Param2 || 0)
+        const month = (p2 >> 8) & 0xff
+        const day = p2 & 0xff
+        const hour = Number(record.Param3 || 0)
+        const p4 = Number(record.Param4 || 0)
+        const minute = (p4 >> 8) & 0xff
+        const second = p4 & 0xff
+        return `${year}年${month}月${day}日 ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
       }
     },
-    param3: { label: '时', parse: (raw) => raw },
-    param4: {
-      label: '分/秒',
-      parse: (raw) => {
-        const minute = (raw >> 8) & 0xFF
-        const second = raw & 0xFF
-        return `${String(minute).padStart(2, '0')}:${String(second).padStart(2, '0')}`
-      }
-    }
+    param2: { label: '/', parse: parseNull },
+    param3: { label: '/', parse: parseNull },
+    param4: { label: '/', parse: parseNull }
   },
-  265: { // 重置BAU网卡
+  265: {
+    // 重置BAU网卡
     param1: { label: '网卡序号', parse: parseNetworkCard },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  266: { // 清除堆保留故障
+  266: {
+    // 清除堆保留故障
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '保留故障类型', parse: parseFaultClearAction },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  267: { // 设置BAU清除事件记录数量
+  267: {
+    // 设置BAU清除事件记录数量
     param1: { label: '删除设定', parse: parseBCUEventDeleteCount },
     param2: { label: '实际删除数量', parse: (raw) => raw },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  268: { // 复位BAU事件记录存储器
+  268: {
+    // 复位BAU事件记录存储器
     param1: { label: '复位动作', parse: parseResetAction },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  269: { // 下设BCP控制
+  269: {
+    // 下设BCP控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: 'BCP控制', parse: parseBCPControl },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  270: { // 堆绝缘检测控制
+  270: {
+    // 堆绝缘检测控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '控制动作', parse: parseStackInsulationControl },
     param4: { label: '/', parse: parseNull }
   },
-  271: { // 堆接触器自检控制
+  271: {
+    // 堆接触器自检控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '控制动作', parse: parseStackContactorSelfTestControl },
     param4: { label: '/', parse: parseNull }
   },
-  
+
   // 三、参数下设事件记录类型（300–305）
-  300: { // 系统基本参数下设
+  300: {
+    // 系统基本参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param3: {
+      label: '起始地址',
+      parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}`
+    },
     param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
-  301: { // 报警参数下设
+  301: {
+    // 报警参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param3: {
+      label: '起始地址',
+      parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}`
+    },
     param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
-  302: { // 实时保存数据下设
+  302: {
+    // 实时保存数据下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param3: {
+      label: '起始地址',
+      parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}`
+    },
     param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
-  303: { // SOX算法配置参数下设
+  303: {
+    // SOX算法配置参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param3: {
+      label: '起始地址',
+      parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}`
+    },
     param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
-  304: { // SOP配置参数下设
+  304: {
+    // SOP配置参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param3: {
+      label: '起始地址',
+      parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}`
+    },
     param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
-  305: { // 出厂校正参数下设
+  305: {
+    // 出厂校正参数下设
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '簇序号', parse: parseClusterId },
-    param3: { label: '起始地址', parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}` },
+    param3: {
+      label: '起始地址',
+      parse: (raw) => `寄存器起始地址:${'0x' + raw.toString(16).toUpperCase()}`
+    },
     param4: { label: '寄存器长度', parse: (raw) => `寄存器数量:${raw}` }
   },
-  
+
   // 四、配置与系统参数变化类（350–397）
-  350: { // 分簇控制标志位
+  350: {
+    // 分簇控制标志位
     param1: { label: '上一次分簇标志', parse: (raw) => `上一次:${parseClusterControlFlag(raw)}` },
     param2: { label: '当前分簇标志', parse: (raw) => `当前:${parseClusterControlFlag(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  351: { // EMS通讯故障断接触器使能
+  351: {
+    // EMS通讯故障断接触器使能
     param1: { label: '上一次', parse: (raw) => `上一次:${parseEnableStatus(raw)}` },
     param2: { label: '当前', parse: (raw) => `当前:${parseEnableStatus(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  352: { // 运维模式
+  352: {
+    // 运维模式
     param1: { label: '上一次', parse: (raw) => `上一次:${parseOperMode(raw)}` },
     param2: { label: '当前', parse: (raw) => `当前:${parseOperMode(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  353: { // 内测模式
+  353: {
+    // 内测模式
     param1: { label: '上一次内测模式', parse: (raw) => `上一次:${raw}` },
     param2: { label: '当前内测模式', parse: (raw) => `当前:${raw}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  354: { // 实时数据记录周期
+  354: {
+    // 实时数据记录周期
     param1: { label: '上一次周期', parse: (raw) => `上一次:${raw}` },
     param2: { label: '当前周期', parse: (raw) => `当前:${raw}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  355: { // 当前配置堆数
+  355: {
+    // 当前配置堆数
     param1: { label: '上一次堆数', parse: (raw) => `上一次:${raw}` },
     param2: { label: '当前堆数', parse: (raw) => `当前:${raw}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  356: { // 当前配置簇数
+  356: {
+    // 当前配置簇数
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次簇数', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前簇数', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  357: { // BMU总数配置
+  357: {
+    // BMU总数配置
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次参数', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前参数', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  358: { // BMU下AFE数量配置
+  358: {
+    // BMU下AFE数量配置
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次参数', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前参数', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  359: { // AFE下电压数量配置
+  359: {
+    // AFE下电压数量配置
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: 'AFE编号', parse: parseAFEId },
     param3: { label: '上一次参数', parse: (raw) => `上一次:${raw}` },
     param4: { label: '当前参数', parse: (raw) => `当前:${raw}` }
   },
-  360: { // AFE下温感数量配置
+  360: {
+    // AFE下温感数量配置
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: 'AFE编号', parse: parseAFEId },
     param3: { label: '上一次参数', parse: (raw) => `上一次:${raw}` },
     param4: { label: '当前参数', parse: (raw) => `当前:${raw}` }
   },
-  361: { // 虚拟电池1配置
+  361: {
+    // 虚拟电池1配置
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: 'BMU编号', parse: parseBMUId },
     param3: { label: '上一次参数', parse: (raw) => `上一次:${raw}` },
     param4: { label: '当前参数', parse: (raw) => `当前:${raw}` }
   },
-  362: { // 虚拟电池2配置
+  362: {
+    // 虚拟电池2配置
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: 'BMU编号', parse: parseBMUId },
     param3: { label: '上一次参数', parse: (raw) => `上一次:${raw}` },
     param4: { label: '当前参数', parse: (raw) => `当前:${raw}` }
   },
-  363: { // 网卡1 IP地址变化
-    param1: { label: '上次IP', parse: (high16, baseConfig) => `上一次IP:${toIPv4From16(high16, Number(baseConfig.Param2))}` },
+  363: {
+    // 网卡1 IP地址变化
+    param1: {
+      label: '上次IP',
+      parse: (high16, baseConfig) => `上一次IP:${toIPv4From16(high16, Number(baseConfig.Param2))}`
+    },
     param2: { label: '/', parse: parseNull },
-    param3: { label: '当前IP', parse: (high16, baseConfig) => `当前IP:${toIPv4From16(high16, Number(baseConfig.Param4))}` },
+    param3: {
+      label: '当前IP',
+      parse: (high16, baseConfig) => `当前IP:${toIPv4From16(high16, Number(baseConfig.Param4))}`
+    },
     param4: { label: '/', parse: parseNull }
   },
-  364: { // 网卡2 IP地址变化
-    param1: { label: '上次IP', parse: (high16, baseConfig) => `上一次IP:${toIPv4From16(high16, Number(baseConfig.Param2))}` },
+  364: {
+    // 网卡2 IP地址变化
+    param1: {
+      label: '上次IP',
+      parse: (high16, baseConfig) => `上一次IP:${toIPv4From16(high16, Number(baseConfig.Param2))}`
+    },
     param2: { label: '/', parse: parseNull },
-    param3: { label: '当前IP', parse: (high16, baseConfig) => `当前IP:${toIPv4From16(high16, Number(baseConfig.Param4))}` },
+    param3: {
+      label: '当前IP',
+      parse: (high16, baseConfig) => `当前IP:${toIPv4From16(high16, Number(baseConfig.Param4))}`
+    },
     param4: { label: '/', parse: parseNull }
   },
-  365: { // MQTT配置参数变化
-    param1: { label: '上次服务器地址', parse: (high16, baseConfig) => `上次服务器地址:${toIPv4From16(high16, Number(baseConfig.Param2))}` },
+  365: {
+    // MQTT配置参数变化
+    param1: {
+      label: '上次服务器地址',
+      parse: (high16, baseConfig) =>
+        `上次服务器地址:${toIPv4From16(high16, Number(baseConfig.Param2))}`
+    },
     param2: { label: '/', parse: parseNull },
-    param3: { label: '当前服务器地址', parse: (high16, baseConfig) => `当前服务器地址:${toIPv4From16(high16, Number(baseConfig.Param4))}` },
+    param3: {
+      label: '当前服务器地址',
+      parse: (high16, baseConfig) =>
+        `当前服务器地址:${toIPv4From16(high16, Number(baseConfig.Param4))}`
+    },
     param4: { label: '/', parse: parseNull }
   },
-  366: { // MQTT服务器PORT参数变化
+  366: {
+    // MQTT服务器PORT参数变化
     param1: { label: '上一次端口', parse: (raw) => `上一次:${raw}` },
     param2: { label: '当前端口', parse: (raw) => `当前:${raw}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  367: { // 网卡1速度
+  367: {
+    // 网卡1速度
     param1: { label: '上一次速度', parse: (raw) => `上一次:${parseNetworkSpeed(raw)}` },
     param2: { label: '当前速度', parse: (raw) => `当前:${parseNetworkSpeed(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  368: { // 网卡2速度
+  368: {
+    // 网卡2速度
     param1: { label: '上一次速度', parse: (raw) => `上一次:${parseNetworkSpeed(raw)}` },
     param2: { label: '当前速度', parse: (raw) => `当前:${parseNetworkSpeed(raw)}` },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
-  369: { // PCS设备类型
+  369: {
+    // PCS设备类型
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次类型', parse: (raw) => `上一次:${parsePCSType(raw)}` },
     param3: { label: '当前类型', parse: (raw) => `当前:${parsePCSType(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  370: { // PCS设备数量
+  370: {
+    // PCS设备数量
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次数量', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前数量', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  371: { // 制冷设备类型
+  371: {
+    // 制冷设备类型
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次类型', parse: (raw) => `上一次:${parseCoolType(raw)}` },
     param3: { label: '当前类型', parse: (raw) => `当前:${parseCoolType(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  372: { // 制冷设备数量
+  372: {
+    // 制冷设备数量
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次数量', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前数量', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  373: { // 除湿空调设备类型
+  373: {
+    // 除湿空调设备类型
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次类型', parse: (raw) => `上一次:${parseDehumidType(raw)}` },
     param3: { label: '当前类型', parse: (raw) => `当前:${parseDehumidType(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  374: { // 除湿空调设备数量
+  374: {
+    // 除湿空调设备数量
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次数量', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前数量', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  375: { // I/O控制板设备类型
+  375: {
+    // I/O控制板设备类型
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次类型', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前类型', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  376: { // I/O控制板设备数量
+  376: {
+    // I/O控制板设备数量
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次数量', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前数量', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  377: { // I/O控制板设备IP基地址
+  377: {
+    // I/O控制板设备IP基地址
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次IP基地址高16', parse: (raw) => `上一次:${raw}` },
     param3: { label: '上一次IP基地址低16', parse: (raw) => `上一次:${raw}` },
     param4: { label: '当前基地址高16/低16', parse: (raw) => `当前:${raw}` }
   },
-  378: { // I/O控制板设备网卡位置
+  378: {
+    // I/O控制板设备网卡位置
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次位置', parse: (raw) => `上一次:${parseNetworkCard(raw)}` },
     param3: { label: '当前位置', parse: (raw) => `当前:${parseNetworkCard(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  379: { // 最小并簇数
+  379: {
+    // 最小并簇数
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次最小并簇数', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前最小并簇数', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  380: { // 使能簇配置
+  380: {
+    // 使能簇配置
     param1: { label: '堆序号', parse: parseBlockId },
     param2: {
       label: '使能簇配置1',
@@ -1516,61 +1676,71 @@ const EVENT_PARAM_MAPPING = {
     },
     param4: { label: '/', parse: parseNull }
   },
-  381: { // 开路下堆电压为0使能
+  381: {
+    // 开路下堆电压为0使能
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次状态', parse: (raw) => `上一次:${parseEnableStatus(raw)}` },
     param3: { label: '当前状态', parse: (raw) => `当前:${parseEnableStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  382: { // 是否存在BCP控制
+  382: {
+    // 是否存在BCP控制
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${parseEnableStatus(raw)}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${parseEnableStatus(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
-  383: { // 簇电压差值-严重报警值
+  383: {
+    // 簇电压差值-严重报警值
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  384: { // 簇电压差值-严重报警滤波时间
+  384: {
+    // 簇电压差值-严重报警滤波时间
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  385: { // 簇电压差值-严重报警恢复值
+  385: {
+    // 簇电压差值-严重报警恢复值
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  386: { // 簇电压差值-严重报警恢复滤波时间
+  386: {
+    // 簇电压差值-严重报警恢复滤波时间
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  387: { // 簇电流差值-严重报警值
+  387: {
+    // 簇电流差值-严重报警值
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  388: { // 簇电流差值-严重报警滤波时间
+  388: {
+    // 簇电流差值-严重报警滤波时间
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  389: { // 簇电流差值-严重报警恢复值
+  389: {
+    // 簇电流差值-严重报警恢复值
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
     param4: { label: '/', parse: parseNull }
   },
-  390: { // 簇电流差值-严重报警恢复滤波时间
+  390: {
+    // 簇电流差值-严重报警恢复滤波时间
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次配置', parse: (raw) => `上一次:${raw}` },
     param3: { label: '当前配置', parse: (raw) => `当前:${raw}` },
@@ -1765,16 +1935,16 @@ function formatEventParam(eventType, paramIndex, paramValue, baseConfig) {
   if (paramValue === undefined || paramValue === null || paramValue === '') {
     return '/'
   }
-  
+
   const value = Number(paramValue)
-  
+
   // 获取事件参数映射
   const eventMapping = EVENT_PARAM_MAPPING[eventType]
   if (!eventMapping) {
     // 如果没有定义，返回原始值
     return String(value)
   }
-  
+
   // 根据参数索引获取对应的参数定义（param1, param2, param3, param4）
   const paramKey = `param${paramIndex}`
   const paramDef = eventMapping[paramKey]
@@ -1782,14 +1952,17 @@ function formatEventParam(eventType, paramIndex, paramValue, baseConfig) {
     // 如果参数没有定义，返回原始值
     return String(value)
   }
-  
+
   // 直接调用parse函数，确保返回字符串
   try {
     // 检查parse函数是否需要baseConfig参数（通过函数参数长度判断）
-    const result = paramDef.parse.length > 1 ? paramDef.parse(value, baseConfig) : paramDef.parse(value)
+    const result =
+      paramDef.parse.length > 1 ? paramDef.parse(value, baseConfig) : paramDef.parse(value)
     return typeof result === 'string' ? result : String(result)
   } catch (error) {
-    console.warn(`[formatEventParam] parse函数执行错误: eventType=${eventType}, paramIndex=${paramIndex}, value=${value}, error=${error.message}`)
+    console.warn(
+      `[formatEventParam] parse函数执行错误: eventType=${eventType}, paramIndex=${paramIndex}, value=${value}, error=${error.message}`
+    )
     return String(value)
   }
 }
@@ -1804,52 +1977,66 @@ function formatStatusField(fieldKey, value) {
   if (value === undefined || value === null) {
     return '/' // 与 formatEventRecordField 的空值处理保持一致
   }
-  
+
   const numValue = Number(value)
-  
+
   switch (fieldKey) {
     case 'StackRunStatus': // 堆运行状态
       return parseSysStatus(numValue)
-    
+
     case 'StackChargeDischargeStatus': // 堆允充允放状态
       const chargeDischargeMap = { 0: '可充可放', 1: '可充禁放', 2: '可放禁充', 3: '禁充禁放' }
-      return chargeDischargeMap[numValue] !== undefined ? chargeDischargeMap[numValue] : `${numValue}(未定义)`
-    
+      return chargeDischargeMap[numValue] !== undefined
+        ? chargeDischargeMap[numValue]
+        : `${numValue}(未定义)`
+
     case 'RemoteLocalScene': // 远方就地场景
       return parseRemoteLocalScene(numValue)
-    
+
     case 'ClusterControlMode': // 分簇控制模式
       const clusterControlMap = { 0: '统一控制', 1: '分簇控制' }
-      return clusterControlMap[numValue] !== undefined ? clusterControlMap[numValue] : `${numValue}(未定义)`
-    
+      return clusterControlMap[numValue] !== undefined
+        ? clusterControlMap[numValue]
+        : `${numValue}(未定义)`
+
     case 'StackTotalFault': // 堆总故障
       const stackTotalFaultMap = { 0: '无故障', 1: '轻微故障', 2: '一般故障', 3: '严重故障' }
-      return stackTotalFaultMap[numValue] !== undefined ? stackTotalFaultMap[numValue] : `${numValue}(未定义)`
-    
+      return stackTotalFaultMap[numValue] !== undefined
+        ? stackTotalFaultMap[numValue]
+        : `${numValue}(未定义)`
+
     case 'EMSCommStatus': // EMS通讯状态
       const emsCommMap = { 0: '通讯正常', 1: '通讯失联' }
       return emsCommMap[numValue] !== undefined ? emsCommMap[numValue] : `${numValue}(未定义)`
-    
+
     case 'PCSCommStatus': // PCS通讯状态
       const pcsCommMap = { 0: '通讯正常', 1: '通讯失联' }
       return pcsCommMap[numValue] !== undefined ? pcsCommMap[numValue] : `${numValue}(未定义)`
-    
+
     case 'CoolingMachineCommStatus': // 水冷机通讯状态
       const coolingMachineCommMap = { 0: '通讯正常', 1: '通讯失联' }
-      return coolingMachineCommMap[numValue] !== undefined ? coolingMachineCommMap[numValue] : `${numValue}(未定义)`
-    
+      return coolingMachineCommMap[numValue] !== undefined
+        ? coolingMachineCommMap[numValue]
+        : `${numValue}(未定义)`
+
     case 'IOModuleCommStatus': // I/O模块通讯状态
       const ioModuleCommMap = { 0: '通讯正常', 1: '通讯失联' }
-      return ioModuleCommMap[numValue] !== undefined ? ioModuleCommMap[numValue] : `${numValue}(未定义)`
-    
+      return ioModuleCommMap[numValue] !== undefined
+        ? ioModuleCommMap[numValue]
+        : `${numValue}(未定义)`
+
     case 'DehumidifierCommStatus': // 除湿机通讯状态
       const dehumidifierCommMap = { 0: '通讯正常', 1: '通讯失联' }
-      return dehumidifierCommMap[numValue] !== undefined ? dehumidifierCommMap[numValue] : `${numValue}(未定义)`
-    
+      return dehumidifierCommMap[numValue] !== undefined
+        ? dehumidifierCommMap[numValue]
+        : `${numValue}(未定义)`
+
     case 'SDCardStatus': // SD卡状态
       const sdCardStatusMap = { 0: 'SD卡路径不存在', 1: '写成功', 2: '写失败' }
-      return sdCardStatusMap[numValue] !== undefined ? sdCardStatusMap[numValue] : `${numValue}(未定义)`
-    
+      return sdCardStatusMap[numValue] !== undefined
+        ? sdCardStatusMap[numValue]
+        : `${numValue}(未定义)`
+
     default:
       return String(value)
   }
@@ -1865,7 +2052,7 @@ function parseFaultBits(registerValue, faultMap) {
   if (!faultMap || faultMap.length !== 16) {
     return String(registerValue)
   }
-  
+
   const faults = []
   for (let i = 0; i < 16; i++) {
     // 检查第i位是否为1
@@ -1877,7 +2064,7 @@ function parseFaultBits(registerValue, faultMap) {
       }
     }
   }
-  
+
   // 如果没有故障，返回"无故障"
   return faults.length > 0 ? faults.join(',') : '无故障'
 }
@@ -1895,7 +2082,7 @@ export function formatEventRecordField(fieldKey, value, baseConfig, fieldDef) {
   if (value === undefined || value === null || value === '') {
     return '/'
   }
-  
+
   // 处理对象类型（map字段）
   if (typeof value === 'object') {
     if (value.txt !== undefined) {
@@ -1903,23 +2090,35 @@ export function formatEventRecordField(fieldKey, value, baseConfig, fieldDef) {
     }
     return JSON.stringify(value)
   }
-  
+
   // 事件类型字段：转换为事件名称
   if (fieldKey === 'EventType') {
     const eventType = Number(value)
-    return EVENT_TYPE_MAP[eventType] !== undefined ? EVENT_TYPE_MAP[eventType] : `未知事件(${eventType})`
+    return EVENT_TYPE_MAP[eventType] !== undefined
+      ? EVENT_TYPE_MAP[eventType]
+      : `未知事件(${eventType})`
   }
-  
+
   // 事件参数字段：根据事件类型格式化
-  if (fieldKey === 'Param1' || fieldKey === 'Param2' || fieldKey === 'Param3' || fieldKey === 'Param4') {
+  if (
+    fieldKey === 'Param1' ||
+    fieldKey === 'Param2' ||
+    fieldKey === 'Param3' ||
+    fieldKey === 'Param4'
+  ) {
     const eventType = Number(baseConfig.EventType || 0)
-    const paramIndex = fieldKey === 'Param1' ? 1 : fieldKey === 'Param2' ? 2 : fieldKey === 'Param3' ? 3 : 4
+    const paramIndex =
+      fieldKey === 'Param1' ? 1 : fieldKey === 'Param2' ? 2 : fieldKey === 'Param3' ? 3 : 4
     return formatEventParam(eventType, paramIndex, value, baseConfig)
   }
-  
+
   // 簇标志字段：按10位二进制显示（使能簇标志和退并簇标志）
-  if (fieldKey === 'EnableClusterFlag1' || fieldKey === 'EnableClusterFlag2' ||
-      fieldKey === 'ExitClusterFlag1' || fieldKey === 'ExitClusterFlag2') {
+  if (
+    fieldKey === 'EnableClusterFlag1' ||
+    fieldKey === 'EnableClusterFlag2' ||
+    fieldKey === 'ExitClusterFlag1' ||
+    fieldKey === 'ExitClusterFlag2'
+  ) {
     const numValue = Number(value)
     // 确保值在有效范围内（0-1023）
     if (numValue < 0 || numValue > 1023) {
@@ -1928,23 +2127,32 @@ export function formatEventRecordField(fieldKey, value, baseConfig, fieldDef) {
     const bits = numValue.toString(2).padStart(10, '0')
     return bits.split('').reverse().join('')
   }
-  
+
   // 状态字段：使用状态映射
-  if (fieldKey === 'StackRunStatus' || fieldKey === 'StackChargeDischargeStatus' || 
-      fieldKey === 'RemoteLocalScene' || fieldKey === 'ClusterControlMode' ||
-      fieldKey === 'StackTotalFault' || fieldKey === 'EMSCommStatus' ||
-      fieldKey === 'PCSCommStatus' || fieldKey === 'CoolingMachineCommStatus' ||
-      fieldKey === 'IOModuleCommStatus' || fieldKey === 'DehumidifierCommStatus' ||
-      fieldKey === 'SDCardStatus') {
+  if (
+    fieldKey === 'StackRunStatus' ||
+    fieldKey === 'StackChargeDischargeStatus' ||
+    fieldKey === 'RemoteLocalScene' ||
+    fieldKey === 'ClusterControlMode' ||
+    fieldKey === 'StackTotalFault' ||
+    fieldKey === 'EMSCommStatus' ||
+    fieldKey === 'PCSCommStatus' ||
+    fieldKey === 'CoolingMachineCommStatus' ||
+    fieldKey === 'IOModuleCommStatus' ||
+    fieldKey === 'DehumidifierCommStatus' ||
+    fieldKey === 'SDCardStatus'
+  ) {
     const result = formatStatusField(fieldKey, value)
     // 确保返回字符串
     return typeof result === 'string' ? result : String(result)
   }
-  
+
   // 故障字段：按bit解析故障
-  if (fieldKey.startsWith('ClusterAnalogAlarm_') || 
-      fieldKey.startsWith('ClusterHardwareFault_') || 
-      fieldKey.startsWith('StackHardwareFault_')) {
+  if (
+    fieldKey.startsWith('ClusterAnalogAlarm_') ||
+    fieldKey.startsWith('ClusterHardwareFault_') ||
+    fieldKey.startsWith('StackHardwareFault_')
+  ) {
     const faultMap = FAULT_BIT_MAPS[fieldKey]
     if (faultMap) {
       const result = parseFaultBits(Number(value), faultMap)
@@ -1954,12 +2162,12 @@ export function formatEventRecordField(fieldKey, value, baseConfig, fieldDef) {
     // 如果faultMap不存在，继续执行到默认返回
   }
 
-  // 特殊字段：SOX算法版本号按10进制显示
-  if (fieldKey === 'SOXAlgorithmVersion') {
+  // 特殊字段：SOX算法版本号和退并簇算法版本号按10进制显示
+  if (fieldKey === 'SOXAlgorithmVersion' || fieldKey === 'ClusterExitMergeAlgorithmVersion') {
     const numValue = parseInt(value, 16) // value是HEX字符串，需要转为10进制
     return String(numValue)
   }
-  
+
   // 十六进制字段：转换为0x格式
   if (fieldDef && (fieldDef.type === 'hex' || fieldDef.type === 'hex16')) {
     const numValue = Number(value)
@@ -1967,23 +2175,32 @@ export function formatEventRecordField(fieldKey, value, baseConfig, fieldDef) {
     const result = '0x' + numValue.toString(16).padStart(4, '0').toUpperCase()
     return typeof result === 'string' ? result : String(result)
   }
-  
+
   // 带单位的字段：从fieldDef.unit读取单位并添加（scale已经在parseByTable中处理了）
   // 注意：这里只是添加单位显示，实际的scale转换已经在解析时完成
   if (fieldDef && fieldDef.unit) {
     const numValue = Number(value)
-    
+
     // 如果值不是有效数字，直接返回字符串
     if (isNaN(numValue) || !isFinite(numValue)) {
       return String(value)
     }
-    
+
     // 如果值已经是字符串且包含单位，直接返回
-    if (typeof value === 'string' && (value.includes('V') || value.includes('A') || value.includes('℃') || 
-        value.includes('%') || value.includes('kW') || value.includes('kWh') || value.includes('Ah') || value.includes('kΩ'))) {
+    if (
+      typeof value === 'string' &&
+      (value.includes('V') ||
+        value.includes('A') ||
+        value.includes('℃') ||
+        value.includes('%') ||
+        value.includes('kW') ||
+        value.includes('kWh') ||
+        value.includes('Ah') ||
+        value.includes('kΩ'))
+    ) {
       return value
     }
-    
+
     // 根据scale决定是否添加小数位：
     // scale: 10 (对应0.1单位) -> 保留一位小数 (如: 30.0%)
     // scale: 1000, scale: 1 或其他 -> 不添加小数位
@@ -1995,7 +2212,7 @@ export function formatEventRecordField(fieldKey, value, baseConfig, fieldDef) {
       return String(numValue) + fieldDef.unit
     }
   }
-  
+
   // 默认返回字符串（确保所有情况都返回字符串）
   const finalValue = String(value)
   // 如果最终值是'null'或'undefined'，返回"/"占位

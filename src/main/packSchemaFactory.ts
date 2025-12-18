@@ -350,7 +350,7 @@ export function PACK_SUMMARY (bmuTotal: number): PackField[] {
         class : 'BMU版本信息',
         key   : `Bmu${i}BootVer`,
         label : `BMU${i} BOOT版本`,
-        type  : 'str2',
+        type  : 'boot_str2_le',
         valid : valid,
       }
     )

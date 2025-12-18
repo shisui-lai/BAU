@@ -7,7 +7,10 @@ import { useI18n } from 'vue-i18n'
 import { useClusterStore } from '@/stores/device/clusterStore'
 import { useBlockStore } from '@/stores/device/blockStore'
 import { getCommandConfig, getAllCommands } from '@/configs/commands/cluster/remoteCommandConfig'
-import { getBlockCommandConfig, getAllBlockCommands } from '@/configs/commands/block/blockRemoteCommandConfig'
+import {
+  getBlockCommandConfig,
+  getAllBlockCommands
+} from '@/configs/commands/block/blockRemoteCommandConfig'
 
 // ========== 全局状态管理 ==========
 // 简化的状态管理
@@ -73,7 +76,7 @@ function createClusterComputedProperties(getAllCommandsFunc) {
    * 控制信息表格数据 - 排除测试模式和独立执行中的控制项
    */
   const controlCommandTableData = computed(() => {
-    return getAllCommandsFunc().filter(cmd => {
+    return getAllCommandsFunc().filter((cmd) => {
       // 排除所有checkbox_bitfield类型的命令（这些在测试模式区域处理）
       if (cmd.type === 'checkbox_bitfield') {
         return false
@@ -102,14 +105,14 @@ function createClusterComputedProperties(getAllCommandsFunc) {
    * 测试模式接触器控制数据
    */
   const testModeContactorData = computed(() => {
-    return getAllCommandsFunc().filter(cmd => cmd.id === 'contactor_ctrl_test')
+    return getAllCommandsFunc().filter((cmd) => cmd.id === 'contactor_ctrl_test')
   })
 
   /**
    * 测试模式其他控制数据
    */
   const testModeOtherData = computed(() => {
-    return getAllCommandsFunc().filter(cmd =>
+    return getAllCommandsFunc().filter((cmd) =>
       ['hsd_ctrl_test', 'lsd_ctrl_test', 'io_ctrl_test'].includes(cmd.id)
     )
   })
@@ -118,7 +121,7 @@ function createClusterComputedProperties(getAllCommandsFunc) {
    * 接触器独立执行数据
    */
   const contactorIndependentData = computed(() => {
-    return getAllCommandsFunc().filter(cmd => cmd.id === 'contactor_standalone_ctrl')
+    return getAllCommandsFunc().filter((cmd) => cmd.id === 'contactor_standalone_ctrl')
   })
 
   /**
@@ -173,7 +176,7 @@ function createBlockComputedProperties(getAllCommandsFunc) {
    * 控制信息表格数据 - 显示所有可控制的命令
    */
   const controlCommandTableData = computed(() => {
-    return getAllCommandsFunc().filter(cmd => {
+    return getAllCommandsFunc().filter((cmd) => {
       // 排除隐藏类型的命令（如查询命令）
       return cmd.uiType !== 'hidden'
     })
@@ -202,7 +205,6 @@ function createBlockComputedProperties(getAllCommandsFunc) {
 
 // ========== 核心业务函数 ==========
 
-
 /**
  * 执行前置条件命令
  * @param {Object} preCondition - 前置条件配置 {topic, value}
@@ -220,8 +222,8 @@ async function executePreConditionCommand(preCondition, selectedClusters) {
     let payload
     if (typeof value === 'number') {
       // 假设前置条件都是u16类型（根据接触器执行策略的配置）
-      const lowByte = value & 0xFF
-      const highByte = (value >> 8) & 0xFF
+      const lowByte = value & 0xff
+      const highByte = (value >> 8) & 0xff
       payload = lowByte.toString(16).padStart(2, '0') + highByte.toString(16).padStart(2, '0')
     } else {
       payload = value.toString()
@@ -275,9 +277,8 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
       }
 
       // 根据模式获取选中的设备
-      const selectedDevices = selectorMode === 'cluster' 
-        ? store.selectedClustersForWrite 
-        : store.selectedBlocksForWrite
+      const selectedDevices =
+        selectorMode === 'cluster' ? store.selectedClustersForWrite : store.selectedBlocksForWrite
 
       if (!selectedDevices || selectedDevices.length === 0) {
         return {
@@ -291,7 +292,10 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
         console.log(`[前置条件] ${config.name} 需要先执行前置条件:`, config.preConditionCommand)
 
         // 先执行前置条件命令
-        const preResult = await executePreConditionCommand(config.preConditionCommand, selectedDevices)
+        const preResult = await executePreConditionCommand(
+          config.preConditionCommand,
+          selectedDevices
+        )
         if (!preResult.success) {
           return {
             success: false,
@@ -300,21 +304,21 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
         }
 
         // 等待一小段时间确保前置条件生效
-        await new Promise(resolve => setTimeout(resolve, 300))
+        await new Promise((resolve) => setTimeout(resolve, 300))
         console.log(`[前置条件] 前置条件执行成功，继续执行主命令`)
       }
 
-    // 添加到执行中状态
-    executingCommands.value.add(commandId)
+      // 添加到执行中状态
+      executingCommands.value.add(commandId)
 
-    // 确定命令值
-    let commandValue = value
-    // 兼容不同配置格式：type（簇模式）和uiType（堆模式）
-    const configType = config.type || config.uiType
-    if (configType === 'button') {
-      // 按钮类型使用配置中的默认值
-      commandValue = config.defaultValue || config.value || 1
-    }
+      // 确定命令值
+      let commandValue = value
+      // 兼容不同配置格式：type（簇模式）和uiType（堆模式）
+      const configType = config.type || config.uiType
+      if (configType === 'button') {
+        // 按钮类型使用配置中的默认值
+        commandValue = config.defaultValue || config.value || 1
+      }
 
       console.log(`[遥控命令] 开始执行命令: ${config.name}`, {
         commandId,
@@ -322,32 +326,32 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
         targets: selectedDevices
       })
 
-    // 数据序列化
-    let payload = ''
-    if (config.dataType === 'u8') {
-      // 对于0xFF这样的单字节值，直接转换为ff而不是00ff
-      payload = commandValue.toString(16).toLowerCase()
-      console.log(`[序列化] u8类型序列化结果:`, {
-        原始值: commandValue,
-        十六进制: payload,
-        字节长度: Math.ceil(payload.length / 2)
-      })
-    } else if (config.dataType === 'u16') {
-      // 小端序
-      const lowByte = commandValue & 0xFF
-      const highByte = (commandValue >> 8) & 0xFF
-      payload = lowByte.toString(16).padStart(2, '0') + highByte.toString(16).padStart(2, '0')
-      console.log(`[序列化] u16类型序列化结果:`, {
-        原始值: commandValue,
-        二进制: commandValue.toString(2).padStart(16, '0'),
-        低字节: lowByte,
-        高字节: highByte,
-        十六进制: payload,
-        字节长度: payload.length / 2
-      })
-    } else {
-      throw new Error(`不支持的数据类型: ${config.dataType}`)
-    }
+      // 数据序列化
+      let payload = ''
+      if (config.dataType === 'u8') {
+        // 对于0xFF这样的单字节值，直接转换为ff而不是00ff
+        payload = commandValue.toString(16).toLowerCase()
+        console.log(`[序列化] u8类型序列化结果:`, {
+          原始值: commandValue,
+          十六进制: payload,
+          字节长度: Math.ceil(payload.length / 2)
+        })
+      } else if (config.dataType === 'u16') {
+        // 小端序
+        const lowByte = commandValue & 0xff
+        const highByte = (commandValue >> 8) & 0xff
+        payload = lowByte.toString(16).padStart(2, '0') + highByte.toString(16).padStart(2, '0')
+        console.log(`[序列化] u16类型序列化结果:`, {
+          原始值: commandValue,
+          二进制: commandValue.toString(2).padStart(16, '0'),
+          低字节: lowByte,
+          高字节: highByte,
+          十六进制: payload,
+          字节长度: payload.length / 2
+        })
+      } else {
+        throw new Error(`不支持的数据类型: ${config.dataType}`)
+      }
 
       const sendOnce = selectorMode === 'block' && !String(config.topic).includes('{block}')
 
@@ -361,7 +365,9 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
         await window.electronAPI.mqttPublish(topic, payload)
         const successCount = 1
         const failCount = 0
-        console.log(`[RemoteCommand] 批量命令发送完成: ${commandId}，成功: ${successCount}，失败: ${failCount}`)
+        console.log(
+          `[RemoteCommand] 批量命令发送完成: ${commandId}，成功: ${successCount}，失败: ${failCount}`
+        )
         return {
           success: true,
           successCount,
@@ -373,7 +379,7 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
       // 向所有选中的设备发送命令
       const promises = selectedDevices.map(async (deviceKey) => {
         let topic, logInfo
-        
+
         if (selectorMode === 'cluster') {
           // 簇模式：解析 "1-1" 格式
           const [blockId, clusterId] = deviceKey.split('-').map(Number)
@@ -381,9 +387,10 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
           logInfo = `堆${blockId}/簇${clusterId}`
         } else {
           // 堆模式：解析 "block1" 格式或直接使用数字
-          const blockNumber = typeof deviceKey === 'string' && deviceKey.startsWith('block') 
-            ? Number(deviceKey.replace('block', ''))
-            : Number(deviceKey)
+          const blockNumber =
+            typeof deviceKey === 'string' && deviceKey.startsWith('block')
+              ? Number(deviceKey.replace('block', ''))
+              : Number(deviceKey)
           topic = config.topic.replace('{block}', blockNumber)
           logInfo = `堆${blockNumber}`
         }
@@ -402,10 +409,12 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
 
       // 等待所有命令发送完成
       const results = await Promise.allSettled(promises)
-      const successCount = results.filter(r => r.status === 'fulfilled').length
-      const failCount = results.filter(r => r.status === 'rejected').length
+      const successCount = results.filter((r) => r.status === 'fulfilled').length
+      const failCount = results.filter((r) => r.status === 'rejected').length
 
-      console.log(`[RemoteCommand] 批量命令发送完成: ${commandId}，成功: ${successCount}，失败: ${failCount}`)
+      console.log(
+        `[RemoteCommand] 批量命令发送完成: ${commandId}，成功: ${successCount}，失败: ${failCount}`
+      )
 
       // 返回结果供组件处理Toast
       return {
@@ -414,7 +423,6 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
         failCount,
         commandName: config.name
       }
-
     } catch (error) {
       console.error('[RemoteCommand] 命令执行失败:', error)
       return {
@@ -435,7 +443,6 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
     }
   }
 }
-
 
 /**
  * 处理多选下拉框命令
@@ -471,7 +478,9 @@ async function handleMultiselectCommand(commandId, selectedOptions, t, executeRe
     // 如果需要确认，显示确认对话框
     if (config.confirmRequired) {
       // 使用翻译函数翻译确认消息
-      confirmMessage.value = config.confirmMessage ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage) : t('toast.commandIssue.confirmOperation')
+      confirmMessage.value = config.confirmMessage
+        ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage)
+        : t('toast.commandIssue.confirmOperation')
       pendingCommand.value = { commandId, value: combinedValue }
       showConfirmDialog.value = true
       return { success: true, showDialog: true }
@@ -480,7 +489,6 @@ async function handleMultiselectCommand(commandId, selectedOptions, t, executeRe
       const result = await executeRemoteCommand(commandId, combinedValue)
       return result
     }
-
   } catch (error) {
     console.error('[多选命令] 执行失败:', error)
     return {
@@ -515,9 +523,10 @@ async function handleCheckboxGroupCommand(commandId, selectedOptions, t, execute
 
     // 计算选中选项的组合值（按位或运算）
     // 如果没有选中任何选项，combinedValue为0，表示"断开所有"
-    const combinedValue = selectedOptions && selectedOptions.length > 0
-      ? selectedOptions.reduce((acc, value) => acc | value, 0)
-      : 0
+    const combinedValue =
+      selectedOptions && selectedOptions.length > 0
+        ? selectedOptions.reduce((acc, value) => acc | value, 0)
+        : 0
 
     console.log(`[复选框组命令] ${config.name} 选中选项:`, {
       selectedOptions,
@@ -528,7 +537,9 @@ async function handleCheckboxGroupCommand(commandId, selectedOptions, t, execute
     // 如果需要确认，显示确认对话框
     if (config.confirmRequired) {
       // 使用翻译函数翻译确认消息
-      confirmMessage.value = config.confirmMessage ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage) : t('toast.commandIssue.confirmOperation')
+      confirmMessage.value = config.confirmMessage
+        ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage)
+        : t('toast.commandIssue.confirmOperation')
       pendingCommand.value = { commandId, value: combinedValue }
       showConfirmDialog.value = true
       return { success: true, showDialog: true }
@@ -537,7 +548,6 @@ async function handleCheckboxGroupCommand(commandId, selectedOptions, t, execute
       const result = await executeRemoteCommand(commandId, combinedValue)
       return result
     }
-
   } catch (error) {
     console.error('[复选框组命令] 执行失败:', error)
     return {
@@ -613,7 +623,7 @@ function setBitValue(commandId, bit, value) {
  */
 function hasBitFieldValue(commandId) {
   if (!bitFieldValues[commandId]) return false
-  return Object.values(bitFieldValues[commandId]).some(value => value !== 0 && value !== false)
+  return Object.values(bitFieldValues[commandId]).some((value) => value !== 0 && value !== false)
 }
 
 /**
@@ -628,16 +638,16 @@ function getBitFieldCombinedValue(commandId, commandConfig) {
   let combinedValue = 0
   const values = bitFieldValues[commandId]
 
-  commandConfig.bitFields.forEach(field => {
+  commandConfig.bitFields.forEach((field) => {
     if (field.options) {
       // 多位字段（如2位控制）
       const fieldValue = values[field.name] || 0
-      combinedValue |= (fieldValue << field.startBit)
+      combinedValue |= fieldValue << field.startBit
     } else {
       // 单bit字段（复选框）
       const bitValue = values[`bit${field.bit}`] || false
       if (bitValue) {
-        combinedValue |= (1 << field.bit)
+        combinedValue |= 1 << field.bit
       }
     }
   })
@@ -668,7 +678,9 @@ async function handleCommandExecution(commandId, value = null, t, executeRemoteC
   // 如果需要确认，显示确认对话框
   if (config.needConfirm) {
     // 使用翻译函数翻译确认消息
-    confirmMessage.value = config.confirmMessage ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage) : t('toast.commandIssue.confirmCommand')
+    confirmMessage.value = config.confirmMessage
+      ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage)
+      : t('toast.commandIssue.confirmCommand')
     pendingCommand.value = { commandId, value }
     showConfirmDialog.value = true
     return { success: true, showDialog: true }
@@ -695,7 +707,12 @@ function confirmBitFieldCommand(t, executeRemoteCommand) {
   // 如果需要确认，显示确认对话框
   if (currentBitFieldCommand.value.needConfirm) {
     // 使用翻译函数翻译确认消息
-    confirmMessage.value = currentBitFieldCommand.value.confirmMessage ? t(`commandIssue.confirmations.${currentBitFieldCommand.value.confirmMessage}`, currentBitFieldCommand.value.confirmMessage) : t('toast.commandIssue.confirmCommand')
+    confirmMessage.value = currentBitFieldCommand.value.confirmMessage
+      ? t(
+          `commandIssue.confirmations.${currentBitFieldCommand.value.confirmMessage}`,
+          currentBitFieldCommand.value.confirmMessage
+        )
+      : t('toast.commandIssue.confirmCommand')
     pendingCommand.value = { commandId, value }
     showConfirmDialog.value = true
   } else {
@@ -732,16 +749,16 @@ async function handleCheckboxBitFieldControl(commandId, commandConfig, t, execut
     // 检查是否是多下拉框类型
     if (commandConfig.type === 'multi_dropdown' && commandConfig.dropdowns) {
       // 处理多下拉框类型
-      commandConfig.dropdowns.forEach(dropdown => {
+      commandConfig.dropdowns.forEach((dropdown) => {
         const stateKey = `${commandId}_${dropdown.name}`
         const selectedValue = selectedValues[stateKey] || 0
 
         // 将选择的值按照bit位置放入最终值中
-        combinedValue |= (selectedValue << dropdown.bitStart)
+        combinedValue |= selectedValue << dropdown.bitStart
       })
 
       console.log(`[多下拉框控制] ${commandConfig.name} 选择状态:`, {
-        dropdownStates: commandConfig.dropdowns.map(dropdown => ({
+        dropdownStates: commandConfig.dropdowns.map((dropdown) => ({
           name: dropdown.name,
           value: selectedValues[`${commandId}_${dropdown.name}`] || 0,
           bitStart: dropdown.bitStart
@@ -753,9 +770,9 @@ async function handleCheckboxBitFieldControl(commandId, commandConfig, t, execut
       // 处理原有的复选框bit位类型
       const selectedBits = checkboxStates[commandId] || {}
       //关键：bit位转换为数值
-      Object.keys(selectedBits).forEach(bitIndex => {
+      Object.keys(selectedBits).forEach((bitIndex) => {
         if (selectedBits[bitIndex]) {
-          combinedValue |= (1 << parseInt(bitIndex))
+          combinedValue |= 1 << parseInt(bitIndex)
         }
       })
 
@@ -780,9 +797,14 @@ async function handleCheckboxBitFieldControl(commandId, commandConfig, t, execut
         commandConfig
       }
       // 使用翻译函数翻译确认消息
-      confirmMessage.value = commandConfig.confirmMessage ? t(`commandIssue.confirmations.${commandConfig.confirmMessage}`, commandConfig.confirmMessage) : t('toast.commandIssue.confirmCommandWithName', [commandConfig.name])
+      confirmMessage.value = commandConfig.confirmMessage
+        ? t(
+            `commandIssue.confirmations.${commandConfig.confirmMessage}`,
+            commandConfig.confirmMessage
+          )
+        : t('toast.commandIssue.confirmCommandWithName', [commandConfig.name])
       showConfirmDialog.value = true
-      
+
       return {
         success: true,
         message: t('toast.commandIssue.waitingForConfirmation')
@@ -795,7 +817,6 @@ async function handleCheckboxBitFieldControl(commandId, commandConfig, t, execut
     // 执行命令
     const result = await executeRemoteCommand(commandId, combinedValue)
     return result
-
   } catch (error) {
     console.error('[复选框bit位控制] 执行失败:', error)
     return {
@@ -852,9 +873,11 @@ function parseInsulationDetectResult(value) {
  * @returns {string} 模式文本
  */
 function parseSysRunMode(value) {
-  console.log(`[parseSysRunMode] 输入值: ${value} (0x${value.toString(16).toUpperCase()}) 类型: ${typeof value}`)
+  console.log(
+    `[parseSysRunMode] 输入值: ${value} (0x${value.toString(16).toUpperCase()}) 类型: ${typeof value}`
+  )
   switch (value) {
-    case 0x5BB5:
+    case 0x5bb5:
       console.log(`[parseSysRunMode] 匹配到测试模式`)
       return '测试模式'
     case 0x1221:
@@ -951,12 +974,11 @@ function parseBcuBmuUpgradeResult(data) {
     totalPackets: data.totalPackets || 0,
     totalPacketsRaw: data.totalPacketsRaw,
     // currentPacket从0-based转换为1-based（协议中序号从0开始，显示时从1开始）
-    currentPacket: ((data.currentPacket || 0) + 1),
+    currentPacket: (data.currentPacket || 0) + 1,
     currentPacketRaw: data.currentPacketRaw,
-    timestamp: new Date()  // 添加时间戳
+    timestamp: new Date() // 添加时间戳
   }
 }
-
 
 /**
  * 获取选中的复选框数量
@@ -1001,71 +1023,75 @@ function initializeCheckboxStates() {
   try {
     // 尝试访问簇模式特有的计算属性
     if (typeof testModeContactorData !== 'undefined' && testModeContactorData.value) {
-  // 初始化测试模式接触器控制复选框状态
-  const testModeCommands = testModeContactorData.value
-  testModeCommands.forEach(command => {
-    if (command.bitFields) {
-      checkboxStates[command.id] = {}
-      command.bitFields.forEach(bitField => {
-        checkboxStates[command.id][bitField.bit] = false
+      // 初始化测试模式接触器控制复选框状态
+      const testModeCommands = testModeContactorData.value
+      testModeCommands.forEach((command) => {
+        if (command.bitFields) {
+          checkboxStates[command.id] = {}
+          command.bitFields.forEach((bitField) => {
+            checkboxStates[command.id][bitField.bit] = false
+          })
+        }
       })
-    }
-  })
     }
 
     if (typeof contactorIndependentData !== 'undefined' && contactorIndependentData.value) {
-  // 初始化独立执行接触器控制下拉框状态
-  const independentCommands = contactorIndependentData.value
-  independentCommands.forEach(command => {
-    if (command.dropdowns) {
-      // 为多下拉框类型初始化状态
-      command.dropdowns.forEach(dropdown => {
-        const stateKey = `${command.id}_${dropdown.name}`
-        selectedValues[stateKey] = 0 // 默认选择"无效"
+      // 初始化独立执行接触器控制下拉框状态
+      const independentCommands = contactorIndependentData.value
+      independentCommands.forEach((command) => {
+        if (command.dropdowns) {
+          // 为多下拉框类型初始化状态
+          command.dropdowns.forEach((dropdown) => {
+            const stateKey = `${command.id}_${dropdown.name}`
+            selectedValues[stateKey] = 0 // 默认选择"无效"
+          })
+        } else if (command.bitFields) {
+          // 保持原有的bitFields兼容性（如果有其他命令使用）
+          checkboxStates[command.id] = {}
+          command.bitFields.forEach((bitField) => {
+            checkboxStates[command.id][bitField.bit] = false
+          })
+        }
       })
-    } else if (command.bitFields) {
-      // 保持原有的bitFields兼容性（如果有其他命令使用）
-      checkboxStates[command.id] = {}
-      command.bitFields.forEach(bitField => {
-        checkboxStates[command.id][bitField.bit] = false
-      })
-    }
-  })
     }
 
-    if (typeof testModeContactorData !== 'undefined' && typeof testModeOtherData !== 'undefined' 
-        && testModeContactorData.value && testModeOtherData.value) {
-  // 初始化复选框组的选中值
-  const allTestCommands = [...testModeContactorData.value, ...testModeOtherData.value]
-  allTestCommands.forEach(command => {
-    if (command.type === 'checkbox_group') {
-      selectedValues[command.id] = []
-    }
-  })
+    if (
+      typeof testModeContactorData !== 'undefined' &&
+      typeof testModeOtherData !== 'undefined' &&
+      testModeContactorData.value &&
+      testModeOtherData.value
+    ) {
+      // 初始化复选框组的选中值
+      const allTestCommands = [...testModeContactorData.value, ...testModeOtherData.value]
+      allTestCommands.forEach((command) => {
+        if (command.type === 'checkbox_group') {
+          selectedValues[command.id] = []
+        }
+      })
     }
 
     if (typeof controlCommandTableData !== 'undefined' && controlCommandTableData.value) {
-  // 初始化控制信息表格中的复选框组和下拉框选中值
-  const allControlCommands = controlCommandTableData.value
-  allControlCommands.forEach(command => {
-    if (command.uiType === 'checkbox_group' && command.bitFields) {
-      // 为复选框组类型初始化复选框状态
-      checkboxStates[command.id] = {}
-      command.bitFields.forEach(bitField => {
-        checkboxStates[command.id][bitField.bit] = false
+      // 初始化控制信息表格中的复选框组和下拉框选中值
+      const allControlCommands = controlCommandTableData.value
+      allControlCommands.forEach((command) => {
+        if (command.uiType === 'checkbox_group' && command.bitFields) {
+          // 为复选框组类型初始化复选框状态
+          checkboxStates[command.id] = {}
+          command.bitFields.forEach((bitField) => {
+            checkboxStates[command.id][bitField.bit] = false
+          })
+        }
+      })
+
+      // 初始化下拉框默认选中第一个选项
+      allControlCommands.forEach((command) => {
+        if (command.uiType === 'dropdown' && command.options && command.options.length > 0) {
+          selectedValues[command.id] = command.options[0].value
+        }
       })
     }
-  })
 
-  // 初始化下拉框默认选中第一个选项
-  allControlCommands.forEach(command => {
-    if (command.uiType === 'dropdown' && command.options && command.options.length > 0) {
-      selectedValues[command.id] = command.options[0].value
-    }
-  })
-    }
-
-  console.log('[RemoteCommand] 复选框状态初始化完成')
+    console.log('[RemoteCommand] 复选框状态初始化完成')
   } catch (error) {
     console.log('[RemoteCommand] 跳过簇模式特有的状态初始化（堆模式）')
   }
@@ -1117,7 +1143,6 @@ async function executeFeedbackQuery(commandId, targetCluster) {
     // 发送MQTT消息
     await window.electronAPI.mqttPublish(topic, payload)
     // console.log(`[反馈查询] 查询命令发送成功: 堆${blockId}/簇${clusterId}`)
-
   } catch (error) {
     // console.error(`[反馈查询] 查询命令执行失败 ${commandId}:`, error)
   }
@@ -1146,8 +1171,8 @@ async function queryAllFeedbackStatus(targetDevice, mode = 'cluster') {
       ]
 
       // 并发执行所有查询，不等待全部完成（避免一个失败影响其他）
-      queries.forEach(query => {
-        query.catch(error => {
+      queries.forEach((query) => {
+        query.catch((error) => {
           // 单个查询失败不影响其他查询
           console.warn('[反馈查询] 单个查询失败:', error)
         })
@@ -1363,15 +1388,15 @@ async function executeBcuBmuUpgradeResultQuery(clusterKey) {
     if (!config || !config.isPollingCommand) {
       return
     }
-    
+
     if (!clusterKey) {
       return
     }
-    
+
     const [blockId, clusterId] = clusterKey.split('-').map(Number)
     const topic = `bms/host/s2d/b${blockId}/c${clusterId}/${config.topic}`
     const payload = 'ff'
-    
+
     await window.electronAPI.mqttPublish(topic, payload)
   } catch (error) {
     console.error(`[BCU/BMU升级结果查询] 查询失败 ${clusterKey}:`, error)
@@ -1387,26 +1412,26 @@ function startBcuBmuUpgradeResultPolling(clusterKeys) {
     console.log('[BCU/BMU升级结果查询] 定时查询已在运行中')
     return
   }
-  
+
   if (!clusterKeys || clusterKeys.length === 0) {
     console.warn('[BCU/BMU升级结果查询] 簇列表为空，无法启动轮询')
     return
   }
-  
+
   bcuBmuUpgradeResultPollingActive.value = true
-  
+
   // 立即执行一次批量查询
-  clusterKeys.forEach(clusterKey => {
+  clusterKeys.forEach((clusterKey) => {
     executeBcuBmuUpgradeResultQuery(clusterKey)
   })
-  
+
   // 启动定时器，每1秒批量查询一次
   bcuBmuUpgradeResultPollingTimer = setInterval(() => {
-    clusterKeys.forEach(clusterKey => {
+    clusterKeys.forEach((clusterKey) => {
       executeBcuBmuUpgradeResultQuery(clusterKey)
     })
   }, 1000)
-  
+
   console.log(`[BCU/BMU升级结果查询] 多簇轮询已启动，簇数: ${clusterKeys.length}，间隔1秒`)
 }
 
@@ -1417,14 +1442,14 @@ function stopBcuBmuUpgradeResultPolling() {
   if (!bcuBmuUpgradeResultPollingActive.value) {
     return
   }
-  
+
   bcuBmuUpgradeResultPollingActive.value = false
-  
+
   if (bcuBmuUpgradeResultPollingTimer) {
     clearInterval(bcuBmuUpgradeResultPollingTimer)
     bcuBmuUpgradeResultPollingTimer = null
   }
-  
+
   console.log('[BCU/BMU升级结果查询] 多簇轮询已停止')
 }
 
@@ -1456,7 +1481,9 @@ function handleFeedbackQueryResponse(commandId, responseData) {
 
       case 'get_sys_run_mode':
         feedbackStatus.sys_run_mode = parseSysRunMode(dataValue)
-        console.log(`[反馈查询] 系统运行模式: ${feedbackStatus.sys_run_mode} (原始值: ${dataValue}, 类型: ${typeof dataValue})`)
+        console.log(
+          `[反馈查询] 系统运行模式: ${feedbackStatus.sys_run_mode} (原始值: ${dataValue}, 类型: ${typeof dataValue})`
+        )
         break
 
       case 'get_batt_stack_ctrl_switch_result':
@@ -1471,7 +1498,7 @@ function handleFeedbackQueryResponse(commandId, responseData) {
         const topic = responseData.topic || ''
         const topicMatch = topic.match(/b(\d+)\/c(\d+)\//)
         let blockId, clusterId
-        
+
         if (topicMatch) {
           blockId = parseInt(topicMatch[1])
           clusterId = parseInt(topicMatch[2])
@@ -1480,10 +1507,10 @@ function handleFeedbackQueryResponse(commandId, responseData) {
           blockId = responseData.blockId
           clusterId = responseData.clusterId
         }
-        
+
         if (blockId && clusterId) {
           const clusterKey = `${blockId}-${clusterId}`
-          
+
           if (responseData.data && typeof responseData.data === 'object' && !responseData.error) {
             feedbackStatus.bcu_bmu_upgrade_result.set(
               clusterKey,
@@ -1493,7 +1520,9 @@ function handleFeedbackQueryResponse(commandId, responseData) {
             feedbackStatus.bcu_bmu_upgrade_result.delete(clusterKey)
           }
         } else {
-          console.warn(`[反馈查询] get_bcu_bmu_upgrade_result 无法解析 blockId 和 clusterId，topic: ${topic}`)
+          console.warn(
+            `[反馈查询] get_bcu_bmu_upgrade_result 无法解析 blockId 和 clusterId，topic: ${topic}`
+          )
         }
         break
 
@@ -1507,7 +1536,7 @@ function handleFeedbackQueryResponse(commandId, responseData) {
         break
 
       default:
-        // console.warn(`[反馈查询] 未知的查询命令: ${commandId}`)
+      // console.warn(`[反馈查询] 未知的查询命令: ${commandId}`)
     }
   } catch (error) {
     console.error(`[反馈查询] 处理应答数据失败 ${commandId}:`, error)
@@ -1541,10 +1570,10 @@ function stopRemoteCommandListeners() {
 export function useRemoteCommand(options = {}) {
   // 选择模式：cluster | block（默认 cluster，兼容旧页面）
   const selectorMode = options.selectorMode === 'block' ? 'block' : 'cluster'
-  
+
   // 获取翻译函数
   const { t } = useI18n()
-  
+
   // 根据模式选择对应的store和配置函数
   let store, getCommandConfigFunc, getAllCommandsFunc
   if (selectorMode === 'cluster') {
@@ -1556,15 +1585,21 @@ export function useRemoteCommand(options = {}) {
     getCommandConfigFunc = getBlockCommandConfig
     getAllCommandsFunc = getAllBlockCommands
   }
-  
+
   // 创建对应模式的executeRemoteCommand函数
-  const executeRemoteCommand = createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t)
-  
+  const executeRemoteCommand = createExecuteRemoteCommand(
+    selectorMode,
+    store,
+    getCommandConfigFunc,
+    t
+  )
+
   // 创建对应模式的计算属性
-  const computedProps = selectorMode === 'cluster' 
-    ? createClusterComputedProperties(getAllCommandsFunc)
-    : createBlockComputedProperties(getAllCommandsFunc)
-  
+  const computedProps =
+    selectorMode === 'cluster'
+      ? createClusterComputedProperties(getAllCommandsFunc)
+      : createBlockComputedProperties(getAllCommandsFunc)
+
   // 创建适配当前模式的反馈轮询函数
   const adaptedStartFeedbackPolling = (getTargetDevice) => {
     if (feedbackPollingActive.value) {
@@ -1586,7 +1621,7 @@ export function useRemoteCommand(options = {}) {
 
     // console.log(`[反馈查询] 定时查询已启动，模式：${selectorMode}，间隔3秒`)
   }
-  
+
   // 创建适配当前模式的反馈查询函数
   const adaptedExecuteFeedbackQuery = async (commandId, targetDevice) => {
     try {
@@ -1602,25 +1637,26 @@ export function useRemoteCommand(options = {}) {
       }
 
       let topic, payload
-      
+
       if (selectorMode === 'cluster') {
-        // 簇模式：解析目标设备格式 '1-1' 
+        // 簇模式：解析目标设备格式 '1-1'
         const [blockId, clusterId] = targetDevice.split('-').map(Number)
         topic = `bms/host/s2d/b${blockId}/c${clusterId}/${config.topic}`
       } else {
         // 堆模式：解析目标设备格式 'block1' 或 '1'
-        const blockId = typeof targetDevice === 'string' && targetDevice.startsWith('block') 
-          ? Number(targetDevice.replace('block', ''))
-          : Number(targetDevice)
+        const blockId =
+          typeof targetDevice === 'string' && targetDevice.startsWith('block')
+            ? Number(targetDevice.replace('block', ''))
+            : Number(targetDevice)
         topic = config.topic.replace('{block}', blockId)
       }
 
       // 数据序列化
       if (config.dataType === 'u8') {
-        const value = config.value || 0xFF
+        const value = config.value || 0xff
         payload = value.toString(16).toLowerCase()
       } else if (config.dataType === 'u16') {
-        const value = config.value || 0xFF
+        const value = config.value || 0xff
         payload = value.toString(16).toLowerCase()
       } else {
         throw new Error(`[反馈查询] 不支持的数据类型: ${config.dataType}`)
@@ -1628,12 +1664,11 @@ export function useRemoteCommand(options = {}) {
 
       // 发送MQTT消息
       await window.electronAPI.mqttPublish(topic, payload)
-      
     } catch (error) {
       console.error(`[反馈查询] 查询命令执行失败 ${commandId}:`, error)
     }
   }
-  
+
   // 创建适配当前模式的批量反馈查询函数
   const adaptedQueryAllFeedbackStatus = async (targetDevice) => {
     if (!feedbackPollingActive.value) return
@@ -1653,8 +1688,8 @@ export function useRemoteCommand(options = {}) {
         ]
 
         // 并发执行所有查询，不等待全部完成（避免一个失败影响其他）
-        queries.forEach(query => {
-          query.catch(error => {
+        queries.forEach((query) => {
+          query.catch((error) => {
             // 单个查询失败不影响其他查询
             console.warn('[反馈查询] 单个查询失败:', error)
           })
@@ -1667,7 +1702,7 @@ export function useRemoteCommand(options = {}) {
       console.error('[反馈查询] 批量查询失败:', error)
     }
   }
-  
+
   // 创建适配当前模式的命令执行函数
   const adaptedHandleCommandExecution = async (commandId, value = null) => {
     const config = getCommandConfigFunc(commandId)
@@ -1684,7 +1719,9 @@ export function useRemoteCommand(options = {}) {
     const needsConfirm = config.needConfirm || config.confirmRequired
     if (needsConfirm) {
       // 使用翻译函数翻译确认消息
-      confirmMessage.value = config.confirmMessage ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage) : t('toast.commandIssue.confirmCommand')
+      confirmMessage.value = config.confirmMessage
+        ? t(`commandIssue.confirmations.${config.confirmMessage}`, config.confirmMessage)
+        : t('toast.commandIssue.confirmCommand')
       pendingCommand.value = { commandId, value }
       showConfirmDialog.value = true
       return { success: true, showDialog: true }
@@ -1694,7 +1731,7 @@ export function useRemoteCommand(options = {}) {
       return result
     }
   }
-  
+
   // 创建适配当前模式的确认位字段命令函数
   const adaptedConfirmBitFieldCommand = async () => {
     if (!currentBitFieldCommand.value) return
@@ -1705,10 +1742,16 @@ export function useRemoteCommand(options = {}) {
     showBitFieldDialog.value = false
 
     // 检查是否需要确认（适配不同的属性名）
-    const needsConfirm = currentBitFieldCommand.value.needConfirm || currentBitFieldCommand.value.confirmRequired
+    const needsConfirm =
+      currentBitFieldCommand.value.needConfirm || currentBitFieldCommand.value.confirmRequired
     if (needsConfirm) {
       // 使用翻译函数翻译确认消息
-      confirmMessage.value = currentBitFieldCommand.value.confirmMessage ? t(`commandIssue.confirmations.${currentBitFieldCommand.value.confirmMessage}`, currentBitFieldCommand.value.confirmMessage) : t('toast.commandIssue.confirmCommand')
+      confirmMessage.value = currentBitFieldCommand.value.confirmMessage
+        ? t(
+            `commandIssue.confirmations.${currentBitFieldCommand.value.confirmMessage}`,
+            currentBitFieldCommand.value.confirmMessage
+          )
+        : t('toast.commandIssue.confirmCommand')
       pendingCommand.value = { commandId, value }
       showConfirmDialog.value = true
     } else {
@@ -1716,7 +1759,7 @@ export function useRemoteCommand(options = {}) {
       return result
     }
   }
-  
+
   // 创建适配当前模式的确认命令执行函数
   const adaptedExecuteConfirmedCommand = async () => {
     if (!pendingCommand.value) return
@@ -1728,7 +1771,7 @@ export function useRemoteCommand(options = {}) {
     const result = await executeRemoteCommand(commandId, value)
     return result
   }
-  
+
   return {
     // 响应式状态
     selectedValues,
@@ -1742,7 +1785,7 @@ export function useRemoteCommand(options = {}) {
     feedbackStatus,
     feedbackPollingActive,
     checkboxStates,
-    
+
     // 前置条件执行状态
     isExecutingPreCondition,
     currentPreConditionTopic,
@@ -1752,12 +1795,15 @@ export function useRemoteCommand(options = {}) {
 
     // 方法
     executeRemoteCommand,
-    handleMultiselectCommand: (commandId, selectedOptions) => handleMultiselectCommand(commandId, selectedOptions, t, executeRemoteCommand),
-    handleCheckboxGroupCommand: (commandId, selectedOptions) => handleCheckboxGroupCommand(commandId, selectedOptions, t, executeRemoteCommand),
+    handleMultiselectCommand: (commandId, selectedOptions) =>
+      handleMultiselectCommand(commandId, selectedOptions, t, executeRemoteCommand),
+    handleCheckboxGroupCommand: (commandId, selectedOptions) =>
+      handleCheckboxGroupCommand(commandId, selectedOptions, t, executeRemoteCommand),
     handleCommandExecution: adaptedHandleCommandExecution,
     confirmBitFieldCommand: () => confirmBitFieldCommand(t, executeRemoteCommand),
     executeConfirmedCommand: adaptedExecuteConfirmedCommand,
-    handleCheckboxBitFieldControl: (commandId, commandConfig) => handleCheckboxBitFieldControl(commandId, commandConfig, t, executeRemoteCommand),
+    handleCheckboxBitFieldControl: (commandId, commandConfig) =>
+      handleCheckboxBitFieldControl(commandId, commandConfig, t, executeRemoteCommand),
     getBitFieldValue,
     setBitFieldValue,
     getBitValue,

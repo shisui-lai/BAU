@@ -50,6 +50,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",
+    "@babel/eslint-parser": "^7.28.5",
+    "@babel/preset-env": "^7.28.5",
     "@babel/traverse": "^7.27.1",
     "@babel/types": "^7.27.1",
     "@electron-toolkit/eslint-config": "^1.0.2",
@@ -58,6 +60,7 @@
     "@vitejs/plugin-vue": "^5.0.5",
     "@vue/devtools": "^7.7.7",
     "@vue/eslint-config-prettier": "^9.0.0",
+    "@vue/test-utils": "^2.4.5",
     "babel-eslint": "^10.1.0",
     "electron": "^31.3.1",
     "electron-builder": "^24.13.3",
@@ -71,9 +74,9 @@
     "prettier": "^3.3.2",
     "sass": "^1.55.0",
     "vite": "^5.3.1",
-    "vue": "^3.2.41",
     "vitest": "^2.1.4",
-    "@vue/test-utils": "^2.4.5"
+    "vue": "^3.2.41",
+    "vue-eslint-parser": "^10.2.0"
   },
   "optionalDependencies": {
     "fsevents": "*"

@@ -22,8 +22,6 @@ export const REMOTE_COMMANDS = {
     ]
   },
 
-
-
   // ========== 绝缘检测 ==========
   line_detection_ctrl: {
     name: '下设绝缘电阻检测指令',
@@ -33,7 +31,7 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要执行绝缘电阻检测吗？',
     options: [
-      { label: '启动绝缘电阻检测', value: 0x5BB5 },
+      { label: '启动绝缘电阻检测', value: 0x5bb5 },
       { label: '关闭绝缘电阻检测', value: 0x1221 }
     ]
   },
@@ -47,7 +45,7 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要切换系统运行模式吗？',
     options: [
-      { label: '测试模式', value: 0x5BB5 },
+      { label: '测试模式', value: 0x5bb5 },
       { label: '正常模式', value: 0x1221 }
     ]
   },
@@ -60,7 +58,7 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要修改掉线检测功能使能状态吗？',
     options: [
-      { label: '开启（默认）', value: 0x5BB5 },
+      { label: '开启（默认）', value: 0x5bb5 },
       { label: '关闭', value: 0x1221 }
     ]
   },
@@ -98,7 +96,7 @@ export const REMOTE_COMMANDS = {
       { label: '高边5', value: 16, bit: 4 },
       { label: '高边6', value: 32, bit: 5 },
       { label: '高边7', value: 64, bit: 6 },
-      { label: '高边8', value: 128, bit: 7 },
+      { label: '高边8', value: 128, bit: 7 }
       // { label: '高边9', value: 256, bit: 8 },
       // { label: '高边10', value: 512, bit: 9 },
       // { label: '高边11', value: 1024, bit: 10 },
@@ -286,8 +284,6 @@ export const REMOTE_COMMANDS = {
     ]
   },
 
-
-
   position_reset_ctrl: {
     name: '复位事件记录存储器',
     topic: 'reset_record_flash',
@@ -296,11 +292,10 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要复位事件记录存储器吗？',
     options: [
-      { label: '复位', value: 0x5BB5 },
+      { label: '复位', value: 0x5bb5 },
       { label: '不执行', value: 0x0000 }
     ]
   },
-
 
   ocv_calibration_ctrl: {
     name: '强制OCV校准',
@@ -310,12 +305,10 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要执行OCV校准吗？',
     options: [
-      { label: '启动', value: 0x5BB5 },
+      { label: '启动', value: 0x5bb5 },
       { label: '关闭', value: 0x1221 }
     ]
   },
-
-
 
   weight_calibration_ctrl: {
     name: '权重校准信号',
@@ -325,11 +318,10 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要执行权重校准吗？',
     options: [
-      { label: '启动', value: 0x5BB5 },
+      { label: '启动', value: 0x5bb5 },
       { label: '关闭', value: 0x1221 }
     ]
   },
-
 
   soh_forced_ctrl: {
     name: 'SOH强制校准信号',
@@ -339,7 +331,7 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要执行SOH强制校准吗？',
     options: [
-      { label: '启动', value: 0x5BB5 },
+      { label: '启动', value: 0x5bb5 },
       { label: '关闭', value: 0x1221 }
     ]
   },
@@ -352,7 +344,7 @@ export const REMOTE_COMMANDS = {
     confirmRequired: true,
     confirmMessage: '确定要执行上电SOH存储标志位复位吗？',
     options: [
-      { label: '启动', value: 0x5BB5 },
+      { label: '启动', value: 0x5bb5 },
       { label: '关闭', value: 0x1221 }
     ]
   },
@@ -364,7 +356,7 @@ export const REMOTE_COMMANDS = {
     dataType: 'u8',
     type: 'query',
     confirmRequired: false,
-    value: 0xFF,
+    value: 0xff,
     isPollingCommand: true // 标记为轮询命令
   },
 
@@ -374,7 +366,7 @@ export const REMOTE_COMMANDS = {
     dataType: 'u8',
     type: 'query',
     confirmRequired: false,
-    value: 0xFF,
+    value: 0xff,
     isPollingCommand: true // 标记为轮询命令
   },
 
@@ -384,7 +376,7 @@ export const REMOTE_COMMANDS = {
     dataType: 'u8',
     type: 'query',
     confirmRequired: false,
-    value: 0xFF,
+    value: 0xff,
     isPollingCommand: true // 标记为轮询命令
   },
 
@@ -394,7 +386,7 @@ export const REMOTE_COMMANDS = {
     dataType: 'u8',
     type: 'query',
     confirmRequired: false,
-    value: 0xFF,
+    value: 0xff,
     isPollingCommand: true // 标记为轮询命令
   },
   get_bau_upgrade_result: {
@@ -403,7 +395,7 @@ export const REMOTE_COMMANDS = {
     dataType: 'u8',
     type: 'query',
     confirmRequired: false,
-    value: 0xFF,
+    value: 0xff,
     isPollingCommand: true // 标记为轮询命令
   }
 }
@@ -427,8 +419,6 @@ export function getAllCommands() {
   return Object.entries(REMOTE_COMMANDS).map(([id, config]) => ({ id, ...config }))
 }
 
-
-
 /**
  * 验证命令值是否有效
  * @param {string} commandId - 命令ID
@@ -438,14 +428,14 @@ export function getAllCommands() {
 export function isValidCommandValue(commandId, value) {
   const config = getCommandConfig(commandId)
   if (!config) return false
-  
+
   // 按钮类型命令不需要验证值
   if (config.type === 'button') return true
-  
+
   // 检查值是否在选项列表中
   if (config.options && Array.isArray(config.options)) {
-    return config.options.some(option => option.value === value)
+    return config.options.some((option) => option.value === value)
   }
-  
+
   return false
 }

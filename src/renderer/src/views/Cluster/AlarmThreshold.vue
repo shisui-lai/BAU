@@ -367,6 +367,15 @@ function getParameterRemarkText(parameterKey) {
   return '' // 暂时返回空字符串
 }
 
+const stopReading = () => {
+  cancelAutoRead('AlarmThreshold')
+  stopParameterReading()
+  if (clusterSwitchDebounceTimer) {
+    clearTimeout(clusterSwitchDebounceTimer)
+    clusterSwitchDebounceTimer = null
+  }
+}
+
 
 
 
@@ -387,7 +396,7 @@ function getParameterRemarkText(parameterKey) {
               :label="isCurrentlyReading ? t('alarmThreshold.buttons.stopReading') : t('alarmThreshold.buttons.startReading')"
               @click="() => {
                 if (isCurrentlyReading) {
-                  stopParameterReading()
+                  stopReading()
                 } else {
                   startMultiTopicReadingWithRetry()
                 }

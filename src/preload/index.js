@@ -1,9 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
- 
-
-
 // IPC 管理类（简化版，仅用于演示）
 /* ----------------- ① 全局 Subject 收原始帧 ----------------- */
 
@@ -68,15 +65,15 @@ if (process.contextIsolated) {
       counterValue: (value) => ipcRenderer.send('counter-value', value),
 
       /** 统一封装：向主进程发送 MQTT 发布请求
-   *  @param {string} topic       完整 MQTT topic
-   *  @param {string} payloadHex  纯十六进制字符串，例如 'ff00aa'
-   *  @return Promise<boolean>    主进程 handle 回传的结果
-   */
-  mqttPublish: (topic, payloadHex) => {
-    // console.log('[Preload] mqttPublish → main', topic, payloadHex)
-    // 与主进程约定的 handle 名称保持一致
-    return ipcRenderer.invoke('mqttPublish', topic, payloadHex)
-  },
+       *  @param {string} topic       完整 MQTT topic
+       *  @param {string} payloadHex  纯十六进制字符串，例如 'ff00aa'
+       *  @return Promise<boolean>    主进程 handle 回传的结果
+       */
+      mqttPublish: (topic, payloadHex) => {
+        // console.log('[Preload] mqttPublish → main', topic, payloadHex)
+        // 与主进程约定的 handle 名称保持一致
+        return ipcRenderer.invoke('mqttPublish', topic, payloadHex)
+      },
 
       ipc: {
         send: (channel, data) => ipcRenderer.send(channel, data),
@@ -93,7 +90,7 @@ if (process.contextIsolated) {
       // 新增：多语言相关 API
       getLocale: () => ipcRenderer.invoke('get-locale'),
       setLocale: (locale) => ipcRenderer.invoke('set-locale', locale),
-      
+
       // 暴露ipcRenderer用于事件监听
       ipcRenderer: {
         on: (channel, listener) => ipcRenderer.on(channel, listener),

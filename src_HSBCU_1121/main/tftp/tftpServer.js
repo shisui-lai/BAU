@@ -40,7 +40,7 @@ function startTftpServer(host, port = 69, root = TFTP_ROOT) {
     }
 
     // 验证升级文件是否存在
-  /*   const upgradeFile = path.join(root, 'RS-BMU-BCU.pkg')
+    /*   const upgradeFile = path.join(root, 'RS-BMU-BCU.pkg')
     if (!fs.existsSync(upgradeFile)) {
       console.warn(`[TFTP] 警告: 升级文件 RS-BMU-BCU.pkg 不存在于 ${root}`)
     } */
@@ -57,14 +57,14 @@ function startTftpServer(host, port = 69, root = TFTP_ROOT) {
       // 监听服务器错误
       tftpServer.on('error', (error) => {
         console.error('[TFTP] 服务器错误:', error)
-        
+
         // 清理服务器实例
         tftpServer = null
-        
+
         // 根据错误类型返回不同的错误信息
         let errorMessage = ''
         let errorCode = error.code || ''
-        
+
         if (errorCode === 'EADDRNOTAVAIL') {
           // IP地址不可用
           errorMessage = `网卡IP地址 ${host} 不可用。请先将电脑网卡ip设置为 ${host}，然后再启动TFTP服务器。`
@@ -78,7 +78,7 @@ function startTftpServer(host, port = 69, root = TFTP_ROOT) {
           // 其他错误
           errorMessage = `TFTP服务器启动失败: ${error.message}`
         }
-        
+
         resolve({
           success: false,
           message: errorMessage,
@@ -91,12 +91,12 @@ function startTftpServer(host, port = 69, root = TFTP_ROOT) {
         console.log(
           `[TFTP] 收到${req.method}请求: ${req.file} 来自 ${req.stats.remoteAddress}:${req.stats.remotePort}`
         )
-        
+
         // 记录请求的详细信息
         req.on('error', (error) => {
           console.error(`[TFTP] 请求错误 (${req.file}):`, error.message)
         })
-        
+
         // 使用默认的请求处理器
         tftpServer.requestListener(req, res)
       })
@@ -141,7 +141,7 @@ function stopTftpServer() {
         tftpServer = null
         resolve({ success: true, message: 'TFTP服务器已停止' })
       })
-      
+
       // 调用 close() - 不接受回调参数
       tftpServer.close()
     } catch (err) {
@@ -187,11 +187,4 @@ function getTftpRoot() {
   return TFTP_ROOT
 }
 
-export {
-  startTftpServer,
-  stopTftpServer,
-  getTftpStatus,
-  setTftpRoot,
-  getTftpRoot
-}
-
+export { startTftpServer, stopTftpServer, getTftpStatus, setTftpRoot, getTftpRoot }

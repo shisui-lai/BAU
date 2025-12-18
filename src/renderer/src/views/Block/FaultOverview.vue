@@ -15,7 +15,7 @@
             <div class="fault-content">
               <div class="indicator-legend">
                 <div class="selector-inline">
-                  <span>选择堆：</span>
+                  <span>{{ t('faultOverview.selectBlock') }}：</span>
                   <Dropdown
                     v-model="selectedBlock"
                     :options="blockOptions"
@@ -242,7 +242,15 @@ const FAULT_NAMES_MAP = computed(() => ({
   }))
 
 // 使用堆选择composable
-const { blockOptions, selectedBlock } = useBlockSelect()
+const { blockOptions: rawBlockOptions, selectedBlock } = useBlockSelect()
+
+// 覆盖 blockOptions 以支持国际化
+const blockOptions = computed(() => {
+  return rawBlockOptions.value.map(b => ({
+    ...b,
+    label: t('cluster.block', [b.block])
+  }))
+})
 
 // 使用堆store
 const blockStore = useBlockStore()

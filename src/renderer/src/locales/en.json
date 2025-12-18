@@ -288,7 +288,7 @@
     "guest": "Guest",
     "logout": "Logout",
     "settings": "Settings",
-    "operationInfo": "Operation Info",
+    "operationInfo": "Cluster Info",
     "batteryInfo": "Battery Info",
     "clusterVersion": "Cluster version",
     "disconnection": "Disconnect Info",
@@ -1489,7 +1489,8 @@
         }
       },
       "summaryClasses": {
-        "basicInfo": "Block Basic Info",
+        "keyInfo": "Block Run Info",
+        "basicInfo": "Charge/Discharge Info",
         "maxMinValues": "Max/Min Values",
         "statusInfo": "Status Info"
       },
@@ -1557,6 +1558,8 @@
         "电池堆禁充禁放状态": "Block Enable State",
         "堆故障状态": "Block Fault State",
         "系统心跳": "System Heartbeat",
+        "使能簇状态": "Cluster Enable Status",
+        "切出簇状态": "Cluster Cutout Status",
         "电池堆额定容量": "Block Rated Capacity",
         "电池堆当前允许最大充电功率": "Block Current Max Charge Power",
         "电池堆当前允许最大放电功率": "Block Current Max Discharge Power",
@@ -1660,12 +1663,7 @@
         "簇电流极差值": "Cluster Current Difference Range Value"
       }
     },
-    "clusterConfigParam": {
-      "remarks": {
-        "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克；3：埃森特交流空调；4：英维克-EMW30-50-80；5：均能水冷机-1": "0xFFFF: No Cooling Device; 1: Konow Water Cooler; 2: Envicool; 3: Essent AC; 4: Envicool EMW30/50/80; 5: Juneng Water Cooler - 1",
-        "0xFFFF：无除湿机设备；1：除湿机-01；2：02-除湿机-E-J-000113": "0xFFFF: No Dehumidifier; 1: Dehumidifier-01; 2: Dehumidifier E-J-000113"
-      }
-    },
+    
     "clusterConfigParam": {
       "label": {
         "BMU总数量": "Total Number of BMUs",
@@ -1779,8 +1777,6 @@
         "制冷关闭温度": "Cooling Stop Temperature",
         "制热开启温度": "Heating Start Temperature",
         "制热关闭温度": "Heating Stop Temperature",
-        "风扇开启温度": "Fan Start Temperature",
-        "风扇停止温度": "Fan Stop Temperature",
         "CAN1通讯速率/仲裁域速率": "CAN1 Communication Rate/Arbitration Rate",
         "CAN1数据域波特率": "CAN1 Data Baud Rate",
         "CAN2通讯速率/仲裁域速率": "CAN2 Communication Rate/Arbitration Rate",
@@ -1850,9 +1846,11 @@
         "0: 关闭内测模式；1: 内测模式1（V、T）2: 内测模式2（IACP）3: 内测模式3（DO）": "0: Disable Internal Test Mode; 1: Internal Test Mode 1 (V, T) 2: Internal Test Mode 2 (IACP) 3: Internal Test Mode 3 (DO)",
         "0:自动均衡；1:手动均衡": "0: Auto Balance; 1: Manual Balance",
         "0x5BB5运维模式；0x1221非运维模式（默认）": "0x5BB5 Operation Mode; 0x1221 Non-Operation Mode (Default)",
-        "0xFFFF：无PCS；1：星星PCS；2：双一力PCS-01；3：科华PCS": "0xFFFF: No PCS; 1: Star PCS; 2: Shuang Yi Li PCS-01; 3: Kehua PCS",
-        "0xFFFF：无制冷设备；1：柯诺威水冷机；2：英维克；3：埃森特交流空调": "0xFFFF: No Cooling Device; 1: Konov Water Cooler; 2: Envicool; 3: Essent AC Air Conditioner",
-        "0xFFFF：无除湿机设备；1：除湿机-01": "0xFFFF: No Dehumidifier; 1: Dehumidifier-01",
+      "0xFFFF：无PCS；1：星星PCS；2：双一力PCS-01；3：科华PCS": "0xFFFF: No PCS; 1: Star PCS; 2: Shuang Yi Li PCS-01; 3: Kehua PCS",
+      "0xFFFF：无制冷设备；1：柯诺威水冷机；2：英维克；3：埃森特交流空调": "0xFFFF: No Cooling Device; 1: Konov Water Cooler; 2: Envicool; 3: Essent AC Air Conditioner",
+      "0xFFFF：无除湿机设备；1：除湿机-01": "0xFFFF: No Dehumidifier; 1: Dehumidifier-01",
+      "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克；3：埃森特交流空调；4：英维克-EMW30-50-80；5：均能水冷机-1": "0xFFFF: No Cooling Device; 1: Konov Water Cooler; 2: Envicool; 3: Essent AC; 4: Envicool EMW30/50/80; 5: Juneng Water Cooler - 1",
+      "0xFFFF：无除湿机设备；1：除湿机-01；2：02-除湿机-E-J-000113": "0xFFFF: No Dehumidifier; 1: Dehumidifier-01; 2: Dehumidifier E-J-000113",
         "0xFFFF：无消防控制器；1：三沃力源（sanvalor）": "0xFFFF: No Fire Controller; 1: Sanvalor Fire Controller",
         "0-50k；1-100k；2-125k；3-250k；4-500k；5-1M，默认：4-500k": "0-50k; 1-100k; 2-125k; 3-250k; 4-500k; 5-1M, Default: 4-500k",
         "0-无效/不支持；1-250k；2-500k；3-800k；4-1M；5-2M；6-4M；7-5M，默认：0-无效/不支持": "0-Invalid/Not Supported; 1-250k; 2-500k; 3-800k; 4-1M; 5-2M; 6-4M; 7-5M, Default: 0-Invalid/Not Supported",
@@ -2335,7 +2333,7 @@
         "RackSOC_SOC取值范围上限值": "Rack SOC Range Upper Limit",
         "RackSOC_SOC取值范围下限值": "Rack SOC Range Lower Limit",
         "SOC低端校准上限电压": "SOC Low-End Calibration Upper Voltage",
-        "SOC高端校准上限电压": "SOC High-End Calibration Upper Voltage",
+        "SOC高端校准下限电压": "SOC High-End Calibration Lower Voltage",
         "SOC静置校准温度": "SOC Rest Calibration Temperature",
         "SOC静置常温校准时间": "SOC Rest Calibration Time at Room Temp",
         "SOC静置低温校准时间": "SOC Rest Calibration Time at Low Temp",
@@ -2427,7 +2425,7 @@
         "放电修正电压拐点-25%C": "Discharge Correction Voltage Knee Point -0.25C",
         "充放电修正电流=25%C": "Charge/Discharge Correction Current =0.25C",
         "充放电修正电流=50%C": "Charge/Discharge Correction Current =0.5C",
-        "放电5拐点真实SOC追赶时间": "Discharge 5 Knee Point Real SOC Catch-up Time",
+        "放电拐点真实SOC追赶时间": "Discharge Knee Point Real SOC Catch-up Time",
         "SOH背景条件_温度下限": "SOH Background Condition - Temperature Lower Limit",
         "最大最小soc差值": "Max-Min SOC Difference",
         "电池放电容量最大百分百值": "Battery Discharge Capacity Maximum Percentage",

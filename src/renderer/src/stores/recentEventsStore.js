@@ -13,7 +13,7 @@ export const useRecentEventsStore = defineStore('recentEvents', {
   actions: {
     setRows(blockId, rows) {
       this.blockId = blockId
-      this.items = Array.isArray(rows) ? rows.slice(-100) : []
+      this.items = Array.isArray(rows) ? rows.slice(-1000) : []
       try {
         localStorage.setItem(LS_KEY, JSON.stringify({ blockId: this.blockId, items: this.items }))
       } catch {}
@@ -32,10 +32,9 @@ export const useRecentEventsStore = defineStore('recentEvents', {
         const obj = JSON.parse(raw)
         if (obj && Array.isArray(obj.items)) {
           this.blockId = obj.blockId || null
-          this.items = obj.items.slice(-100)
+          this.items = obj.items.slice(-1000)
         }
       } catch {}
     }
   }
 })
-

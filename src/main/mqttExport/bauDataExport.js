@@ -23,8 +23,14 @@
 import fs from 'fs'
 import path from 'path'
 import { Mutex } from 'async-mutex'
-import { ensureDir, formatFileSuffix, formatDateTime, appendFileWithRetry, getCachedFreeDiskSpace } from './utils'
-import { ALARM_MAP, BLOCK_SUMMARY } from '../table.js'
+import {
+  ensureDir,
+  formatFileSuffix,
+  formatDateTime,
+  appendFileWithRetry,
+  getCachedFreeDiskSpace
+} from './utils'
+import { ALARM_MAP, BLOCK_SUMMARY, SYS_ABSTRACT } from '../table.js'
 import { RUN_EXPORT_DIR, getDeviceDirSuffix, clearDeviceDirSuffixCache } from './paths'
 import { locateCell } from '../../protocol/utils'
 import { shouldDisplayFault, getBrokenwireFaultStatus } from '../../protocol/faultLogic'
@@ -34,8 +40,28 @@ const csvBuffers = new Map() // { filePath: { key, header, buffer: [] } }
 const CSV_BUFFER_INTERVAL = 5000 // 5 seconds
 let flushTimer = null
 
-const latest = { cellVoltage: {}, cellTemperature: {}, cellSOC: {}, cellSOH: {}, clusterSummary: {}, packSummary: {}, blockSummary: {}, alarm: {} }
-const lastWritten = { cellVoltage: {}, cellTemperature: {}, cellSOC: {}, cellSOH: {}, clusterSummary: {}, packSummary: {}, blockSummary: {}, alarm: {} }
+const latest = {
+  cellVoltage: {},
+  cellTemperature: {},
+  cellSOC: {},
+  cellSOH: {},
+  clusterSummary: {},
+  packSummary: {},
+  blockSummary: {},
+  alarm: {},
+  sysAbstract: {}
+}
+const lastWritten = {
+  cellVoltage: {},
+  cellTemperature: {},
+  cellSOC: {},
+  cellSOH: {},
+  clusterSummary: {},
+  packSummary: {},
+  blockSummary: {},
+  alarm: {},
+  sysAbstract: {}
+}
 const currentFileMap = new Map()
 const deviceOrder = new Map()
 const configSnapshotMap = new Map()
@@ -43,7 +69,10 @@ const pendingNewHeader = new Set()
 const initializedFiles = new Set()
 const fileInitPromises = new Map()
 const daySnapshotMap = new Map()
-const FILE_SIZE_LIMIT = parseInt(process.env.EXPORT_FILE_SIZE_LIMIT || String(500 * 1024 * 1024), 10)
+const FILE_SIZE_LIMIT = parseInt(
+  process.env.EXPORT_FILE_SIZE_LIMIT || String(500 * 1024 * 1024),
+  10
+)
 const MIN_FREE_SPACE = parseInt(process.env.MIN_FREE_SPACE || String(5 * 1024 * 1024 * 1024), 10)
 const DISK_WARNING_COOLDOWN_MS = parseInt(process.env.DISK_WARNING_COOLDOWN_MS || '10000', 10)
 let lastDiskWarningTs = 0
@@ -74,9 +103,10 @@ function getCsvFilePath(deviceId, basename) {
   const { block, cluster } = parseDevice(deviceId)
   const baseKey = cluster === 0 ? `${block}-0` : deviceId
   const dirSuffix = getDeviceDirSuffix(baseKey)
-  const dir = cluster === 0
-    ? path.join(RUN_EXPORT_DIR, `Block${block}_${dirSuffix}`)
-    : path.join(RUN_EXPORT_DIR, `Block${block}_Cluster${cluster}_${dirSuffix}`)
+  const dir =
+    cluster === 0
+      ? path.join(RUN_EXPORT_DIR, `Block${block}_${dirSuffix}`)
+      : path.join(RUN_EXPORT_DIR, `Block${block}_Cluster${cluster}_${dirSuffix}`)
   ensureDir(dir)
   const fileSuffix = formatFileSuffix(new Date())
   return path.join(dir, `${basename}_${fileSuffix}.csv`)
@@ -124,7 +154,11 @@ export function startSaveTimerSemantic() {
     if (free < MIN_FREE_SPACE && !bypassLowDiskCheck) {
       const nowTs = Date.now()
       if (nowTs - lastDiskWarningTs > DISK_WARNING_COOLDOWN_MS) {
-        try { if (process.connected) { process.send({ API: 'disk-space-warning' }) } } catch {}
+        try {
+          if (process.connected) {
+            process.send({ API: 'disk-space-warning' })
+          }
+        } catch {}
         lastDiskWarningTs = nowTs
       }
       return
@@ -132,7 +166,11 @@ export function startSaveTimerSemantic() {
     if (free < MIN_FREE_SPACE && bypassLowDiskCheck) {
       const nowTs = Date.now()
       if (nowTs - lastDiskWarningTs > DISK_WARNING_COOLDOWN_MS) {
-        try { if (process.connected) { process.send({ API: 'disk-space-warning' }) } } catch {}
+        try {
+          if (process.connected) {
+            process.send({ API: 'disk-space-warning' })
+          }
+        } catch {}
         lastDiskWarningTs = nowTs
       }
       // 继续执行保存流程，不阻断
@@ -141,7 +179,7 @@ export function startSaveTimerSemantic() {
     Object.keys(latest).forEach((label) => {
       // Fix: Ensure lastWritten[label] is initialized to avoid TypeError with dynamic alarm keys
       if (!lastWritten[label]) lastWritten[label] = {}
-      
+
       Object.keys(latest[label]).forEach((id) => {
         const sample = latest[label][id]
         const prev = lastWritten[label][id]
@@ -163,12 +201,15 @@ export function startSaveTimerSemantic() {
         }
         if (dataListToWrite) {
           if (label === 'cellVoltage') saveCellSemantic(dataListToWrite, id, now, metaToUse)
-          if (label === 'cellTemperature') saveCellTemperatureSemantic(dataListToWrite, id, now, metaToUse)
+          if (label === 'cellTemperature')
+            saveCellTemperatureSemantic(dataListToWrite, id, now, metaToUse)
           if (label === 'cellSOC') saveCellSocSemantic(dataListToWrite, id, now, metaToUse)
           if (label === 'cellSOH') saveCellSohSemantic(dataListToWrite, id, now, metaToUse)
-          if (label === 'clusterSummary') saveClusterSummarySemantic(dataListToWrite, id, now, metaToUse)
+          if (label === 'clusterSummary')
+            saveClusterSummarySemantic(dataListToWrite, id, now, metaToUse)
           if (label === 'packSummary') savePackSummarySemantic(dataListToWrite, id, now, metaToUse)
-          if (label === 'blockSummary') saveBlockSummarySemantic(dataListToWrite, id, now, metaToUse)
+          if (label === 'blockSummary')
+            saveBlockSummarySemantic(dataListToWrite, id, now, metaToUse)
           if (label.startsWith('alarm_')) saveAlarmSemantic(dataListToWrite, id, now, metaToUse)
           lastWritten[label][id] = { timestamp: newTs, dataList: dataListToWrite, meta: metaToUse }
         }
@@ -194,10 +235,10 @@ export function stopSaveTimerSemantic() {
     clearInterval(saveTimer)
     saveTimer = null
   }
-  
+
   // 清空所有状态缓存，确保下次启动时生成新文件并重置状态
   // 注意：不清空 csvBuffers，让 stopFlushTimer 触发的最后一次写入能正常完成（写入旧文件）
-  // csvBuffers.clear() 
+  // csvBuffers.clear()
   // currentFileMap.clear()
   idCounters.clear()
   configSnapshotMap.clear()
@@ -205,18 +246,18 @@ export function stopSaveTimerSemantic() {
   initializedFiles.clear()
   fileInitPromises.clear()
   // daySnapshotMap.clear()
-  
+
   // 清空告警状态
   storedAlarms.clear()
   alarmStatusCache.clear()
 
   // 清空文件夹命名缓存 (关键修复：确保生成新的文件夹)
   // clearDeviceDirSuffixCache()
-  
+
   // 重置数据缓存
-  Object.keys(lastWritten).forEach(k => lastWritten[k] = {})
-  Object.keys(latest).forEach(k => latest[k] = {})
-  
+  Object.keys(lastWritten).forEach((k) => (lastWritten[k] = {}))
+  Object.keys(latest).forEach((k) => (latest[k] = {}))
+
   console.log('[DataExport] Storage stopped and cache cleared.')
 }
 const idCounters = new Map()
@@ -300,7 +341,13 @@ export async function saveCellSemantic(dataList, deviceId, ts, meta) {
   }
   const filePath = currentFileMap.get(key) || getCsvFilePath(deviceId, basename)
   currentFileMap.set(key, filePath)
-  const header = ['ID', '导出时间', ...dataList.flatMap((p) => p.cells.map((c) => `电池${c.index}（BMU${p.packID} ${c.bmuIndex}#）`))].join(',')
+  const header = [
+    'ID',
+    '导出时间',
+    ...dataList.flatMap((p) =>
+      p.cells.map((c) => `电池${c.index}（BMU${p.packID} ${c.bmuIndex}#）`)
+    )
+  ].join(',')
   const stats = await fs.promises.stat(filePath).catch(() => null)
   if (!stats) {
     await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
@@ -333,7 +380,13 @@ export async function saveCellTemperatureSemantic(dataList, deviceId, ts, meta) 
   }
   const filePath = currentFileMap.get(key) || getCsvFilePath(deviceId, basename)
   currentFileMap.set(key, filePath)
-  const header = ['ID', '导出时间', ...dataList.flatMap((p) => p.cells.map((c) => `温度${c.index}（BMU${p.packID} ${c.bmuIndex}#）`))].join(',')
+  const header = [
+    'ID',
+    '导出时间',
+    ...dataList.flatMap((p) =>
+      p.cells.map((c) => `温度${c.index}（BMU${p.packID} ${c.bmuIndex}#）`)
+    )
+  ].join(',')
   const stats = await fs.promises.stat(filePath).catch(() => null)
   if (!stats) {
     await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
@@ -366,7 +419,11 @@ export async function saveCellSocSemantic(dataList, deviceId, ts, meta) {
   }
   const filePath = currentFileMap.get(key) || getCsvFilePath(deviceId, basename)
   currentFileMap.set(key, filePath)
-  const header = ['ID', '导出时间', ...dataList.flatMap((p) => p.cells.map((c) => `SOC${c.index}（BMU${p.packID} ${c.bmuIndex}#）`))].join(',')
+  const header = [
+    'ID',
+    '导出时间',
+    ...dataList.flatMap((p) => p.cells.map((c) => `SOC${c.index}（BMU${p.packID} ${c.bmuIndex}#）`))
+  ].join(',')
   const stats = await fs.promises.stat(filePath).catch(() => null)
   if (!stats) {
     await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
@@ -399,7 +456,11 @@ export async function saveCellSohSemantic(dataList, deviceId, ts, meta) {
   }
   const filePath = currentFileMap.get(key) || getCsvFilePath(deviceId, basename)
   currentFileMap.set(key, filePath)
-  const header = ['ID', '导出时间', ...dataList.flatMap((p) => p.cells.map((c) => `SOH${c.index}（BMU${p.packID} ${c.bmuIndex}#）`))].join(',')
+  const header = [
+    'ID',
+    '导出时间',
+    ...dataList.flatMap((p) => p.cells.map((c) => `SOH${c.index}（BMU${p.packID} ${c.bmuIndex}#）`))
+  ].join(',')
   const stats = await fs.promises.stat(filePath).catch(() => null)
   if (!stats) {
     await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
@@ -444,6 +505,80 @@ export async function saveClusterSummarySemantic(dataList, deviceId, ts, meta) {
     }
   }
 
+  // 解析设备定位（堆号/簇号），用于全局簇序计算
+  const { block, cluster } = parseDevice(deviceId)
+  const bIdx = Number(block) || 1
+  const cIdx = Number(cluster) || 1
+
+  // 读取堆汇总缓存：包含 BlockCount、ClusterCount1..6 与 EnableClusterStatus1/2
+  const bcEntry =
+    latest.blockSummary && latest.blockSummary[deviceId] ? latest.blockSummary[deviceId] : null
+  const bc = bcEntry && Array.isArray(bcEntry.dataList) ? bcEntry.dataList[0] : null
+  // 使用堆键读取堆概要（bX-c0）作为有效来源
+  const blockIdKey = `${bIdx}-0`
+  const bcEntryByBlock =
+    latest.blockSummary && latest.blockSummary[blockIdKey] ? latest.blockSummary[blockIdKey] : null
+  const bcByBlock =
+    bcEntryByBlock && Array.isArray(bcEntryByBlock.dataList) ? bcEntryByBlock.dataList[0] : null
+  const bcEffective = bcByBlock || bc
+  const blockCount = Number(bcEffective?.BlockCount) || 0
+  const clusterCounts = [
+    Number(bcEffective?.ClusterCount1) || 0,
+    Number(bcEffective?.ClusterCount2) || 0,
+    Number(bcEffective?.ClusterCount3) || 0,
+    Number(bcEffective?.ClusterCount4) || 0,
+    Number(bcEffective?.ClusterCount5) || 0,
+    Number(bcEffective?.ClusterCount6) || 0
+  ]
+  // 全局簇序：前置堆的簇数累加 + 当前簇号
+  const offset = clusterCounts
+    .slice(0, Math.max(0, bIdx - 1))
+    .reduce((sum, n) => sum + (Number.isFinite(n) ? n : 0), 0)
+  const globalClusterIndex = offset + cIdx
+  // 从使能位域取当前簇的位（最多20簇：Status1 10位 + Status2 10位）
+  const s1 = Number(bcEffective?.EnableClusterStatus1)
+  const s2 = Number(bcEffective?.EnableClusterStatus2)
+  // 调试打印：对比以设备ID与以堆ID-0为键的堆概要，定位位域来源是否为空
+  console.log('[ClusterData][EnableDebug]', {
+    deviceId,
+    blockIdKey,
+    hasBcDevice: !!bc,
+    hasBcBlock: !!bcByBlock,
+    blockCount,
+    clusterCounts,
+    globalClusterIndex,
+    s1_device: bc?.EnableClusterStatus1,
+    s2_device: bc?.EnableClusterStatus2,
+    s1_block: bcByBlock?.EnableClusterStatus1,
+    s2_block: bcByBlock?.EnableClusterStatus2
+  })
+  let enableText = '/'
+  if (Number.isFinite(globalClusterIndex) && globalClusterIndex > 0) {
+    if (globalClusterIndex <= 10 && Number.isFinite(s1)) {
+      const bit = (s1 >> (globalClusterIndex - 1)) & 1
+      enableText = bit === 1 ? '使能' : '非使能'
+      console.log('[ClusterData][EnableBit]', {
+        deviceId,
+        blockIdKey,
+        globalClusterIndex,
+        source: 's1',
+        bit,
+        enableText
+      })
+    } else if (globalClusterIndex <= 20 && Number.isFinite(s2)) {
+      const bit = (s2 >> (globalClusterIndex - 11)) & 1
+      enableText = bit === 1 ? '使能' : '非使能'
+      console.log('[ClusterData][EnableBit]', {
+        deviceId,
+        blockIdKey,
+        globalClusterIndex,
+        source: 's2',
+        bit,
+        enableText
+      })
+    }
+  }
+
   // 需要从CSV中移除的系统总状态位相关字段（改为合成一列）
   const SYS_TOTAL_EXCLUDE = new Set([
     '系统总状态位1',
@@ -470,14 +605,133 @@ export async function saveClusterSummarySemantic(dataList, deviceId, ts, meta) {
   ])
 
   const filteredElements = allElements.filter((it) => !SYS_TOTAL_EXCLUDE.has(it.label))
+  // 将“簇使能状态”以标准元素注入统一构建流程，保证与其他参数一致
+  filteredElements.unshift({ label: '簇使能状态', value: enableText })
 
-  // 头部：在导出时间之后插入合成列“系统总状态位”
-  const header = ['ID', '导出时间', '系统总状态位', ...filteredElements.map((it) => it.label)].join(',')
+  // 头部：在导出时间之后插入合成列“系统总状态位”，并追加交叉排列的极值+编号列
+  const classesOrder = [
+    '单体电压概要',
+    '单体温度概要',
+    '电芯SOC概要',
+    '电芯SOH概要',
+    'BMU电压概要',
+    'BMU温度概要',
+    'CNR温度概要'
+  ]
+  const byKey = new Map()
+  for (const it of SYS_ABSTRACT) {
+    if (!it || !it.key) continue
+    byKey.set(String(it.key), String(it.label || ''))
+  }
+  function getTailHeaderName(cls, key) {
+    if (cls === '单体电压概要') {
+      if (key === 'AverCellVoltage') return '单体电压平均值(V)'
+      if (key === 'RangeCellVoltage') return '单体电压极差值(V)'
+    }
+    if (cls === '单体温度概要') {
+      if (key === 'AverCellTemp') return '单体温度平均值(℃)'
+      if (key === 'RangeCellTemp') return '单体温度极差值(℃)'
+    }
+    if (cls === '电芯SOC概要') {
+      if (key === 'AverCellSOC') return '单体SOC平均值(%)'
+      if (key === 'RangeCellSOC') return '单体SOC极差值(%)'
+    }
+    if (cls === '电芯SOH概要') {
+      if (key === 'AverCellSOH') return '单体SOH平均值(%)'
+      if (key === 'RangeCellSOH') return '单体SOH极差值(%)'
+    }
+    if (cls === 'BMU电压概要') {
+      if (key === 'AverBmuVoltage') return 'BMU电压平均值(V)'
+      if (key === 'RangeBmuVoltage') return 'BMU电压极差值(V)'
+    }
+    if (cls === 'BMU温度概要') {
+      if (key === 'AverBmuTemp') return 'BMU温度平均值(℃)'
+      if (key === 'RangeBmuTemp') return 'BMU温度极差值(℃)'
+    }
+    if (cls === 'CNR温度概要') {
+      if (key === 'AverCNRTemp') return '动力接插件温度平均值(℃)'
+      if (key === 'RangeCNRTemp') return '动力接插件温度极差值(℃)'
+    }
+    // 兜底：使用原始标签
+    return byKey.get(key) || key
+  }
+  function transformHeaderLabel(cls, label) {
+    if (cls === 'CNR温度概要') {
+      return String(label).replace(/极柱/g, '动力接插件')
+    }
+    return label
+  }
+  function buildClassColumns(cls) {
+    const items = SYS_ABSTRACT.filter((it) => it && String(it.class || '') === cls)
+    const maxPairs = []
+    const minPairs = []
+    const tailKeys = []
+    for (const it of items) {
+      const k = String(it.key || '')
+      if (k.endsWith('Num')) continue
+      const vLabel = String(it.label || '')
+      if (k.startsWith('Max')) {
+        const nLabel = byKey.get(k + 'Num') || null
+        maxPairs.push([vLabel, nLabel])
+      } else if (k.startsWith('Min')) {
+        const nLabel = byKey.get(k + 'Num') || null
+        minPairs.push([vLabel, nLabel])
+      } else if (k.startsWith('Aver') || k.startsWith('Range')) {
+        tailKeys.push(k)
+      }
+    }
+    const cols = []
+    for (const [vL, nL] of maxPairs) {
+      cols.push(transformHeaderLabel(cls, vL))
+      if (nL) cols.push(transformHeaderLabel(cls, nL))
+    }
+    for (const [vL, nL] of minPairs) {
+      cols.push(transformHeaderLabel(cls, vL))
+      if (nL) cols.push(transformHeaderLabel(cls, nL))
+    }
+    for (const k of tailKeys) cols.push(getTailHeaderName(cls, k))
+    return cols
+  }
+  const extremeColumns = []
+  for (const cls of classesOrder) {
+    extremeColumns.push(...buildClassColumns(cls))
+  }
+  // ===== BMU 信息（pack_summary）列：插在极值列前 =====
+  const psEntry =
+    latest.packSummary && latest.packSummary[deviceId] ? latest.packSummary[deviceId] : null
+  const psList = psEntry ? psEntry.dataList || [] : []
+  const bmuTotal =
+    psEntry && psEntry.meta && psEntry.meta.bmuTotal
+      ? psEntry.meta.bmuTotal
+      : psEntry && psEntry.dataList && psEntry.dataList.length
+        ? 32
+        : 0
+  const psMapByClass = new Map()
+  for (const group of psList) {
+    const cls = String(group.class || '')
+    const m = psMapByClass.get(cls) || new Map()
+    for (const item of group.element || []) m.set(String(item.label || ''), item.value)
+    psMapByClass.set(cls, m)
+  }
+  const bmuHeader = []
+  for (let i = 1; i <= bmuTotal; i++) {
+    bmuHeader.push(`BMU${i} 软件版本`, `BMU${i} BOOT版本`, `BMU${i} 产品编码`)
+  }
+  // 表头：统一由“系统总状态位 + filteredElements + BMU信息 + 极值列”构建，“簇使能状态”作为标准元素参与其中
+  const header = [
+    'ID',
+    '导出时间',
+    '系统总状态位',
+    ...filteredElements.map((it) => it.label),
+    ...bmuHeader,
+    ...extremeColumns
+  ].join(',')
   const stats = await fs.promises.stat(filePath).catch(() => null)
   if (!stats) {
     await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
   }
-  isConfigChanged(key, meta)
+  // 禁用中途表头重写（不基于表头签名触发），保持同一文件首行表头唯一
+  isConfigChanged(key, null)
   if (stats && pendingNewHeader.has(key)) {
     await appendFileWithRetry(filePath, header + '\r\n')
     idCounters.set(key, 0)
@@ -524,6 +778,18 @@ export async function saveClusterSummarySemantic(dataList, deviceId, ts, meta) {
     .map((s) => (s && s !== 'null' && s !== 'undefined' ? s : '/'))
     .join('; ')
 
+  const saSample =
+    latest.sysAbstract && latest.sysAbstract[deviceId] ? latest.sysAbstract[deviceId].dataList : []
+  const saMapByClass = new Map()
+  for (const group of saSample || []) {
+    const cls = String(group.class || '')
+    const m = saMapByClass.get(cls) || new Map()
+    for (const item of group.element || []) {
+      m.set(String(item.label || ''), item.value)
+    }
+    saMapByClass.set(cls, m)
+  }
+  // 行值：统一按系统总状态位 + filteredElements 构建，“簇使能状态”在循环中输出
   const values = [sysTotalCol]
   for (const item of filteredElements) {
     const v = item && item.value
@@ -548,11 +814,12 @@ export async function saveClusterSummarySemantic(dataList, deviceId, ts, meta) {
       values.push(Number.isFinite(num) ? (ALARM_MAP[num] ?? v) : v)
       continue
     }
-    if (item && (
-      item.label === '周期任务堆栈大小' ||
-      item.label === '系统堆栈空间' ||
-      item.label === '系统堆栈最小空间'
-    )) {
+    if (
+      item &&
+      (item.label === '周期任务堆栈大小' ||
+        item.label === '系统堆栈空间' ||
+        item.label === '系统堆栈最小空间')
+    ) {
       const num = Number(v)
       if (Number.isFinite(num)) {
         values.push(`${num.toFixed(2)} KB`)
@@ -562,6 +829,63 @@ export async function saveClusterSummarySemantic(dataList, deviceId, ts, meta) {
       continue
     }
     values.push(v)
+  }
+  // ===== BMU 信息（按 1..bmuTotal）=====
+  const mVer = psMapByClass.get('BMU版本信息') || new Map()
+  const mCode = psMapByClass.get('BMU产品编码') || new Map()
+  const fixBoot = (v) => {
+    if (v == null) return v
+    const s = String(v)
+    if (s.length > 1 && s[0] === '0') return '\u200B' + s
+    return v
+  }
+  for (let i = 1; i <= bmuTotal; i++) {
+    const sw = mVer.has(`BMU${i} 软件版本`) ? mVer.get(`BMU${i} 软件版本`) : '/'
+    const bt = mVer.has(`BMU${i} BOOT版本`) ? fixBoot(mVer.get(`BMU${i} BOOT版本`)) : '/'
+    const pc = mCode.has(`BMU${i} 产品编码`) ? mCode.get(`BMU${i} 产品编码`) : '/'
+    values.push(sw, bt, pc)
+  }
+  function takeVal(label, cls) {
+    const m = saMapByClass.get(cls)
+    const v = m && m.has(label) ? m.get(label) : '/'
+    if (typeof v === 'object' && v && 'txt' in v) return String(v.txt)
+    return v
+  }
+  for (const cls of classesOrder) {
+    const items = SYS_ABSTRACT.filter((it) => it && String(it.class || '') === cls)
+    const maxKeys = items
+      .filter(
+        (it) => String(it.key || '').startsWith('Max') && !String(it.key || '').endsWith('Num')
+      )
+      .map((it) => String(it.key))
+    const minKeys = items
+      .filter(
+        (it) => String(it.key || '').startsWith('Min') && !String(it.key || '').endsWith('Num')
+      )
+      .map((it) => String(it.key))
+    const tailKeys = items
+      .filter((it) => {
+        const k = String(it.key || '')
+        return k.startsWith('Aver') || k.startsWith('Range')
+      })
+      .map((it) => String(it.key))
+
+    for (const k of maxKeys) {
+      const vLabel = byKey.get(k) || ''
+      const nLabel = byKey.get(k + 'Num') || null
+      if (vLabel) values.push(takeVal(vLabel, cls))
+      if (nLabel) values.push(takeVal(nLabel, cls))
+    }
+    for (const k of minKeys) {
+      const vLabel = byKey.get(k) || ''
+      const nLabel = byKey.get(k + 'Num') || null
+      if (vLabel) values.push(takeVal(vLabel, cls))
+      if (nLabel) values.push(takeVal(nLabel, cls))
+    }
+    for (const k of tailKeys) {
+      const vLabel = byKey.get(k) || ''
+      if (vLabel) values.push(takeVal(vLabel, cls))
+    }
   }
   const idVal = nextId(key)
   const row = [idVal, nowStr, ...values].join(',') + '\r\n'
@@ -575,11 +899,11 @@ export async function savePackSummarySemantic(dataList, deviceId, ts, meta) {
    * @returns {Promise<void>}
    */
   const nameMap = {
-    'BMU电压': 'BMU_Vol',
-    'BMU电路板温度': 'BMU_Temp',
+    BMU电压: 'BMU_Vol',
+    BMU电路板温度: 'BMU_Temp',
     'BMU SOC': 'BMU_SOC',
-    '动力接插件温度1': 'Power_Connector_Temp',
-    '动力接插件温度2': 'Power_Connector_Temp'
+    动力接插件温度1: 'Power_Connector_Temp',
+    动力接插件温度2: 'Power_Connector_Temp'
   }
   const grouped = new Map()
   for (const cat of dataList) {
@@ -631,7 +955,7 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
    * 写入堆概要CSV（表头由 BLOCK_SUMMARY 定义）
    * @returns {Promise<void>}
    */
-  const baseConfig = Array.isArray(baseConfigOrList) ? (baseConfigOrList[0] || {}) : baseConfigOrList
+  const baseConfig = Array.isArray(baseConfigOrList) ? baseConfigOrList[0] || {} : baseConfigOrList
   const basename = 'BlockSummary'
   const key = `${deviceId}:${basename}`
   if (isNewDay(key)) {
@@ -647,7 +971,11 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
     if ('bitsOf' in f || t === 'bit') return false
     return true
   })
-  const header = ['ID', '导出时间', ...fields.map((f) => f.unit ? `${f.label}(${f.unit})` : f.label)].join(',')
+  const header = [
+    'ID',
+    '导出时间',
+    ...fields.map((f) => (f.unit ? `${f.label}(${f.unit})` : f.label))
+  ].join(',')
   const stats = await fs.promises.stat(filePath).catch(() => null)
   if (!stats) {
     await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
@@ -668,7 +996,7 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
       f.key === 'CutoutClusterStatus2'
     ) {
       if (Number.isFinite(n)) {
-        const bits = (n & 0x3FF).toString(2).padStart(10, '0')
+        const bits = (n & 0x3ff).toString(2).padStart(10, '0')
         return '\u200B' + bits
       }
       return v == null ? '/' : String(v)
@@ -678,11 +1006,28 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
       return m[n] ?? String(v)
     }
     if (f.key === 'bauWorkingMode') {
-      const m = { 0: '静置', 1: '充电', 2: '放电', 3: '开路', 4: '接触器自检', 255: '各簇状态不一致' }
+      const m = {
+        0: '静置',
+        1: '充电',
+        2: '放电',
+        3: '开路',
+        4: '接触器自检',
+        255: '各簇状态不一致'
+      }
       return m[n] ?? String(v)
     }
     if (f.key === 'deviceSystemStatus') {
-      const m = { 0: '运行监测', 1: '绝缘检测状态', 2: '接触器自检状态', 3: '系统初始化', 4: 'BCU升级状态', 6: 'BCU自适应地址状态', 7: 'BMU自适应地址状态', 8: 'BMU升级状态', 65535: '其他' }
+      const m = {
+        0: '运行监测',
+        1: '绝缘检测状态',
+        2: '接触器自检状态',
+        3: '系统初始化',
+        4: 'BCU升级状态',
+        6: 'BCU自适应地址状态',
+        7: 'BMU自适应地址状态',
+        8: 'BMU升级状态',
+        65535: '其他'
+      }
       return m[n] ?? String(v)
     }
     if (f.key === 'chargeDischargeForbiddenStatus') {
@@ -707,25 +1052,57 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
   await appendFileWithRetry(filePath, row)
   await rotateIfNeeded(filePath, deviceId, basename, key, header)
 }
-function generateAlarmKey(deviceId, classification, bmuIndex, cellIndex, fault, level, cellIndexRelative) {
+function generateAlarmKey(
+  deviceId,
+  classification,
+  bmuIndex,
+  cellIndex,
+  fault,
+  level,
+  cellIndexRelative
+) {
   /**
    * 生成精确告警键（含等级）
    */
   const safeCellIndex = cellIndex || cellIndexRelative || ''
   return `${deviceId}:${classification}:${bmuIndex}:${safeCellIndex}:${fault}:${level}`
 }
-function generateAlarmKeyWithoutLevel(deviceId, classification, bmuIndex, cellIndex, fault, cellIndexRelative) {
+function generateAlarmKeyWithoutLevel(
+  deviceId,
+  classification,
+  bmuIndex,
+  cellIndex,
+  fault,
+  cellIndexRelative
+) {
   /**
    * 生成不含等级的告警键（用于恢复/对比）
    */
   const safeCellIndex = cellIndex || cellIndexRelative || ''
   return `${deviceId}:${classification}:${bmuIndex}:${safeCellIndex}:${fault}`
 }
-function hasAlarmStatusChanged(deviceId, classification, bmuIndex, cellIndex, fault, level, actionValue, cellIndexRelative) {
+function hasAlarmStatusChanged(
+  deviceId,
+  classification,
+  bmuIndex,
+  cellIndex,
+  fault,
+  level,
+  actionValue,
+  cellIndexRelative
+) {
   /**
    * 检测同等级下状态变化（值变化或重新触发）
    */
-  const alarmKey = generateAlarmKey(deviceId, classification, bmuIndex, cellIndex, fault, level, cellIndexRelative)
+  const alarmKey = generateAlarmKey(
+    deviceId,
+    classification,
+    bmuIndex,
+    cellIndex,
+    fault,
+    level,
+    cellIndexRelative
+  )
   const currentStatus = JSON.stringify({ classification, bmuIndex, cellIndex, fault, level })
   const cachedStatus = alarmStatusCache.get(alarmKey)
   if (!cachedStatus) {
@@ -750,10 +1127,10 @@ function calculateGlobalTemp(bmu, tempInBmu, cfg = {}) {
    * @param {{afeTempCounts:number[]}} cfg - 配置（每BMU温度探头数量列表）
    * @returns {number|null} 全局绝对序号
    */
-  if (!bmu || !tempInBmu) return null;
-  const { afeTempCounts = [] } = cfg;
-  const tempsPerBmu = afeTempCounts.reduce((total, count) => total + count, 0);
-  return tempsPerBmu > 0 ? (bmu - 1) * tempsPerBmu + tempInBmu : null;
+  if (!bmu || !tempInBmu) return null
+  const { afeTempCounts = [] } = cfg
+  const tempsPerBmu = afeTempCounts.reduce((total, count) => total + count, 0)
+  return tempsPerBmu > 0 ? (bmu - 1) * tempsPerBmu + tempInBmu : null
 }
 
 function detectRecoveredAlarms(deviceId, currentKeys, getPreciseTime, currentDataType) {
@@ -765,7 +1142,7 @@ function detectRecoveredAlarms(deviceId, currentKeys, getPreciseTime, currentDat
    * @param {string} currentDataType - 当前数据类型（Topic），用于隔离不同类型的恢复
    * @returns {Array<Object>} 恢复告警列表
    */
-  const recoveredAlarms = [];
+  const recoveredAlarms = []
   // 遍历所有已存储的告警
   for (const [alarmKey, alarmInfo] of storedAlarms.entries()) {
     // 检查是否属于当前设备（通过前缀匹配）
@@ -773,16 +1150,16 @@ function detectRecoveredAlarms(deviceId, currentKeys, getPreciseTime, currentDat
       // 关键修复：只检测属于当前数据类型（Topic）的告警
       // 防止不同Topic的数据（如 TOTAL_FAULT 和 FAULT_LEVEL2）相互误判为恢复
       if (currentDataType && alarmInfo.dataType !== currentDataType) {
-        continue;
+        continue
       }
 
       // 提取不带等级的键（用于匹配当前存在的告警）
-      const lastColonIndex = alarmKey.lastIndexOf(':');
-      const keyNoLevel = alarmKey.substring(0, lastColonIndex);
+      const lastColonIndex = alarmKey.lastIndexOf(':')
+      const keyNoLevel = alarmKey.substring(0, lastColonIndex)
 
       // 如果当前上报的告警列表中不包含这个键，说明该告警已消失（恢复）
       if (!currentKeys.has(keyNoLevel)) {
-        const currentTime = getPreciseTime();
+        const currentTime = getPreciseTime()
         // 记录恢复告警
         recoveredAlarms.push({
           ...alarmInfo,
@@ -790,21 +1167,27 @@ function detectRecoveredAlarms(deviceId, currentKeys, getPreciseTime, currentDat
           alarmStatus: '已恢复',
           timestamp: currentTime,
           actionValue: '' // 恢复时动作值通常为空
-        });
-        
+        })
+
         // 从存储和缓存中移除
-        storedAlarms.delete(alarmKey);
-        alarmStatusCache.delete(alarmKey);
+        storedAlarms.delete(alarmKey)
+        alarmStatusCache.delete(alarmKey)
       }
     }
   }
-  return recoveredAlarms;
+  return recoveredAlarms
 }
 
-const ALARM_LEVEL_ORDER = { 
-  '严重': 3, '一般': 2, '轻微': 1,
-  '严重报警': 3, '一般报警': 2, '轻微报警': 1,
-  'Severe': 3, 'Medium': 2, 'Mild': 1
+const ALARM_LEVEL_ORDER = {
+  严重: 3,
+  一般: 2,
+  轻微: 1,
+  严重报警: 3,
+  一般报警: 2,
+  轻微报警: 1,
+  Severe: 3,
+  Medium: 2,
+  Mild: 1
 }
 
 // Helper for Action Value Lookup
@@ -813,124 +1196,133 @@ function getCurrentActionValue(deviceId, faultName, bmuIndex, cellIndexRelative)
    * 根据故障类型在最新运行数据中查找动作值（电压/温度/电流/绝缘等）
    * @returns {any|null} 查到的实时值或 null
    */
-  const name = String(faultName || '');
+  const name = String(faultName || '')
 
   // 0. Exclude Disconnection/Communication Faults
   // 拦截掉线、断线、通信故障，直接返回'-'，避免显示错误数值
-  if (name.match(/掉线|断线|通信|Lost|Disconnect/i)) return '-';
+  if (name.match(/掉线|断线|通信|Lost|Disconnect/i)) return '-'
 
   // Access global 'latest' cache
-  const devData = (type) => latest[type] && latest[type][deviceId] ? latest[type][deviceId].dataList : null;
+  const devData = (type) =>
+    latest[type] && latest[type][deviceId] ? latest[type][deviceId].dataList : null
 
   // 1. Cell Voltage (Exact Match)
   // 白名单：仅匹配单体过压/欠压，排除压差过大
   if (name.match(/单体电池(过压|欠压)|Cell.*(Over|Under).*Volt/i) && !name.includes('压差')) {
-    const list = devData('cellVoltage');
+    const list = devData('cellVoltage')
     if (Array.isArray(list)) {
-      const pack = list.find(p => String(p.packID) === String(bmuIndex));
+      const pack = list.find((p) => String(p.packID) === String(bmuIndex))
       if (pack && Array.isArray(pack.cells)) {
-        const cell = pack.cells.find(c => String(c.bmuIndex) === String(cellIndexRelative));
-        if (cell) return cell.value;
+        const cell = pack.cells.find((c) => String(c.bmuIndex) === String(cellIndexRelative))
+        if (cell) return cell.value
       }
     }
   }
 
   // 2. Cell Temperature (Exact Match)
   // 白名单：仅匹配充/放电单体过温/欠温，排除温差过大
-  if (name.match(/(充电|放电).*单体.*(过温|欠温)|Cell.*(Over|Under).*Temp/i) && !name.includes('温差')) {
-    const list = devData('cellTemperature');
+  if (
+    name.match(/(充电|放电).*单体.*(过温|欠温)|Cell.*(Over|Under).*Temp/i) &&
+    !name.includes('温差')
+  ) {
+    const list = devData('cellTemperature')
     if (Array.isArray(list)) {
-      const pack = list.find(p => String(p.packID) === String(bmuIndex));
+      const pack = list.find((p) => String(p.packID) === String(bmuIndex))
       if (pack && Array.isArray(pack.cells)) {
-        const cell = pack.cells.find(c => String(c.bmuIndex) === String(cellIndexRelative));
-        if (cell) return cell.value;
+        const cell = pack.cells.find((c) => String(c.bmuIndex) === String(cellIndexRelative))
+        if (cell) return cell.value
       }
     }
   }
 
   // 3. Cell SOC (Exact Match)
   if (name.match(/单体SOC(过高|过低)/i)) {
-    const list = devData('cellSOC');
+    const list = devData('cellSOC')
     if (Array.isArray(list)) {
-      const pack = list.find(p => String(p.packID) === String(bmuIndex));
+      const pack = list.find((p) => String(p.packID) === String(bmuIndex))
       if (pack && Array.isArray(pack.cells)) {
-        const cell = pack.cells.find(c => String(c.bmuIndex) === String(cellIndexRelative));
-        if (cell) return cell.value;
+        const cell = pack.cells.find((c) => String(c.bmuIndex) === String(cellIndexRelative))
+        if (cell) return cell.value
       }
     }
   }
 
   // 4. Cluster Data (Voltage, Current, Insulation)
   if (name === '簇端过压' || name === '簇端欠压') {
-    return findClusterValue(devData, '簇电压');
+    return findClusterValue(devData, '簇电压')
   }
   if (name === '充电过流' || name === '放电过流') {
-    return findClusterValue(devData, '簇电流');
+    return findClusterValue(devData, '簇电流')
   }
   if (name === '绝缘电阻正对地过低') {
-    return findClusterValue(devData, '绝缘电阻R+'); // Assuming label matches
+    return findClusterValue(devData, '绝缘电阻R+') // Assuming label matches
   }
   if (name === '绝缘电阻负对地过低') {
-    return findClusterValue(devData, '绝缘电阻R-'); // Assuming label matches
+    return findClusterValue(devData, '绝缘电阻R-') // Assuming label matches
   }
 
   // 5. Pack/BMU Data (Board Temp, Connector Temp)
   if (name === 'BMU过温' || name === 'BMU欠温') {
     // 查找 BMU电路板温度 -> BMU{N}(℃)
-    return findPackValue(devData, 'BMUTemp', `BMU${bmuIndex}`);
+    return findPackValue(devData, 'BMUTemp', `BMU${bmuIndex}`)
   }
   if (name === 'BMU过压' || name === 'BMU欠压') {
     // 查找 BMU板端电压 -> BMU{N}(V)
-    return findPackValue(devData, 'BMUVoltage', `BMU${bmuIndex}`);
+    return findPackValue(devData, 'BMUVoltage', `BMU${bmuIndex}`)
   }
   if (name.match(/动力接插件过温/)) {
     // 查找 动力接插件温度 -> BMU{N}-1 or BMU{N}-2
     // Assuming fault name implies which connector, or return first found for BMU
-    return findPackValue(devData, 'ImpetusTemp', `BMU${bmuIndex}`);
+    return findPackValue(devData, 'ImpetusTemp', `BMU${bmuIndex}`)
   }
 
-  return null;
+  return null
 }
 
 // Helper to find value in Cluster Summary
 function findClusterValue(devDataFunc, targetLabel) {
-  const list = devDataFunc('clusterSummary');
+  const list = devDataFunc('clusterSummary')
   if (Array.isArray(list)) {
     for (const cat of list) {
       if (cat && Array.isArray(cat.element)) {
         for (const el of cat.element) {
-           if (String(el.label).includes(targetLabel)) return el.value;
+          if (String(el.label).includes(targetLabel)) return el.value
         }
       }
     }
   }
-  return null;
+  return null
 }
 
 // Helper to find value in Pack Summary
 function findPackValue(devDataFunc, classificationKey, labelKey) {
-  const list = devDataFunc('packSummary');
+  const list = devDataFunc('packSummary')
   if (Array.isArray(list)) {
     for (const cat of list) {
       // classificationKey is partial match for cat.classification (e.g. 'BMUTemp' matches 'BMUTemp')
-      if (cat && cat.classification && cat.classification.includes(classificationKey) && Array.isArray(cat.element)) {
+      if (
+        cat &&
+        cat.classification &&
+        cat.classification.includes(classificationKey) &&
+        Array.isArray(cat.element)
+      ) {
         for (const el of cat.element) {
-           if (String(el.label).includes(labelKey)) return el.value;
+          if (String(el.label).includes(labelKey)) return el.value
         }
       }
     }
   }
-  return null;
+  return null
 }
 
 // Helper for Level Normalization
 function normalizeLevel(level) {
-  if (!level) return '严重';
-  const s = String(level);
-  if (s.match(/严重|Severe|Level\s*3/i)) return '严重';
-  if (s.match(/一般|Medium|Level\s*2/i)) return '一般';
-  if (s.match(/轻微|Mild|Level\s*1/i)) return '轻微';
-  return '严重';
+  if (!level) return '严重'
+  const s = String(level)
+  if (s.match(/严重|Severe|Level\s*3/i)) return '严重'
+  if (s.match(/一般|Medium|Level\s*2/i)) return '一般'
+  if (s.match(/轻微|Mild|Level\s*1/i)) return '轻微'
+  return '严重'
 }
 
 export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
@@ -946,12 +1338,12 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
   const { block, cluster } = parseDevice(deviceId)
   const stackNo = block
   const clusterNo = cluster
-  
+
   // 使用堆级ID (Block ID) 作为缓存 Key，确保同一堆下的所有簇共享同一个文件
-  const blockId = `${block}-0` 
+  const blockId = `${block}-0`
   const basename = 'ErrorData'
   const key = `${blockId}:${basename}`
-  
+
   if (isNewDay(key)) {
     const np = getAlarmCsvFilePath(blockId) // Use blockId to get path
     currentFileMap.set(key, np)
@@ -959,10 +1351,22 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
   }
   const filePath = currentFileMap.get(key) || getAlarmCsvFilePath(blockId)
   currentFileMap.set(key, filePath)
-  
+
   // 更新表头：增加堆号、簇号
-  const header = ['ID', '导出时间', '故障产生时间', '告警', '告警等级', '动作值', '堆号', '簇号', 'BMU编号', 'Cell/Temp绝对索引', 'Cell/Temp相对索引'].join(',')
-  
+  const header = [
+    'ID',
+    '导出时间',
+    '故障产生时间',
+    '告警',
+    '告警等级',
+    '动作值',
+    '堆号',
+    '簇号',
+    'BMU编号',
+    'Cell/Temp绝对索引',
+    'Cell/Temp相对索引'
+  ].join(',')
+
   // 使用 promise 锁确保同一文件路径在同一会话中只初始化一次表头，防止并发写入重复表头
   if (!initializedFiles.has(filePath)) {
     let promise = fileInitPromises.get(filePath)
@@ -980,7 +1384,7 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
   }
 
   const nowStr = formatDateTime(new Date(ts))
-  
+
   // 从 deviceId 解析堆号和簇号 (已在函数顶部解析)
   // const { block, cluster } = parseDevice(deviceId)
   // const stackNo = block
@@ -988,39 +1392,45 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
 
   // 1. 扁平化并预处理告警数据（定位 + 过滤）
   const flatAlarms = []
-  
+
   for (const category of dataList) {
     if (!category || !Array.isArray(category.element)) continue
     // dataType 从 ingest.js 透传过来
-    const dataType = category.dataType || '' 
+    const dataType = category.dataType || ''
 
     for (const item of category.element) {
       // 1. 应用过滤逻辑 (名称过滤)
       if (!shouldDisplayFault(dataType, item.fault)) {
-        continue;
+        continue
       }
 
       // 2. 应用值校验逻辑 (状态过滤)
       // 确保只有真正的故障状态才会被记录，过滤掉"正常"、0、false等值
-      let isFault = false;
-      let rawVal = item.value;
+      let isFault = false
+      let rawVal = item.value
       if (typeof rawVal === 'object' && rawVal !== null && 'val' in rawVal) {
-        rawVal = rawVal.val;
+        rawVal = rawVal.val
       }
 
       if (dataType === 'BROKENWIRE') {
-        isFault = getBrokenwireFaultStatus(item.fault, rawVal, dataType);
+        isFault = getBrokenwireFaultStatus(item.fault, rawVal, dataType)
       } else {
         // 标准故障判断
         // Strict filtering: Exclude 0, '0', '正常', '无故障', or empty/null levels
-        if (item.level === 0 || item.level === '0' || item.level === '正常' || item.level === '无故障' || !item.level) {
-          isFault = false;
+        if (
+          item.level === 0 ||
+          item.level === '0' ||
+          item.level === '正常' ||
+          item.level === '无故障' ||
+          !item.level
+        ) {
+          isFault = false
         } else {
-          isFault = true;
+          isFault = true
         }
       }
 
-      if (!isFault) continue;
+      if (!isFault) continue
 
       // 计算定位信息
       // 使用 locateCell 重新解析 label 以确保准确性，特别是 ingest.js 只是简单透传
@@ -1028,10 +1438,10 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
       const bmu = loc.bmu || item.bmuIndex
       const cellInBmu = loc.cellInBmu // 相对索引
       const globalCell = loc.globalCell // 绝对电芯索引
-      
+
       let globalTemp = null
       if (item.fault.includes('过温') || item.fault.includes('欠温')) {
-        globalTemp = (bmu && cellInBmu) ? calculateGlobalTemp(bmu, cellInBmu, meta || {}) : null
+        globalTemp = bmu && cellInBmu ? calculateGlobalTemp(bmu, cellInBmu, meta || {}) : null
       }
 
       // 决定最终使用的索引值
@@ -1041,21 +1451,21 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
       const relIndex = cellInBmu || ''
 
       // Normalize Level
-      item.level = normalizeLevel(item.level);
+      item.level = normalizeLevel(item.level)
 
       // Lookup Action Value
-      const realValue = getCurrentActionValue(deviceId, item.fault, bmu, relIndex);
+      const realValue = getCurrentActionValue(deviceId, item.fault, bmu, relIndex)
 
-      flatAlarms.push({ 
-        ...item, 
+      flatAlarms.push({
+        ...item,
         classification: category.classification,
         dataType: dataType, // 关键修复：显式传递 dataType，用于恢复检测匹配
         bmuIndex: bmu,
-        cellIndex: absIndex,          // 绝对索引列
-        cellIndexRelative: relIndex,  // 相对索引列
+        cellIndex: absIndex, // 绝对索引列
+        cellIndexRelative: relIndex, // 相对索引列
         stackNo,
         clusterNo,
-        actionValue: (realValue !== null && realValue !== undefined) ? realValue : item.actionValue // Prioritize real lookup
+        actionValue: realValue !== null && realValue !== undefined ? realValue : item.actionValue // Prioritize real lookup
       })
     }
   }
@@ -1063,11 +1473,18 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
   // 构建当前告警键集合（不带等级），用于快速查找和恢复检测
   const currentKeys = new Set()
   const currentAlarmMap = new Map()
-  
+
   for (const item of flatAlarms) {
-    const keyNoLevel = generateAlarmKeyWithoutLevel(deviceId, item.classification, item.bmuIndex, item.cellIndex, item.fault, item.cellIndexRelative)
+    const keyNoLevel = generateAlarmKeyWithoutLevel(
+      deviceId,
+      item.classification,
+      item.bmuIndex,
+      item.cellIndex,
+      item.fault,
+      item.cellIndexRelative
+    )
     currentKeys.add(keyNoLevel)
-    
+
     if (!currentAlarmMap.has(keyNoLevel)) currentAlarmMap.set(keyNoLevel, [])
     currentAlarmMap.get(keyNoLevel).push(item)
   }
@@ -1079,12 +1496,27 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
 
   // 2. 处理当前存在的告警（新告警、升阶、降阶）
   for (const item of flatAlarms) {
-    const keyNoLevel = generateAlarmKeyWithoutLevel(deviceId, item.classification, item.bmuIndex, item.cellIndex, item.fault, item.cellIndexRelative)
-    const alarmKey = generateAlarmKey(deviceId, item.classification, item.bmuIndex, item.cellIndex, item.fault, item.level, item.cellIndexRelative)
-    
+    const keyNoLevel = generateAlarmKeyWithoutLevel(
+      deviceId,
+      item.classification,
+      item.bmuIndex,
+      item.cellIndex,
+      item.fault,
+      item.cellIndexRelative
+    )
+    const alarmKey = generateAlarmKey(
+      deviceId,
+      item.classification,
+      item.bmuIndex,
+      item.cellIndex,
+      item.fault,
+      item.level,
+      item.cellIndexRelative
+    )
+
     let oldEntry = null
     const possibleLevels = ['严重', '一般', '轻微'] // Only standard levels now
-    
+
     // 检查是否有该故障的旧记录（可能是不同等级）
     for (const level of possibleLevels) {
       const testKey = `${keyNoLevel}:${level}`
@@ -1105,90 +1537,162 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
         if (newOrder > oldOrder) {
           // 升阶：需要获取最新的动作值
           // 尝试重新获取实时值，因为状态变了，值可能也变了
-          const currentRealValue = getCurrentActionValue(deviceId, item.fault, item.bmuIndex, item.cellIndexRelative);
-          const finalActionValue = (currentRealValue !== null && currentRealValue !== undefined) ? currentRealValue : (item.actionValue || '');
+          const currentRealValue = getCurrentActionValue(
+            deviceId,
+            item.fault,
+            item.bmuIndex,
+            item.cellIndexRelative
+          )
+          const finalActionValue =
+            currentRealValue !== null && currentRealValue !== undefined
+              ? currentRealValue
+              : item.actionValue || ''
 
           const currentTime = getPreciseTime()
-          alarmsToStore.push({ 
-            ...oldAlarm, 
-            level: `${oldLevel}→${newLevel} (升阶)`, 
-            levelValue: 0, 
-            timestamp: currentTime, 
-            alarmStatus: '告警升阶', 
-            actionValue: finalActionValue 
+          alarmsToStore.push({
+            ...oldAlarm,
+            level: `${oldLevel}→${newLevel} (升阶)`,
+            levelValue: 0,
+            timestamp: currentTime,
+            alarmStatus: '告警升阶',
+            actionValue: finalActionValue
           })
-          
+
           storedAlarms.delete(oldKey)
           alarmStatusCache.delete(oldKey)
-          
-          storedAlarms.set(alarmKey, { ...item, classification: item.classification, dataType: item.dataType, timestamp: currentTime, actionValue: finalActionValue })
-          alarmStatusCache.set(alarmKey, JSON.stringify({ classification: item.classification, bmuIndex: item.bmuIndex, cellIndex: item.cellIndex, fault: item.fault, level: item.level }))
+
+          storedAlarms.set(alarmKey, {
+            ...item,
+            classification: item.classification,
+            dataType: item.dataType,
+            timestamp: currentTime,
+            actionValue: finalActionValue
+          })
+          alarmStatusCache.set(
+            alarmKey,
+            JSON.stringify({
+              classification: item.classification,
+              bmuIndex: item.bmuIndex,
+              cellIndex: item.cellIndex,
+              fault: item.fault,
+              level: item.level
+            })
+          )
           continue
         } else if (newOrder < oldOrder) {
-          // 降阶：先记录恢复，再记录新告警
-          // 恢复记录：使用旧记录的 actionValue (快照)，代表故障发生时的值
+          // 降阶：与升阶保持一致，记录一条等级流转事件
           const currentTime = getPreciseTime()
-          // 1. 恢复旧告警
-          alarmsToStore.push({ 
-            ...oldAlarm, 
-            level: `${oldLevel}-告警恢复`, 
-            levelValue: 0, 
-            timestamp: currentTime, 
-            alarmStatus: '已恢复', 
-            actionValue: oldAlarm.actionValue || '' // Keep snapshot
+          // 使用最新的动作值（如电压/温度等），不可用则回退到当前项的动作值
+          const currentRealValue = getCurrentActionValue(
+            deviceId,
+            item.fault,
+            item.bmuIndex,
+            item.cellIndexRelative
+          )
+          const finalActionValue =
+            currentRealValue !== null && currentRealValue !== undefined
+              ? currentRealValue
+              : item.actionValue || ''
+
+          // 写入一条降阶事件
+          alarmsToStore.push({
+            ...oldAlarm,
+            level: `${oldLevel}→${newLevel} (降阶)`,
+            levelValue: 0,
+            timestamp: currentTime,
+            alarmStatus: '告警降阶',
+            actionValue: finalActionValue
           })
-          
+
+          // 更新缓存为新等级
           storedAlarms.delete(oldKey)
           alarmStatusCache.delete(oldKey)
-          
-          // 2. 记录新等级告警
-          // 新告警：使用最新的动作值
-          const currentRealValue = getCurrentActionValue(deviceId, item.fault, item.bmuIndex, item.cellIndexRelative);
-          const finalActionValue = (currentRealValue !== null && currentRealValue !== undefined) ? currentRealValue : (item.actionValue || '');
 
-          alarmsToStore.push({ 
-            ...item, 
-            alarmStatus: '新告警', 
-            actionValue: finalActionValue, 
-            timestamp: currentTime 
+          storedAlarms.set(alarmKey, {
+            ...item,
+            classification: item.classification,
+            dataType: item.dataType,
+            timestamp: currentTime,
+            actionValue: finalActionValue
           })
-          
-          storedAlarms.set(alarmKey, { ...item, classification: item.classification, dataType: item.dataType, timestamp: currentTime, actionValue: finalActionValue })
-          alarmStatusCache.set(alarmKey, JSON.stringify({ classification: item.classification, bmuIndex: item.bmuIndex, cellIndex: item.cellIndex, fault: item.fault, level: item.level }))
+          alarmStatusCache.set(
+            alarmKey,
+            JSON.stringify({
+              classification: item.classification,
+              bmuIndex: item.bmuIndex,
+              cellIndex: item.cellIndex,
+              fault: item.fault,
+              level: item.level
+            })
+          )
           continue
         }
       }
     }
 
     // 检查同等级下的状态变化（如 actionValue 变化，或者重新触发）
-    const status = hasAlarmStatusChanged(deviceId, item.classification, item.bmuIndex, item.cellIndex, item.fault, item.level, item.actionValue, item.cellIndexRelative)
-    
+    const status = hasAlarmStatusChanged(
+      deviceId,
+      item.classification,
+      item.bmuIndex,
+      item.cellIndex,
+      item.fault,
+      item.level,
+      item.actionValue,
+      item.cellIndexRelative
+    )
+
     if (status.isNew) {
       const currentTime = getPreciseTime()
-      alarmsToStore.push({ ...item, alarmStatus: '新告警', actionValue: item.actionValue || '', timestamp: currentTime })
-      storedAlarms.set(alarmKey, { ...item, classification: item.classification, dataType: item.dataType, timestamp: currentTime })
+      alarmsToStore.push({
+        ...item,
+        alarmStatus: '新告警',
+        actionValue: item.actionValue || '',
+        timestamp: currentTime
+      })
+      storedAlarms.set(alarmKey, {
+        ...item,
+        classification: item.classification,
+        dataType: item.dataType,
+        timestamp: currentTime
+      })
     } else if (status.hasChanged) {
       // 这是一个兜底逻辑，通常会被上面的升降阶逻辑捕获，但保留以防万一
       const currentTime = getPreciseTime()
-      alarmsToStore.push({ ...item, alarmStatus: '新告警', actionValue: item.actionValue || '', timestamp: currentTime })
-      
+      alarmsToStore.push({
+        ...item,
+        alarmStatus: '新告警',
+        actionValue: item.actionValue || '',
+        timestamp: currentTime
+      })
+
       const existingAlarm = storedAlarms.get(alarmKey)
       if (existingAlarm) {
-        alarmsToStore.push({ 
-          ...existingAlarm, 
-          level: (existingAlarm.level || '') + '-告警恢复', 
-          levelValue: 0, 
-          timestamp: currentTime, 
-          alarmStatus: '已恢复', 
-          actionValue: item.actionValue || '' 
+        alarmsToStore.push({
+          ...existingAlarm,
+          level: (existingAlarm.level || '') + '-告警恢复',
+          levelValue: 0,
+          timestamp: currentTime,
+          alarmStatus: '已恢复',
+          actionValue: item.actionValue || ''
         })
       }
-      storedAlarms.set(alarmKey, { ...item, classification: item.classification, dataType: item.dataType, timestamp: currentTime })
+      storedAlarms.set(alarmKey, {
+        ...item,
+        classification: item.classification,
+        dataType: item.dataType,
+        timestamp: currentTime
+      })
     } else {
       // 显式恢复告警（通常通过 detectRecoveredAlarms 处理，但保留以兼容）
       if (item.level === '恢复告警') {
         const currentTime = getPreciseTime()
-        alarmsToStore.push({ ...item, alarmStatus: '已恢复', actionValue: item.actionValue || '', timestamp: currentTime })
+        alarmsToStore.push({
+          ...item,
+          alarmStatus: '已恢复',
+          actionValue: item.actionValue || '',
+          timestamp: currentTime
+        })
         storedAlarms.delete(alarmKey)
         alarmStatusCache.delete(alarmKey)
       } else {
@@ -1196,7 +1700,12 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
         const existingAlarm = storedAlarms.get(alarmKey)
         if (existingAlarm) {
           const currentTime = getPreciseTime()
-          storedAlarms.set(alarmKey, { ...existingAlarm, actionValue: item.actionValue, dataType: item.dataType, timestamp: currentTime })
+          storedAlarms.set(alarmKey, {
+            ...existingAlarm,
+            actionValue: item.actionValue,
+            dataType: item.dataType,
+            timestamp: currentTime
+          })
         }
       }
     }
@@ -1205,36 +1714,37 @@ export async function saveAlarmSemantic(dataList, deviceId, ts, meta) {
   // 3. 检测已恢复的告警（消失即恢复）
   // 传入 currentDataType (例如 'TOTAL_FAULT')，确保只处理属于该 Topic 的告警恢复
   // 获取当前批次的 dataType (假设同一批次所有 element 的 dataType 相同)
-  const currentDataType = dataList.length > 0 ? dataList[0].dataType : '';
+  const currentDataType = dataList.length > 0 ? dataList[0].dataType : ''
   const recovered = detectRecoveredAlarms(deviceId, currentKeys, getPreciseTime, currentDataType)
   alarmsToStore.push(...recovered)
 
   // 4. 排序并写入
   alarmsToStore.sort((a, b) => a.timestamp - b.timestamp)
-  
+
   for (const item of alarmsToStore) {
     const idVal = nextId(filePath) // 使用文件路径作为ID计数键，保证同文件内连续递增
     const occur = formatDateTime(new Date(item.timestamp))
-    const row = [
-      idVal, 
-      nowStr, 
-      occur, 
-      item.faultZh || item.fault, 
-      item.level || '', 
-      item.actionValue || '', 
-      item.stackNo || '',
-      item.clusterNo || '',
-      item.bmuIndex || '', 
-      item.cellIndex || '', 
-      item.cellIndexRelative || ''
-    ].join(',') + '\r\n'
-    
+    const row =
+      [
+        idVal,
+        nowStr,
+        occur,
+        item.faultZh || item.fault,
+        item.level || '',
+        item.actionValue || '',
+        item.stackNo || '',
+        item.clusterNo || '',
+        item.bmuIndex || '',
+        item.cellIndex || '',
+        item.cellIndexRelative || ''
+      ].join(',') + '\r\n'
+
     // 使用缓冲写入，避免高频IO与并发表头写入
     bufferCsvData(filePath, key, header, row)
   }
-  
-  // Rotation is now handled (or should be) within the flush mechanism, 
-  // but we keep this call here if it updates shared state (like idCounters), 
+
+  // Rotation is now handled (or should be) within the flush mechanism,
+  // but we keep this call here if it updates shared state (like idCounters),
   // although technically rotation logic should ideally move to flush time for accuracy.
   // For now, to match reference behavior where rotation check happens post-write:
   // Since bufferCsvData is async/delayed, immediate rotation check might be slightly off but acceptable.
@@ -1248,7 +1758,9 @@ try {
   process.on('message', (msg) => {
     if (msg && msg.API === 'disk-space-decision') {
       setDiskSpaceBypass(msg.decision === 'continue')
-      try { console.log('[Semantic] disk-space-decision:', msg.decision) } catch {}
+      try {
+        console.log('[Semantic] disk-space-decision:', msg.decision)
+      } catch {}
     }
   })
 } catch {}
@@ -1291,7 +1803,7 @@ async function flushCsvBuffers() {
    * @returns {Promise<void>}
    */
   const clients = {} // Placeholder if needed, but we mostly rely on buffers
-  
+
   // 1. Snapshot and clear buffers while holding lock
   let release
   const toWrite = [] // { filePath, key, header, lines }
@@ -1334,7 +1846,7 @@ function startFlushTimer() {
    */
   if (flushTimer) return
   flushTimer = setInterval(() => {
-    flushCsvBuffers().catch(err => console.error(err))
+    flushCsvBuffers().catch((err) => console.error(err))
   }, CSV_BUFFER_INTERVAL)
 }
 
@@ -1348,5 +1860,5 @@ function stopFlushTimer() {
     flushTimer = null
   }
   // Flush remaining data
-  flushCsvBuffers().catch(err => console.error(err))
+  flushCsvBuffers().catch((err) => console.error(err))
 }

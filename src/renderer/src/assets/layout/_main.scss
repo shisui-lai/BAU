@@ -30,3 +30,15 @@ a {
   margin-top: 3.5rem; /* 为固定导航栏留出空间 */
   margin-left: 160px; /* 为侧边栏留出空间，适当减少空白 */
 }
+
+.layout-wrapper.layout-fullscreen {
+  .layout-main-container {
+    margin-left: 0;
+    margin-top: 0;
+    padding: 0;
+  }
+  
+  .layout-main {
+    padding: 0;
+  }
+}

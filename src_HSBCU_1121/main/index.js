@@ -86,8 +86,8 @@ let store
 async function initStore() {
   const mod = await import('electron-store')
   const Store = mod.default
-  store = new Store({ 
-    defaults: { 
+  store = new Store({
+    defaults: {
       locale: 'zh',
       layoutConfig: {
         ripple: true,
@@ -97,7 +97,7 @@ async function initStore() {
         theme: 'lara-dark-cyan',
         scale: 10
       }
-    } 
+    }
   })
 }
 

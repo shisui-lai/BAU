@@ -35,7 +35,7 @@ const layoutConfig = reactive({
 })
 
 // 异步加载配置
-getSavedConfig().then(savedConfig => {
+getSavedConfig().then((savedConfig) => {
   if (savedConfig && Object.keys(savedConfig).length > 0) {
     Object.assign(layoutConfig, savedConfig, { activeMenuItem: null })
   }
@@ -61,7 +61,7 @@ const saveConfig = async () => {
       theme: layoutConfig.theme,
       scale: layoutConfig.scale
     }
-    
+
     if (window.electronAPI?.layoutConfig?.set) {
       // 打包后使用 Electron Store
       await window.electronAPI.layoutConfig.set(configToSave)

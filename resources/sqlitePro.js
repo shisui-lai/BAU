@@ -171,7 +171,7 @@ function removeModbusClientByIp(ip) {
     client.client.close() // 或 client.destroy()，具体取决于类实现
     delete modbusClients[ip] // 从对象中删除该客户端
   } else {
-    console.error('Client with IP address not found.');
+    console.error('Client with IP address not found.')
   }
 }
 

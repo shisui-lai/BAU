@@ -5,12 +5,12 @@ import { useClusterStore } from '@/stores/device/clusterStore'
 
 /**
  * DI/DO状态数据处理 Composable
- * 
+ *
  * 功能：
  * 1. 监听MQTT的 di_do_temp_status topic数据
  * 2. 解析并格式化DI/DO状态和RT温度数据
  * 3. 提供分组后的数据供UI展示
- * 
+ *
  * 数据来源：bms/bau/d2s/bM/cN/di_do_temp_status
  * 数据格式：按class分组的对象，每个class包含多个信号状态
  */
@@ -20,7 +20,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
 
   // 原始数据存储
   const rawData = ref({ baseConfig: {}, data: [] })
-  
+
   // 当前选中的堆和簇ID（从store的selectedBlock和selectedCluster计算得出）
   const currentBlockId = computed(() => {
     const selected = clusterStore.selectedClusterForView
@@ -29,7 +29,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     const parts = selected.split('-')
     return parts.length === 2 ? parseInt(parts[0]) : 0
   })
-  
+
   const currentClusterId = computed(() => {
     const selected = clusterStore.selectedClusterForView
     if (!selected || typeof selected !== 'string') return 0
@@ -37,10 +37,10 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     const parts = selected.split('-')
     return parts.length === 2 ? parseInt(parts[1]) : 0
   })
-  
+
   // IPC监听器引用
   let listenerId = null
-  
+
   // 节流配置
   const THROTTLE_INTERVAL = 1000 // 数据刷新间隔：1000ms（每秒最多1次更新）
 
@@ -50,23 +50,23 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
    */
   const parseBitSignals = (classData) => {
     if (!classData || classData.length === 0) return []
-    
+
     const result = []
-    
+
     // classData是一个数组，包含该class下的所有字段
     for (const item of classData) {
       // 跳过隐藏字段和非bit类型字段
       if (item.hide || !item.label) continue
-      
+
       // 获取翻译后的信号名称，如果没有翻译则使用原始名称
       const translatedLabel = signalNames.value[item.label] || item.label
-      
+
       result.push({
         label: translatedLabel,
         value: item.value || 0
       })
     }
-    
+
     return result
   }
 
@@ -88,7 +88,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
 
     const ORDER = [
       temperatureLabels.bPlusTemp || 'B+温度',
-      temperatureLabels.bMinusTemp || 'B-温度', 
+      temperatureLabels.bMinusTemp || 'B-温度',
       temperatureLabels.pPlusTemp || 'P+温度',
       temperatureLabels.pMinusTemp || 'P-温度',
       temperatureLabels.bcuTemp || 'BCU温度'
@@ -98,7 +98,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     const codeToTemp = {}
     const rtClasses = ['RT1温度信息', 'RT2温度信息', 'RT3温度信息', 'RT4温度信息', 'RT5温度信息']
     for (let i = 0; i < rtClasses.length; i++) {
-      const rtClass = dataArray.find(group => group.class === rtClasses[i])
+      const rtClass = dataArray.find((group) => group.class === rtClasses[i])
       if (!rtClass || !rtClass.element) continue
       let nameCode = 0
       let temp = null
@@ -112,13 +112,19 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     }
 
     // 产出固定顺序的行；缺失显示为 '-'
-    const rows = ORDER.map(name => ({ label: name, value: '-℃' }))
+    const rows = ORDER.map((name) => ({ label: name, value: '-℃' }))
     for (const [codeStr, temp] of Object.entries(codeToTemp)) {
       const code = Number(codeStr)
       const name = NAME_MAP[code]
       if (!name) continue
-      const idx = rows.findIndex(r => r.label === name)
-      const show = (temp === null || temp === undefined || temp === '' || (typeof temp === 'number' && Math.abs(temp - 3276.7) < 0.05)) ? '-℃' : `${temp}℃`
+      const idx = rows.findIndex((r) => r.label === name)
+      const show =
+        temp === null ||
+        temp === undefined ||
+        temp === '' ||
+        (typeof temp === 'number' && Math.abs(temp - 3276.7) < 0.05)
+          ? '-℃'
+          : `${temp}℃`
       if (idx !== -1) rows[idx].value = show
       else rows.push({ label: name, value: show })
     }
@@ -134,14 +140,49 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     if (!rawData.value.data || rawData.value.data.length === 0) {
       const grouped = {}
       const DEFAULT_DI_LABELS = [
-        '主正接触器反馈','主负接触器反馈','预充接触器反馈','隔离开关反馈','断路器反馈','风扇反馈','直流供电KM反馈','门禁反馈','SPD反馈','交流电压反馈','烟感反馈','消防反馈','温感反馈','排风系统反馈','辅助断路器反馈','氢气探测器反馈','MSD反馈','急停反馈'
+        '主正接触器反馈',
+        '主负接触器反馈',
+        '预充接触器反馈',
+        '隔离开关反馈',
+        '断路器反馈',
+        '风扇反馈',
+        '直流供电KM反馈',
+        '门禁反馈',
+        'SPD反馈',
+        '交流电压反馈',
+        '烟感反馈',
+        '消防反馈',
+        '温感反馈',
+        '排风系统反馈',
+        '辅助断路器反馈',
+        '氢气探测器反馈',
+        'MSD反馈',
+        '急停反馈'
       ]
       const DEFAULT_DO_LABELS = [
-        '主正接触器高边驱动反馈','主负接触器高边驱动反馈','预充接触器高边驱动反馈','绿灯高边驱动反馈','黄灯高边驱动反馈','红灯高边驱动反馈','风扇高边驱动反馈','主断分励脱扣高边驱动反馈故障','直流供电KM高边驱动反馈','pcs封波高边驱动反馈','辅助断路器高边驱动反馈','排风系统高边驱动反馈','柜体风机高边驱动反馈'
+        '主正接触器高边驱动反馈',
+        '主负接触器高边驱动反馈',
+        '预充接触器高边驱动反馈',
+        '绿灯高边驱动反馈',
+        '黄灯高边驱动反馈',
+        '红灯高边驱动反馈',
+        '风扇高边驱动反馈',
+        '主断分励脱扣高边驱动反馈故障',
+        '直流供电KM高边驱动反馈',
+        'pcs封波高边驱动反馈',
+        '辅助断路器高边驱动反馈',
+        '排风系统高边驱动反馈',
+        '柜体风机高边驱动反馈'
       ]
 
-      grouped.diSignal = DEFAULT_DI_LABELS.map(lbl => ({ label: signalNames.value[lbl] || lbl, value: 0 }))
-      grouped.doDriveFeedback = DEFAULT_DO_LABELS.map(lbl => ({ label: signalNames.value[lbl] || lbl, value: 0 }))
+      grouped.diSignal = DEFAULT_DI_LABELS.map((lbl) => ({
+        label: signalNames.value[lbl] || lbl,
+        value: 0
+      }))
+      grouped.doDriveFeedback = DEFAULT_DO_LABELS.map((lbl) => ({
+        label: signalNames.value[lbl] || lbl,
+        value: 0
+      }))
       const rtData = parseRTData([], temperatureLabels.value)
       grouped.rtData = rtData
       return grouped
@@ -154,9 +195,14 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     const diClasses = ['DI信号状态-1', 'DI信号状态-2', 'DI信号状态-3', 'DI信号状态-4']
     let diSignals = []
     for (const className of diClasses) {
-      const classData = data.find(group => group.class === className)
+      const classData = data.find((group) => group.class === className)
       if (classData && classData.element) {
-        const filtered = classData.element.filter(it => it.label && !String(it.label).includes('预留') && !String(it.label).toLowerCase().includes('reserved'))
+        const filtered = classData.element.filter(
+          (it) =>
+            it.label &&
+            !String(it.label).includes('预留') &&
+            !String(it.label).toLowerCase().includes('reserved')
+        )
         diSignals = diSignals.concat(parseBitSignals(filtered))
       }
     }
@@ -165,12 +211,22 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     }
 
     // 2. 处理DO驱动反馈状态（合并DO驱动反馈状态-1到DO驱动反馈状态-4），屏蔽预留
-    const doDriveClasses = ['DO驱动反馈状态-1', 'DO驱动反馈状态-2', 'DO驱动反馈状态-3', 'DO驱动反馈状态-4']
+    const doDriveClasses = [
+      'DO驱动反馈状态-1',
+      'DO驱动反馈状态-2',
+      'DO驱动反馈状态-3',
+      'DO驱动反馈状态-4'
+    ]
     let doDriveSignals = []
     for (const className of doDriveClasses) {
-      const classData = data.find(group => group.class === className)
+      const classData = data.find((group) => group.class === className)
       if (classData && classData.element) {
-        const filtered = classData.element.filter(it => it.label && !String(it.label).includes('预留') && !String(it.label).toLowerCase().includes('reserved'))
+        const filtered = classData.element.filter(
+          (it) =>
+            it.label &&
+            !String(it.label).includes('预留') &&
+            !String(it.label).toLowerCase().includes('reserved')
+        )
         doDriveSignals = doDriveSignals.concat(parseBitSignals(filtered))
       }
     }
@@ -196,8 +252,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     const { blockId, clusterId, dataType, baseConfig, data } = msg
 
     // 只处理当前选中的堆和簇的数据
-    if (blockId === currentBlockId.value && 
-        clusterId === currentClusterId.value) {
+    if (blockId === currentBlockId.value && clusterId === currentClusterId.value) {
       rawData.value = {
         baseConfig: baseConfig || {},
         data: data || []
@@ -210,7 +265,6 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
       } catch (e) {
         console.warn('缓存DI/DO状态数据失败:', e)
       }
-
     }
   }
 
@@ -228,7 +282,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     if (listenerId) {
       window.electron.ipcRenderer.removeListener('DI_DO_TEMP_STATUS', listenerId)
     }
-    
+
     // 清理旧的节流函数
     if (throttledHandler && throttledHandler.cancel) {
       throttledHandler.cancel()
@@ -241,11 +295,10 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
       },
       THROTTLE_INTERVAL,
       {
-        leading: true,   // 首次调用立即执行
-        trailing: true   // 结束时执行最后一次
+        leading: true, // 首次调用立即执行
+        trailing: true // 结束时执行最后一次
       }
     )
-
 
     listenerId = (event, msg) => {
       if (!msg) return
@@ -260,7 +313,6 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     }
 
     window.electron.ipcRenderer.on('DI_DO_TEMP_STATUS', listenerId)
-    
   }
 
   /**
@@ -270,15 +322,13 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
     const blockId = currentBlockId.value
     const clusterId = currentClusterId.value
     const cacheKey = `di_do_status_b${blockId}_c${clusterId}`
-    
+
     try {
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
         rawData.value = JSON.parse(cached)
-        
       } else {
         rawData.value = { baseConfig: {}, data: [] }
-        
       }
     } catch (e) {
       console.warn('加载DI/DO状态缓存失败:', e)
@@ -304,7 +354,6 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
   onBeforeMount(() => {
     loadFromCache()
     registerListener()
-    
   })
 
   /**
@@ -317,7 +366,7 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
       listenerId = null
       console.log('[useDiDoStatus] 已移除IPC监听器')
     }
-    
+
     // 然后清理节流函数
     if (throttledHandler) {
       // 先刷新所有待处理的更新
@@ -334,7 +383,6 @@ export function useDiDoStatus(temperatureLabels = ref({}), signalNames = ref({})
 
   return {
     rawData: computed(() => rawData.value),
-    groupedDiDoStatus,
+    groupedDiDoStatus
   }
 }
-

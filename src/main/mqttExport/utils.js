@@ -80,7 +80,9 @@ export async function appendFileWithRetry(filePath, content) {
         process.send && process.send({ API: 'save-excel', filePath })
         await waitForUserDecision()
       } else if (err.code === 'ENOENT') {
-        try { ensureDir(path.dirname(filePath)) } catch {}
+        try {
+          ensureDir(path.dirname(filePath))
+        } catch {}
       } else {
         throw err
       }

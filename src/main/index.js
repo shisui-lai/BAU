@@ -1,4 +1,14 @@
-import { app, Menu, shell, BrowserWindow, ipcMain, dialog, screen, session, powerMonitor } from 'electron'
+import {
+  app,
+  Menu,
+  shell,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  screen,
+  session,
+  powerMonitor
+} from 'electron'
 import { join, parse } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -26,10 +36,10 @@ import {
   startForceUpgrade,
   stopForceUpgrade,
   getForceUpgradeStatus
-} from './handlers/bauAddressHandler.js'//地址探测
+} from './handlers/bauAddressHandler.js' //地址探测
 
 let mainWindow
-let quitting = false;
+let quitting = false
 import forkPath1 from './mqtt.js?modulePath'
 import { createMessageHandler, registerDiskSpaceDecisionForwarder } from './ipc/childBridge.js'
 
@@ -43,11 +53,11 @@ console.log('[Main] 准备使用进程管理器管理MQTT子进程...')
 ipcMain.handle('show-open-dialog', async () => {
   // 获取FTP根目录作为默认路径
   const ftpRoot = ftpServerModule.getFtpRoot()
-  
+
   const { canceled, filePaths } = await dialog.showOpenDialog({
     title: '选择升级文件',
     properties: ['openFile'],
-    defaultPath: ftpRoot  // 使用FTP根目录作为默认路径
+    defaultPath: ftpRoot // 使用FTP根目录作为默认路径
   })
 
   if (!canceled && filePaths.length > 0) {
@@ -85,7 +95,6 @@ ipcMain.handle('set-locale', (_event, locale) => {
 
 // 引入FTP服务器模块 - 在MQTT初始化之后
 import * as ftpServerModule from './ftpServer.js'
-
 
 // ==================== 崩溃错误捕获系统 ====================
 // 捕获主进程未捕获的异常
@@ -133,13 +142,13 @@ process.on('warning', (warning) => {
 // 捕获渲染进程崩溃（最常见的闪退原因！）
 app.on('render-process-gone', (event, webContents, details) => {
   console.error('[RENDER PROCESS GONE] 渲染进程崩溃!', details)
-  
+
   const error = new Error(`渲染进程崩溃: ${details.reason}`)
   error.exitCode = details.exitCode
   error.reason = details.reason
-  
+
   crashLogger.logCrash(error, 'render-process-gone')
-  
+
   // 如果是主窗口崩溃，尝试重新加载
   if (mainWindow && webContents === mainWindow.webContents) {
     console.error('[RENDER PROCESS GONE] 主窗口崩溃，尝试重新加载...')
@@ -154,15 +163,15 @@ app.on('render-process-gone', (event, webContents, details) => {
 // 捕获子进程崩溃（包括GPU进程等）
 app.on('child-process-gone', (event, details) => {
   console.error('[CHILD PROCESS GONE] 子进程崩溃!', details)
-  
+
   const error = new Error(`子进程崩溃: ${details.type} - ${details.reason}`)
   error.exitCode = details.exitCode
   error.reason = details.reason
   error.processType = details.type
   error.serviceName = details.serviceName || 'unknown'
-  
+
   crashLogger.logCrash(error, 'child-process-gone')
-  
+
   // GPU进程崩溃时的特殊处理
   if (details.type === 'GPU') {
     console.error('[CHILD PROCESS GONE] GPU进程崩溃，可能需要禁用硬件加速')
@@ -176,17 +185,17 @@ app.on('child-process-gone', (event, details) => {
 // SIGTERM - 系统请求终止（最常见）
 process.on('SIGTERM', () => {
   console.error('[SIGTERM] 收到系统终止信号！应用即将被强制关闭')
-  
+
   const error = new Error('应用被系统强制终止 (SIGTERM)')
   error.signal = 'SIGTERM'
   error.source = 'Windows系统或任务管理器'
-  
+
   // 使用同步方式立即记录日志，因为进程即将被强制终止
   crashLogger.logCrash(error, 'system-sigterm')
-  
+
   // 尝试清理资源
   crashLogger.stopResourceMonitoring()
-  
+
   console.error('[SIGTERM] 日志已记录，进程即将退出')
   process.exit(0)
 })
@@ -194,14 +203,14 @@ process.on('SIGTERM', () => {
 // SIGINT - 中断信号（Ctrl+C，或系统中断）
 process.on('SIGINT', () => {
   console.error('[SIGINT] 收到中断信号！')
-  
+
   const error = new Error('应用被中断 (SIGINT)')
   error.signal = 'SIGINT'
   error.source = 'Ctrl+C或系统中断'
-  
+
   crashLogger.logCrash(error, 'system-sigint')
   crashLogger.stopResourceMonitoring()
-  
+
   console.error('[SIGINT] 日志已记录，进程即将退出')
   process.exit(0)
 })
@@ -210,14 +219,14 @@ process.on('SIGINT', () => {
 if (process.platform === 'win32') {
   process.on('SIGBREAK', () => {
     console.error('[SIGBREAK] 收到Windows中断信号！')
-    
+
     const error = new Error('应用被中断 (SIGBREAK - Windows)')
     error.signal = 'SIGBREAK'
     error.source = 'Windows Ctrl+Break'
-    
+
     crashLogger.logCrash(error, 'system-sigbreak')
     crashLogger.stopResourceMonitoring()
-    
+
     console.error('[SIGBREAK] 日志已记录，进程即将退出')
     process.exit(0)
   })
@@ -226,14 +235,14 @@ if (process.platform === 'win32') {
 // SIGHUP - 挂起信号（终端关闭、SSH断开等）
 process.on('SIGHUP', () => {
   console.error('[SIGHUP] 收到挂起信号！')
-  
+
   const error = new Error('应用收到挂起信号 (SIGHUP)')
   error.signal = 'SIGHUP'
   error.source = '终端关闭或连接断开'
-  
+
   crashLogger.logCrash(error, 'system-sighup')
   crashLogger.stopResourceMonitoring()
-  
+
   console.error('[SIGHUP] 日志已记录，进程即将退出')
   process.exit(0)
 })
@@ -241,20 +250,20 @@ process.on('SIGHUP', () => {
 // 监听系统电源事件（休眠、睡眠、关机等）
 powerMonitor.on('shutdown', (e) => {
   console.error('[POWER] 系统正在关机！')
-  
+
   // 阻止立即关机，给我们时间记录日志
   e.preventDefault()
-  
+
   const error = new Error('系统关机导致应用终止')
   error.signal = 'shutdown'
   error.source = 'Windows系统关机'
-  
+
   // 同步记录日志
   crashLogger.logCrash(error, 'system-shutdown')
   crashLogger.stopResourceMonitoring()
-  
+
   console.error('[POWER] 关机日志已记录')
-  
+
   // 立即退出，让系统继续关机流程
   setTimeout(() => {
     app.exit(0)
@@ -264,11 +273,11 @@ powerMonitor.on('shutdown', (e) => {
 // 监听系统休眠/睡眠
 powerMonitor.on('suspend', () => {
   console.warn('[POWER] 系统正在进入休眠/睡眠状态')
-  
+
   const error = new Error('系统休眠前记录状态')
   error.signal = 'suspend'
   error.source = 'Windows系统休眠/睡眠'
-  
+
   // 记录休眠前的状态（不退出应用）
   crashLogger.logCrash(error, 'system-suspend')
 })
@@ -310,7 +319,7 @@ if (process.platform === 'linux') {
   app.commandLine.appendSwitch('ignore-gpu-blacklist')
   // 启用GPU合成（提升渲染性能）
   app.commandLine.appendSwitch('enable-gpu-compositing')
-  
+
   console.log('[Main] Linux环境：已启用GPU硬件加速优化')
 }
 // ======================================================================
@@ -322,14 +331,15 @@ if (process.platform === 'linux') {
 app.whenReady().then(async () => {
   // 初始化多语言存储
   await initStore()
-  
-  try {                                   // ★改
-    const devtoolsPath = join(process.resourcesPath, 'extensions', 'vue-devtools'); // ★示例
-    await session.defaultSession.loadExtension(devtoolsPath, { allowFileAccess: true });
+
+  try {
+    // ★改
+    const devtoolsPath = join(process.resourcesPath, 'extensions', 'vue-devtools') // ★示例
+    await session.defaultSession.loadExtension(devtoolsPath, { allowFileAccess: true })
   } catch (e) {
-    console.warn('[DevTools] skip:', e.message);
+    console.warn('[DevTools] skip:', e.message)
   }
-});
+})
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
@@ -353,7 +363,7 @@ function createWindow() {
     }
   })
   mainWindow.on('close', (event) => {
-    if (quitting) return;
+    if (quitting) return
     // 阻止默认关闭行为
     event.preventDefault()
 
@@ -372,7 +382,7 @@ function createWindow() {
     if (result === 0) {
       // 设置退出标志，避免重复弹窗
       quitting = true
-      
+
       // 使用 app.quit() 触发 before-quit 事件，以便记录退出日志
       // 不要使用 app.exit(0)，那会跳过 before-quit 事件
       app.quit()
@@ -383,10 +393,10 @@ function createWindow() {
   // 监听窗口无响应事件（渲染进程卡死）
   mainWindow.on('unresponsive', () => {
     console.error('[WINDOW UNRESPONSIVE] 主窗口无响应')
-    
+
     const error = new Error('主窗口无响应（渲染进程可能卡死）')
     crashLogger.logCrash(error, 'window-unresponsive')
-    
+
     // 显示对话框询问用户是否等待或重启
     const result = dialog.showMessageBoxSync(mainWindow, {
       type: 'warning',
@@ -397,7 +407,7 @@ function createWindow() {
       defaultId: 0,
       cancelId: 0
     })
-    
+
     if (result === 1) {
       // 重新加载
       console.log('[WINDOW UNRESPONSIVE] 用户选择重新加载窗口')
@@ -424,12 +434,12 @@ function createWindow() {
     console.warn('[WEBCONTENTS DESTROYED] 渲染进程已销毁')
   })
   // =======================================================
-  
+
   // 打开开发者工具
- /*  mainWindow.webContents.openDevTools() */
+  /*  mainWindow.webContents.openDevTools() */
 
   // 在开发环境中安装Vue DevTools
-/*   if (is.dev) {
+  /*   if (is.dev) {
     try {
       const installExtension = require('electron-devtools-installer').default
       const { VUEJS3_DEVTOOLS } = require('electron-devtools-installer')
@@ -513,12 +523,12 @@ function createWindow() {
 
   // 设置FTP服务器的主窗口引用
   ftpServerModule.setMainWindow(mainWindow)
-  
+
   // 页面可见性状态管理
   let isPageVisible = true
   // 文件占用弹窗防抖：避免重复弹窗与重复监听器注册
   let busyDialogShowing = false
-  
+
   // 监听渲染进程的可见性变化 - 已禁用后台节流
   ipcMain.on('page-visibility-change', (_e, visible) => {
     isPageVisible = visible
@@ -538,246 +548,240 @@ function createWindow() {
   mainWindow.webContents.once('did-finish-load', () => {
     processManager.setMessageHandler(createMessageHandler(processManager, mainWindow))
     registerDiskSpaceDecisionForwarder(processManager)
-  }
-  )
+  })
 
+  // MQTT发布消息
+  ipcMain.handle('mqttPublish', (_e, topic, payloadHex) => {
+    const currentTask = processManager.getMQTTTask()
+    if (currentTask && !currentTask.killed) {
+      currentTask.send({ cmd: 'MQTT_PUBLISH', topic, payloadHex })
+    } else {
+      console.error('[Main] MQTT子进程未运行')
+      return false // 让渲染端走 catch，便于排查
+    }
+    // console.log('[Main] publish → child', topic, payloadHex)
+    return true // 立即 resolve
+  })
 
-    // MQTT发布消息
-    ipcMain.handle('mqttPublish', (_e, topic, payloadHex) => {
+  // MQTT连接管理
+  ipcMain.handle('mqtt-connect', async (_e, config) => {
+    console.log('[Main] 🔗 收到MQTT连接请求:', config)
+
+    return new Promise((resolve) => {
       const currentTask = processManager.getMQTTTask()
-      if (currentTask && !currentTask.killed) {
-        currentTask.send({ cmd:'MQTT_PUBLISH', topic, payloadHex })
-      } else {
-        console.error('[Main] MQTT子进程未运行')
-        return false           // 让渲染端走 catch，便于排查
-      }
-      // console.log('[Main] publish → child', topic, payloadHex)
-      return true;                                                // 立即 resolve
-    });
-
-    // MQTT连接管理
-    ipcMain.handle('mqtt-connect', async (_e, config) => {
-      console.log('[Main] 🔗 收到MQTT连接请求:', config)
-
-      return new Promise((resolve) => {
-        const currentTask = processManager.getMQTTTask()
-        if (!currentTask || currentTask.killed) {
-          console.error('[Main] ❌ MQTT子进程未运行')
-          resolve(false)
-          return
-        }
-
-        try {
-          // 发送连接指令到MQTT子进程
-          console.log('[Main]  准备发送连接指令到MQTT子进程...')
-          currentTask.send({ cmd: 'MQTT_CONNECT', config })
-          console.log('[Main]  已发送连接指令到MQTT子进程')
-        } catch (error) {
-          console.error('[Main]  发送连接指令失败:', error)
-          resolve(false)
-          return
-        }
-
-        let timeoutId = null
-        let firstResponseReceived = false
-
-        // 监听连接结果（一次性）
-        const handleResult = (message) => {
-          // console.log('[Main]  收到MQTT子进程消息:', message.type)
-          if (message.type === 'mqtt-connect-result') {
-            // 标记已收到首次响应
-            if (!firstResponseReceived) {
-              firstResponseReceived = true
-              if (timeoutId) {
-                clearTimeout(timeoutId)
-                timeoutId = null
-              }
-            }
-            
-            currentTask.removeListener('message', handleResult)
-            
-            // 无论成功或失败，都返回结果
-            // 失败时mqtt.js会自动重连，不需要前端再次请求
-            resolve(message.data.success)
-          }
-        }
-
-        currentTask.on('message', handleResult)
-
-        // 只为首次连接尝试设置超时（略大于mqtt.js的connectTimeout）
-        // mqtt.js connectTimeout是10秒，我们设置12秒
-        // 如果超时，说明首次连接失败，但mqtt.js会继续自动重连
-        timeoutId = setTimeout(() => {
-          console.warn('[Main]  首次连接超时 (12秒)，mqtt.js将继续自动重连')
-          currentTask.removeListener('message', handleResult)
-          
-          // 返回false表示首次连接未成功
-          // 但不影响mqtt.js后台的自动重连
-          resolve(false)
-        }, 12000) // 12秒超时，与mqtt.js的connectTimeout(10秒)协调
-      })
-    })
-
-    // MQTT断开连接
-    ipcMain.handle('mqtt-disconnect', async (_e) => {
-      return new Promise((resolve) => {
-        const currentTask = processManager.getMQTTTask()
-        if (!currentTask || currentTask.killed) {
-          resolve(true)
-          return
-        }
-
-        currentTask.send({ cmd: 'MQTT_DISCONNECT' })
-
-        const handleResult = (message) => {
-          if (message.type === 'mqtt-disconnect-result') {
-            currentTask.removeListener('message', handleResult)
-            resolve(message.data.success)
-          }
-        }
-
-        currentTask.on('message', handleResult)
-
-        setTimeout(() => {
-          currentTask.removeListener('message', handleResult)
-          resolve(true) // 断开连接总是成功
-        }, 5000)
-      })
-    })
-
-    // MQTT测试连接
-    ipcMain.handle('mqtt-test-connection', async (_e, config) => {
-      return new Promise((resolve) => {
-        const currentTask = processManager.getMQTTTask()
-        if (!currentTask || currentTask.killed) {
-          resolve({ success: false, error: 'MQTT进程未运行' })
-          return
-        }
-
-        currentTask.send({ cmd: 'MQTT_TEST_CONNECTION', config })
-
-        const handleResult = (message) => {
-          if (message.type === 'mqtt-test-result') {
-            currentTask.removeListener('message', handleResult)
-            resolve(message.data)
-          }
-        }
-
-        currentTask.on('message', handleResult)
-
-        setTimeout(() => {
-          currentTask.removeListener('message', handleResult)
-          resolve({ success: false, error: '测试超时' })
-        }, 10000)
-      })
-    })
-
-    ipcMain.on('set-export-config', (_event, { semantic, raw }) => {
-      const mqttTask = processManager.getMQTTTask()
-      if (mqttTask && !mqttTask.killed) {
-        mqttTask.send({ cmd: 'SET_EXPORT_ENABLE', semantic, raw })
-      }
-    })
-
-    // 添加进程管理相关的IPC处理器
-    // 这些接口允许渲染进程查询和控制MQTT子进程状态
-
-    // 获取进程基本状态 - 返回运行状态、PID、重启次数等基本信息
-    ipcMain.handle('get-process-status', async () => {
-      return processManager.getStatus()
-    })
-
-    // 手动重启MQTT进程 - 允许用户在界面上手动触发重启
-    ipcMain.handle('restart-mqtt-process', async () => {
-      processManager.restartProcess('manual')
-      return { success: true }
-    })
-
-    // 获取详细统计信息 - 返回心跳时间、连接质量等详细监控数据
-    ipcMain.handle('get-process-stats', async () => {
-      return processManager.getStats()
-    })
-
-    // ========== 事件记录导出相关IPC处理 ==========
-    
-    // 启动事件记录导出
-    ipcMain.on('start-reading-data-event', (event, { offsetRead, totalRead, blockId }) => {
-      const mqttTask = processManager.getMQTTTask()
-      if (!mqttTask || mqttTask.killed) {
-        mainWindow.webContents.send('readEventErrorFromMain', {
-          blockId,
-          error: 'MQTT进程未运行'
-        })
+      if (!currentTask || currentTask.killed) {
+        console.error('[Main] ❌ MQTT子进程未运行')
+        resolve(false)
         return
       }
 
-      // 使用默认目录
-      const saveDir = DEFAULT_EXPORT_DIR
-      console.log(`[Main] 使用默认导出目录: ${saveDir}`)
-      
-      // 通知渲染进程：导出开始，显示目录
-      event.sender.send('export-started', saveDir)
-
-      mqttTask.send({
-        cmd: 'START_READ_EVENT',
-        offsetRead,
-        totalRead,
-        blockId,
-        exportDir: saveDir
-      })
-    })
-
-    // 取消事件记录导出
-    ipcMain.on('cancel-export-event', (event, { blockId }) => {
-      const mqttTask = processManager.getMQTTTask()
-      if (mqttTask && !mqttTask.killed) {
-        mqttTask.send({
-          cmd: 'CANCEL_READ_EVENT',
-          blockId
-        })
+      try {
+        // 发送连接指令到MQTT子进程
+        console.log('[Main]  准备发送连接指令到MQTT子进程...')
+        currentTask.send({ cmd: 'MQTT_CONNECT', config })
+        console.log('[Main]  已发送连接指令到MQTT子进程')
+      } catch (error) {
+        console.error('[Main]  发送连接指令失败:', error)
+        resolve(false)
+        return
       }
-    })
 
-    // ========== 导出目录管理 ==========
-    
-    // 获取默认导出目录
-    ipcMain.handle('get-default-export-dir', () => {
-      return DEFAULT_EXPORT_DIR
-    })
+      let timeoutId = null
+      let firstResponseReceived = false
 
-    // 选择默认导出目录
-    ipcMain.handle('choose-default-export-dir', async () => {
-      const { canceled, filePaths } = await dialog.showOpenDialog({
-        properties: ['openDirectory', 'createDirectory'],
-        defaultPath: DEFAULT_EXPORT_DIR
-      })
-      return canceled ? null : filePaths[0]
-    })
-
-    // 设置默认导出目录
-    ipcMain.on('set-default-export-dir', (event, dir) => {
-      DEFAULT_EXPORT_DIR = dir
-      // 在 Windows 上，parse(dir).root === 'D:\\' 当 dir === 'D:\\' 时
-      const isRoot = parse(dir).root === dir
-      if (!isRoot) {
-        try {
-          const fs = require('fs')
-          fs.mkdirSync(DEFAULT_EXPORT_DIR, { recursive: true })
-        } catch (err) {
-          console.error(`创建导出目录 "${DEFAULT_EXPORT_DIR}" 失败：`, err)
-          // 如果错误码是 EPERM（根目录不允许创建），就忽略；否则重新抛出
-          if (err.code !== 'EPERM') {
-            throw err
+      // 监听连接结果（一次性）
+      const handleResult = (message) => {
+        // console.log('[Main]  收到MQTT子进程消息:', message.type)
+        if (message.type === 'mqtt-connect-result') {
+          // 标记已收到首次响应
+          if (!firstResponseReceived) {
+            firstResponseReceived = true
+            if (timeoutId) {
+              clearTimeout(timeoutId)
+              timeoutId = null
+            }
           }
+
+          currentTask.removeListener('message', handleResult)
+
+          // 无论成功或失败，都返回结果
+          // 失败时mqtt.js会自动重连，不需要前端再次请求
+          resolve(message.data.success)
         }
       }
-      event.sender.send('export-dir-updated', dir)
+
+      currentTask.on('message', handleResult)
+
+      // 只为首次连接尝试设置超时（略大于mqtt.js的connectTimeout）
+      // mqtt.js connectTimeout是10秒，我们设置12秒
+      // 如果超时，说明首次连接失败，但mqtt.js会继续自动重连
+      timeoutId = setTimeout(() => {
+        console.warn('[Main]  首次连接超时 (12秒)，mqtt.js将继续自动重连')
+        currentTask.removeListener('message', handleResult)
+
+        // 返回false表示首次连接未成功
+        // 但不影响mqtt.js后台的自动重连
+        resolve(false)
+      }, 12000) // 12秒超时，与mqtt.js的connectTimeout(10秒)协调
     })
+  })
 
+  // MQTT断开连接
+  ipcMain.handle('mqtt-disconnect', async (_e) => {
+    return new Promise((resolve) => {
+      const currentTask = processManager.getMQTTTask()
+      if (!currentTask || currentTask.killed) {
+        resolve(true)
+        return
+      }
+
+      currentTask.send({ cmd: 'MQTT_DISCONNECT' })
+
+      const handleResult = (message) => {
+        if (message.type === 'mqtt-disconnect-result') {
+          currentTask.removeListener('message', handleResult)
+          resolve(message.data.success)
+        }
+      }
+
+      currentTask.on('message', handleResult)
+
+      setTimeout(() => {
+        currentTask.removeListener('message', handleResult)
+        resolve(true) // 断开连接总是成功
+      }, 5000)
+    })
+  })
+
+  // MQTT测试连接
+  ipcMain.handle('mqtt-test-connection', async (_e, config) => {
+    return new Promise((resolve) => {
+      const currentTask = processManager.getMQTTTask()
+      if (!currentTask || currentTask.killed) {
+        resolve({ success: false, error: 'MQTT进程未运行' })
+        return
+      }
+
+      currentTask.send({ cmd: 'MQTT_TEST_CONNECTION', config })
+
+      const handleResult = (message) => {
+        if (message.type === 'mqtt-test-result') {
+          currentTask.removeListener('message', handleResult)
+          resolve(message.data)
+        }
+      }
+
+      currentTask.on('message', handleResult)
+
+      setTimeout(() => {
+        currentTask.removeListener('message', handleResult)
+        resolve({ success: false, error: '测试超时' })
+      }, 10000)
+    })
+  })
+
+  ipcMain.on('set-export-config', (_event, { semantic, raw }) => {
+    const mqttTask = processManager.getMQTTTask()
+    if (mqttTask && !mqttTask.killed) {
+      mqttTask.send({ cmd: 'SET_EXPORT_ENABLE', semantic, raw })
+    }
+  })
+
+  // 添加进程管理相关的IPC处理器
+  // 这些接口允许渲染进程查询和控制MQTT子进程状态
+
+  // 获取进程基本状态 - 返回运行状态、PID、重启次数等基本信息
+  ipcMain.handle('get-process-status', async () => {
+    return processManager.getStatus()
+  })
+
+  // 手动重启MQTT进程 - 允许用户在界面上手动触发重启
+  ipcMain.handle('restart-mqtt-process', async () => {
+    processManager.restartProcess('manual')
+    return { success: true }
+  })
+
+  // 获取详细统计信息 - 返回心跳时间、连接质量等详细监控数据
+  ipcMain.handle('get-process-stats', async () => {
+    return processManager.getStats()
+  })
+
+  // ========== 事件记录导出相关IPC处理 ==========
+
+  // 启动事件记录导出
+  ipcMain.on('start-reading-data-event', (event, { offsetRead, totalRead, blockId }) => {
+    const mqttTask = processManager.getMQTTTask()
+    if (!mqttTask || mqttTask.killed) {
+      mainWindow.webContents.send('readEventErrorFromMain', {
+        blockId,
+        error: 'MQTT进程未运行'
+      })
+      return
+    }
+
+    // 使用默认目录
+    const saveDir = DEFAULT_EXPORT_DIR
+    console.log(`[Main] 使用默认导出目录: ${saveDir}`)
+
+    // 通知渲染进程：导出开始，显示目录
+    event.sender.send('export-started', saveDir)
+
+    mqttTask.send({
+      cmd: 'START_READ_EVENT',
+      offsetRead,
+      totalRead,
+      blockId,
+      exportDir: saveDir
+    })
+  })
+
+  // 取消事件记录导出
+  ipcMain.on('cancel-export-event', (event, { blockId }) => {
+    const mqttTask = processManager.getMQTTTask()
+    if (mqttTask && !mqttTask.killed) {
+      mqttTask.send({
+        cmd: 'CANCEL_READ_EVENT',
+        blockId
+      })
+    }
+  })
+
+  // ========== 导出目录管理 ==========
+
+  // 获取默认导出目录
+  ipcMain.handle('get-default-export-dir', () => {
+    return DEFAULT_EXPORT_DIR
+  })
+
+  // 选择默认导出目录
+  ipcMain.handle('choose-default-export-dir', async () => {
+    const { canceled, filePaths } = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: DEFAULT_EXPORT_DIR
+    })
+    return canceled ? null : filePaths[0]
+  })
+
+  // 设置默认导出目录
+  ipcMain.on('set-default-export-dir', (event, dir) => {
+    DEFAULT_EXPORT_DIR = dir
+    // 在 Windows 上，parse(dir).root === 'D:\\' 当 dir === 'D:\\' 时
+    const isRoot = parse(dir).root === dir
+    if (!isRoot) {
+      try {
+        const fs = require('fs')
+        fs.mkdirSync(DEFAULT_EXPORT_DIR, { recursive: true })
+      } catch (err) {
+        console.error(`创建导出目录 "${DEFAULT_EXPORT_DIR}" 失败：`, err)
+        // 如果错误码是 EPERM（根目录不允许创建），就忽略；否则重新抛出
+        if (err.code !== 'EPERM') {
+          throw err
+        }
+      }
+    }
+    event.sender.send('export-dir-updated', dir)
+  })
 }
-
-
-
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
@@ -787,7 +791,7 @@ app.whenReady().then(() => {
   console.log('[Main] 崩溃日志系统已启动')
   console.log('[Main] 日志目录:', crashLogger.getLogDirectory())
   console.log('[Main] 系统资源监控已启动（每5秒采集一次）')
-  
+
   createWindow()
   /*   createPopupWindow() */
   // Set app user model id for windows
@@ -813,47 +817,42 @@ app.whenReady().then(() => {
   })
 })
 
-    
-    let exitLogRecorded = false;
+let exitLogRecorded = false
 app.on('before-quit', async (e) => {
   // 只记录一次退出日志
   if (!exitLogRecorded) {
-    exitLogRecorded = true;
-    
+    exitLogRecorded = true
+
     console.log('[Main] 正在记录退出日志...')
-    
+
     // 记录退出日志（同步写入，确保退出前完成）
     const logPath = crashLogger.logExit('用户手动退出应用')
     if (logPath) {
       console.log('[Main] ✅ 退出日志已保存:', logPath)
     }
-    
+
     // 停止资源监控
     crashLogger.stopResourceMonitoring()
     console.log('[Main] 已停止系统资源监控')
   }
-  
+
   // 处理子进程清理
   if (processManager.isRunning() && !quitting) {
-    quitting = true;
-    e.preventDefault();                   // 等子进程退出再 quit
+    quitting = true
+    e.preventDefault() // 等子进程退出再 quit
     console.log('[Main] 等待子进程清理完成...')
     processManager.cleanupAsync().then(() => {
       console.log('[Main] 子进程清理完成，应用即将退出')
-      app.quit();
-    });
+      app.quit()
+    })
   }
-});
-
-
+})
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-
 
 // BAU地址探测网卡选择功能IPC事件注册
 ipcMain.handle('get-network-interfaces', handleGetNetworkInterfaces)
@@ -902,20 +901,20 @@ ipcMain.handle('select-tftp-upgrade-file', async () => {
       { name: '所有文件', extensions: ['*'] }
     ]
   })
-  
+
   if (canceled || !filePaths.length) {
     return { canceled: true }
   }
-  
+
   const fullPath = filePaths[0]
   const path = require('path')
   const fileName = path.basename(fullPath)
   const fileDir = path.dirname(fullPath)
-  
+
   try {
     // 设置TFTP根目录为文件所在目录
     setTftpRoot(fileDir)
-    
+
     return {
       canceled: false,
       fullPath,
@@ -947,7 +946,6 @@ ipcMain.on('stop-force-upgrade', () => {
 ipcMain.handle('get-force-upgrade-status', () => {
   return getForceUpgradeStatus()
 })
-
 
 // 系统资源和崩溃日志相关IPC事件注册
 // 获取当前系统资源占用情况
@@ -983,7 +981,6 @@ ipcMain.handle('test-crash-log', async (_e, testType = 'test') => {
 ipcMain.handle('get-app-version', () => {
   return app.getVersion()
 })
-
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.

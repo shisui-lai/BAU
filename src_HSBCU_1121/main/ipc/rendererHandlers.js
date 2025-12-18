@@ -100,7 +100,7 @@ export function registerRendererIpc(modbusTask) {
       console.error('modbusTask is uninit')
       return
     }
-    
+
     // 直接发送消息给子进程，让子进程处理所有客户端
     // 避免主进程和子进程的客户端列表不同步问题
     modbusTask.send({
@@ -246,15 +246,15 @@ export function registerRendererIpc(modbusTask) {
   // 批量断开所有Modbus连接（用于自适应前）
   ipcMain.handle('disconnect-all-modbus', async (event) => {
     console.log('批量断开所有Modbus连接')
-    const ips = modbusClient.map(c => c.ModbusServerIP)
+    const ips = modbusClient.map((c) => c.ModbusServerIP)
     modbusClient = [] // 清空客户端列表
-    
+
     // 发送批量断开命令给子进程
     modbusTask.send({ API: 'modbus-disconnect-all', ips })
-    
+
     // 等待一段时间确保所有连接都已断开
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
     console.log('所有Modbus连接已断开')
     return { success: true, disconnectedCount: ips.length }
   })
@@ -674,7 +674,7 @@ export function registerRendererIpc(modbusTask) {
   })
 
   // ==================== TFTP 强制升级相关 IPC ====================
-  
+
   // 启动 TFTP 服务器
   ipcMain.handle('tftp-start', async (_, { host, port }) => {
     return await startTftpServer(host, port, TFTP_ROOT)
@@ -735,7 +735,7 @@ export function registerRendererIpc(modbusTask) {
     }
     const fullPath = filePaths[0]
     const fileName = basename(fullPath)
-    
+
     // 验证文件名必须为 RS-BMS-BCU.pkg
     if (fileName !== 'RS-BMS-BCU.pkg') {
       return {
@@ -746,12 +746,12 @@ export function registerRendererIpc(modbusTask) {
         message: '文件名必须为 RS-BMS-BCU.pkg'
       }
     }
-    
+
     // 设置TFTP根目录为文件所在目录
     const fileDir = parse(fullPath).dir
     TFTP_ROOT = fileDir
     setTftpRoot(fileDir)
-    
+
     return {
       canceled: false,
       fullPath,

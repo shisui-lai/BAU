@@ -23,15 +23,22 @@ export function processCellVolt({ topic, hex, blockId, clusterId, baseConfig, da
   const deviceId = `${blockId}-${clusterId || 0}`
   const packs = new Map()
   let globalIndex = 0
-  for (const group of (data || [])) {
+  for (const group of data || []) {
     const bmuId = group && group.bmuId ? group.bmuId : 1
     let pack = packs.get(bmuId)
-    if (!pack) { pack = { packID: bmuId, cells: [] }; packs.set(bmuId, pack) }
+    if (!pack) {
+      pack = { packID: bmuId, cells: [] }
+      packs.set(bmuId, pack)
+    }
     const elements = group && group.element ? group.element : []
     for (const el of elements) {
       const val = el.value
       globalIndex++
-      pack.cells.push({ index: String(globalIndex).padStart(3, '0'), bmuIndex: pack.cells.length + 1, value: val })
+      pack.cells.push({
+        index: String(globalIndex).padStart(3, '0'),
+        bmuIndex: pack.cells.length + 1,
+        value: val
+      })
     }
   }
   const dataList = Array.from(packs.values())
@@ -56,15 +63,22 @@ export function processCellTemp({ topic, hex, blockId, clusterId, baseConfig, da
   const deviceId = `${blockId}-${clusterId || 0}`
   const packs = new Map()
   let globalIndex = 0
-  for (const group of (data || [])) {
+  for (const group of data || []) {
     const bmuId = group && group.bmuId ? group.bmuId : 1
     let pack = packs.get(bmuId)
-    if (!pack) { pack = { packID: bmuId, cells: [] }; packs.set(bmuId, pack) }
+    if (!pack) {
+      pack = { packID: bmuId, cells: [] }
+      packs.set(bmuId, pack)
+    }
     const elements = group && group.element ? group.element : []
     for (const el of elements) {
       const val = el.value
       globalIndex++
-      pack.cells.push({ index: String(globalIndex).padStart(3, '0'), bmuIndex: pack.cells.length + 1, value: val })
+      pack.cells.push({
+        index: String(globalIndex).padStart(3, '0'),
+        bmuIndex: pack.cells.length + 1,
+        value: val
+      })
     }
   }
   const dataList = Array.from(packs.values())
@@ -89,15 +103,22 @@ export function processCellSoc({ topic, hex, blockId, clusterId, baseConfig, dat
   const deviceId = `${blockId}-${clusterId || 0}`
   const packs = new Map()
   let globalIndex = 0
-  for (const group of (data || [])) {
+  for (const group of data || []) {
     const bmuId = group && group.bmuId ? group.bmuId : 1
     let pack = packs.get(bmuId)
-    if (!pack) { pack = { packID: bmuId, cells: [] }; packs.set(bmuId, pack) }
+    if (!pack) {
+      pack = { packID: bmuId, cells: [] }
+      packs.set(bmuId, pack)
+    }
     const elements = group && group.element ? group.element : []
     for (const el of elements) {
       const val = el.value
       globalIndex++
-      pack.cells.push({ index: String(globalIndex).padStart(3, '0'), bmuIndex: pack.cells.length + 1, value: val })
+      pack.cells.push({
+        index: String(globalIndex).padStart(3, '0'),
+        bmuIndex: pack.cells.length + 1,
+        value: val
+      })
     }
   }
   const dataList = Array.from(packs.values())
@@ -122,15 +143,22 @@ export function processCellSoh({ topic, hex, blockId, clusterId, baseConfig, dat
   const deviceId = `${blockId}-${clusterId || 0}`
   const packs = new Map()
   let globalIndex = 0
-  for (const group of (data || [])) {
+  for (const group of data || []) {
     const bmuId = group && group.bmuId ? group.bmuId : 1
     let pack = packs.get(bmuId)
-    if (!pack) { pack = { packID: bmuId, cells: [] }; packs.set(bmuId, pack) }
+    if (!pack) {
+      pack = { packID: bmuId, cells: [] }
+      packs.set(bmuId, pack)
+    }
     const elements = group && group.element ? group.element : []
     for (const el of elements) {
       const val = el.value
       globalIndex++
-      pack.cells.push({ index: String(globalIndex).padStart(3, '0'), bmuIndex: pack.cells.length + 1, value: val })
+      pack.cells.push({
+        index: String(globalIndex).padStart(3, '0'),
+        bmuIndex: pack.cells.length + 1,
+        value: val
+      })
     }
   }
   const dataList = Array.from(packs.values())
@@ -156,6 +184,11 @@ export function processClusterSummary({ topic, hex, blockId, clusterId, baseConf
   cacheSampleSemantic('clusterSummary', data || [], deviceId, Date.now(), baseConfig)
 }
 
+export function processSysAbstract({ topic, hex, blockId, clusterId, baseConfig, data }) {
+  const deviceId = `${blockId}-${clusterId || 0}`
+  cacheSampleSemantic('sysAbstract', data || [], deviceId, Date.now(), baseConfig)
+}
+
 /**
  * 处理包端概要数据并缓存到 latest
  * @param {{topic:string,hex:string,blockId:number,clusterId:number,baseConfig:Object,data:Array}} params - MQTT解析后的参数集合
@@ -174,9 +207,9 @@ export function processAlarmSemantic({ topic, hex, blockId, clusterId, baseConfi
   const deviceId = `${blockId}-${clusterId || 0}`
   const parts = topic.split('/')
   const dataType = parts[parts.length - 1].toUpperCase()
-  
+
   const categories = []
-  for (const group of (data || [])) {
+  for (const group of data || []) {
     const cls = group && group.class ? group.class : ''
     const arr = []
     const elements = group && group.element ? group.element : []
@@ -190,7 +223,7 @@ export function processAlarmSemantic({ topic, hex, blockId, clusterId, baseConfi
         const levelConfig = getFaultLevelFromLabel(el.label)
         level = levelConfig ? levelConfig.txt : ''
       }
-      
+
       // 2. Determine Action Value
       let actionValue = ''
       if (typeof el.value === 'object' && el.value && 'raw' in el.value) {
@@ -199,16 +232,16 @@ export function processAlarmSemantic({ topic, hex, blockId, clusterId, baseConfi
         actionValue = el.value
       }
 
-      const item = { 
-        fault: el.label, 
-        faultZh: el.label, 
-        level: level, 
-        actionValue: actionValue, 
-        bmuIndex: (el.bmuIndex || el.bmu || ''), 
-        cellIndex: (el.cellIndex || el.cell || ''), 
-        cellIndexRelative: (el.cellIndexRelative || ''), 
-        timestamp: Date.now(), 
-        value: el.value 
+      const item = {
+        fault: el.label,
+        faultZh: el.label,
+        level: level,
+        actionValue: actionValue,
+        bmuIndex: el.bmuIndex || el.bmu || '',
+        cellIndex: el.cellIndex || el.cell || '',
+        cellIndexRelative: el.cellIndexRelative || '',
+        timestamp: Date.now(),
+        value: el.value
       }
       arr.push(item)
     }
@@ -228,7 +261,7 @@ export function processBlockSummary({ topic, hex, blockId, clusterId, baseConfig
   const deviceId = `${blockId}-${clusterId || 0}`
   // utils.parseBlockSummaryRAW 返回 { error:false, data: baseConfig }
   // 因此优先使用 data 作为 baseConfig；若未来修正为返回 baseConfig，则仍兼容
-  const bc = (data && typeof data === 'object' && Object.keys(data).length) ? data : baseConfig
+  const bc = data && typeof data === 'object' && Object.keys(data).length ? data : baseConfig
   // 注意：block_summary 的表头是固定的（由 BLOCK_SUMMARY 定义），不应因数值变化而重复写入表头
   // 因此这里传入的 meta 设为 null，避免触发表头重写逻辑
   cacheSampleSemantic('blockSummary', bc ? [bc] : [], deviceId, Date.now(), null)

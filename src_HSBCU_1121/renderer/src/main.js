@@ -238,7 +238,7 @@ app.component('VirtualScroller', VirtualScroller)
 async function loadSavedThemeConfig() {
   try {
     let config = null
-    
+
     // 优先使用 Electron Store
     if (window.electronAPI?.layoutConfig?.get) {
       config = await window.electronAPI.layoutConfig.get()
@@ -249,14 +249,14 @@ async function loadSavedThemeConfig() {
         config = JSON.parse(saved)
       }
     }
-    
+
     if (!config) return
-    
+
     // 应用保存的字体大小
     if (config.scale) {
       document.documentElement.style.fontSize = config.scale + 'px'
     }
-    
+
     // 应用保存的主题
     if (config.theme) {
       const themeLink = document.getElementById('theme-css')

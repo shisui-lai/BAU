@@ -528,7 +528,7 @@ function paraseAlarmPCSSYL(param, status) {
     case 0:
       return status === 'alarm' ? '无告警' : '正常'
     case 1:
-      return (status === 'alarm' ? '有一级或二级报警' : '有三级报警')
+      return status === 'alarm' ? '有一级或二级报警' : '有三级报警'
     default:
       return `未知${param}` // 添加默认值处理
   }
@@ -948,7 +948,7 @@ function getAlarmData2(
   return faultConfigs.reduce((result, { name, addr, cells }, faultIndex) => {
     // 计算该故障类型总共的单体数量
     const totalCells = config.bmuTotal * cells
-    
+
     // 计算需要的寄存器数量（每8个单体占用1个寄存器）
     const totalRegs = Math.ceil(totalCells / 8)
 
@@ -2539,7 +2539,7 @@ function getArray_ConfigParamSys2(params) {
           value: params[48],
           unit: 'A',
           min: 0,
-          max:65535
+          max: 65535
         },
         {
           id: 34,
@@ -2858,19 +2858,19 @@ function getArray_ConfigFactorycalib(params, excludeIpFlags = false) {
     (modbusToSigned16(params[11]) / 10).toFixed(1)
   ]
   let minArray = Array.from({ length: 12 }, (_, i) => {
-      if (i % 2 === 0) {
-        return -32.767
-      } else {
-        return -327.67
-      }
-    })
+    if (i % 2 === 0) {
+      return -32.767
+    } else {
+      return -327.67
+    }
+  })
   let maxArray = Array.from({ length: 12 }, (_, i) => {
-      if (i % 2 === 0) {
-        return 32.767
-      } else {
-        return 327.67
-      }
-    })
+    if (i % 2 === 0) {
+      return 32.767
+    } else {
+      return 327.67
+    }
+  })
   if (excludeIpFlags) {
     for (let i = 0; i < group0_addresses.length; i++) {
       basicArray[0].element.push({
@@ -3406,49 +3406,49 @@ function getArray_ConfigAlarmClus(params) {
     let value = valueArray[i]
     let unit = unitArray[i]
     /*     let writeValue = writeValueArray[i] */
-     // 根据索引确定 min 和 max 值
-     let min, max
-     if (i < 60) {
-       // 索引 0-59 的元素
-       if (i % 2 === 0) {
-         // 偶数索引：min=0, max=32767
-         min = 0
-         max = 32767
-       } else {
-         // 奇数索引：min=0, max=65535
-         min = 0
-         max = 65535
-       }
-     } else if (i >= 60 && i < 120) {
-       // 索引 60-119 的元素，每4个为一组
-       const groupIndex = (i - 60) % 4
-       switch (groupIndex) {
-         case 0: // 第1个：min=-40, max=125
-           min = -40
-           max = 125
-           break
-         case 1: // 第2个：min=0, max=65535
-           min = 0
-           max = 65535
-           break
-         case 2: // 第3个：min=0, max=165
-           min = 0
-           max = 165
-           break
-         case 3: // 第4个：min=0, max=65535
-           min = 0
-           max = 65535
-           break
-       }
-     }
+    // 根据索引确定 min 和 max 值
+    let min, max
+    if (i < 60) {
+      // 索引 0-59 的元素
+      if (i % 2 === 0) {
+        // 偶数索引：min=0, max=32767
+        min = 0
+        max = 32767
+      } else {
+        // 奇数索引：min=0, max=65535
+        min = 0
+        max = 65535
+      }
+    } else if (i >= 60 && i < 120) {
+      // 索引 60-119 的元素，每4个为一组
+      const groupIndex = (i - 60) % 4
+      switch (groupIndex) {
+        case 0: // 第1个：min=-40, max=125
+          min = -40
+          max = 125
+          break
+        case 1: // 第2个：min=0, max=65535
+          min = 0
+          max = 65535
+          break
+        case 2: // 第3个：min=0, max=165
+          min = 0
+          max = 165
+          break
+        case 3: // 第4个：min=0, max=65535
+          min = 0
+          max = 65535
+          break
+      }
+    }
     if (i < 24) {
-      basicArray[0].element.push({ address, label, value, unit,min, max })
+      basicArray[0].element.push({ address, label, value, unit, min, max })
     } else if (i >= 24 && i < 48) {
-      basicArray[1].element.push({ address, label, value, unit,min, max })
+      basicArray[1].element.push({ address, label, value, unit, min, max })
     } else if (i >= 48 && i < 60) {
-      basicArray[2].element.push({ address, label, value, unit,min, max })
+      basicArray[2].element.push({ address, label, value, unit, min, max })
     } else {
-      basicArray[3].element.push({ address, label, value, unit,min, max })
+      basicArray[3].element.push({ address, label, value, unit, min, max })
     }
   }
   /*   console.log(basicArray[0].element.value) */
@@ -3675,16 +3675,16 @@ function getArray_ConfigAlarmBMU(params) {
         max = 65535
       }
     }
-    
+
     // 构建基础对象
     let elementObj = { address, label, value, unit, min, max }
-    
+
     // 为特定参数添加note属性
     if (i === 60) {
       // BMU电路板温度温差-轻微报警值
       elementObj.note = '该告警预留，目前未使用'
     }
-    
+
     if (i < 36) {
       basicArray[0].element.push(elementObj)
     } else if (i >= 36 && i < 72) {
@@ -4014,11 +4014,11 @@ function getArray_ConfigAlarmCell1(params) {
     }
 
     if (i < 36) {
-      basicArray[0].element.push({ address, label, value, unit,min, max })
+      basicArray[0].element.push({ address, label, value, unit, min, max })
     } else if (i >= 36 && i < 96) {
-      basicArray[1].element.push({ address, label, value, unit,min, max })
+      basicArray[1].element.push({ address, label, value, unit, min, max })
     } else if (i >= 96 && i < 120) {
-      basicArray[2].element.push({ address, label, value, unit,min, max })
+      basicArray[2].element.push({ address, label, value, unit, min, max })
     }
   }
   return basicArray
@@ -4054,21 +4054,21 @@ function getArray_ConfigAlarmCell2(params) {
     let value = valueArray[i]
     let unit = unitArray[i]
     /*     let writeValue = writeValueArray[i] */
-        // 根据索引确定 min 和 max 值
-        let min, max
-        if (i < 12) {
-          // 索引 0-47 的元素
-          if (i % 2 === 0) {
-            // 偶数索引：min=0, max=100
-            min = 0
-            max = 110
-          } else {
-            // 奇数索引：min=0, max=65535
-            min = 0
-            max = 65535
-          }
-        }
-    basicArray[0].element.push({ address, label, value, unit,min, max })
+    // 根据索引确定 min 和 max 值
+    let min, max
+    if (i < 12) {
+      // 索引 0-47 的元素
+      if (i % 2 === 0) {
+        // 偶数索引：min=0, max=100
+        min = 0
+        max = 110
+      } else {
+        // 奇数索引：min=0, max=65535
+        min = 0
+        max = 65535
+      }
+    }
+    basicArray[0].element.push({ address, label, value, unit, min, max })
   }
   return basicArray
 }
@@ -4305,7 +4305,7 @@ function getArray_ConfigSOX1(params) {
 
     ...Array.from({ length: 2 }, () => 429496729.5),
     1,
-    6553.5,
+    6553.5
   ]
   /*   const writeValueArray = Array.from({ length: 49 }, () => '') */
   for (let i = 0; i < 112; i++) {
@@ -4657,7 +4657,7 @@ function getArray_ConfigSOX2(params) {
     6553.5,
     ...Array.from({ length: 2 }, () => 5000),
     ...Array.from({ length: 2 }, () => 3276.7),
-    6553.5,
+    6553.5
   ]
   /*  const writeValueArray = Array.from({ length: 113 }, () => '') */
   for (let i = 0; i < 113; i++) {

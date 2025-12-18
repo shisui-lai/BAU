@@ -301,7 +301,7 @@ const mergeDataConfig = (oldData, newData) => {
         if (isSpecial005aParam && importedValue !== null && importedValue !== undefined) {
           // 对于0x005a的特殊参数，如果有导入值，则使用导入值而不是实时读取的值
           finalValue = importedValue
-          finalDisplayValue = importedValue  // 同时设置displayValue
+          finalDisplayValue = importedValue // 同时设置displayValue
         }
 
         return {
@@ -617,7 +617,7 @@ export async function writeImportedForData(data, ipStore, toast, t) {
     if (el.importedValue == null) return
     const [addr] = el.address.split('-')
     if (seen.has(addr)) return
-    
+
     if (el.dataType === 'ip') {
       // IP地址类型，拆分成两个16位寄存器
       const { high, low } = processValue(el.importedValue, true)
@@ -634,7 +634,7 @@ export async function writeImportedForData(data, ipStore, toast, t) {
       const scaled = Math.round(parseFloat(el.importedValue) * scale)
       const high = (scaled >>> 16) & 0xffff
       const low = scaled & 0xffff
-      
+
       // 写入两个寄存器（与页面编辑时一致：除以scale后写入）
       writeData.push({ address: addr, value: +(low / scale).toFixed(2) })
       writeData.push({ address: paired, value: +(high / scale).toFixed(2) })
@@ -732,11 +732,7 @@ export function isValidUTF8(bytes) {
     // 3字节序列 (0xE0-0xEF) - 中文通常使用这种格式
     // 格式: 1110xxxx 10xxxxxx 10xxxxxx
     if (bytes[i] >= 0xe0 && bytes[i] <= 0xef) {
-      if (
-        i + 2 >= bytes.length ||
-        (bytes[i + 1] & 0xc0) !== 0x80 ||
-        (bytes[i + 2] & 0xc0) !== 0x80
-      )
+      if (i + 2 >= bytes.length || (bytes[i + 1] & 0xc0) !== 0x80 || (bytes[i + 2] & 0xc0) !== 0x80)
         return false
       i += 3
       continue
@@ -881,7 +877,7 @@ export async function validateAndReadExcel(file, onSuccess, onError) {
 
     // 获取第一个工作表
     const worksheet = workbook.worksheets[0]
-    
+
     if (!worksheet) {
       onError({
         summary: '文件读取失败',
@@ -899,12 +895,12 @@ export async function validateAndReadExcel(file, onSuccess, onError) {
       row.eachCell({ includeEmpty: true }, (cell) => {
         // 获取单元格的值
         let value = cell.value
-        
+
         // 处理富文本
         if (value && typeof value === 'object' && value.richText) {
           value = value.richText.map((t) => t.text).join('')
         }
-        
+
         rowData.push(value?.toString() || '')
       })
 

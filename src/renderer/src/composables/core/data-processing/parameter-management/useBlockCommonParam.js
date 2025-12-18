@@ -51,20 +51,21 @@ function computeParameterClassesByTable(fieldTable) {
     offset += bytes
   }
 
-  return classRanges.map(r => {
+  return classRanges.map((r) => {
     const classInfo = { name: r.name, byteOffset: r.start, byteLength: r.end - r.start }
-    
+
     // 为设备管理页面的分类添加翻译键
     if (r.name === '系统基本配置') {
       classInfo.nameKey = 'config.deviceManagementPage.sections.deviceCommonConfig'
     }
-    
+
     return classInfo
   })
 }
 
 export function useBlockCommonParam() {
-  const createDefaultBlockCommonParamData = () => createDefaultParameterData(BLOCK_COMMON_PARAM_R, '[useBlockCommonParam]')
+  const createDefaultBlockCommonParamData = () =>
+    createDefaultParameterData(BLOCK_COMMON_PARAM_R, '[useBlockCommonParam]')
 
   const parseBlockCommonParamReadResponse = (mqttMessage) =>
     parseParameterReadResponse(mqttMessage, '[useBlockCommonParam]', '堆系统基本配置')
@@ -92,5 +93,3 @@ export function useBlockCommonParam() {
     getParameterClasses
   }
 }
-
-

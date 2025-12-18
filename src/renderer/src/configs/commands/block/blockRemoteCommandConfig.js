@@ -88,7 +88,7 @@ export const blockRemoteCommandConfig = {
     ]
   },
 
-    // 5. 下设接触器自检检测指令
+  // 5. 下设接触器自检检测指令
   contactor_selftest_en: {
     id: 'contactor_selftest_en',
     name: '下设接触器自检指令',
@@ -117,7 +117,7 @@ export const blockRemoteCommandConfig = {
     confirmMessage: '确定要执行重启BAU操作吗？',
     description: '重启BAU设备，仅限就地模式下有效',
     options: [
-      { label: '重启BAU', value: 0x5BB5 },
+      { label: '重启BAU', value: 0x5bb5 },
       { label: '不执行', value: 0x0000 }
     ]
   },
@@ -173,7 +173,7 @@ export const blockRemoteCommandConfig = {
     confirmMessage: '确定要复位事件记录存储器吗？',
     description: '复位事件记录存储器：0x5BB5复位，其他值不执行',
     options: [
-      { label: '复位', value: 0x5BB5 },
+      { label: '复位', value: 0x5bb5 },
       { label: '不执行', value: 0x0000 }
     ]
   },
@@ -187,10 +187,9 @@ export const blockRemoteCommandConfig = {
     dataType: 'u16', // 查询命令2字节
     uiType: 'hidden', // 隐藏类型，不在UI中显示
     isPollingCommand: true, // 标记为轮询查询命令
-    value: 0xFF, // 固定查询值
+    value: 0xff, // 固定查询值
     description: '周期性读取电池堆控制开关执行结果'
   }
-
 }
 
 // BAU应答码定义已统一使用全局ERROR_CODES (src/main/table.js)
@@ -230,7 +229,7 @@ export function getBlockRemoteCommandsByUIType() {
     multi_dropdown: []
   }
 
-  commands.forEach(command => {
+  commands.forEach((command) => {
     if (grouped[command.uiType]) {
       grouped[command.uiType].push(command)
     }

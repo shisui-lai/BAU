@@ -206,6 +206,15 @@ function startMultiTopicReadingWithRetry() {
   startMultiTopicReading(allReadTopics)
 }
 
+const stopReading = () => {
+  cancelAutoRead('SOXParam')
+  stopParameterReading()
+  if (clusterSwitchDebounceTimer) {
+    clearTimeout(clusterSwitchDebounceTimer)
+    clusterSwitchDebounceTimer = null
+  }
+}
+
 // 原文缓存：按分类区分
 const { setRawInput, getRawInput, getInputDisplay, clearByPrefix } = useRawInputCache(() => `SOX_PARAM:${currentSelectedClass.value?.name || ''}`)
 
@@ -468,7 +477,7 @@ function getParameterRemarkText(parameterKey) {
               :label="isCurrentlyReading ? t('soxParam.buttons.stopReading') : t('soxParam.buttons.startReading')"
               @click="() => {
                 if (isCurrentlyReading) {
-                  stopParameterReading()
+                  stopReading()
                 } else {
                   startMultiTopicReadingWithRetry()
                 }

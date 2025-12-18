@@ -16,13 +16,17 @@ export function shouldDisplayFault(dataType, label) {
   // 2. 二级表：过滤单体相关故障，保留BMU级故障
   if (dataType.startsWith('FAULT_LEVEL2')) {
     const cellFaultTypes = [
-      '单体电池过压', '单体电池欠压',
-      '充电单体过温', '充电单体欠温',
-      '放电单体过温', '放电单体欠温',
-      '单体SOC过高', '单体SOC过低'
+      '单体电池过压',
+      '单体电池欠压',
+      '充电单体过温',
+      '充电单体欠温',
+      '放电单体过温',
+      '放电单体欠温',
+      '单体SOC过高',
+      '单体SOC过低'
     ]
-    const isCellFault = cellFaultTypes.some(type => label.includes(type))
-    return !isCellFault  // 单体故障不显示，BMU故障显示
+    const isCellFault = cellFaultTypes.some((type) => label.includes(type))
+    return !isCellFault // 单体故障不显示，BMU故障显示
   }
 
   // 3. 掉线信息：过滤一级掉线标志，保留可定位的掉线信息
@@ -42,29 +46,36 @@ export function shouldDisplayFault(dataType, label) {
   // 4. 堆模拟量故障等级：只显示簇间压差和簇间电流差异故障
   if (dataType === 'BLOCK_ANALOG_FAULT_GRADE') {
     // 白名单：只允许这两个簇间故障显示
-    const allowedFaults = [
-      '簇间压差过大故障',
-      '簇间电流差过大故障'
-    ];
-    return allowedFaults.some(fault => label.includes(fault));
+    const allowedFaults = ['簇间压差过大故障', '簇间电流差过大故障']
+    return allowedFaults.some((fault) => label.includes(fault))
   }
 
   // 5. TOTAL_FAULT：屏蔽单体总故障、pack总故障、簇总故障1、簇总故障2
   if (dataType === 'TOTAL_FAULT') {
     // 检查故障标签是否属于被屏蔽的类别
     // 单体总故障
-    if (label.includes('单体电压过压') || label.includes('单体电压欠压') ||
-        label.includes('单体充电过温') || label.includes('单体充电欠温') ||
-        label.includes('单体放电过温') || label.includes('单体放电欠温') ||
-        label.includes('单体SOC过高') || label.includes('单体SOC过低')) {
-      return false;
+    if (
+      label.includes('单体电压过压') ||
+      label.includes('单体电压欠压') ||
+      label.includes('单体充电过温') ||
+      label.includes('单体充电欠温') ||
+      label.includes('单体放电过温') ||
+      label.includes('单体放电欠温') ||
+      label.includes('单体SOC过高') ||
+      label.includes('单体SOC过低')
+    ) {
+      return false
     }
 
     // pack总故障
-    if (label.includes('pack电压过高') || label.includes('pack电压过低') ||
-        label.includes('pack温度过温') || label.includes('pack温度欠温') ||
-        label.includes('动力接插件过温')) {
-      return false;
+    if (
+      label.includes('pack电压过高') ||
+      label.includes('pack电压过低') ||
+      label.includes('pack温度过温') ||
+      label.includes('pack温度欠温') ||
+      label.includes('动力接插件过温')
+    ) {
+      return false
     }
 
     // 簇总故障1 - 已移除过滤，允许存储故障等级（支持升降级记录）
@@ -78,21 +89,26 @@ export function shouldDisplayFault(dataType, label) {
     */
 
     // 簇总故障2
-    if (label.includes('充电过流故障等级') || label.includes('放电过流故障等级') ||
-        label.includes('RT1过温故障等级') || label.includes('RT2过温故障等级') ||
-        label.includes('RT3过温故障等级') || label.includes('RT4过温故障等级') ||
-        label.includes('RT5过温故障等级')) {
-      return false;
+    if (
+      label.includes('充电过流故障等级') ||
+      label.includes('放电过流故障等级') ||
+      label.includes('RT1过温故障等级') ||
+      label.includes('RT2过温故障等级') ||
+      label.includes('RT3过温故障等级') ||
+      label.includes('RT4过温故障等级') ||
+      label.includes('RT5过温故障等级')
+    ) {
+      return false
     }
 
     // 其他TOTAL_FAULT故障（如接触器故障等）正常显示
-    return true;
+    return true
   }
 
   // 8. DI_DO_TEMP_STATUS: 过滤掉非故障的状态信息
   if (dataType === 'DI_DO_TEMP_STATUS') {
-    const keywords = ['故障', '氧化', '黏连', 'Fault', 'Oxidation', 'Adhesion', 'Alarm', '报警'];
-    return keywords.some(k => label.includes(k));
+    const keywords = ['故障', '氧化', '黏连', 'Fault', 'Oxidation', 'Adhesion', 'Alarm', '报警']
+    return keywords.some((k) => label.includes(k))
   }
 
   // 6. 过滤预留字段故障
@@ -106,9 +122,9 @@ export function shouldDisplayFault(dataType, label) {
 
 /**
  * 掉线信息故障状态判断函数
- * @param {string} label 
- * @param {boolean} value 
- * @param {string} dataType 
+ * @param {string} label
+ * @param {boolean} value
+ * @param {string} dataType
  * @returns {boolean} 是否为故障状态
  */
 export function getBrokenwireFaultStatus(label, value, dataType) {
@@ -136,13 +152,13 @@ export function getBrokenwireFaultStatus(label, value, dataType) {
   ]
 
   // 检查是否为失联状态类型
-  const isConnectionLoss = connectionLossFields.some(field => label.includes(field))
+  const isConnectionLoss = connectionLossFields.some((field) => label.includes(field))
   if (isConnectionLoss) {
     return !value // 反转逻辑：false表示失联（故障），true表示正常
   }
 
   // 检查是否为采集掉线类型
-  const isCollectionOffline = collectionOfflineFields.some(field => label.includes(field))
+  const isCollectionOffline = collectionOfflineFields.some((field) => label.includes(field))
   if (isCollectionOffline) {
     return value // 正向逻辑：true表示掉线（故障），false表示正常
   }
@@ -150,8 +166,6 @@ export function getBrokenwireFaultStatus(label, value, dataType) {
   // 默认情况：如果无法识别字段类型，使用反转逻辑（保持向后兼容）
   return !value
 }
-
-
 
 /* ---------- 统一告警等级配置 (Backend Version) ---------- */
 // 直接使用中文，便于 CSV 导出
@@ -168,7 +182,7 @@ const faultLevelCache = new Map()
 /**
  * 根据故障标签获取故障等级
  * 复刻自 src/renderer/src/composables/core/data-processing/common/parseFault.ts
- * @param {string} label 
+ * @param {string} label
  * @returns {object} LEVEL_CONFIG item
  */
 export function getFaultLevelFromLabel(label) {
@@ -215,8 +229,8 @@ export function getFaultLevelFromLabel(label) {
 
 // 等级映射数组（索引对应2-bit值）
 export const LEVEL_MAPPING = [
-  LEVEL_CONFIG.NONE,   // 0
+  LEVEL_CONFIG.NONE, // 0
   LEVEL_CONFIG.SEVERE, // 1
   LEVEL_CONFIG.MEDIUM, // 2
-  LEVEL_CONFIG.MILD    // 3
+  LEVEL_CONFIG.MILD // 3
 ]

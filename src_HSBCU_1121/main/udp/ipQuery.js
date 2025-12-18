@@ -65,7 +65,7 @@ export const ipQueryHandler = (event, { selectedInterface, selectedInterfaceName
         if (foundDevices.length > 0) {
           // 找到设备，发送结果到渲染进程
           event.sender.send('udp-query-ip-result', { success: true, devices: foundDevices })
-          
+
           // ✅ 新增：将查询到的在线IP列表发送到modbusTask子进程
           const onlineIps = foundDevices.map((device) => device.ip)
           modbusTask.send({
@@ -90,7 +90,7 @@ export const ipQueryHandler = (event, { selectedInterface, selectedInterfaceName
               noDevicesFound: true,
               message: '未查询到任何设备，请检查网络连接'
             })
-            
+
             // ✅ 新增：即使未找到设备，也发送空列表到modbusTask
             modbusTask.send({
               API: 'update-online-ips',

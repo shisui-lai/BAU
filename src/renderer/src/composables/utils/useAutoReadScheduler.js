@@ -24,7 +24,7 @@ export function registerAutoReadFunction(fn) {
  */
 export function scheduleAutoRead(topics, delay = 500, source = 'unknown') {
   // 将新的topics添加到待处理集合
-  topics.forEach(topic => pendingTopics.add(topic))
+  topics.forEach((topic) => pendingTopics.add(topic))
 
   // 如果已经有调度在等待，直接返回
   if (scheduled) {
@@ -63,7 +63,7 @@ export function cancelAutoRead(source = 'unknown') {
     clearTimeout(timeoutId)
     timeoutId = null
   }
-  
+
   scheduled = false
   pendingTopics.clear()
 }

@@ -146,31 +146,31 @@ process.on('message', async (message) => {
         // ✅ 新增：根据查询到的在线IP列表，终止不在列表中的IP的重连
         const onlineIps = message.onlineIps || []
         console.log(`[MBSTASK] 收到在线IP列表:`, onlineIps)
-        
+
         // 遍历所有客户端，终止不在在线列表中的IP的重连
         Object.keys(modbusClients).forEach((ip) => {
           const client = modbusClients[ip]
           if (!client) return
-          
+
           // 如果该IP不在在线列表中，且正在重连中（未连接成功）
           if (!onlineIps.includes(ip) && client.mbsState !== MBS_STATE_GOOD_CONNECT) {
             console.log(`[MBSTASK] IP ${ip} 不在查询结果中，终止其重连`)
-            
+
             // 终止重连
             client.isTerminated = true
             client.skip = true
             client.mbsState = MBS_STATE_FAIL_CONNECT
-            
+
             // 清除重连定时器
             if (client.autoReconnectTimeout) {
               clearTimeout(client.autoReconnectTimeout)
               client.autoReconnectTimeout = null
             }
-            
+
             // 停止心跳和健康检查
             client.stopHeartbeat()
             client.stopHealthCheck()
-            
+
             // 通知前端该IP重连已终止
             process.send({
               API: 'connection-status',
@@ -179,7 +179,7 @@ process.on('message', async (message) => {
               error: '不在查询结果中，已停止重连',
               errorType: 'not_in_query_result'
             })
-            
+
             console.log(`[MBSTASK] 已终止 IP ${ip} 的重连`)
           }
         })
@@ -246,14 +246,14 @@ process.on('message', async (message) => {
         // 批量断开所有Modbus连接
         const ips = message.ips || []
         console.log(`[MBSTASK] 批量断开所有连接，共 ${ips.length} 个IP`)
-        
+
         ips.forEach((ip) => {
           const client = modbusClients[ip]
           if (client) {
             savedModules[ip] = client.modules
             client.forceDisconnect()
             delete modbusClients[ip]
-            
+
             // 发送设备状态更新到渲染进程
             process.send({
               API: 'connection-status',
@@ -261,17 +261,17 @@ process.on('message', async (message) => {
               success: false,
               error: 'disconnected' // 附加错误信息
             })
-            
+
             console.log(`[MBSTASK] 已断开连接: ${ip}`)
           }
         })
-        
+
         // 停止轮询
         if (Object.keys(modbusClients).length === 0) {
           stopPolling()
           console.log('✅ 已停止 Modbus 轮询（所有客户端已断开）')
         }
-        
+
         console.log(`[MBSTASK] 批量断开完成`)
       }
       break
@@ -279,14 +279,14 @@ process.on('message', async (message) => {
       {
         const targetIp = message.targetIp
         console.log('[MBSTASK] 收到 start-all 消息, targetIp:', targetIp)
-        
+
         // 遍历所有客户端
         Object.keys(modbusClients).forEach((ip) => {
           // 如果指定了 targetIp 且不是 'all'，只处理该IP
           if (targetIp !== 'all' && ip !== targetIp) {
             return
           }
-          
+
           const client = modbusClients[ip]
           if (client) {
             console.log(`[MBSTASK] start client: ${ip}`)
@@ -311,14 +311,14 @@ process.on('message', async (message) => {
       {
         const targetIp = message.targetIp
         console.log('[MBSTASK] 收到 stop-all 消息, targetIp:', targetIp)
-        
+
         // 遍历所有客户端
         Object.keys(modbusClients).forEach((ip) => {
           // 如果指定了 targetIp 且不是 'all'，只处理该IP
           if (targetIp !== 'all' && ip !== targetIp) {
             return
           }
-          
+
           const client = modbusClients[ip]
           if (client) {
             client.isStopped = true // 停止读取全部
@@ -336,7 +336,7 @@ process.on('message', async (message) => {
     case 'start':
       {
         const client = modbusClients[message.client.ModbusServerIP]
-        console.log('start client:',client.mbsHost)
+        console.log('start client:', client.mbsHost)
         if (client) {
           client.isStopped = false // 启动读取全部数据
           client.mbsState = MBS_STATE_NEXT // 手动触发读取状态
@@ -483,8 +483,8 @@ process.on('message', async (message) => {
             const data2 = await client.client.readHoldingRegisters(0x3221, 1)
 
             // 将读取到的值除以10，保留一位小数
-            const processedFrame1 = data1.data.map(value => Math.round((value / 10) * 10) / 10)
-            const processedFrame2 = data2.data.map(value => Math.round((value / 10) * 10) / 10)
+            const processedFrame1 = data1.data.map((value) => Math.round((value / 10) * 10) / 10)
+            const processedFrame2 = data2.data.map((value) => Math.round((value / 10) * 10) / 10)
 
             process.send({
               API: 'soc-params-value',

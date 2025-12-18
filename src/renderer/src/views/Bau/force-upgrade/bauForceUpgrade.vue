@@ -1,6 +1,6 @@
 <template>
   <div class="force-upgrade-page">
-    <div class="card force-upgrade" v-if="!showPasswordDialog">
+    <div class="card force-upgrade" v-if="pwdConfirmed">
     <div class="control">
       <!-- 左侧：TFTP 服务器配置部分 -->
       <div class="section1">
@@ -579,6 +579,8 @@ onBeforeMount(async () => {
     isBlurred.value = true
     return
   }
+  // 已验证过密码，本次直接展示页面内容
+  pwdConfirmed.value = true
   await initializePage()
 })
 
@@ -629,11 +631,11 @@ function checkPwd() {
 }
 
 function cancelPwd() {
-  showPasswordDialog.value = false
+  // 若是“确认密码”导致的对话框关闭，则不返回上一页
   if (pwdConfirmed.value) {
-    pwdConfirmed.value = false
     return
   }
+  // 取消或右上角关闭：保持原取消逻辑并返回上一页
   isBlurred.value = true
   setTimeout(() => {
     router.go(-1)

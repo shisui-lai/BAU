@@ -132,7 +132,7 @@ const {
   getParameterDropdownOptions,
   updateDropdownParameterValue,
   enhancedParameterList
-// 读取/下设按“堆”逻辑处理（只有 blockId）；顶部显示与否完全由 usePageTypeDetection 控制
+  // 读取/下设按“堆”逻辑处理（只有 blockId）；顶部显示与否完全由 usePageTypeDetection 控制
 } = useRemoteControlCore(deviceManagementConfig, toastService, { selectorMode: 'block' })
 
 // 重试逻辑
@@ -478,7 +478,7 @@ onMounted(() => {
   
   // 注册MQTT事件监听器（与簇遥调页面一致，使用 window.electron.ipcRenderer）
   const ipc = window.electron?.ipcRenderer
-  if (ipc && !ipcDMListenersRegistered) {
+    if (ipc && !ipcDMListenersRegistered) {
 
     // 仅清理本页专用通道，避免误伤全局监听（BLOCK_COMMON_PARAM_R 保留全局监听）
     ipc.removeAllListeners?.('BLOCK_COMMON_PARAM_W')
@@ -678,6 +678,7 @@ const pClusterCount4    = useParamRef('ClusterCount4')
 const pClusterCount5    = useParamRef('ClusterCount5')
 const pClusterCount6    = useParamRef('ClusterCount6')
 
+
 function findOption(options, value) {
   return (options || []).find(o => o.value === value) || { label: String(value), value }
 }
@@ -736,6 +737,7 @@ function optionsForLabel(label){
   if (conf.options && Array.isArray(conf.options)) return conf.options
   return []
 }
+
 
 // 翻译下拉框选项函数 - 直接翻译，避免循环依赖
 function getTranslatedDropdownOptions(parameterLabel) {

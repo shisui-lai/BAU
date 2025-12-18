@@ -32,25 +32,12 @@ const userMenuItems = computed(() => [
 
 // 统一的菜单项结构，包含可折叠和不可折叠的项，并添加角色控制
 const rawMenuItems = ref([
-  // 可折叠的分组项
-  {
-    labelKey: 'menu.operationInfo',
-    icon: 'pi pi-chart-line',
-    expanded: false,
-    type: 'group',
-    roles: ['admin', 'guest'], // 管理员和访客都能看
-    items: [
-      { labelKey: 'menu.batteryInfo', icon: 'pi pi-home', route: '/', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.clusterVersion', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.didoStatus', icon: 'pi pi-table', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
-    ]
-  },
   {
     labelKey: 'menu.blockSummary',
     icon: 'pi pi-server',
-    expanded: false,
+    expanded: true,
     type: 'group',
-    roles: ['admin', 'guest'], // 部分子项所有人可见
+    roles: ['admin', 'guest'],
     items: [
       { labelKey: 'menu.blockInfo', icon: 'pi pi-chart-bar', route: '/Block/BlockInfo', roles: ['admin', 'guest'] },
       { labelKey: 'menu.blockAlarmThreshold', icon: 'pi pi-bell', route: '/Block/BlockAlarmThreshold', roles: ['admin'] },
@@ -58,6 +45,18 @@ const rawMenuItems = ref([
       { labelKey: 'menu.blockRemoteCommand', icon: 'pi pi-send', route: '/Block/BlockRemoteCommand', roles: ['admin'] },
       { labelKey: 'menu.blockIOStatus', icon: 'pi pi-server', route: '/Block/BlockIO', roles: ['admin', 'guest'] },
       { labelKey: 'menu.blockVersion', icon: 'pi pi-info-circle', route: '/Block/BlockVersion', roles: ['admin', 'guest'] }
+    ]
+  },
+  {
+    labelKey: 'menu.operationInfo',
+    icon: 'pi pi-chart-line',
+    expanded: false,
+    type: 'group',
+    roles: ['admin', 'guest'],
+    items: [
+      { labelKey: 'menu.batteryInfo', icon: 'pi pi-home', route: '/Cluster/cellData', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.clusterVersion', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.didoStatus', icon: 'pi pi-table', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
     ]
   },
   {

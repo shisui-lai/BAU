@@ -1,7 +1,11 @@
 // src/renderer/src/composables/useAlarmThreshold.js
 import { markRaw } from 'vue'
 import { result } from 'lodash-es'
-import { CLUSTER_DNS_PARAM_R, PACK_DNS_PARAM_R, CELL_DNS_PARAM_R } from '../../../../../../main/table.js'
+import {
+  CLUSTER_DNS_PARAM_R,
+  PACK_DNS_PARAM_R,
+  CELL_DNS_PARAM_R
+} from '../../../../../../main/table.js'
 import {
   serializeParameterData,
   createDefaultParameterData,
@@ -12,15 +16,15 @@ import {
 // 定义每个Topic对应的参数表
 // 性能优化：使用markRaw避免Vue深度响应式跟踪
 const TOPIC_CONFIG = markRaw({
-  'cluster_dns_param': {
+  cluster_dns_param: {
     paramFields: markRaw(CLUSTER_DNS_PARAM_R),
     name: '簇端报警参数'
   },
-  'pack_dns_param': {
+  pack_dns_param: {
     paramFields: markRaw(PACK_DNS_PARAM_R),
     name: '包端报警参数'
   },
-  'cell_dns_param': {
+  cell_dns_param: {
     paramFields: markRaw(CELL_DNS_PARAM_R),
     name: '单体报警参数'
   }
@@ -29,17 +33,17 @@ const TOPIC_CONFIG = markRaw({
 // 根据参数分类确定所属的Topic
 function getTopicByClassName(className) {
   // 检查簇端参数
-  const isClusterParam = CLUSTER_DNS_PARAM_R.some(param => param.class === className)
+  const isClusterParam = CLUSTER_DNS_PARAM_R.some((param) => param.class === className)
   if (isClusterParam) return 'cluster_dns_param'
-  
+
   // 检查包端参数
-  const isPackParam = PACK_DNS_PARAM_R.some(param => param.class === className)
+  const isPackParam = PACK_DNS_PARAM_R.some((param) => param.class === className)
   if (isPackParam) return 'pack_dns_param'
-  
+
   // 检查单体参数
-  const isCellParam = CELL_DNS_PARAM_R.some(param => param.class === className)
+  const isCellParam = CELL_DNS_PARAM_R.some((param) => param.class === className)
   if (isCellParam) return 'cell_dns_param'
-  
+
   // 默认返回簇端
   console.warn(`[useAlarmThreshold] 未找到分类 ${className} 对应的Topic，默认使用cluster_dns_param`)
   return 'cluster_dns_param'
@@ -49,20 +53,25 @@ function getTopicByClassName(className) {
 function calculateClassOffsetInTopic(className, topicType) {
   const config = TOPIC_CONFIG[topicType]
   if (!config) return { byteOffset: 0, byteLength: 0 }
-  
+
   const paramFields = config.paramFields
-  const classParams = paramFields.filter(p => p.class === className)
+  const classParams = paramFields.filter((p) => p.class === className)
   if (classParams.length === 0) return { byteOffset: 0, byteLength: 0 }
-  
+
   let totalOffset = 0
   let classStart = -1
   let classEnd = -1
-  
+
   // 遍历该Topic的所有参数计算字节偏移
   for (const param of paramFields) {
     const typeByteMap = {
-      'u8': 1, 's8': 1, 'u16': 2, 's16': 2,
-      'u32': 4, 's32': 4, 'f32': 4
+      u8: 1,
+      s8: 1,
+      u16: 2,
+      s16: 2,
+      u32: 4,
+      s32: 4,
+      f32: 4
     }
 
     // 处理skip类型
@@ -89,10 +98,10 @@ function calculateClassOffsetInTopic(className, topicType) {
 
     totalOffset += paramByteSize
   }
-  
+
   return {
     byteOffset: classStart === -1 ? 0 : classStart,
-    byteLength: classStart === -1 ? 0 : (classEnd - classStart)
+    byteLength: classStart === -1 ? 0 : classEnd - classStart
   }
 }
 
@@ -105,11 +114,14 @@ export function useAlarmThreshold() {
     ...markRaw(CELL_DNS_PARAM_R)
   ])
 
-  const createDefaultAlarmThresholdData = () => createDefaultParameterData(ALL_ALARM_PARAM_R, '[useAlarmThreshold]')
+  const createDefaultAlarmThresholdData = () =>
+    createDefaultParameterData(ALL_ALARM_PARAM_R, '[useAlarmThreshold]')
 
-  const parseAlarmThresholdReadResponse = (mqttMessage) => parseParameterReadResponse(mqttMessage, '[useAlarmThreshold]', '告警阈值')
-  console.log('test',parseAlarmThresholdReadResponse)
-  const parseAlarmThresholdWriteResponse = (mqttMessage) => parseParameterWriteResponse(mqttMessage, '[useAlarmThreshold]', '告警阈值')
+  const parseAlarmThresholdReadResponse = (mqttMessage) =>
+    parseParameterReadResponse(mqttMessage, '[useAlarmThreshold]', '告警阈值')
+  console.log('test', parseAlarmThresholdReadResponse)
+  const parseAlarmThresholdWriteResponse = (mqttMessage) =>
+    parseParameterWriteResponse(mqttMessage, '[useAlarmThreshold]', '告警阈值')
 
   /**
    * 序列化告警阈值数据 - 按Topic分别处理
@@ -119,56 +131,59 @@ export function useAlarmThreshold() {
    * @param {number} registerCount - 寄存器数量
    * @returns {string|null} 序列化后的十六进制字符串或null（失败时）
    */
-  const serializeAlarmThresholdData = (parameterDataFrame, currentClassName, startByteOffset = 0, registerCount = 0) => {
+  const serializeAlarmThresholdData = (
+    parameterDataFrame,
+    currentClassName,
+    startByteOffset = 0,
+    registerCount = 0
+  ) => {
     if (!currentClassName) {
       console.error('[useAlarmThreshold] 缺少currentClassName参数')
       return null
     }
-    
+
     // 1. 确定当前分类属于哪个Topic
     const topicType = getTopicByClassName(currentClassName)
     const config = TOPIC_CONFIG[topicType]
-    
+
     console.log(`[useAlarmThreshold] 分类"${currentClassName}" 属于Topic: ${topicType}`)
-    
+
     // 2. 使用该Topic对应的参数表进行序列化
     return serializeParameterData(
       parameterDataFrame,
-      config.paramFields,           // 使用特定Topic的参数表
-      startByteOffset,              // 在该Topic内的字节偏移
-      registerCount,                // 寄存器数量
+      config.paramFields, // 使用特定Topic的参数表
+      startByteOffset, // 在该Topic内的字节偏移
+      registerCount, // 寄存器数量
       '[useAlarmThreshold]',
       `告警阈值-${config.name}`
     )
   }
 
-  
-
-// 获取分类信息（包含Topic和偏移信息与多语言键）
+  // 获取分类信息（包含Topic和偏移信息与多语言键）
   const getClassInfo = (className) => {
     const topicType = getTopicByClassName(className)
     const offsetInfo = calculateClassOffsetInTopic(className, topicType)
-  // 分类名称到多语言key映射，与BaseParam方式保持一致
-  const nameKeyMap = {
-    '簇端电压': 'alarmThreshold.parameterClasses.clusterVoltage',
-    '簇端温度': 'alarmThreshold.parameterClasses.clusterTemperature',
-    '电流': 'alarmThreshold.parameterClasses.current',
-    '绝缘电阻': 'alarmThreshold.parameterClasses.insulation',
-    'BMU电压': 'alarmThreshold.parameterClasses.bmuVoltage',
-    'BMU温度': 'alarmThreshold.parameterClasses.bmuTemperature',
-    '接插件温度': 'alarmThreshold.parameterClasses.connectorTemperature',
-    '单体电压': 'alarmThreshold.parameterClasses.cellVoltage',
-    '单体温度': 'alarmThreshold.parameterClasses.cellTemperature',
-    '单体SOC': 'alarmThreshold.parameterClasses.cellSOC',
-    '单体SOH': 'alarmThreshold.parameterClasses.cellSOH'
-  }
-    
+    // 分类名称到多语言key映射，与BaseParam方式保持一致
+    const nameKeyMap = {
+      簇端电压: 'alarmThreshold.parameterClasses.clusterVoltage',
+      簇端温度: 'alarmThreshold.parameterClasses.clusterTemperature',
+      电流: 'alarmThreshold.parameterClasses.current',
+      绝缘电阻: 'alarmThreshold.parameterClasses.insulation',
+      BMU电压: 'alarmThreshold.parameterClasses.bmuVoltage',
+      BMU温度: 'alarmThreshold.parameterClasses.bmuTemperature',
+      接插件温度: 'alarmThreshold.parameterClasses.connectorTemperature',
+      单体电压: 'alarmThreshold.parameterClasses.cellVoltage',
+      单体温度: 'alarmThreshold.parameterClasses.cellTemperature',
+      单体SOC: 'alarmThreshold.parameterClasses.cellSOC',
+      单体SOH: 'alarmThreshold.parameterClasses.cellSOH'
+    }
+
     return {
       topicType,
       dataType: topicType,
       byteOffset: offsetInfo.byteOffset,
       byteLength: offsetInfo.byteLength,
-    nameKey: nameKeyMap[className] || '',
+      nameKey: nameKeyMap[className] || '',
       ...offsetInfo
     }
   }
@@ -183,5 +198,4 @@ export function useAlarmThreshold() {
     TOPIC_CONFIG,
     ALL_ALARM_PARAM_R
   }
-} 
-
+}

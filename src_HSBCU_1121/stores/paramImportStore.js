@@ -52,7 +52,10 @@ export const useModuleDataStore = defineStore('moduleData', {
             skipCount++
           } else {
             // 特殊处理0x005a寄存器的三个参数
-            if (it.address === '0x005a' && ['簇压模式', 'BMU动力接插件温度', 'BMU温度数据类型'].includes(参数名)) {
+            if (
+              it.address === '0x005a' &&
+              ['簇压模式', 'BMU动力接插件温度', 'BMU温度数据类型'].includes(参数名)
+            ) {
               // 对于0x005a的特殊参数，直接使用导入的值，不需要位操作
               // 因为这些参数在导出时已经是分离的值了
               it.importedValue = isNaN(+值) ? 值 : +值

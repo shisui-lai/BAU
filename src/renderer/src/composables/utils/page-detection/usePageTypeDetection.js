@@ -12,21 +12,21 @@ export function usePageTypeDetection() {
   const route = useRoute()
   const clusterStore = useClusterStore()
   const blockStore = useBlockStore()
-  
+
   // 页面类型映射表
   const pageTypeMap = {
     // ================== 簇级只读页面 (clusterread-type) ==================
     // 只显示查看簇选择器，不显示下发多选框（只读数据查看）
-    '/': 'clusterread',                    // 电池信息页面（首页）
-    '/index': 'clusterread',               // 电池信息页面（备用路由）
-    '/Cluster/version': 'clusterread',         // 版本信息页面
-    '/cluster/version': 'clusterread',         // 版本信息页面（备用路由）
-    '/Cluster/Brokenwire': 'clusterread',      // 掉线信息页面
-    '/cluster/brokenwire': 'clusterread',      // 掉线信息页面（备用路由）
-    '/Cluster/Fault': 'clusterread',           // 故障页面
-    '/cluster/fault': 'clusterread',           // 故障页面（备用路由）
-    '/FaultOverview': 'standalone',             // 故障总览页面（独立页面：不显示顶栏选择器，在页面内提供选择器）
-    '/fault-overview': 'standalone',            // 故障总览页面（备用路由）
+    '/': 'clusterread', // 电池信息页面（首页）
+    '/index': 'clusterread', // 电池信息页面（备用路由）
+    '/Cluster/version': 'clusterread', // 版本信息页面
+    '/cluster/version': 'clusterread', // 版本信息页面（备用路由）
+    '/Cluster/Brokenwire': 'clusterread', // 掉线信息页面
+    '/cluster/brokenwire': 'clusterread', // 掉线信息页面（备用路由）
+    '/Cluster/Fault': 'clusterread', // 故障页面
+    '/cluster/fault': 'clusterread', // 故障页面（备用路由）
+    '/FaultOverview': 'standalone', // 故障总览页面（独立页面：不显示顶栏选择器，在页面内提供选择器）
+    '/fault-overview': 'standalone', // 故障总览页面（备用路由）
     // 设备管理页面（独立页面：固定topic，无选择器）
     '/Block/DeviceManagement': 'standalone',
     // BAU地址探测页面（独立页面：无选择器）
@@ -34,47 +34,46 @@ export function usePageTypeDetection() {
     '/block/device-management': 'standalone',
     // PCS外设页面（堆级只读页面：只显示堆选择器）
     '/Peripheral/BlockPcs': 'blockread',
-    
+
     // ================== 簇级遥调、遥控页面 (cluster-type) ==================
     // 需要显示簇选择器和下发多选框的页面（可读写）
-    '/Cluster/BaseParam': 'cluster',           // 系统基础参数（配置参数）
-    '/cluster/base-param': 'cluster',          // 系统基础参数（备用路由）
-    '/Cluster/AlarmThreshold': 'cluster',      // 告警阈值页面
-    '/cluster/alarm-threshold': 'cluster',     // 告警阈值页面（备用路由）
-    '/Cluster/SOXParam': 'cluster',            // SOX参数页面
-    '/cluster/sox-param': 'cluster',           // SOX参数页面（备用路由）
+    '/Cluster/BaseParam': 'cluster', // 系统基础参数（配置参数）
+    '/cluster/base-param': 'cluster', // 系统基础参数（备用路由）
+    '/Cluster/AlarmThreshold': 'cluster', // 告警阈值页面
+    '/cluster/alarm-threshold': 'cluster', // 告警阈值页面（备用路由）
+    '/Cluster/SOXParam': 'cluster', // SOX参数页面
+    '/cluster/sox-param': 'cluster', // SOX参数页面（备用路由）
 
-    '/Cluster/Order': 'cluster',               // 指令下发页面
-    '/cluster/order': 'cluster',               // 指令下发页面（备用路由）
-    
+    '/Cluster/Order': 'cluster', // 指令下发页面
+    '/cluster/order': 'cluster', // 指令下发页面（备用路由）
+
     // ================== 堆级只读页面 (blockread-type) ==================
     // 只显示查看堆选择器，不显示下发多选框（只读数据查看）
-    '/Block/BlockSummary': 'blockread',             // 堆汇总信息页面
-    '/block/blockSummary': 'blockread',             // 堆汇总信息页面（备用路由）
-    '/Block/BlockInfo': 'blockread',                // 堆信息页面（汇总+系统概要）
-    '/block/blockInfo': 'blockread',                // 堆信息页面（备用路由）
-    '/Block/BlockVersion': 'standalone',             // 堆版本信息页面（独立页面，无选择器）
-    '/block/blockVersion': 'standalone',             // 堆版本信息页面（备用路由）
-    '/Block/BlockIO': 'blockread',                   // 堆IO状态页面（堆级只读页面）
-    '/block/blockIO': 'blockread',                   // 堆IO状态页面（备用路由）
-    '/Block/BlockSysAbstract': 'blockread',         // 堆系统概要页面
-    '/block/blockSysAbstract': 'blockread',         // 堆系统概要页面（备用路由）
-    '/Bau/address-adaptive': 'blockread',          // 地址自适应页面
+    '/Block/BlockSummary': 'blockread', // 堆汇总信息页面
+    '/block/blockSummary': 'blockread', // 堆汇总信息页面（备用路由）
+    '/Block/BlockInfo': 'blockread', // 堆信息页面（汇总+系统概要）
+    '/block/blockInfo': 'blockread', // 堆信息页面（备用路由）
+    '/Block/BlockVersion': 'standalone', // 堆版本信息页面（独立页面，无选择器）
+    '/block/blockVersion': 'standalone', // 堆版本信息页面（备用路由）
+    '/Block/BlockIO': 'blockread', // 堆IO状态页面（堆级只读页面）
+    '/block/blockIO': 'blockread', // 堆IO状态页面（备用路由）
+    '/Block/BlockSysAbstract': 'blockread', // 堆系统概要页面
+    '/block/blockSysAbstract': 'blockread', // 堆系统概要页面（备用路由）
+    '/Bau/address-adaptive': 'blockread', // 地址自适应页面
     '/Bau/upgrade': 'blockread',
-    '/Bau/eventRecord/event': 'blockread',        // 系统时间与记录页面（堆级只读页面）
-    
+    '/Bau/eventRecord/event': 'blockread', // 系统时间与记录页面（堆级只读页面）
+
     // ================== 堆级遥调、遥控页面 (block-type) ==================
     // 需要显示堆选择器和下发多选框的页面（可读写）
-    '/Block/BaseParam': 'block',               // 堆基础参数页面
-    '/block/base-param': 'block',              // 堆基础参数页面（备用路由）
-    '/Block/BlockAlarmThreshold': 'block',     // 堆告警阈值页面
-    '/block/block-alarm-threshold': 'block',    // 堆告警阈值页面（备用路由）
-    '/Block/BlockConfigParam': 'block',        // 堆配置参数页面
-    '/Block/BlockRemoteCommand': 'block',      // 堆遥控页面
-    '/block/block-remote-command': 'block',    // 堆遥控页面（备用路由）
-
+    '/Block/BaseParam': 'block', // 堆基础参数页面
+    '/block/base-param': 'block', // 堆基础参数页面（备用路由）
+    '/Block/BlockAlarmThreshold': 'block', // 堆告警阈值页面
+    '/block/block-alarm-threshold': 'block', // 堆告警阈值页面（备用路由）
+    '/Block/BlockConfigParam': 'block', // 堆配置参数页面
+    '/Block/BlockRemoteCommand': 'block', // 堆遥控页面
+    '/block/block-remote-command': 'block' // 堆遥控页面（备用路由）
   }
-  
+
   /**
    * 根据路由路径获取页面类型
    * @param {string} path - 路由路径
@@ -85,19 +84,19 @@ export function usePageTypeDetection() {
     if (pageTypeMap[path]) {
       return pageTypeMap[path]
     }
-    
+
     // 模糊匹配（处理动态路由参数）
     for (const [routePath, pageType] of Object.entries(pageTypeMap)) {
       if (path.startsWith(routePath)) {
         return pageType
       }
     }
-    
+
     // 默认为簇级只读页面
     console.warn(`[PageTypeDetection] 未找到路由 ${path} 的页面类型配置，使用默认类型: clusterread`)
     return 'clusterread'
   }
-  
+
   /**
    * 设置页面类型
    * @param {string} pageType - 页面类型
@@ -118,7 +117,7 @@ export function usePageTypeDetection() {
       blockStore.setCurrentPageType('standalone')
     }
   }
-  
+
   /**
    * 根据当前路由更新页面类型
    */
@@ -127,7 +126,7 @@ export function usePageTypeDetection() {
     const pageType = getPageTypeFromPath(currentPath)
     setPageType(pageType)
   }
-  
+
   /**
    * 添加新的页面类型映射
    * @param {string} path - 路由路径
@@ -136,13 +135,13 @@ export function usePageTypeDetection() {
   function addPageTypeMapping(path, pageType) {
     pageTypeMap[path] = pageType
     // console.log(`[PageTypeDetection] 添加页面类型映射: ${path} -> ${pageType}`)
-    
+
     // 如果是当前路由，立即更新
     if (route.path === path) {
       setPageType(pageType)
     }
   }
-  
+
   /**
    * 获取当前页面类型
    * @returns {string} 当前页面类型
@@ -154,7 +153,7 @@ export function usePageTypeDetection() {
     }
     return clusterStore.currentPageType
   }
-  
+
   /**
    * 检查当前页面是否为指定类型
    * @param {string} pageType - 要检查的页面类型
@@ -163,7 +162,7 @@ export function usePageTypeDetection() {
   function isCurrentPageType(pageType) {
     return getCurrentPageType() === pageType
   }
-  
+
   /**
    * 获取所有页面类型映射
    * @returns {Object} 页面类型映射对象
@@ -171,7 +170,7 @@ export function usePageTypeDetection() {
   function getAllPageTypeMappings() {
     return { ...pageTypeMap }
   }
-  
+
   // 监听路由变化，自动更新页面类型
   watch(
     () => route.path,
@@ -180,23 +179,23 @@ export function usePageTypeDetection() {
     },
     { immediate: false }
   )
-  
+
   // 组件挂载时初始化页面类型
   onMounted(() => {
     updatePageType()
   })
-  
+
   return {
     // 核心方法
     updatePageType,
     setPageType,
     getCurrentPageType,
     isCurrentPageType,
-    
+
     // 配置方法
     addPageTypeMapping,
     getAllPageTypeMappings,
-    
+
     // 工具方法
     getPageTypeFromPath
   }
@@ -206,10 +205,10 @@ export function usePageTypeDetection() {
  * 页面类型常量
  */
 export const PAGE_TYPES = {
-  CLUSTER: 'cluster',          // 簇级遥调页面（可读写）
-  CLUSTERREAD: 'clusterread',  // 簇级只读页面（只读数据查看）
-  BLOCK: 'block',              // 堆级遥调页面（可读写）
-  BLOCKREAD: 'blockread'       // 堆级只读页面（只读数据查看）
+  CLUSTER: 'cluster', // 簇级遥调页面（可读写）
+  CLUSTERREAD: 'clusterread', // 簇级只读页面（只读数据查看）
+  BLOCK: 'block', // 堆级遥调页面（可读写）
+  BLOCKREAD: 'blockread' // 堆级只读页面（只读数据查看）
 }
 
 /**

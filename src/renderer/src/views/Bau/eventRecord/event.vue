@@ -209,11 +209,30 @@
       </div>
     </div>
     <div class="card p-4 mt-1">
-      <h5>最近100条事件</h5>
+      <div class="flex align-items-center justify-content-between mb-2">
+        <h5>最近事件（最多1000条）</h5>
+        <Tag :value="`总数：${recentRowsDesc.length} 条`" severity="info" />
+      </div>
       <div class="event-data-table-wrapper">
-        <DataTable :value="recentStore.list" showGridlines scrollable scrollHeight="640px">
-          <Column field="ID" header="序号" />
-          <Column field="Timestamp" header="时间戳" />
+        <DataTable
+          :value="recentRowsDesc"
+          showGridlines
+          paginator
+          :key="dtKey"
+          :rows="dtRows"
+          :first="dtFirst"
+          @page="(e) => { dtFirst.value = e.first; dtRows.value = e.rows }"
+        >
+          <Column header="序号">
+            <template #body="{ data }">
+              {{ recentRowsDesc.indexOf(data) + 1 }}
+            </template>
+          </Column>
+          <Column header="时间戳">
+            <template #body="{ data }">
+              <span class="nowrap">{{ data.Timestamp }}</span>
+            </template>
+          </Column>
           <Column field="EventType" header="事件类型" />
           <Column field="Param1" header="参数1" />
           <Column field="Param2" header="参数2" />
@@ -249,6 +268,7 @@ import Checkbox from 'primevue/checkbox'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import ProgressBar from 'primevue/progressbar'
+import Tag from 'primevue/tag'
 
 const { t, te, locale } = useI18n()
 const toast = useToast()
@@ -1043,6 +1063,7 @@ window.electron.ipcRenderer.on('export-completed', (_, data) => {
 window.electron.ipcRenderer.on('readEventRecentFinal', (_, payload) => {
   const { blockId, rows } = payload || {}
   recentStore.setRows(blockId, Array.isArray(rows) ? rows : [])
+  dtFirst.value = 0
 })
 
 // 监听导出取消
@@ -1239,6 +1260,27 @@ onBeforeUnmount(() => {
   window.electron.ipcRenderer.removeAllListeners('update-readEventProgress')
   window.electron.ipcRenderer.removeAllListeners('readEventRecentFinal')
 })
+
+// 最近事件按“新→旧”排序并分页显示
+const dtRows = ref(100)
+const dtFirst = ref(0)
+const dtKey = ref(0)
+const recentRowsDesc = computed(() => {
+  const rows = Array.isArray(recentStore.list) ? recentStore.list : []
+  // 按 ID 倒序排列（ID 大的在前，即最新的在前）
+  // 这里的 ID 是由后端生成的序号，对应设备记录的物理顺序
+  return rows.slice().sort((a, b) => (b.ID || 0) - (a.ID || 0))
+})
+watch(
+  () => recentRowsDesc.value.length,
+  (len) => {
+    const lastFirst = len > 0 ? Math.floor((len - 1) / dtRows.value) * dtRows.value : 0
+    if (dtFirst.value > lastFirst) {
+      dtFirst.value = 0
+    }
+    dtKey.value++
+  }
+)
 </script>
 
 <style scoped>
@@ -1434,5 +1476,9 @@ onBeforeUnmount(() => {
 :deep(.p-datatable-wrapper) {
   overflow-x: auto;
   max-width: 100%;
+}
+.nowrap {
+  white-space: nowrap;
+  word-break: keep-all;
 }
 </style>

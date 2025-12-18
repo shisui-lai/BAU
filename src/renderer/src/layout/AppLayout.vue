@@ -1,5 +1,6 @@
 <script setup>
 import { computed, watch, ref, onMounted, provide, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import AppTopbar from './AppTopbar.vue'
 import AppFooter from './AppFooter.vue'
 import AppSidebar from './AppSidebar.vue'
@@ -13,9 +14,13 @@ import { useSystemConfigStore } from '@/stores/system/systemConfigStore'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'
 
+const route = useRoute()
 const { layoutConfig, layoutState, isSidebarActive } = useLayout()
 const mqttStore = useMqttStore()
 const { t } = useI18n()
+
+// 判断是否为全屏模式（不显示顶部栏和侧边栏）
+const isFullScreen = computed(() => route.meta.fullScreen)
 
 // 【数据接收监控】初始化数据接收监控store
 // 功能：监控MQTT数据接收状态，提供5秒超时检测和智能配置读取
@@ -56,7 +61,8 @@ const containerClass = computed(() => {
       layoutState.staticMenuDesktopInactive.value && layoutConfig.menuMode.value === 'static',
     'layout-overlay-active': layoutState.overlayMenuActive.value,
     'layout-mobile-active': layoutState.staticMenuMobileActive.value,
-    'p-ripple-disabled': layoutConfig.ripple.value === false
+    'p-ripple-disabled': layoutConfig.ripple.value === false,
+    'layout-fullscreen': isFullScreen.value
   }
 })
 
@@ -319,9 +325,9 @@ defineExpose({
 <template>
   <div class="layout-wrapper" :class="containerClass">
     <!-- 移除MQTT状态传递，现在由侧边栏直接使用 -->
-    <app-topbar />
+    <app-topbar v-if="!isFullScreen" />
     
-    <div class="layout-sidebar">
+    <div class="layout-sidebar" v-if="!isFullScreen">
       <app-sidebar></app-sidebar>
     </div>
     <div class="layout-main-container">

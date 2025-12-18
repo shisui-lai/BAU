@@ -3,8 +3,8 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Dropdown from 'primevue/dropdown'
 import { parseBlockVersion, pickBlockVersion } from '@/composables/core/data-processing/block/parseBlockVersion'
-import { parseClusterSummary, pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
 import { parsePackSummary, pickPack } from '@/composables/core/data-processing/cluster/parsePackSummary'
+import { parseClusterSummary, pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
 import { useClusterStore } from '@/stores/device/clusterStore'
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 
@@ -97,11 +97,11 @@ const selectedClusterVersions = computed(() => {
 // 获取单个簇版本信息
 function getSingleClusterVersions(clusterKey, cluster) {
   // 获取BCU版本信息 - 在computed中调用pickCluster建立响应式依赖
-  const clusterData = pickCluster(clusterKey, ['版本信息'])
+  const clusterGroups = pickCluster(clusterKey, ['版本信息']) || []
   let bcuVersion = '–'
 
-  if (clusterData.length > 0) {
-    const versionGroup = clusterData[0]
+  if (clusterGroups.length > 0) {
+    const versionGroup = clusterGroups[0]
     const bcuSoftwareItem = versionGroup.element.find(item => item.label === 'BCU软件版本号')
     if (bcuSoftwareItem) {
       bcuVersion = formatVersionValue(bcuSoftwareItem.value)
@@ -143,11 +143,11 @@ function getAllClustersVersions() {
     const clusterKey = cluster.value
 
     // 获取BCU版本信息
-    const clusterData = pickCluster(clusterKey, ['版本信息'])
+    const clusterGroups = pickCluster(clusterKey, ['版本信息']) || []
     let bcuVersion = '–'
 
-    if (clusterData.length > 0) {
-      const versionGroup = clusterData[0]
+    if (clusterGroups.length > 0) {
+      const versionGroup = clusterGroups[0]
       const bcuSoftwareItem = versionGroup.element.find(item => item.label === 'BCU软件版本号')
       if (bcuSoftwareItem) {
         bcuVersion = formatVersionValue(bcuSoftwareItem.value)
@@ -195,16 +195,25 @@ const onPackSummary = (_e, msg) => {
   parsePackSummary(msg)    // BMU版本信息
 }
 
+// 本地簇概要缓存
+const localClusterSections = ref({})
+
 const onClusterSummary = (_e, msg) => {
-  parseClusterSummary(msg) // BCU版本信息
+  const key = `${msg.blockId}-${msg.clusterId}`
+  const arr = (Array.isArray(msg.data) ? msg.data : []).map(sec => ({
+    class: sec.class,
+    element: Array.isArray(sec.element) ? [...sec.element] : []
+  }))
+  localClusterSections.value = { ...localClusterSections.value, [key]: arr }
+  parseClusterSummary(msg)
 }
 
 // 生命周期管理
 onMounted(() => {
   // 清理可能存在的旧监听器
-  window.electron.ipcRenderer.removeAllListeners?.('BLOCK_VER')
-  window.electron.ipcRenderer.removeAllListeners?.('PACK_SUMMARY')
-  window.electron.ipcRenderer.removeAllListeners?.('CLUSTER_SUMMARY')
+  window.electron.ipcRenderer.removeAllListeners?.('BLOCK_VER',      handleBlockVersionMessage)
+  window.electron.ipcRenderer.removeAllListeners?.('PACK_SUMMARY',   onPackSummary)
+  window.electron.ipcRenderer.removeAllListeners?.('CLUSTER_SUMMARY', onClusterSummary)
 
   // 监听版本信息MQTT事件（实现响应式更新）
   window.electron.ipcRenderer.on('BLOCK_VER', handleBlockVersionMessage)      // BAU版本
@@ -214,9 +223,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   // 清理版本信息MQTT事件监听器
-  window.electron.ipcRenderer.removeAllListeners?.('BLOCK_VER')
-  window.electron.ipcRenderer.removeAllListeners?.('PACK_SUMMARY')
-  window.electron.ipcRenderer.removeAllListeners?.('CLUSTER_SUMMARY')
+  window.electron.ipcRenderer.removeAllListeners?.('BLOCK_VER',      handleBlockVersionMessage)
+  window.electron.ipcRenderer.removeAllListeners?.('PACK_SUMMARY',   onPackSummary)
+  window.electron.ipcRenderer.removeAllListeners?.('CLUSTER_SUMMARY', onClusterSummary)
 })
 </script>
 

@@ -12,12 +12,14 @@ import { useClusterSelect } from '@/composables/core/device-selection/useCluster
 const { clusterOptions, selectedCluster,
       ensureClusterOption, replaceClusterOptions } = useClusterSelect()
 import cluster from './version.vue' 
-import { pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
+// 移除 parseClusterSummary 依赖，改为本地缓存方式
 import { pickPack           } from '@/composables/core/data-processing/cluster/parsePackSummary'
 import { parsePackSummary }    from '@/composables/core/data-processing/cluster/parsePackSummary'
-import { parseClusterSummary }    from '@/composables/core/data-processing/cluster/parseClusterSummary'
+import { parseClusterSummary, pickCluster, clusterSummaryTick } from '@/composables/core/data-processing/cluster/parseClusterSummary'
 
 const { t, locale } = useI18n()
+
+// 诊断打印逻辑已移除
 
   function onPackSummary (_e, msg) {
     parsePackSummary(msg)
@@ -26,6 +28,8 @@ const { t, locale } = useI18n()
       updateTrigger.value++
     }
   }
+
+  // 使用集中缓存（parseClusterSummary.ts）
 
   function onClusterSummary (_e, msg) {
     parseClusterSummary(msg)
@@ -45,7 +49,6 @@ const DATA_TYPE_MAP = computed(() => ({
   BMU_TEMP:         { label: t('batteryInfo.dataTypes.bmuTemp'),     decimals: 1 },
   BMU_PLUGIN_TEMP:  { label: t('batteryInfo.dataTypes.bmuPluginTemp'),     decimals: 1 },
   BMU_SOC:          { label: t('batteryInfo.dataTypes.bmuSOC'),      decimals: 1 },    // 协议修改新增
-  BMU_PRODUCT_CODE: { label: t('batteryInfo.dataTypes.bmuProductCode'),   decimals: -1 },  // 协议修改新增
   // BMU_PLUGIN_TEMP2:  { label: '动力接插件温度2',     decimals: 1 }
   //decimals 保留小数位数，-1 表示不显示小数
 }))
@@ -289,11 +292,12 @@ onMounted(() => {
 
   // 先清理可能存在的旧监听器（防止快速切换导致的残留）
   CELL_CHANNELS.forEach(ch => {
-    window.electron.ipcRenderer.removeAllListeners(ch)
+    window.electron.ipcRenderer.removeAllListeners(ch, onCellMsg)
   })
-  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY')
-  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY')
+  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY',    onPackSummary)
+  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY', onClusterSummary)
 
+  console.log('[Renderer][cellData] registering CELL_* / PACK_SUMMARY / CLUSTER_SUMMARY listeners')
   CELL_CHANNELS.forEach(ch => {
     window.electron.ipcRenderer.on(ch, onCellMsg)
   })
@@ -342,6 +346,8 @@ onMounted(() => {
       }
     }
   }
+
+  // 诊断心跳打印已移除
 })
 
 onBeforeUnmount(() => {
@@ -357,12 +363,33 @@ onBeforeUnmount(() => {
   
   // 清理所有节流处理器，释放内存
   cleanupThrottlers()
+
+  // 诊断心跳打印已移除
 })
 
 // 页面激活时的处理（从其他页面切回）
 onActivated(() => {
   isPageActive.value = true
   console.log('[页面激活] 页面已激活，使用内存缓存防闪烁')
+
+  // 由于其他页面可能误调用了 removeAllListeners 导致本页监听被清除，激活时进行一次安全重绑
+  try {
+    // 仅移除本页回调，避免影响其他页面
+    window.electron.ipcRenderer.removeListener('PACK_SUMMARY',    onPackSummary)
+    window.electron.ipcRenderer.removeListener('CLUSTER_SUMMARY', onClusterSummary)
+  } catch {}
+  try {
+    CELL_CHANNELS.forEach(ch => {
+      window.electron.ipcRenderer.removeListener(ch, onCellMsg)
+    })
+  } catch {}
+
+  // 重新注册监听器
+  CELL_CHANNELS.forEach(ch => {
+    window.electron.ipcRenderer.on(ch, onCellMsg)
+  })
+  window.electron.ipcRenderer.on('PACK_SUMMARY',    onPackSummary)
+  window.electron.ipcRenderer.on('CLUSTER_SUMMARY', onClusterSummary)
 })
 
 // 页面停用时的处理（切换到其他页面）
@@ -670,8 +697,14 @@ watch(activeView, (newView, oldView) => {
   const NEED = ['系统信息', '温度信息', '电池信息']
 
   // ①　原始提取（如果别处要用）
-  const filteredClusterSections = computed(() =>
-    pickCluster(selectedCluster.value, NEED))
+  const filteredClusterSections = computed(() => {
+    // 注入集中解析层tick以增强依赖；使用统一的 pick 接口
+    const _tick = clusterSummaryTick.value
+    const key = selectedCluster.value
+    return key ? (pickCluster(key, NEED) || []) : []
+  })
+
+  // 诊断相关的界面层数据监听已移除
 
   // 系统状态映射
   const SYSTEM_STATUS_MAP = computed(() => ({
@@ -783,60 +816,59 @@ watch(activeView, (newView, oldView) => {
   }
 
   const systemStates = computed(() => {
-    const blocks = pickCluster(selectedCluster.value, ['系统信息'])
-    const ele = blocks.find(b => b.class === '系统信息')?.element || []
-    const targetLabels = [
-      '静止','充电','放电','禁充','禁放','禁充禁放','告警','故障',
-      '充电功率锁存','放电功率锁存',
-      '充电指令','充电指令完成','放电指令','放电指令完成',
-      '脱离母线指令','脱离母线指令完成',
-      '运维模式','正常模式/测试模式','初始化'
-    ]
+    const _tick = clusterSummaryTick.value
+    const key = selectedCluster.value
+    const secs = key ? (pickCluster(key, ['系统信息']) || []) : []
+    const ele = secs.find(b => b.class === '系统信息')?.element || []
+
+    const baseMap = {
+      '静止': 'idle',
+      '充电': 'charge',
+      '放电': 'discharge',
+      '禁充': 'forbidCharge',
+      '禁放': 'forbidDischarge',
+      '禁充禁放': 'forbidChargeDischarge',
+      '告警': 'alarm',
+      '故障': 'fault',
+      '充电功率锁存': 'chgPowerLatch',
+      '放电功率锁存': 'dischPowerLatch',
+      '充电指令': 'chgCmd',
+      '充电指令完成': 'chgCmdDone',
+      '放电指令': 'dischCmd',
+      '放电指令完成': 'dischCmdDone',
+      '脱离母线指令': 'busOffCmd',
+      '脱离母线指令完成': 'busOffCmdDone'
+    }
 
     const result = []
-    ele.filter(it => targetLabels.includes(it.label)).forEach(it => {
-      if (it.label === '运维模式' && it.value && typeof it.value === 'object') {
-        const isMaint = it.value.raw === 1
-        result.push({ label: '运维模式', active: isMaint, text: locale.value === 'zh' ? '运维模式' : t('systemTotalStatus.maintMode') })
-        result.push({ label: '非运维模式', active: !isMaint, text: locale.value === 'zh' ? '非运维模式' : t('systemTotalStatus.nonMaintMode') })
-        return
-      }
-      if (it.label === '正常模式/测试模式' && it.value && typeof it.value === 'object') {
-        const isTest = it.value.raw === 1
-        result.push({ label: '正常模式', active: !isTest, text: locale.value === 'zh' ? '正常模式' : t('systemTotalStatus.testModeNormal') })
-        result.push({ label: '测试模式', active: isTest, text: locale.value === 'zh' ? '测试模式' : t('systemTotalStatus.testModeTest') })
-        return
-      }
-      if (it.label === '初始化' && it.value && typeof it.value === 'object') {
-        const isInit = it.value.raw === 1
-        result.push({ label: '初始化完成', active: !isInit, text: locale.value === 'zh' ? '初始化完成' : t('systemTotalStatus.initCompleted') })
-        result.push({ label: '初始化中',   active: isInit,  text: locale.value === 'zh' ? '初始化中' : t('systemTotalStatus.initInProgress') })
-        return
-      }
 
-      const active = Boolean(it.value)
-      const map = {
-        '静止': 'idle',
-        '充电': 'charge',
-        '放电': 'discharge',
-        '禁充': 'forbidCharge',
-        '禁放': 'forbidDischarge',
-        '禁充禁放': 'forbidChargeDischarge',
-        '告警': 'alarm',
-        '故障': 'fault',
-        '充电功率锁存': 'chgPowerLatch',
-        '放电功率锁存': 'dischPowerLatch',
-        '充电指令': 'chgCmd',
-        '充电指令完成': 'chgCmdDone',
-        '放电指令': 'dischCmd',
-        '放电指令完成': 'dischCmdDone',
-        '脱离母线指令': 'busOffCmd',
-        '脱离母线指令完成': 'busOffCmdDone'
-      }
-      const key = map[it.label]
-      const text = key ? (locale.value === 'zh' ? it.label : t(`systemTotalStatus.${key}`)) : it.label
-      result.push({ label: it.label, active, text })
+    Object.keys(baseMap).forEach(lbl => {
+      const found = ele.find(it => it.label === lbl)
+      const v = found?.value
+      const raw = (v && typeof v === 'object' && 'raw' in v) ? Number(v.raw) || 0 : Number(v) || 0
+      const active = raw === 1
+      const key2 = baseMap[lbl]
+      const text = key2 ? (locale.value === 'zh' ? lbl : t(`systemTotalStatus.${key2}`)) : lbl
+      result.push({ label: lbl, active, text })
     })
+
+    const maint = ele.find(it => it.label === '运维模式')
+    const maintRaw = (maint?.value && typeof maint.value === 'object' && 'raw' in maint.value) ? Number(maint.value.raw) || 0 : Number(maint?.value) || 0
+    const isMaint = maintRaw === 1
+    result.push({ label: '运维模式', active: isMaint, text: locale.value === 'zh' ? '运维模式' : t('systemTotalStatus.maintMode') })
+    result.push({ label: '非运维模式', active: !isMaint, text: locale.value === 'zh' ? '非运维模式' : t('systemTotalStatus.nonMaintMode') })
+
+    const testMode = ele.find(it => it.label === '正常模式/测试模式')
+    const testRaw = (testMode?.value && typeof testMode.value === 'object' && 'raw' in testMode.value) ? Number(testMode.value.raw) || 0 : Number(testMode?.value) || 0
+    const isTest = testRaw === 1
+    result.push({ label: '正常模式', active: !isTest, text: locale.value === 'zh' ? '正常模式' : t('systemTotalStatus.testModeNormal') })
+    result.push({ label: '测试模式', active: isTest, text: locale.value === 'zh' ? '测试模式' : t('systemTotalStatus.testModeTest') })
+
+    const initMode = ele.find(it => it.label === '初始化')
+    const initRaw = (initMode?.value && typeof initMode.value === 'object' && 'raw' in initMode.value) ? Number(initMode.value.raw) || 0 : Number(initMode?.value) || 0
+    const isInit = initRaw === 1
+    result.push({ label: '初始化完成', active: !isInit, text: locale.value === 'zh' ? '初始化完成' : t('systemTotalStatus.initCompleted') })
+    result.push({ label: '初始化中',   active: isInit,  text: locale.value === 'zh' ? '初始化中' : t('systemTotalStatus.initInProgress') })
 
     return result
   })
@@ -889,16 +921,25 @@ watch(activeView, (newView, oldView) => {
         return { label: fieldLabel, value: '–' }
       }
       
-      // 对系统状态和故障等级进行文本映射
+      // 对系统状态和故障等级进行文本映射，并为故障等级设置颜色
       let displayValue = found.value
-      if (fieldLabel === t('batteryInfo.clusterInfo.systemStatus') && SYSTEM_STATUS_MAP.value[found.value] !== undefined) {
-        displayValue = SYSTEM_STATUS_MAP.value[found.value]
-      } else if (fieldLabel === t('batteryInfo.clusterInfo.faultLevel') && FAULT_LEVEL_MAP.value[found.value] !== undefined) {
-        displayValue = FAULT_LEVEL_MAP.value[found.value]
+      let valueClass = ''
+      const rawVal = (found.value && typeof found.value === 'object' && 'raw' in found.value)
+        ? Number(found.value.raw)
+        : Number(found.value)
+      if (fieldLabel === t('batteryInfo.clusterInfo.systemStatus') && SYSTEM_STATUS_MAP.value[rawVal] !== undefined) {
+        displayValue = SYSTEM_STATUS_MAP.value[rawVal]
+      } else if (fieldLabel === t('batteryInfo.clusterInfo.faultLevel') && FAULT_LEVEL_MAP.value[rawVal] !== undefined) {
+        const rawLevel = rawVal
+        displayValue = FAULT_LEVEL_MAP.value[rawLevel]
+        if (rawLevel === 0) valueClass = 'text-green-500'
+        else if (rawLevel === 3) valueClass = 'text-yellow-500'
+        else if (rawLevel === 2) valueClass = 'text-orange-500'
+        else if (rawLevel === 1) valueClass = 'text-red-500'
       }
       
       // 返回纯标签名（不带单位），单位会在模板中通过UNIT_MAP添加
-      return { label: fieldLabel, value: displayValue }
+      return { label: fieldLabel, value: displayValue, valueClass }
     })
   });
 
@@ -922,7 +963,6 @@ watch(activeView, (newView, oldView) => {
     if (activeView.value === 'BMU_TEMP') return ['BMU电路板温度'];
     if (activeView.value === 'BMU_PLUGIN_TEMP') return ['动力接插件温度1', '动力接插件温度2'];
     if (activeView.value === 'BMU_SOC') return ['BMU SOC'];
-    if (activeView.value === 'BMU_PRODUCT_CODE') return ['BMU产品编码'];
     // if (activeView.value === 'BMU_PLUGIN_TEMP2') return ['动力接插件温度2'];
     return [];
   });
@@ -950,8 +990,6 @@ watch(activeView, (newView, oldView) => {
       const bmuNumber = bmuMatch[1]
       if (dataType === 'BMU_SOC') {
         return `BMU${bmuNumber} ${t('batteryInfo.bmuData.bmuSOC')}`
-      } else if (dataType === 'BMU_PRODUCT_CODE') {
-        return `BMU${bmuNumber} ${t('batteryInfo.bmuData.bmuProductCode')}`
       } else if (dataType === 'BMU_VOLT') {
         return `BMU${bmuNumber} ${t('batteryInfo.bmuData.bmuVoltage')}`
       } else if (dataType === 'BMU_TEMP') {
@@ -962,7 +1000,7 @@ watch(activeView, (newView, oldView) => {
   }
 
   const bmuRows = computed(() => {
-    if (!['BMU_VOLT', 'BMU_TEMP', 'BMU_PLUGIN_TEMP', 'BMU_SOC', 'BMU_PRODUCT_CODE'].includes(activeView.value)) {
+    if (!['BMU_VOLT', 'BMU_TEMP', 'BMU_PLUGIN_TEMP', 'BMU_SOC'].includes(activeView.value)) {
       return [];
     }
     const secs = pickPack(selectedCluster.value, NEED_FIELDS.value) || []
@@ -999,7 +1037,7 @@ watch(activeView, (newView, oldView) => {
     }
 
     // 对于BMU_SOC、BMU_PRODUCT_CODE、BMU_VOLT、BMU_TEMP，需要转换标签
-    if (['BMU_SOC', 'BMU_PRODUCT_CODE', 'BMU_VOLT', 'BMU_TEMP'].includes(activeView.value)) {
+    if (['BMU_SOC', 'BMU_VOLT', 'BMU_TEMP'].includes(activeView.value)) {
       return secs.flatMap(sec => 
         sec.element.map(item => ({
           ...item,
@@ -1041,7 +1079,7 @@ watch(activeView, (newView, oldView) => {
              :key="e.label"
              :class="['property-card','normal-item', accentClass(e.label)]">
           <div class="label">{{ e.label }}</div>
-          <div class="value">{{ e.value }}{{ UNIT_MAP[e.label] }}</div>
+          <div class="value" :class="e.valueClass">{{ e.value }}{{ UNIT_MAP[e.label] }}</div>
         </div>
       </div>
     </div>
@@ -1056,7 +1094,7 @@ watch(activeView, (newView, oldView) => {
     </div>
     
     <!-- ▼▼ BMU 表卡片 ▼▼ -->
-    <SystemAbstract v-if="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH','BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC','BMU_PRODUCT_CODE'].includes(activeView)"
+    <SystemAbstract v-if="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH','BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC'].includes(activeView)"
                     :activeView="activeView"
                     :selectedCluster="selectedCluster" />
 
@@ -1097,7 +1135,7 @@ watch(activeView, (newView, oldView) => {
         </Column>
       </DataTable>
 
-    <div v-if="['BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC','BMU_PRODUCT_CODE'].includes(activeView)"
+    <div v-if="['BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC'].includes(activeView)"
          class="card-grid">
       <div v-for="e in bmuRows"
            :key="e.label"
@@ -1292,6 +1330,11 @@ watch(activeView, (newView, oldView) => {
   .normal-item .label { color: #9ca3af; font-weight: 500; font-size: 0.85rem; }
   .normal-item .value { font-weight: 600; font-size: 0.95rem; }
   .normal-item:hover { background: #1f2937; }
+
+  .text-red-500   { color: #ef4444; }
+  .text-orange-500{ color: #f59e0b; }
+  .text-yellow-500{ color: #fbbf24; }
+  .text-green-500 { color: #22c55e; }
 
   .system-states-container { padding: 0; }
   .system-states-container { 

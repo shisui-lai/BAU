@@ -2,7 +2,7 @@
 // 包含：数据解析、序列化、错误处理等系统基本参数特有的功能
 import { markRaw } from 'vue'
 import { SYS_BASE_PARAM_R } from '../../../../../../main/table.js'
-import { 
+import {
   serializeParameterData,
   createDefaultParameterData,
   parseParameterReadResponse,
@@ -10,7 +10,6 @@ import {
 } from '../remote-control/useRemoteControlCore.js'
 
 export function useSysBaseParam() {
-    
   /**
    * 创建系统基本参数的默认数据对象
    * 根据SYS_BASE_PARAM_R表定义初始化所有参数的默认值
@@ -21,9 +20,9 @@ export function useSysBaseParam() {
     // 性能优化：使用markRaw避免Vue深度响应式跟踪
     return createDefaultParameterData(markRaw(SYS_BASE_PARAM_R), '[useSysBaseParam]')
   }
-  
+
   // ================== MQTT消息解析功能 ==================
-  
+
   /**
    * 解析系统基本参数读取响应消息
    * 处理从设备返回的读取数据，包括成功和错误情况
@@ -58,20 +57,19 @@ export function useSysBaseParam() {
    */
   const serializeSystemBaseParamData = (parameterDataFrame, startByteOffset, registerCount) => {
     // 调用通用序列化函数
-    const fieldDefinitionTable = SYS_BASE_PARAM_R    // 使用明确的变量名
-    const logPrefix = '[useSysBaseParam]'            // 使用明确的变量名
-    const dataTypeName = '系统基本参数'               // 使用明确的变量名
-    
+    const fieldDefinitionTable = SYS_BASE_PARAM_R // 使用明确的变量名
+    const logPrefix = '[useSysBaseParam]' // 使用明确的变量名
+    const dataTypeName = '系统基本参数' // 使用明确的变量名
+
     return serializeParameterData(
-      parameterDataFrame,      
-      fieldDefinitionTable,    
-      startByteOffset,         
-      registerCount,           
-      logPrefix,               
-      dataTypeName             
+      parameterDataFrame,
+      fieldDefinitionTable,
+      startByteOffset,
+      registerCount,
+      logPrefix,
+      dataTypeName
     )
   }
-
 
   // ================== 返回接口 ==================
   return {
@@ -83,4 +81,4 @@ export function useSysBaseParam() {
     // 数据序列化
     serializeSystemBaseParamData
   }
-} 
+}

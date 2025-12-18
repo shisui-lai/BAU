@@ -29,10 +29,10 @@ export function useBauAddressDetection() {
     result: null
   })
 
-  const operationResult = ref(null)//存储操作结果（如复位设备）
+  const operationResult = ref(null) //存储操作结果（如复位设备）
 
   // 网卡选择功能状态
-  const networkInterfaces = ref([])  // 网络接口列表
+  const networkInterfaces = ref([]) // 网络接口列表
   const selectedInterface = ref(null) // 当前选中的网络接口
   const isLoadingInterfaces = ref(false) // 是否正在加载网络接口
 
@@ -49,20 +49,19 @@ export function useBauAddressDetection() {
   // 常量
   const ADMIN_PASSWORD = '0574'
   const FUNCTION_CODES = {
-    QUERY_IP1: 0xA001,
-    SET_IP1: 0xA002,
-    QUERY_IP2: 0xA003,
-    SET_IP2: 0xA004,
-    QUERY_MQTT: 0xA005,
-    SET_MQTT: 0xA006,
-    FORCE_UPGRADE: 0xAFFD,
-    RESET_DEFAULT: 0xAFFE,
-    RESET_DEVICE: 0xAFFF
+    QUERY_IP1: 0xa001,
+    SET_IP1: 0xa002,
+    QUERY_IP2: 0xa003,
+    SET_IP2: 0xa004,
+    QUERY_MQTT: 0xa005,
+    SET_MQTT: 0xa006,
+    FORCE_UPGRADE: 0xaffd,
+    RESET_DEFAULT: 0xaffe,
+    RESET_DEVICE: 0xafff
   }
 
   // 全局查询互斥标志位
   const isAnyQueryActive = ref(false)
-
 
   // ==================== 设备查询函数 ====================
 
@@ -120,7 +119,6 @@ export function useBauAddressDetection() {
       }
       // 如果已有选择的网卡，保持不变
       // 如果没有可用接口，selectedInterface.value保持null
-
     } catch (error) {
       // 错误处理：网络接口获取失败时的用户提示
       console.error('[BAU] 加载网络接口失败:', error)
@@ -165,70 +163,80 @@ export function useBauAddressDetection() {
 
     try {
       // 第2步：设置全局查询标志位和查询状态
-      isAnyQueryActive.value = true         // 设置全局互斥标志位
-      queryState.value.isQuerying = true    // 显示加载指示器
-      queryState.value.result = null        // 清空之前的结果
-      queryState.value.hasSearched = true   // 标记已执行过查询
+      isAnyQueryActive.value = true // 设置全局互斥标志位
+      queryState.value.isQuerying = true // 显示加载指示器
+      queryState.value.result = null // 清空之前的结果
+      queryState.value.hasSearched = true // 标记已执行过查询
 
       // 第3步：注册IPC监听器，监听主进程的UDP响应结果
       // 使用监听器模式是因为UDP通信是异步的，需要等待设备响应
-      const listenerId = window.electronAPI.ipc.registerListener('bau-operation-result', (event, result) => {
-        try {
-          // 第5步：处理主进程返回的UDP通信结果
-          queryState.value.isQuerying = false  // 隐藏加载指示器
+      const listenerId = window.electronAPI.ipc.registerListener(
+        'bau-operation-result',
+        (event, result) => {
+          try {
+            // 第5步：处理主进程返回的UDP通信结果
+            queryState.value.isQuerying = false // 隐藏加载指示器
 
-          if (result.success && result.devices && result.devices.length > 0) {
-            // 查询成功：解析设备响应数据
-            const device = result.devices[0]
-            const deviceData = device.parsedData || {}
+            if (result.success && result.devices && result.devices.length > 0) {
+              // 查询成功：解析设备响应数据
+              const device = result.devices[0]
+              const deviceData = device.parsedData || {}
 
-            if (deviceData && deviceData.success === true) {
-              // 数据解析成功：更新查询结果状态
-              queryState.value.result = {
-                deviceType: deviceType,
-                data: deviceData,
-                functionCode: functionCode
+              if (deviceData && deviceData.success === true) {
+                // 数据解析成功：更新查询结果状态
+                queryState.value.result = {
+                  deviceType: deviceType,
+                  data: deviceData,
+                  functionCode: functionCode
+                }
+                showSuccess('toast.bauAddressDetection.deviceQuerySuccess', [deviceType])
+              } else {
+                // 数据解析失败：显示错误信息
+                showError(deviceData?.error || 'toast.bauAddressDetection.deviceQueryFailed', [
+                  deviceType
+                ])
               }
-              showSuccess('toast.bauAddressDetection.deviceQuerySuccess', [deviceType])
             } else {
-              // 数据解析失败：显示错误信息
-              showError(deviceData?.error || 'toast.bauAddressDetection.deviceQueryFailed', [deviceType])
+              // 查询失败：未找到设备或通信失败
+              showWarning('toast.bauAddressDetection.deviceNotFound', [deviceType])
             }
-          } else {
-            // 查询失败：未找到设备或通信失败
-            showWarning('toast.bauAddressDetection.deviceNotFound', [deviceType])
+          } finally {
+            // 第6步：确保清理工作总是执行
+            isAnyQueryActive.value = false // 重置全局互斥标志位
+            window.electronAPI.ipc.unregisterListener(listenerId) // 清理监听器
           }
-        } finally {
-          // 第6步：确保清理工作总是执行
-          isAnyQueryActive.value = false  // 重置全局互斥标志位
-          window.electronAPI.ipc.unregisterListener(listenerId)  // 清理监听器
         }
-      })
+      )
 
-    try {
-      // 第3步：调用主进程UDP通信函数
-      // 根据功能码选择对应的IPC方法：
-      // - MQTT查询使用专用的MQTT处理器
-      // - IP查询使用通用的IP处理器
-      const invokeMethod = functionCode === FUNCTION_CODES.QUERY_MQTT ? 'bau-query-mqtt-with-interface' : 'bau-query-ip-with-interface'
-      const params = {
-        functionCode: functionCode,
-        interfaceAddress: selectedInterface.value?.address || '0.0.0.0'  // 使用选中网卡的IP地址
+      try {
+        // 第3步：调用主进程UDP通信函数
+        // 根据功能码选择对应的IPC方法：
+        // - MQTT查询使用专用的MQTT处理器
+        // - IP查询使用通用的IP处理器
+        const invokeMethod =
+          functionCode === FUNCTION_CODES.QUERY_MQTT
+            ? 'bau-query-mqtt-with-interface'
+            : 'bau-query-ip-with-interface'
+        const params = {
+          functionCode: functionCode,
+          interfaceAddress: selectedInterface.value?.address || '0.0.0.0' // 使用选中网卡的IP地址
+        }
+
+        console.log(
+          `[BAU] 使用指定网卡查询: ${selectedInterface.value?.displayName || '未选择网卡'}`
+        )
+        // IPC异步调用：触发主进程的UDP通信
+        await window.electronAPI.ipc.invoke(invokeMethod, params)
+      } catch (error) {
+        // 异常处理：IPC调用失败或网络错误
+        console.error(`${deviceType}设备查询失败:`, error)
+        showError(`${deviceType}设备查询失败，请检查网络连接`)
+
+        // 发生异常时的清理工作
+        queryState.value.isQuerying = false
+        isAnyQueryActive.value = false // 重置全局互斥标志位
+        window.electronAPI.ipc.unregisterListener(listenerId)
       }
-
-      console.log(`[BAU] 使用指定网卡查询: ${selectedInterface.value?.displayName || '未选择网卡'}`)
-      // IPC异步调用：触发主进程的UDP通信
-      await window.electronAPI.ipc.invoke(invokeMethod, params)
-    } catch (error) {
-      // 异常处理：IPC调用失败或网络错误
-      console.error(`${deviceType}设备查询失败:`, error)
-      showError(`${deviceType}设备查询失败，请检查网络连接`)
-
-      // 发生异常时的清理工作
-      queryState.value.isQuerying = false
-      isAnyQueryActive.value = false  // 重置全局互斥标志位
-      window.electronAPI.ipc.unregisterListener(listenerId)
-    }
     } catch (outerError) {
       // 外层异常处理：确保标志位总是被重置
       console.error(`${deviceType}查询外层异常:`, outerError)
@@ -264,13 +272,21 @@ export function useBauAddressDetection() {
     // 操作模式判断：
     if (configData) {
       // 直接设置模式：使用传入的配置数据
-      showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setIpTitle', [deviceType]), 'modifyIpConfig', {
-        deviceType,
-        configData
-      })
+      showPasswordConfirm(
+        t('bauAddressDetectionPage.dialogs.setIpTitle', [deviceType]),
+        'modifyIpConfig',
+        {
+          deviceType,
+          configData
+        }
+      )
     } else {
       // 修改模式：基于查询结果进行修改
-      showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setIpTitle', [deviceType]), 'modifyIpConfig', { deviceType })
+      showPasswordConfirm(
+        t('bauAddressDetectionPage.dialogs.setIpTitle', [deviceType]),
+        'modifyIpConfig',
+        { deviceType }
+      )
     }
   }
 
@@ -288,7 +304,9 @@ export function useBauAddressDetection() {
     // 操作模式判断：
     if (configData) {
       // 直接设置模式：使用传入的MQTT配置数据
-      showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setMqttTitle'), 'modifyMqttConfig', { configData })
+      showPasswordConfirm(t('bauAddressDetectionPage.dialogs.setMqttTitle'), 'modifyMqttConfig', {
+        configData
+      })
     } else {
       // 修改模式：基于查询结果进行修改
       if (!mqttQuery.value.result) {
@@ -306,7 +324,11 @@ export function useBauAddressDetection() {
    * 恢复出厂网络配置，但不重启设备
    */
   function resetToDefault() {
-    showPasswordConfirm(t('bauAddressDetectionPage.dialogs.resetDefaultTitle'), 'resetToDefault', {})
+    showPasswordConfirm(
+      t('bauAddressDetectionPage.dialogs.resetDefaultTitle'),
+      'resetToDefault',
+      {}
+    )
   }
 
   /**
@@ -342,8 +364,8 @@ export function useBauAddressDetection() {
     passwordDialog.message = t('bauAddressDetectionPage.messages.passwordDialogMessage')
     passwordDialog.operation = operation
     passwordDialog.params = params
-    passwordInput.value = ''  // 清空密码输入框
-    showPasswordDialog.value = true  // 显示密码对话框
+    passwordInput.value = '' // 清空密码输入框
+    showPasswordDialog.value = true // 显示密码对话框
   }
 
   async function confirmPassword() {
@@ -361,10 +383,15 @@ export function useBauAddressDetection() {
       case 'modifyIpConfig':
         if (params.configData) {
           // 直接设置IP配置
-          const functionCode = params.deviceType === 'IP2' ? FUNCTION_CODES.SET_IP2 : FUNCTION_CODES.SET_IP1
+          const functionCode =
+            params.deviceType === 'IP2' ? FUNCTION_CODES.SET_IP2 : FUNCTION_CODES.SET_IP1
           console.log('confirmPassword: 准备调用executeSetOperation')
           try {
-            await executeSetOperation(functionCode, params.configData, t(`toast.bauAddressDetection.${params.deviceType.toLowerCase()}Config`))
+            await executeSetOperation(
+              functionCode,
+              params.configData,
+              t(`toast.bauAddressDetection.${params.deviceType.toLowerCase()}Config`)
+            )
             console.log('confirmPassword: executeSetOperation完成')
           } catch (error) {
             console.error('confirmPassword: executeSetOperation失败:', error)
@@ -379,7 +406,11 @@ export function useBauAddressDetection() {
           // 直接设置MQTT配置
           console.log('confirmPassword: 准备调用executeSetOperation (MQTT)')
           try {
-            await executeSetOperation(FUNCTION_CODES.SET_MQTT, params.configData, t('toast.bauAddressDetection.setMqttConfig', '设置MQTT配置'))
+            await executeSetOperation(
+              FUNCTION_CODES.SET_MQTT,
+              params.configData,
+              t('toast.bauAddressDetection.setMqttConfig', '设置MQTT配置')
+            )
             console.log('confirmPassword: executeSetOperation (MQTT)完成')
           } catch (error) {
             console.error('confirmPassword: executeSetOperation (MQTT)失败:', error)
@@ -390,13 +421,22 @@ export function useBauAddressDetection() {
         }
         break
       case 'resetToDefault':
-        executeResetOperation(FUNCTION_CODES.RESET_DEFAULT, t('toast.bauAddressDetection.resetDefaultParams', '复位默认参数'))
+        executeResetOperation(
+          FUNCTION_CODES.RESET_DEFAULT,
+          t('toast.bauAddressDetection.resetDefaultParams', '复位默认参数')
+        )
         break
       case 'resetDevice':
-        executeResetOperation(FUNCTION_CODES.RESET_DEVICE, t('toast.bauAddressDetection.resetDevice', '复位设备'))
+        executeResetOperation(
+          FUNCTION_CODES.RESET_DEVICE,
+          t('toast.bauAddressDetection.resetDevice', '复位设备')
+        )
         break
       case 'forceUpgrade':
-        executeResetOperation(FUNCTION_CODES.FORCE_UPGRADE, t('toast.bauAddressDetection.forceUpgrade', '强制升级'))
+        executeResetOperation(
+          FUNCTION_CODES.FORCE_UPGRADE,
+          t('toast.bauAddressDetection.forceUpgrade', '强制升级')
+        )
         break
     }
   }
@@ -407,27 +447,30 @@ export function useBauAddressDetection() {
   }
   // 执行复位操作
   function executeResetOperation(functionCode, operationName) {
-    const listenerId = window.electronAPI.ipc.registerListener('bau-operation-result', (event, result) => {
-      if (result.success) {
-        operationResult.value = {
-          type: 'success',
-          message: t('toast.bauAddressDetection.deviceResetSuccess')
-        }
-        showSuccess('toast.bauAddressDetection.deviceResetSuccess')
+    const listenerId = window.electronAPI.ipc.registerListener(
+      'bau-operation-result',
+      (event, result) => {
+        if (result.success) {
+          operationResult.value = {
+            type: 'success',
+            message: t('toast.bauAddressDetection.deviceResetSuccess')
+          }
+          showSuccess('toast.bauAddressDetection.deviceResetSuccess')
 
-        // 如果是设备复位，清空所有查询结果
-        if (functionCode === FUNCTION_CODES.RESET_DEVICE) {
-          setTimeout(() => {
-            ip1Query.value.result = null
-            ip2Query.value.result = null
-            mqttQuery.value.result = null
-          }, 1000)
+          // 如果是设备复位，清空所有查询结果
+          if (functionCode === FUNCTION_CODES.RESET_DEVICE) {
+            setTimeout(() => {
+              ip1Query.value.result = null
+              ip2Query.value.result = null
+              mqttQuery.value.result = null
+            }, 1000)
+          }
+        } else {
+          showError(result.error || 'toast.bauAddressDetection.deviceResetFailed')
         }
-      } else {
-        showError(result.error || 'toast.bauAddressDetection.deviceResetFailed')
+        window.electronAPI.ipc.unregisterListener(listenerId)
       }
-      window.electronAPI.ipc.unregisterListener(listenerId)
-    })
+    )
 
     // 统一使用网卡选择方法进行复位/升级操作
     let invokeMethod
@@ -439,14 +482,16 @@ export function useBauAddressDetection() {
       invokeMethod = 'bau-force-upgrade-with-interface'
     }
 
-    window.electronAPI.ipc.invoke(invokeMethod, {
-      functionCode: functionCode,
-      interfaceAddress: selectedInterface.value?.address || '0.0.0.0'
-    }).catch(error => {
-      console.error(`${operationName}失败:`, error)
-      showError('toast.bauAddressDetection.deviceResetFailed')
-      window.electronAPI.ipc.unregisterListener(listenerId)
-    })
+    window.electronAPI.ipc
+      .invoke(invokeMethod, {
+        functionCode: functionCode,
+        interfaceAddress: selectedInterface.value?.address || '0.0.0.0'
+      })
+      .catch((error) => {
+        console.error(`${operationName}失败:`, error)
+        showError('toast.bauAddressDetection.deviceResetFailed')
+        window.electronAPI.ipc.unregisterListener(listenerId)
+      })
   }
 
   // 执行设置操作
@@ -477,32 +522,44 @@ export function useBauAddressDetection() {
     }
     console.log('=== 调试信息结束 ===')
 
-    const listenerId = window.electronAPI.ipc.registerListener('bau-operation-result', (event, result) => {
-      if (result.success && result.devices && result.devices.length > 0) {
-        const device = result.devices[0]
-        if (device.parsedData && device.parsedData.success) {
-          operationResult.value = {
-            type: 'success',
-            message: `${operationName}成功`
+    const listenerId = window.electronAPI.ipc.registerListener(
+      'bau-operation-result',
+      (event, result) => {
+        if (result.success && result.devices && result.devices.length > 0) {
+          const device = result.devices[0]
+          if (device.parsedData && device.parsedData.success) {
+            operationResult.value = {
+              type: 'success',
+              message: `${operationName}成功`
+            }
+            showSuccess('toast.bauAddressDetection.deviceConfigSuccess', [operationName])
+          } else {
+            showError(device.parsedData?.error || 'toast.bauAddressDetection.deviceConfigFailed', [
+              operationName
+            ])
           }
-          showSuccess('toast.bauAddressDetection.deviceConfigSuccess', [operationName])
         } else {
-          showError(device.parsedData?.error || 'toast.bauAddressDetection.deviceConfigFailed', [operationName])
+          showError(result.error || 'toast.bauAddressDetection.deviceResetFailed')
         }
-      } else {
-        showError(result.error || 'toast.bauAddressDetection.deviceResetFailed')
+        window.electronAPI.ipc.unregisterListener(listenerId)
       }
-      window.electronAPI.ipc.unregisterListener(listenerId)
-    })
+    )
 
     // 统一使用网卡选择方法进行设置操作
-    const invokeMethod = functionCode === FUNCTION_CODES.SET_MQTT ? 'bau-set-mqtt-with-interface' : 'bau-set-ip-with-interface'
+    const invokeMethod =
+      functionCode === FUNCTION_CODES.SET_MQTT
+        ? 'bau-set-mqtt-with-interface'
+        : 'bau-set-ip-with-interface'
 
     // 清理Vue响应式Proxy对象，避免IPC序列化失败
     const cleanData = JSON.parse(JSON.stringify(data))
 
     console.log('准备调用IPC方法:', invokeMethod)
-    console.log('IPC参数:', { functionCode, data: cleanData, interfaceAddress: selectedInterface.value?.address })
+    console.log('IPC参数:', {
+      functionCode,
+      data: cleanData,
+      interfaceAddress: selectedInterface.value?.address
+    })
 
     try {
       console.log('开始IPC调用...')
@@ -520,34 +577,57 @@ export function useBauAddressDetection() {
     }
   }
 
-
   // 消息提示
   function showSuccess(messageKey, params = []) {
-    const message = typeof messageKey === 'string' && messageKey.startsWith('toast.') 
-      ? t(messageKey, params) 
-      : messageKey
-    toastService.add({ severity: 'success', summary: t('toast.bauAddressDetection.success'), detail: message, life: 3000 })
+    const message =
+      typeof messageKey === 'string' && messageKey.startsWith('toast.')
+        ? t(messageKey, params)
+        : messageKey
+    toastService.add({
+      severity: 'success',
+      summary: t('toast.bauAddressDetection.success'),
+      detail: message,
+      life: 3000
+    })
   }
 
   function showError(messageKey, params = []) {
-    const message = typeof messageKey === 'string' && messageKey.startsWith('toast.') 
-      ? t(messageKey, params) 
-      : messageKey
-    toastService.add({ severity: 'error', summary: t('toast.bauAddressDetection.error'), detail: message, life: 5000 })
+    const message =
+      typeof messageKey === 'string' && messageKey.startsWith('toast.')
+        ? t(messageKey, params)
+        : messageKey
+    toastService.add({
+      severity: 'error',
+      summary: t('toast.bauAddressDetection.error'),
+      detail: message,
+      life: 5000
+    })
   }
 
   function showWarning(messageKey, params = []) {
-    const message = typeof messageKey === 'string' && messageKey.startsWith('toast.') 
-      ? t(messageKey, params) 
-      : messageKey
-    toastService.add({ severity: 'warn', summary: t('toast.bauAddressDetection.warning'), detail: message, life: 4000 })
+    const message =
+      typeof messageKey === 'string' && messageKey.startsWith('toast.')
+        ? t(messageKey, params)
+        : messageKey
+    toastService.add({
+      severity: 'warn',
+      summary: t('toast.bauAddressDetection.warning'),
+      detail: message,
+      life: 4000
+    })
   }
 
   function showInfo(messageKey, params = []) {
-    const message = typeof messageKey === 'string' && messageKey.startsWith('toast.') 
-      ? t(messageKey, params) 
-      : messageKey
-    toastService.add({ severity: 'info', summary: t('toast.bauAddressDetection.info'), detail: message, life: 3000 })
+    const message =
+      typeof messageKey === 'string' && messageKey.startsWith('toast.')
+        ? t(messageKey, params)
+        : messageKey
+    toastService.add({
+      severity: 'info',
+      summary: t('toast.bauAddressDetection.info'),
+      detail: message,
+      life: 3000
+    })
   }
 
   // 生命周期

@@ -3,8 +3,7 @@ import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } fro
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'
 import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
-import { pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
-import { parseClusterSummary } from '@/composables/core/data-processing/cluster/parseClusterSummary'
+import { parseClusterSummary, pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
 import { useFactoryCalibParam } from '@/composables/core/data-processing/parameter-management/useFactoryCalibParam'
 import { PAGE_PASSWORDS } from '@/configs/passwords'
 import { useRouter } from 'vue-router'
@@ -553,34 +552,26 @@ const handleFactoryCalibUpdate = (_event, mqttMessage) => {
   }
 }
 
-// 使用computed来响应式获取实时数据
+const localClusterSections = ref({})
 const currentRealTimeData = computed(() => {
   if (!selectedCluster.value) {
     return { current: null, clusterVoltage: null, preChargeVoltage: null }
   }
-
-  // 使用pickCluster获取系统信息
-  const clusterData = pickCluster(selectedCluster.value, ['系统信息'])
-
+  const key = selectedCluster.value
+  const clusterData = key ? (pickCluster(key, ['系统信息']) || []) : []
   if (!clusterData.length) {
     return { current: null, clusterVoltage: null, preChargeVoltage: null }
   }
-
   const systemInfo = clusterData.find(section => section.class === '系统信息')
   if (!systemInfo || !systemInfo.element) {
     return { current: null, clusterVoltage: null, preChargeVoltage: null }
   }
-
-  // 查找簇电流、簇电压、预充电压
   let current = null, clusterVoltage = null, preChargeVoltage = null
-
-  // 中文标签到字段名的映射（数据解析层始终使用中文标签）
   const LABEL_TO_FIELD_MAP = {
     '簇电流(A)': 'current',
-    '簇电压(V)': 'clusterVoltage', 
+    '簇电压(V)': 'clusterVoltage',
     '预充电压(V)': 'preChargeVoltage'
   }
-
   systemInfo.element.forEach(item => {
     const fieldName = LABEL_TO_FIELD_MAP[item.label]
     if (fieldName && item.value !== '-') {
@@ -594,12 +585,17 @@ const currentRealTimeData = computed(() => {
       }
     }
   })
-
   return { current, clusterVoltage, preChargeVoltage }
 })
 
-// CLUSTER_SUMMARY事件处理函数
+// CLUSTER_SUMMARY事件处理函数：集中解析到缓存
 const onClusterSummary = (_e, msg) => {
+  const key = `${msg.blockId}-${msg.clusterId}`
+  const arr = (Array.isArray(msg.data) ? msg.data : []).map(sec => ({
+    class: sec.class,
+    element: Array.isArray(sec.element) ? [...sec.element] : []
+  }))
+  localClusterSections.value = { ...localClusterSections.value, [key]: arr }
   parseClusterSummary(msg)
 }
 
@@ -688,11 +684,11 @@ const initializePage = () => {
 
 // 取消密码输入
 const cancelPwd = () => {
-  showPasswordDialog.value = false
+  // 若是“确认密码”导致的对话框关闭，则不返回上一页
   if (pwdConfirmed.value) {
-    pwdConfirmed.value = false
     return
   }
+  // 取消或右上角关闭：保持原取消逻辑并返回上一页
   showCancelTip.value = true
   isBlurred.value = true
   setTimeout(() => {
@@ -719,6 +715,7 @@ onMounted(() => {
   }
 
   // console.log('[Calibration Debug] 密码验证通过，继续执行')
+  pwdConfirmed.value = true
   initializePage()
 })
 
@@ -739,14 +736,14 @@ onUnmounted(() => {
   stopPeriodicReading()
 
   // 清理事件监听器
-  window.electron.ipcRenderer.removeAllListeners('FACTORY_CALIB_PARAM_R')
-  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY')
+  window.electron.ipcRenderer.removeAllListeners('FACTORY_CALIB_PARAM_R', handleFactoryCalibUpdate)
+  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY', onClusterSummary)
 })
 </script>
 
 <template>
   <div class="page-wrapper">
-    <div class="card" v-if="!showPasswordDialog">
+    <div class="card" v-if="pwdConfirmed">
     <!-- 校准类型选择区 -->
     <div class="mb-4">
       <label for="kb-select" class="form-label">{{ t('analogCalibration.selectLabel') }}</label>

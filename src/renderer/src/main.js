@@ -228,7 +228,7 @@ app.component('VirtualScroller', VirtualScroller)
 async function bootstrap() {
   // 从 Electron 主进程获取用户语言偏好
   let defaultLocale = 'zh'
-  
+
   if (window.electronAPI?.getLocale) {
     defaultLocale = await window.electronAPI.getLocale()
   } else {
@@ -244,7 +244,7 @@ async function bootstrap() {
     fallbackLocale: 'en',
     messages
   })
-  
+
   app.use(i18n)
   app.mount('#app')
 }

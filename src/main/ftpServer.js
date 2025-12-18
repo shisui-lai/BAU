@@ -30,7 +30,7 @@ function checkPortInUse(port) {
     })
     server.on('error', () => resolve(true)) // 端口被占用
   })
-} 
+}
 
 // 确保升级文件目录存在
 if (!fs.existsSync(FTP_ROOT)) {
@@ -116,7 +116,6 @@ function validateUpgradeFile(filePath) {
 
 // 🔥 为连接设置文件事件监听
 function setupConnectionFileEvents(connection) {
-
   // 文件上传事件
   connection.on('STOR', (error, fileName) => {
     if (error) {
@@ -146,7 +145,9 @@ function setupConnectionFileEvents(connection) {
         uploadTimestamp: new Date().toISOString()
       }
 
-      console.log(`[FTP] 文件信息获取完成: ${fileName}, 大小: ${enhancedFileInfo.sizeFormatted}, 有效: ${enhancedFileInfo.isValid}`)
+      console.log(
+        `[FTP] 文件信息获取完成: ${fileName}, 大小: ${enhancedFileInfo.sizeFormatted}, 有效: ${enhancedFileInfo.isValid}`
+      )
 
       // 通知前端
       notifyFileEvent('file-uploaded', enhancedFileInfo)
@@ -216,7 +217,7 @@ ipcMain.handle('ftp-start', async (_, { host, port, user, pass }) => {
         ftpServer = null
         console.log(`[FTP] 已关闭现有服务器`)
         // 等待端口释放
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        await new Promise((resolve) => setTimeout(resolve, 1000))
       } catch (closeError) {
         console.error(`[FTP] 关闭现有服务器失败:`, closeError.message)
         ftpServer = null // 强制清理状态
@@ -260,7 +261,6 @@ ipcMain.handle('ftp-start', async (_, { host, port, user, pass }) => {
 
     console.log(`[FTP] 服务器启动成功: ${host}:${port}`)
     return { success: true, message: 'FTP服务器启动成功' }
-
   } catch (error) {
     console.error(`[FTP] 启动失败:`, error.message)
     // 清理状态
@@ -282,7 +282,6 @@ ipcMain.handle('ftp-stop', async () => {
 
     console.log(`[FTP] 服务器停止成功`)
     return { success: true, message: 'FTP服务器停止成功' }
-
   } catch (error) {
     console.error(`[FTP] 停止失败:`, error.message)
     // 确保状态清理
@@ -294,8 +293,8 @@ ipcMain.handle('ftp-stop', async () => {
 // 查询FTP服务器状态
 ipcMain.handle('ftp-status', async () => {
   const isRunning = ftpServer !== null
-  return { 
-    success: true, 
+  return {
+    success: true,
     isRunning,
     message: isRunning ? 'FTP服务器运行中' : 'FTP服务器未运行'
   }
@@ -304,19 +303,19 @@ ipcMain.handle('ftp-status', async () => {
 // 选择FTP根目录
 ipcMain.handle('choose-default-FTP-dir', async () => {
   const { dialog } = require('electron')
-  
+
   const result = await dialog.showOpenDialog({
     title: '选择FTP根目录',
     properties: ['openDirectory'],
-    defaultPath: FTP_ROOT  // 使用当前FTP根目录作为默认路径
+    defaultPath: FTP_ROOT // 使用当前FTP根目录作为默认路径
   })
-  
+
   if (!result.canceled && result.filePaths.length > 0) {
     FTP_ROOT = result.filePaths[0]
     console.log(`[FTP] 根目录已更改为: ${FTP_ROOT}`)
     return { success: true, path: FTP_ROOT }
   }
-  
+
   return { success: false, message: '未选择目录' }
 })
 
@@ -329,7 +328,7 @@ ipcMain.handle('get-ftp-root', async () => {
 ipcMain.handle('ftp-get-files', async () => {
   try {
     const files = fs.readdirSync(FTP_ROOT)
-    const fileList = files.map(fileName => {
+    const fileList = files.map((fileName) => {
       const filePath = path.join(FTP_ROOT, fileName)
       return getFileInfo(filePath, fileName)
     })
@@ -375,11 +374,7 @@ ipcMain.handle('ftp-validate-file', async (_, fileName) => {
   }
 })
 
-export {
-  ftpServer as getFtpServer,
-  getFtpRoot,
-  setMainWindow
-}
+export { ftpServer as getFtpServer, getFtpRoot, setMainWindow }
 
 // 为了兼容性，也保留CommonJS导出
 module.exports = {

@@ -482,6 +482,11 @@ const stopParameterReading = () => {
   } else {
     systemStopParameterReading()
   }
+  cancelAutoRead('BaseParam')
+  if (clusterSwitchDebounceTimer) {
+    clearTimeout(clusterSwitchDebounceTimer)
+    clusterSwitchDebounceTimer = null
+  }
 }
 
 //协议修改新增 - 统一的下拉框判断函数

@@ -108,7 +108,7 @@ class CrashLogger {
   calculateCPUUsage(cpus) {
     if (!this.lastCpuInfo) {
       // 第一次采集，保存当前CPU信息
-      this.lastCpuInfo = cpus.map(cpu => ({
+      this.lastCpuInfo = cpus.map((cpu) => ({
         idle: cpu.times.idle,
         total: Object.values(cpu.times).reduce((acc, time) => acc + time, 0)
       }))
@@ -124,13 +124,13 @@ class CrashLogger {
       const totalDiff = total - lastInfo.total
       const idleDiff = idle - lastInfo.idle
 
-      const usage = totalDiff === 0 ? 0 : ((1 - idleDiff / totalDiff) * 100)
+      const usage = totalDiff === 0 ? 0 : (1 - idleDiff / totalDiff) * 100
 
       return usage
     })
 
     // 更新上次CPU信息
-    this.lastCpuInfo = cpus.map(cpu => ({
+    this.lastCpuInfo = cpus.map((cpu) => ({
       idle: cpu.times.idle,
       total: Object.values(cpu.times).reduce((acc, time) => acc + time, 0)
     }))
@@ -243,17 +243,22 @@ class CrashLogger {
   formatCrashLog(crashInfo) {
     // 构建额外的崩溃详情（渲染进程/子进程崩溃特有）
     let additionalInfo = ''
-    if (crashInfo.exitCode !== undefined || crashInfo.reason || crashInfo.processType || crashInfo.signal) {
+    if (
+      crashInfo.exitCode !== undefined ||
+      crashInfo.reason ||
+      crashInfo.processType ||
+      crashInfo.signal
+    ) {
       additionalInfo = `
 【崩溃详情】`
-      
+
       // 系统信号信息（系统强制终止时）
       if (crashInfo.signal) {
         additionalInfo += `
 - 终止信号: ${crashInfo.signal}
 - 信号来源: ${crashInfo.source || 'N/A'}`
       }
-      
+
       // 进程崩溃信息
       if (crashInfo.exitCode !== undefined || crashInfo.reason || crashInfo.processType) {
         additionalInfo += `
@@ -262,7 +267,7 @@ class CrashLogger {
 - 进程类型: ${crashInfo.processType || 'N/A'}
 - 服务名称: ${crashInfo.serviceName || 'N/A'}`
       }
-      
+
       additionalInfo += '\n'
     }
 
@@ -341,9 +346,10 @@ ${'='.repeat(80)}
    */
   cleanOldLogs(keepCount = 30) {
     try {
-      const files = fs.readdirSync(this.logDir)
-        .filter(file => file.startsWith('crash-') && file.endsWith('.log'))
-        .map(file => ({
+      const files = fs
+        .readdirSync(this.logDir)
+        .filter((file) => file.startsWith('crash-') && file.endsWith('.log'))
+        .map((file) => ({
           name: file,
           path: path.join(this.logDir, file),
           time: fs.statSync(path.join(this.logDir, file)).mtime.getTime()
@@ -353,7 +359,7 @@ ${'='.repeat(80)}
       // 删除超过保留数量的文件
       if (files.length > keepCount) {
         const filesToDelete = files.slice(keepCount)
-        filesToDelete.forEach(file => {
+        filesToDelete.forEach((file) => {
           try {
             fs.unlinkSync(file.path)
             console.log(`[CrashLogger] 已删除旧日志: ${file.name}`)

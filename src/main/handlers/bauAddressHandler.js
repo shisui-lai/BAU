@@ -25,15 +25,15 @@ let forceUpgradeEvent = null
 
 // 功能码定义
 const FUNCTION_CODES = {
-  QUERY_IP1: 0xA001,
-  SET_IP1: 0xA002,
-  QUERY_IP2: 0xA003,
-  SET_IP2: 0xA004,
-  QUERY_MQTT: 0xA005,
-  SET_MQTT: 0xA006,
-  FORCE_UPGRADE: 0xAFFD,
-  RESET_DEFAULT: 0xAFFE,
-  RESET_DEVICE: 0xAFFF
+  QUERY_IP1: 0xa001,
+  SET_IP1: 0xa002,
+  QUERY_IP2: 0xa003,
+  SET_IP2: 0xa004,
+  QUERY_MQTT: 0xa005,
+  SET_MQTT: 0xa006,
+  FORCE_UPGRADE: 0xaffd,
+  RESET_DEFAULT: 0xaffe,
+  RESET_DEVICE: 0xafff
 }
 
 /**
@@ -93,7 +93,7 @@ const createPacket = (functionCode, data = null) => {
     case FUNCTION_CODES.QUERY_MQTT:
       // 写入MQTT查询魔数 0xFAFBFCFD，大端序
       // 这个魔数用于标识MQTT相关操作
-      buffer.writeUInt32BE(0xFAFBFCFD, offset)
+      buffer.writeUInt32BE(0xfafbfcfd, offset)
       break
 
     // MQTT设置操作：配置BAU设备的MQTT服务器参数
@@ -119,14 +119,14 @@ const createPacket = (functionCode, data = null) => {
     case FUNCTION_CODES.RESET_DEFAULT:
       // 写入复位魔数 0xFE424155，大端序
       // FE表示复位默认参数操作，424155是"BAU"的变形
-      buffer.writeUInt32BE(0xFE424155, offset)
+      buffer.writeUInt32BE(0xfe424155, offset)
       break
 
     // 强制升级BAU操作：触发BAU设备升级流程
     case FUNCTION_CODES.FORCE_UPGRADE:
       // 写入强制升级魔数 0xFD424155，大端序
       // FD表示强制升级操作，424155是"BAU"的变形
-      buffer.writeUInt32BE(0xFD424155, offset)
+      buffer.writeUInt32BE(0xfd424155, offset)
       offset += 4
       // 剩余4个备用uint32字段填充0 (16字节)，总共20字节数据区
       // 注意：buffer是22字节（2字节功能码 + 20字节数据区），offset从2开始
@@ -142,7 +142,7 @@ const createPacket = (functionCode, data = null) => {
     case FUNCTION_CODES.RESET_DEVICE:
       // 写入重启魔数 0xFF424155，大端序
       // FF表示重启设备操作，424155是"BAU"的变形
-      buffer.writeUInt32BE(0xFF424155, offset)
+      buffer.writeUInt32BE(0xff424155, offset)
       break
   }
   offset += 4
@@ -158,15 +158,18 @@ const createPacket = (functionCode, data = null) => {
 }
 
 /**
- * IP字符串转整数 (小端序) 
+ * IP字符串转整数 (小端序)
  */
 const ipStringToInt = (ipStr) => {
   if (!ipStr) return 0
   const parts = ipStr.split('.')
-  return ((parseInt(parts[0]) & 0xFF) |
-          ((parseInt(parts[1]) & 0xFF) << 8) |
-          ((parseInt(parts[2]) & 0xFF) << 16) |
-          ((parseInt(parts[3]) & 0xFF) << 24)) >>> 0
+  return (
+    ((parseInt(parts[0]) & 0xff) |
+      ((parseInt(parts[1]) & 0xff) << 8) |
+      ((parseInt(parts[2]) & 0xff) << 16) |
+      ((parseInt(parts[3]) & 0xff) << 24)) >>>
+    0
+  )
 }
 
 /**
@@ -175,10 +178,13 @@ const ipStringToInt = (ipStr) => {
 const ipStringToIntBE = (ipStr) => {
   if (!ipStr) return 0
   const parts = ipStr.split('.')
-  return (((parseInt(parts[0]) & 0xFF) << 24) |
-          ((parseInt(parts[1]) & 0xFF) << 16) |
-          ((parseInt(parts[2]) & 0xFF) << 8) |
-          (parseInt(parts[3]) & 0xFF)) >>> 0  // 无符号右移确保正数
+  return (
+    (((parseInt(parts[0]) & 0xff) << 24) |
+      ((parseInt(parts[1]) & 0xff) << 16) |
+      ((parseInt(parts[2]) & 0xff) << 8) |
+      (parseInt(parts[3]) & 0xff)) >>>
+    0
+  ) // 无符号右移确保正数
 }
 
 /**
@@ -208,7 +214,7 @@ const parseResponse = (buffer, functionCode) => {
     const result = {
       functionCode: responseFunctionCode,
       responseCode: responseCode,
-      success: responseCode === 0xE000
+      success: responseCode === 0xe000
     }
 
     if (!result.success) {
@@ -230,7 +236,8 @@ const parseResponse = (buffer, functionCode) => {
       case FUNCTION_CODES.QUERY_IP1:
       case FUNCTION_CODES.QUERY_IP2:
         // console.log(`[BAU Parse] 解析IP配置，数据长度: ${buffer.length}`)
-        if (buffer.length >= 30) { // 至少需要30字节
+        if (buffer.length >= 30) {
+          // 至少需要30字节
           result.ipAddress = formatIpAddress(buffer.readUInt32BE(offset))
           offset += 4
           result.subnetMask = formatIpAddress(buffer.readUInt32BE(offset))
@@ -262,7 +269,8 @@ const parseResponse = (buffer, functionCode) => {
         break
 
       case FUNCTION_CODES.QUERY_MQTT:
-        if (buffer.length >= 20) { // 需要至少20字节：serverIp(4) + port(4) + 备用(12) + MAC(8)
+        if (buffer.length >= 20) {
+          // 需要至少20字节：serverIp(4) + port(4) + 备用(12) + MAC(8)
           result.serverIp = formatIpAddress(buffer.readUInt32BE(offset))
           offset += 4
           result.port = buffer.readUInt32BE(offset)
@@ -288,7 +296,8 @@ const parseResponse = (buffer, functionCode) => {
         // 强制升级响应解析
         // 响应结构: 功能码(2) + 响应码(2) + 备用(20字节) + MAC地址(8字节) = 32字节
         // 与其他命令（QUERY_IP1/IP2、QUERY_MQTT）格式保持一致
-        if (buffer.length >= 32) { // 至少需要32字节
+        if (buffer.length >= 32) {
+          // 至少需要32字节
           // 跳过5个备用uint32字段 (20字节)
           offset += 20
           // 读取MAC地址（2个uint32，与其他命令一致）
@@ -325,39 +334,36 @@ const formatIpAddress = (ipInt) => {
   if (!ipInt) return '0.0.0.0'
 
   return [
-    (ipInt >>> 0) & 0xFF,
-    (ipInt >>> 8) & 0xFF,
-    (ipInt >>> 16) & 0xFF,
-    (ipInt >>> 24) & 0xFF
+    (ipInt >>> 0) & 0xff,
+    (ipInt >>> 8) & 0xff,
+    (ipInt >>> 16) & 0xff,
+    (ipInt >>> 24) & 0xff
   ].join('.')
 }
-
-
 
 const formatMacAddressFromTwoUint32 = (part1, part2) => {
   // 打印原始MAC值
   // console.log(`[MAC Debug] 原始MAC值 - part1: 0x${part1.toString(16).padStart(8, '0')}, part2: 0x${part2.toString(16).padStart(8, '0')}`)
-  
+
   // 根据实际数据分析，MAC地址应该按照以下顺序排列：54:27:8d:a0:bd:c7
   // part1(0x2754a08d) -> 54:27:8d:a0, part2(0x0000c7bd) -> bd:c7
   const bytes = [
-    (part1 >>> 16) & 0xFF,  // part1的第2字节 -> MAC第1字节 (54)
-    (part1 >>> 24) & 0xFF,  // part1的第1字节 -> MAC第2字节 (27)
-    (part1 >>> 0) & 0xFF,   // part1的第4字节 -> MAC第3字节 (8d)
-    (part1 >>> 8) & 0xFF,   // part1的第3字节 -> MAC第4字节 (a0)
-    (part2 >>> 0) & 0xFF,   // part2的第4字节 -> MAC第5字节 (bd)
-    (part2 >>> 8) & 0xFF    // part2的第3字节 -> MAC第6字节 (c7)
+    (part1 >>> 16) & 0xff, // part1的第2字节 -> MAC第1字节 (54)
+    (part1 >>> 24) & 0xff, // part1的第1字节 -> MAC第2字节 (27)
+    (part1 >>> 0) & 0xff, // part1的第4字节 -> MAC第3字节 (8d)
+    (part1 >>> 8) & 0xff, // part1的第3字节 -> MAC第4字节 (a0)
+    (part2 >>> 0) & 0xff, // part2的第4字节 -> MAC第5字节 (bd)
+    (part2 >>> 8) & 0xff // part2的第3字节 -> MAC第6字节 (c7)
   ]
-  
-  const macAddress = bytes.map(b => b.toString(16).padStart(2, '0')).join(':')
-  
+
+  const macAddress = bytes.map((b) => b.toString(16).padStart(2, '0')).join(':')
+
   // 打印解析的MAC值
   // console.log(`[MAC Debug] 解析的MAC地址: ${macAddress}`)
   // console.log(`[MAC Debug] 字节数组: [${bytes.map(b => '0x' + b.toString(16).padStart(2, '0')).join(', ')}]`)
-  
+
   return macAddress
 }
-
 
 // ==================== 网卡选择功能 - 统一UDP通信方式 ====================
 
@@ -373,19 +379,19 @@ export const getNetworkInterfaces = () => {
     const result = []
 
     // 遍历所有网络接口，筛选出可用于UDP通信的接口
-    Object.keys(interfaces).forEach(name => {
+    Object.keys(interfaces).forEach((name) => {
       const interfaceList = interfaces[name]
 
       // 过滤条件：只处理IPv4接口，排除内部回环接口(127.0.0.1)
       // 内部接口无法用于与外部BAU设备通信
-      interfaceList.forEach(iface => {
+      interfaceList.forEach((iface) => {
         if (iface.family === 'IPv4' && !iface.internal) {
           // 构造网络接口信息对象，供前端选择使用
           const interfaceInfo = {
-            name: name,                    // 网卡名称，如"以太网"、"WLAN"
-            address: iface.address,        // IP地址，如"192.168.1.100"
-            mac: iface.mac,               // MAC地址，如"aa:bb:cc:dd:ee:ff"
-            netmask: iface.netmask,       // 子网掩码，如"255.255.255.0"
+            name: name, // 网卡名称，如"以太网"、"WLAN"
+            address: iface.address, // IP地址，如"192.168.1.100"
+            mac: iface.mac, // MAC地址，如"aa:bb:cc:dd:ee:ff"
+            netmask: iface.netmask, // 子网掩码，如"255.255.255.0"
             displayName: `${name} (${iface.address})` // 用户友好的显示名称
           }
           result.push(interfaceInfo)
@@ -414,7 +420,12 @@ export const getNetworkInterfaces = () => {
  */
 const sendBauCommandWithDataAndInterface = (event, { functionCode, data, interfaceAddress }) => {
   const bindAddress = interfaceAddress || '0.0.0.0'
-  console.log('[BAU UDP SET] 使用网卡发送广播设置, functionCode =', functionCode.toString(16), ', 绑定地址:', bindAddress)
+  console.log(
+    '[BAU UDP SET] 使用网卡发送广播设置, functionCode =',
+    functionCode.toString(16),
+    ', 绑定地址:',
+    bindAddress
+  )
 
   const udpClient = dgram.createSocket('udp4')
   const packet = createPacket(functionCode, data)
@@ -428,25 +439,23 @@ const sendBauCommandWithDataAndInterface = (event, { functionCode, data, interfa
     // 发送UDP广播包到BAU设备
     // 目标：255.255.255.255:39999 (全网广播)
     // 数据：22字节的设置命令包
-    udpClient.send(
-      packet,
-      0,
-      packet.length,
-      BAU_PORT,
-      BROADCAST_ADDRESS,
-      (err) => {
-        if (err) {
-          // 发送失败：网络错误或权限问题
-          console.error('[BAU UDP SET] 发送广播失败:', err.message)
-          event.sender.send('bau-operation-result', { success: false, error: err.message })
-          udpClient.close()
-          socketClosed = true
-          return
-        }
-        // 发送成功：记录发送的数据包内容和使用的网卡
-        console.log('[BAU UDP SET] 发送设置广播成功:', packet.toString('hex'), ', 使用网卡:', bindAddress)
+    udpClient.send(packet, 0, packet.length, BAU_PORT, BROADCAST_ADDRESS, (err) => {
+      if (err) {
+        // 发送失败：网络错误或权限问题
+        console.error('[BAU UDP SET] 发送广播失败:', err.message)
+        event.sender.send('bau-operation-result', { success: false, error: err.message })
+        udpClient.close()
+        socketClosed = true
+        return
       }
-    )
+      // 发送成功：记录发送的数据包内容和使用的网卡
+      console.log(
+        '[BAU UDP SET] 发送设置广播成功:',
+        packet.toString('hex'),
+        ', 使用网卡:',
+        bindAddress
+      )
+    })
   })
 
   // 存储响应的设备列表
@@ -455,18 +464,21 @@ const sendBauCommandWithDataAndInterface = (event, { functionCode, data, interfa
   // 监听UDP响应消息
   // BAU设备收到设置命令后会发送确认响应
   udpClient.on('message', (msg, rinfo) => {
-    if (socketClosed) return  // 防止套接字关闭后继续处理消息
+    if (socketClosed) return // 防止套接字关闭后继续处理消息
 
     // 记录收到的响应数据
-    console.log(`[BAU UDP SET] 收到来自 ${rinfo.address}:${rinfo.port} 的响应:`, msg.toString('hex'))
+    console.log(
+      `[BAU UDP SET] 收到来自 ${rinfo.address}:${rinfo.port} 的响应:`,
+      msg.toString('hex')
+    )
 
     // 解析响应数据，验证设置是否成功
     const parsedData = parseResponse(msg, functionCode)
     foundDevices.push({
-      ip: rinfo.address,        // 响应设备的IP地址
-      port: rinfo.port,         // 响应设备的端口
+      ip: rinfo.address, // 响应设备的IP地址
+      port: rinfo.port, // 响应设备的端口
       data: msg.toString('hex'), // 原始响应数据
-      parsedData: parsedData    // 解析后的响应数据
+      parsedData: parsedData // 解析后的响应数据
     })
   })
 
@@ -514,7 +526,12 @@ const sendBauCommandWithDataAndInterface = (event, { functionCode, data, interfa
  */
 const sendBauCommandWithInterface = (event, { functionCode, interfaceAddress }) => {
   const bindAddress = interfaceAddress || '0.0.0.0'
-  console.log('[BAU UDP] 使用网卡发送广播查询, functionCode =', functionCode.toString(16), ', 绑定地址:', bindAddress)
+  console.log(
+    '[BAU UDP] 使用网卡发送广播查询, functionCode =',
+    functionCode.toString(16),
+    ', 绑定地址:',
+    bindAddress
+  )
 
   // 创建UDP4套接字，用于IPv4通信
   const udpClient = dgram.createSocket('udp4')
@@ -529,11 +546,11 @@ const sendBauCommandWithInterface = (event, { functionCode, interfaceAddress }) 
     console.log('[BAU UDP] 绑定UDP套接字成功，端口:', PC_PORT, ', 绑定地址:', bindAddress)
 
     udpClient.send(
-      broadcastMessage,        // 要发送的数据
-      0,                      // 数据偏移
+      broadcastMessage, // 要发送的数据
+      0, // 数据偏移
       broadcastMessage.length, // 数据长度
-      BAU_PORT,               // 目标端口39999
-      BROADCAST_ADDRESS,      // 广播地址 (255.255.255.255)
+      BAU_PORT, // 目标端口39999
+      BROADCAST_ADDRESS, // 广播地址 (255.255.255.255)
       (err) => {
         if (err) {
           console.error('[BAU UDP] 发送广播失败:', err.message)
@@ -542,7 +559,12 @@ const sendBauCommandWithInterface = (event, { functionCode, interfaceAddress }) 
           socketClosed = true
           return
         }
-        console.log('[BAU UDP] 发送广播成功:', broadcastMessage.toString('hex'), ', 使用网卡:', bindAddress)
+        console.log(
+          '[BAU UDP] 发送广播成功:',
+          broadcastMessage.toString('hex'),
+          ', 使用网卡:',
+          bindAddress
+        )
       }
     )
   })
@@ -590,8 +612,6 @@ const sendBauCommandWithInterface = (event, { functionCode, interfaceAddress }) 
     event.sender.send('bau-operation-result', { success: false, error: err.message })
   })
 }
-
-
 
 // ==================== 网卡选择功能的IPC处理器 ====================
 // 所有BAU操作统一使用网卡选择方式，替代原有的0.0.0.0全网广播
@@ -714,9 +734,12 @@ export const startForceUpgrade = (event, { interfaceAddress }) => {
       console.log(`[Force Upgrade] UDP客户端已绑定到 ${bindAddress}:${PC_PORT}`)
 
       // 构造并打印数据包信息
-      console.log(`[Force Upgrade] 升级数据包 (${upgradePacket.length}字节):`, upgradePacket.toString('hex'))
+      console.log(
+        `[Force Upgrade] 升级数据包 (${upgradePacket.length}字节):`,
+        upgradePacket.toString('hex')
+      )
       console.log(`[Force Upgrade] 目标: ${BROADCAST_ADDRESS}:${BAU_PORT}`)
-      
+
       // 发送第一条指令
       sendForceUpgradeCommand(upgradePacket)
 
@@ -724,7 +747,7 @@ export const startForceUpgrade = (event, { interfaceAddress }) => {
       forceUpgradeInterval = setInterval(() => {
         sendForceUpgradeCommand(upgradePacket)
       }, 100)
-      
+
       console.log('[Force Upgrade] 开始循环发送，间隔: 100ms')
 
       resolve()
@@ -736,38 +759,34 @@ export const startForceUpgrade = (event, { interfaceAddress }) => {
       if (!forceUpgradeClient || !isForceUpgrading) return
 
       sendCount++
-      
-      forceUpgradeClient.send(
-        packet,
-        0,
-        packet.length,
-        BAU_PORT,
-        BROADCAST_ADDRESS,
-        (err) => {
-          if (err) {
-            console.error('[Force Upgrade] 发送指令失败:', err.message)
-            stopForceUpgrade()
-            // 只发送一次错误通知
-            if (forceUpgradeEvent && forceUpgradeEvent.sender) {
-              forceUpgradeEvent.sender.send('force-upgrade-error', {
-                error: err.message
-              })
-            }
-          } else {
-            // 每10次发送打印一次日志（避免日志过多）
-            if (sendCount % 10 === 0 || sendCount === 1) {
-              console.log(`[Force Upgrade] 已发送指令 ${sendCount} 次到 ${BROADCAST_ADDRESS}:${BAU_PORT}, 数据包:`, packet.toString('hex'))
-            }
-            
-            // 通知前端正在发送
-            if (forceUpgradeEvent && forceUpgradeEvent.sender) {
-              forceUpgradeEvent.sender.send('force-upgrade-sending', {
-                timestamp: Date.now()
-              })
-            }
+
+      forceUpgradeClient.send(packet, 0, packet.length, BAU_PORT, BROADCAST_ADDRESS, (err) => {
+        if (err) {
+          console.error('[Force Upgrade] 发送指令失败:', err.message)
+          stopForceUpgrade()
+          // 只发送一次错误通知
+          if (forceUpgradeEvent && forceUpgradeEvent.sender) {
+            forceUpgradeEvent.sender.send('force-upgrade-error', {
+              error: err.message
+            })
+          }
+        } else {
+          // 每10次发送打印一次日志（避免日志过多）
+          if (sendCount % 10 === 0 || sendCount === 1) {
+            console.log(
+              `[Force Upgrade] 已发送指令 ${sendCount} 次到 ${BROADCAST_ADDRESS}:${BAU_PORT}, 数据包:`,
+              packet.toString('hex')
+            )
+          }
+
+          // 通知前端正在发送
+          if (forceUpgradeEvent && forceUpgradeEvent.sender) {
+            forceUpgradeEvent.sender.send('force-upgrade-sending', {
+              timestamp: Date.now()
+            })
           }
         }
-      )
+      })
     }
 
     // 监听 BAU 的响应
@@ -781,15 +800,15 @@ export const startForceUpgrade = (event, { interfaceAddress }) => {
       // 检查是否是标准22字节响应格式（0xAFFD）
       if (msg.length >= 4) {
         const responseFunctionCode = msg.readUInt16BE(0)
-        
+
         if (responseFunctionCode === FUNCTION_CODES.FORCE_UPGRADE) {
           // 解析标准32字节响应
           const parsedData = parseResponse(msg, FUNCTION_CODES.FORCE_UPGRADE)
-          
+
           if (parsedData.success) {
             // 成功响应（响应码0xE000）
             console.log('[Force Upgrade] BAU响应：升级指令执行成功')
-            
+
             // 发送成功事件
             if (forceUpgradeEvent && forceUpgradeEvent.sender) {
               forceUpgradeEvent.sender.send('force-upgrade-success', {
@@ -798,7 +817,7 @@ export const startForceUpgrade = (event, { interfaceAddress }) => {
                 message: '升级指令执行成功'
               })
             }
-            
+
             // 关闭UDP，结束操作（与其他BAU指令保持一致）
             stopForceUpgrade()
           } else {
@@ -811,19 +830,20 @@ export const startForceUpgrade = (event, { interfaceAddress }) => {
                 message: parsedData.error || '升级指令执行失败'
               })
             }
-            
+
             // 关闭UDP，结束操作
             stopForceUpgrade()
           }
         } else {
           // 可能是进度反馈或其他响应，暂时记录
-          console.log(`[Force Upgrade] 收到其他响应，功能码: 0x${responseFunctionCode.toString(16)}`)
+          console.log(
+            `[Force Upgrade] 收到其他响应，功能码: 0x${responseFunctionCode.toString(16)}`
+          )
         }
       } else {
         console.warn('[Force Upgrade] 收到未知格式的响应，长度:', msg.length)
       }
     })
-
   })
 }
 
@@ -925,12 +945,12 @@ export const startTftpServer = (host, port = TFTP_DEFAULT_PORT, root = TFTP_ROOT
       // 监听服务器错误
       tftpServer.on('error', (error) => {
         console.error('[TFTP] 服务器错误:', error)
-        
+
         tftpServer = null
-        
+
         let errorMessage = ''
         const errorCode = error.code || ''
-        
+
         if (errorCode === 'EADDRNOTAVAIL') {
           errorMessage = `TFTP服务器启动失败，请检查本机IP是否为 ${tftpHost}。`
         } else if (errorCode === 'EADDRINUSE') {
@@ -940,7 +960,7 @@ export const startTftpServer = (host, port = TFTP_DEFAULT_PORT, root = TFTP_ROOT
         } else {
           errorMessage = `TFTP服务器启动失败: ${error.message}`
         }
-        
+
         resolve({
           success: false,
           message: errorMessage,
@@ -953,11 +973,11 @@ export const startTftpServer = (host, port = TFTP_DEFAULT_PORT, root = TFTP_ROOT
         console.log(
           `[TFTP] 收到${req.method}请求: ${req.file} 来自 ${req.stats.remoteAddress}:${req.stats.remotePort}`
         )
-        
+
         req.on('error', (error) => {
           console.error(`[TFTP] 请求错误 (${req.file}):`, error.message)
         })
-        
+
         tftpServer.requestListener(req, res)
       })
 
@@ -1000,7 +1020,7 @@ export const stopTftpServer = () => {
         tftpServer = null
         resolve({ success: true, message: 'TFTP服务器已停止' })
       })
-      
+
       tftpServer.close()
     } catch (err) {
       console.error('[TFTP] 停止失败:', err)
@@ -1060,10 +1080,10 @@ export const handleSelectTftpUpgradeFile = async (filePath) => {
   try {
     const fileName = path.basename(filePath)
     const fileDir = path.dirname(filePath)
-    
+
     // 设置TFTP根目录为文件所在目录
     setTftpRoot(fileDir)
-    
+
     return {
       success: true,
       fileName: fileName,
@@ -1078,5 +1098,3 @@ export const handleSelectTftpUpgradeFile = async (filePath) => {
     }
   }
 }
-
-

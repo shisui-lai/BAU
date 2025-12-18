@@ -9,64 +9,63 @@ export const DROPDOWN_CONFIGS = {
     // 系统基本参数
     sys_base_param: {
       // 使用中文参数名称作为key，更直观易维护
-      '事件记录模式': [
+      事件记录模式: [
         { label: '简约模式', value: 0 },
         { label: '详细模式', value: 1 }
       ],
-      '内测模式': [
+      内测模式: [
         { label: '关闭内测模式', value: 0 },
         { label: '内测模式（V、T）', value: 1 },
-        { label: '内测模式2（IACP）', value: 2},
-        { label: '内测模式3（DO）', value: 3},
-
+        { label: '内测模式2（IACP）', value: 2 },
+        { label: '内测模式3（DO）', value: 3 }
       ],
-      '均衡模式': [
+      均衡模式: [
         { label: '自动均衡', value: 0 },
         { label: '手动均衡', value: 1 }
       ],
-      '运维模式': [
+      运维模式: [
         { label: '运维模式', value: 23477 },
-        { label: '非运维模式', value: 4641 },
+        { label: '非运维模式', value: 4641 }
       ],
-      'PCS类型': [
+      PCS类型: [
         { label: '无PCS', value: 65535 },
         { label: '星星pcs', value: 1 },
         { label: '双一力PCS-01', value: 2 },
-        { label: '科华PCS', value: 3 },
+        { label: '科华PCS', value: 3 }
       ],
-      '制冷设备类型': [
+      制冷设备类型: [
         { label: '无制冷设备', value: 65535 },
         { label: '科诺威水冷机', value: 1 },
         { label: '英维克', value: 2 },
         { label: '埃森特交流空调', value: 3 },
         { label: '英维克-EMW30-50-80', value: 4 },
-        { label: '均能水冷机-1', value: 5 },
+        { label: '均能水冷机-1', value: 5 }
       ],
-      '除湿机设备类型': [
+      除湿机设备类型: [
         { label: '无除湿机设备', value: 65535 },
         { label: '除湿机-01', value: 1 },
-        { label: '02-除湿机-E-J-000113', value: 2 },
+        { label: '02-除湿机-E-J-000113', value: 2 }
       ],
-      '消防控制器类型': [
+      消防控制器类型: [
         { label: '无消防控制器', value: 65535 },
         { label: '三沃力源（sanvalor）', value: 1 }
       ],
-      '簇压模式': [
+      簇压模式: [
         { label: '高压采集模式', value: 0 },
         { label: '单体电压累加模式', value: 1 }
       ],
-      '动力接插件温度': [
+      动力接插件温度: [
         { label: '不存在', value: 0 },
         { label: '存在', value: 1 }
       ],
-      'BMU温度数据类型': [
+      BMU温度数据类型: [
         { label: '普通模式', value: 0 },
         { label: '高精度模式', value: 1 }
       ],
-      '禁止使能簇': [
-      { label: '禁止', value: 0x5BB5 },
-      { label: '启动', value: 0x1221 }
-    ],
+      禁止使能簇: [
+        { label: '禁止', value: 0x5bb5 },
+        { label: '启动', value: 0x1221 }
+      ],
 
       'CAN1通讯速率/仲裁域速率': [
         { label: '500K', value: 4 },
@@ -74,9 +73,9 @@ export const DROPDOWN_CONFIGS = {
         { label: '100K', value: 1 },
         { label: '125K', value: 2 },
         { label: '250K', value: 3 },
-        { label: '1M', value: 5 },        
+        { label: '1M', value: 5 }
       ],
-      'CAN1数据域波特率': [
+      CAN1数据域波特率: [
         { label: '无效/不支持', value: 0 },
         { label: '250K', value: 1 },
         { label: '500K', value: 2 },
@@ -84,7 +83,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '1M', value: 4 },
         { label: '2M', value: 5 },
         { label: '4M', value: 6 },
-        { label: '5M', value: 7 },  
+        { label: '5M', value: 7 }
       ],
       'CAN2通讯速率/仲裁域速率': [
         { label: '500K', value: 4 },
@@ -92,9 +91,9 @@ export const DROPDOWN_CONFIGS = {
         { label: '100K', value: 1 },
         { label: '125K', value: 2 },
         { label: '250K', value: 3 },
-        { label: '1M', value: 5 },        
+        { label: '1M', value: 5 }
       ],
-      'CAN2数据域波特率': [
+      CAN2数据域波特率: [
         { label: '无效/不支持', value: 0 },
         { label: '250K', value: 1 },
         { label: '500K', value: 2 },
@@ -102,7 +101,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '1M', value: 4 },
         { label: '2M', value: 5 },
         { label: '4M', value: 6 },
-        { label: '5M', value: 7 },  
+        { label: '5M', value: 7 }
       ],
       'CAN3通讯速率/仲裁域速率': [
         { label: '500K', value: 4 },
@@ -110,9 +109,9 @@ export const DROPDOWN_CONFIGS = {
         { label: '100K', value: 1 },
         { label: '125K', value: 2 },
         { label: '250K', value: 3 },
-        { label: '1M', value: 5 },        
+        { label: '1M', value: 5 }
       ],
-      'CAN3数据域波特率': [
+      CAN3数据域波特率: [
         { label: '无效/不支持', value: 0 },
         { label: '250K', value: 1 },
         { label: '500K', value: 2 },
@@ -120,7 +119,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '1M', value: 4 },
         { label: '2M', value: 5 },
         { label: '4M', value: 6 },
-        { label: '5M', value: 7 },  
+        { label: '5M', value: 7 }
       ],
       'RS485-1 波特率': [
         { label: '1200', value: 0 },
@@ -130,7 +129,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },         
+        { label: '115200', value: 7 }
       ],
       'RS485-2 波特率': [
         { label: '1200', value: 0 },
@@ -140,7 +139,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },         
+        { label: '115200', value: 7 }
       ],
       'RS485-3 波特率': [
         { label: '1200', value: 0 },
@@ -150,35 +149,33 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },         
+        { label: '115200', value: 7 }
       ],
 
-      '电流传感器类型': [
+      电流传感器类型: [
         { label: 'LEM-CAB500-C/SP5-012', value: 0 },
-        { label: 'LEM-DHAB-5/118', value: 1 },
-        { label: 'JC-JHAB-5/18', value: 48 },
-        { label: 'CG-FL2C-200A/75mV', value: 192 },
+        { label: 'LEM-DHAB-S/118', value: 1 },
+        { label: 'JC-JHAB-S/18', value: 48 },
+        { label: 'CG-FL2C-200A/75mV', value: 192 }
       ],
 
-
-      '电池类型': [
+      电池类型: [
         { label: '磷酸铁锂电池', value: 0 },
         { label: '钛酸锂电池', value: 1 },
         { label: '锰酸锂电池', value: 2 }
       ],
 
-      '电池厂家': [
+      电池厂家: [
         { label: '宁德280Ah(CB310)', value: 0 },
         { label: '海辰280Ah(LFP71173207)', value: 1 },
-        { label: '兰280Ah(PC-0B1-72174L4-AH)', value: 2 },
+        { label: '兰钧280Ah(PC-0B1-72174L4-AH)', value: 2 },
         { label: '宁德280Ah(CB2W0)', value: 3 },
         { label: '海辰280Ah(ST280P100A)', value: 4 },
         { label: '亿纬314Ah(MB31)', value: 5 },
         { label: '海辰314Ah(ST314P050A)', value: 6 }
       ],
 
-
-      '均衡模式选项': [
+      均衡模式选项: [
         { label: '禁止自动均衡', value: 0 },
         { label: '开路', value: 1 },
         { label: '静置', value: 2 },
@@ -196,7 +193,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '静置、充电、放电', value: 14 },
         { label: '开路、静置、放电、充电', value: 15 }
       ],
-      '充电均衡阈值电压区间K值': {
+      充电均衡阈值电压区间K值: {
         options: [
           { label: '2mV', value: 10 },
           { label: '15mV', value: 100 },
@@ -204,7 +201,7 @@ export const DROPDOWN_CONFIGS = {
           { label: '20mV', value: '20', matchValues: 'other' }
         ]
       },
-      '放电均衡阈值电压区间K值': {
+      放电均衡阈值电压区间K值: {
         options: [
           { label: '2mV', value: 10 },
           { label: '15mV', value: 100 },
@@ -212,29 +209,29 @@ export const DROPDOWN_CONFIGS = {
           { label: '20mV', value: '20', matchValues: 'other' }
         ]
       },
-      '开路均衡阈值电压区间K值': {
+      开路均衡阈值电压区间K值: {
         options: [
           { label: '2mV', value: 10 },
           { label: '15mV', value: 100 },
           { label: '150mV', value: 1000 },
           { label: '20mV', value: '20', matchValues: 'other' }
         ]
-      },
-    },
+      }
+    }
   },
 
   // ========== 簇遥控数据配置（预留） ==========
   cluster_remote_command: {
     // 未来的簇遥控参数配置
     command_param: {
-      '控制模式': [
+      控制模式: [
         { label: '手动控制', value: 0 },
         { label: '自动控制', value: 1 },
         { label: '远程控制', value: 2 }
       ]
     },
     block_soc_param: {
-      '簇间SOC同步开关': [
+      簇间SOC同步开关: [
         { label: '不使能', value: 0 },
         { label: '使能', value: 1 }
       ]
@@ -242,7 +239,7 @@ export const DROPDOWN_CONFIGS = {
   },
 
   block_soc_param: {
-    '簇间SOC同步开关': [
+    簇间SOC同步开关: [
       { label: '不使能', value: 0 },
       { label: '使能', value: 1 }
     ]
@@ -252,23 +249,23 @@ export const DROPDOWN_CONFIGS = {
   block_remote_control: {
     // 系统堆通用配置参数（BLOCK_COMMON_PARAM）
     block_common_param: {
-      '远方就地模式': [
+      远方就地模式: [
         { label: '远方', value: 0 },
         { label: '就地', value: 1 }
       ],
-      '分簇控制标志位': [
+      分簇控制标志位: [
         { label: '统一控制', value: 0 },
         { label: '分簇控制', value: 1 }
       ],
-      'EMS通讯故障断接触器使能': [
+      EMS通讯故障断接触器使能: [
         { label: '不使能', value: 0 },
         { label: '使能', value: 1 }
       ],
-      '运维模式': [
+      运维模式: [
         { label: '非运维模式', value: 0 },
         { label: '运维模式', value: 1 }
       ],
-      '内测模式': [
+      内测模式: [
         { label: '关闭', value: 0 },
         { label: '开启', value: 1 }
       ]
@@ -279,18 +276,18 @@ export const DROPDOWN_CONFIGS = {
     block_batt_param: {
       // 暂无
     },
-    
+
     // 2) 系统通讯设备配置参数
     block_comm_dev_cfg: {
-      'PCS类型': [
+      PCS类型: [
         { label: '无PCS', value: 0 },
         { label: '双一力PCS', value: 1 }
       ],
-      '制冷设备类型': [
+      制冷设备类型: [
         { label: '无制冷设备', value: 0 },
         { label: '三河同飞', value: 1 }
       ],
-      '除湿空调类型': [
+      除湿空调类型: [
         { label: '无除湿空调', value: 0 },
         { label: '三河同飞', value: 1 }
       ],
@@ -306,31 +303,30 @@ export const DROPDOWN_CONFIGS = {
 
     // 3) 系统操作配置参数
     block_operate_cfg: {
-      '全部开路时堆电压是否为0': [
+      全部开路时堆电压是否为0: [
         { label: '不开启', value: 0 },
         { label: '开启', value: 1 }
       ],
-      '静置时堆SOC是否追随平均SOC': [
+      静置时堆SOC是否追随平均SOC: [
         { label: '不开启', value: 0 },
         { label: '开启', value: 1 }
       ],
-      '是否存在BCP控制': [
+      是否存在BCP控制: [
         { label: '不存在', value: 0 },
         { label: '存在', value: 1 }
       ],
-      '簇间SOC同步开关': [
+      簇间SOC同步开关: [
         { label: '不使能', value: 0 },
         { label: '使能', value: 1 }
       ]
-    }
-    ,
+    },
     // 4) 系统堆SOC配置参数
     block_soc_param: {
-      '簇间SOC同步开关': [
+      簇间SOC同步开关: [
         { label: '不使能', value: 0 },
         { label: '使能', value: 1 }
       ],
-      '开启平台校准策略': [
+      开启平台校准策略: [
         { label: '不使能', value: 0 },
         { label: '使能', value: 1 }
       ]
@@ -348,7 +344,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '默认 500K', value: 4 },
         { label: '1M', value: 5 }
       ],
-      'CAN1数据域波特率': [
+      CAN1数据域波特率: [
         { label: '无效/不支持', value: 0 },
         { label: '250K', value: 1 },
         { label: '500K', value: 2 },
@@ -363,7 +359,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '默认 500K', value: 4 },
         { label: '1M', value: 5 }
       ],
-      'CAN2数据域波特率': [
+      CAN2数据域波特率: [
         { label: '无效/不支持', value: 0 },
         { label: '250K', value: 1 },
         { label: '500K', value: 2 },
@@ -378,7 +374,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '默认 500K', value: 4 },
         { label: '1M', value: 5 }
       ],
-      'CAN3数据域波特率': [
+      CAN3数据域波特率: [
         { label: '无效/不支持', value: 0 },
         { label: '250K', value: 1 },
         { label: '500K', value: 2 },
@@ -393,7 +389,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },
+        { label: '115200', value: 7 }
       ],
       'RS485-2通讯速率': [
         { label: '1200', value: 0 },
@@ -403,7 +399,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },
+        { label: '115200', value: 7 }
       ],
       'RS485-3通讯速率': [
         { label: '1200', value: 0 },
@@ -413,7 +409,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },
+        { label: '115200', value: 7 }
       ],
       'RS485-4通讯速率': [
         { label: '1200', value: 0 },
@@ -423,7 +419,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },
+        { label: '115200', value: 7 }
       ],
       'RS485-5通讯速率': [
         { label: '1200', value: 0 },
@@ -433,7 +429,7 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },
+        { label: '115200', value: 7 }
       ],
       'RS485-6通讯速率': [
         { label: '1200', value: 0 },
@@ -443,16 +439,16 @@ export const DROPDOWN_CONFIGS = {
         { label: '19200', value: 4 },
         { label: '38400', value: 5 },
         { label: '57600', value: 6 },
-        { label: '115200', value: 7 },
+        { label: '115200', value: 7 }
       ],
-      '网卡1速度': [
+      网卡1速度: [
         { label: '100M', value: 0 },
         { label: '10M', value: 1 }
       ],
-      '网卡2速度': [
+      网卡2速度: [
         { label: '100M', value: 0 },
         { label: '10M', value: 1 }
-      ],
+      ]
     }
   },
 
@@ -482,7 +478,7 @@ export function getDropdownConfig(dataType, topicType, parameterKey) {
 /**
  * 检查参数是否需要下拉框
  * @param {string} dataType - 数据类型
- * @param {string} topicType - 主题类型  
+ * @param {string} topicType - 主题类型
  * @param {string} parameterKey - 参数名称
  * @returns {boolean} 是否需要下拉框
  */
@@ -490,11 +486,11 @@ export function isDropdownParameter(dataType, topicType, parameterKey) {
   const config = getDropdownConfig(dataType, topicType, parameterKey)
   if (!config) return false
   // return config !== null && Array.isArray(config) && config.length > 0
-   // 支持新格式 { options: [...] }
+  // 支持新格式 { options: [...] }
   if (config.options && Array.isArray(config.options)) {
     return config.options.length > 0
   }
-  
+
   // 兼容旧格式 [...]
   return Array.isArray(config) && config.length > 0
 }
@@ -515,8 +511,8 @@ export function getDisplayLabel(dataType, topicType, parameterKey, value) {
       if (option.matchValues === 'other') {
         // 特殊处理"other"类型：除了明确指定的值外，其他所有值都匹配
         const explicitValues = options
-          .filter(opt => opt.value !== 'other' && opt.matchValues === undefined)
-          .map(opt => Number(opt.value))
+          .filter((opt) => opt.value !== 'other' && opt.matchValues === undefined)
+          .map((opt) => Number(opt.value))
         if (!explicitValues.includes(Number(value))) {
           return option.label
         }
@@ -549,20 +545,27 @@ export function getDisplayLabel(dataType, topicType, parameterKey, value) {
  * @param {string} currentLocale - 当前语言设置（可选）
  * @returns {Array} 翻译后的选项数组
  */
-export function translateDropdownOptions(options, parameterKey, t, te, currentLocale = 'zh', pagePrefix = 'clusterConfigParam') {
+export function translateDropdownOptions(
+  options,
+  parameterKey,
+  t,
+  te,
+  currentLocale = 'zh',
+  pagePrefix = 'clusterConfigParam'
+) {
   if (!Array.isArray(options)) return options
-  
+
   // 如果是中文，直接返回原始选项
   if (currentLocale === 'zh') {
-    return options.map(option => ({
+    return options.map((option) => ({
       label: option.label,
       value: option.value,
       ...(option.matchValues !== undefined && { matchValues: option.matchValues }),
       ...(option.translationKey && { translationKey: option.translationKey })
     }))
   }
-  
-  return options.map(option => {
+
+  return options.map((option) => {
     // 创建完全新的对象，确保所有属性都是独立的
     const translatedOption = {
       label: option.label,
@@ -570,14 +573,14 @@ export function translateDropdownOptions(options, parameterKey, t, te, currentLo
       ...(option.matchValues !== undefined && { matchValues: option.matchValues }),
       ...(option.translationKey && { translationKey: option.translationKey })
     }
-    
+
     // 如果有翻译键，使用翻译键进行翻译
     if (option.translationKey) {
       translatedOption.label = t(option.translationKey)
     } else {
       // 根据页面前缀构建翻译键路径
       const fallbackKey = `${pagePrefix}.dropdownOptions.${parameterKey}.${option.label}`
-      
+
       // 如果有翻译存在性检查函数，先检查键是否存在
       if (te && te(fallbackKey)) {
         translatedOption.label = t(fallbackKey)
@@ -589,7 +592,7 @@ export function translateDropdownOptions(options, parameterKey, t, te, currentLo
         }
       }
     }
-    
+
     return translatedOption
   })
 }
@@ -610,7 +613,7 @@ export function getActualValue(dataType, topicType, parameterKey, displayLabel) 
   const options = config.options || config
   if (!Array.isArray(options)) return displayLabel
 
-  const option = options.find(opt => opt.label === displayLabel)
+  const option = options.find((opt) => opt.label === displayLabel)
   if (!option) {
     console.warn(`[DropdownConfig] 参数 ${parameterKey} 的显示值 ${displayLabel} 不在选项列表中`)
     return displayLabel

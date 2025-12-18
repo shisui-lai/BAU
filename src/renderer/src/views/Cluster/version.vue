@@ -9,9 +9,9 @@ import Column from 'primevue/column'
 // import { usePackSummaryStore } from '@/stores/packSummary'
 import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
 import { parsePackSummary }    from '@/composables/core/data-processing/cluster/parsePackSummary'
-import { parseClusterSummary }    from '@/composables/core/data-processing/cluster/parseClusterSummary'
- import {clusterFrames as clusterFramesMap,pickCluster} from '@/composables/core/data-processing/cluster/parseClusterSummary'
+// 改为本地缓存簇概要数据的方式，移除 parseClusterSummary 依赖
  import {packFrames    as packFramesMap,   pickPack   } from '@/composables/core/data-processing/cluster/parsePackSummary'
+ import { parseClusterSummary, pickCluster } from '@/composables/core/data-processing/cluster/parseClusterSummary'
 
 const { t, te } = useI18n()
 
@@ -23,6 +23,7 @@ function onPackSummary (_e, msg) {
   parsePackSummary(msg)
 }
 
+// 统一解析到集中缓存
 function onClusterSummary (_e, msg) {
   parseClusterSummary(msg)
 }
@@ -30,8 +31,8 @@ function onClusterSummary (_e, msg) {
 /* ---------- ② 在 onMounted 里注册 ---------- */
 onMounted(() => {
   // 先清理可能存在的旧监听器（防止快速切换导致的残留）
-  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY')
-  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY')
+  window.electron.ipcRenderer.removeAllListeners('PACK_SUMMARY',    onPackSummary)
+  window.electron.ipcRenderer.removeAllListeners('CLUSTER_SUMMARY', onClusterSummary)
 
   window.electron.ipcRenderer.on('PACK_SUMMARY',    onPackSummary)
   window.electron.ipcRenderer.on('CLUSTER_SUMMARY', onClusterSummary)
@@ -138,7 +139,7 @@ const tableRows = computed(() => {
   const clsArr = props.filterClasses
 
   // 预处理簇端 rows
-  const clusterData = pickCluster(key, clsArr)
+  const clusterData = key ? (pickCluster(key, clsArr) || []) : []
   const clusterMap = new Map(clusterData.map(b => [b.class, b.element]))
   const clusterRows = clsArr.map((cls, idx) => {
     const ele = clusterMap.get(cls) || []

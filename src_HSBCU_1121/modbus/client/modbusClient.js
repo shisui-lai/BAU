@@ -74,20 +74,20 @@ function clearArpCache(ip) {
     console.log('非管理员权限，跳过清除ARP缓存操作')
     return
   }
-  
+
   console.log(`[${ip}] 开始清除ARP缓存...`)
-  
+
   // 通知前端：即将清除ARP缓存
- /*  process.send({
+  /*  process.send({
     API: 'arp-cache-clear',
     ip,
     status: 'clearing'
   }) */
-  
+
   exec('netsh interface ip delete arpcache', (err, stdout, stderr) => {
     if (err) {
       console.error(`[${ip}] ARP缓存清除失败:`, err)
-     /*  process.send({
+      /*  process.send({
         API: 'arp-cache-clear',
         ip,
         status: 'failed',
@@ -95,7 +95,7 @@ function clearArpCache(ip) {
       }) */
       return
     }
-    
+
     console.log(`[${ip}] ARP缓存清除完成`)
     /* process.send({
       API: 'arp-cache-clear',
@@ -386,7 +386,7 @@ class modbusTcpClient {
     this.retryCount = 0
     this.networkRestartCount = 0 // 网卡重启次数计数器
     this.arpCacheCleared = false // ARP缓存清除标志位
-    this.maxRetries = 10000// 默认最大重试次数
+    this.maxRetries = 10000 // 默认最大重试次数
     this.maxNetworkRestarts = 3 // 最大网卡重启次数
     this.baseReconnectInterval = 3000 // 基础重连间隔
     this.isTerminated = false // 标记是否已终止重连
@@ -666,7 +666,7 @@ class modbusTcpClient {
     this.mbsState = MBS_STATE_GOOD_CONNECT
     this.mbsStatus = 'Connected'
     this.connectionVerified = true
-    console.log(`[${this.mbsHost}] Connected.`,'isStopped:',this.isStopped)
+    console.log(`[${this.mbsHost}] Connected.`, 'isStopped:', this.isStopped)
 
     // 清除之前的自动重连定时器
     if (this.autoReconnectTimeout) {
@@ -813,12 +813,12 @@ class modbusTcpClient {
     }
     this.stopHeartbeat()
     this.stopHealthCheck() // 停止健康检查
-    
+
     // ✅ 关键修复：先处理剩余队列数据，再删除client
     // 确保在client被删除前，队列中的数据能正确写入到对应的BCU文件夹
     console.log(`[${this.mbsHost}] 断开连接前先处理剩余队列数据`)
     cleanupIpQueue(this.mbsHost)
-    
+
     // 然后再清理连接（会删除client和清空Map）
     await this.cleanupConnection()
 

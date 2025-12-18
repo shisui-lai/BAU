@@ -41,7 +41,7 @@ function parseValue(raw, unit) {
     return (raw * 0.1).toFixed(1) + 'V'
   }
   if (unit === 'A') {
-    if(raw>0x7fff)raw-=0x10000
+    if (raw > 0x7fff) raw -= 0x10000
     return (raw * 0.1).toFixed(1) + 'A'
   }
 

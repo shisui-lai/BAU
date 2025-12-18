@@ -76,31 +76,34 @@ const routes = [
             path: '',
             name: 'BCU-Param',
             /*    redirect: '/Bcu/cellSOH/cellSOH-eachcluster/cellSOH-cluster1', */
-            component: () => import(
-              /* webpackPrefetch: true */
-              /* webpackChunkName: "bcu-param" */
-              '@/views/Bcu/bcuParameter/bcuParameter.vue'
-            ),
+            component: () =>
+              import(
+                /* webpackPrefetch: true */
+                /* webpackChunkName: "bcu-param" */
+                '@/views/Bcu/bcuParameter/bcuParameter.vue'
+              ),
             meta: { visibleForGuest: false } // 管理员才看得见
           },
           {
             path: 'alarmConfig',
             name: 'BCU-AlarmConfig',
-            component: () => import(
-              /* webpackPrefetch: true */
-              /* webpackChunkName: "bcu-alarm-config" */
-              '@/views/Bcu/bcuParameter/alarmConfig.vue'
-            ),
+            component: () =>
+              import(
+                /* webpackPrefetch: true */
+                /* webpackChunkName: "bcu-alarm-config" */
+                '@/views/Bcu/bcuParameter/alarmConfig.vue'
+              ),
             meta: { visibleForGuest: false } // 管理员才看得见
           },
           {
             path: 'SOXConfig',
             name: 'BCU-SOXConfig',
-            component: () => import(
-              /* webpackPrefetch: true */
-              /* webpackChunkName: "bcu-sox-config" */
-              '@/views/Bcu/bcuParameter/SOXConfig.vue'
-            ),
+            component: () =>
+              import(
+                /* webpackPrefetch: true */
+                /* webpackChunkName: "bcu-sox-config" */
+                '@/views/Bcu/bcuParameter/SOXConfig.vue'
+              ),
             meta: { visibleForGuest: false } // 管理员才看得见
           }
         ]

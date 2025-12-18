@@ -18,8 +18,8 @@ function regsToBytes(registers) {
   const bytes = []
   for (const reg of registers) {
     // 小端序：低字节在前，高字节在后
-    bytes.push(reg & 0xFF)        // 低字节
-    bytes.push((reg >> 8) & 0xFF) // 高字节
+    bytes.push(reg & 0xff) // 低字节
+    bytes.push((reg >> 8) & 0xff) // 高字节
   }
   return bytes
 }
@@ -78,14 +78,14 @@ function validateEventRecordCRC(recordData) {
 
 // 事件记录读取状态变量
 let isReadingEvent = false
-let eventReadingBlockId = null   // 当前读取的堆ID
-let eventReadingOffset = 0       // 读取偏移量（起始偏移量）
-let eventReadingTotal = 0         // 总记录数
-let eventReadingCurrent = 0      // 当前已读取记录数
+let eventReadingBlockId = null // 当前读取的堆ID
+let eventReadingOffset = 0 // 读取偏移量（起始偏移量）
+let eventReadingTotal = 0 // 总记录数
+let eventReadingCurrent = 0 // 当前已读取记录数
 let eventReadingCanceled = false // 是否已取消
-let eventReadingError = false    // 是否已发送错误通知（避免重复发送）
+let eventReadingError = false // 是否已发送错误通知（避免重复发送）
 let eventRecordDataCache = new Map() // 缓存已读取的事件记录数据（key: recordIndex=请求偏移量, value: parsedData）
-let currentSaveDir = ''          // 当前保存目录
+let currentSaveDir = '' // 当前保存目录
 
 // 事件记录读取等待机制：使用Promise等待响应
 // key: recordIndex（请求偏移量，即offsetRead + sendIndex）
@@ -103,7 +103,6 @@ let eventReadingCompletedCount = 0 // 已完成请求数量（成功或失败）
 // 映射关系验证：记录请求recordIndex和对应的设备RecordOffset
 let mappingVerification = [] // 存储映射关系：{ requestedRecordIndex, deviceRecordOffset }
 
-
 // 响应顺序检测：用于判断设备是否按顺序响应
 let lastReceivedRecordOffset = null // 上一个收到的RecordOffset
 let responseOrderStats = {
@@ -115,7 +114,7 @@ let responseOrderStats = {
 
 /**
  * 处理事件记录数据响应
- * 
+ *
  * 字段说明：
  * - 请求topic: bms/host/s2d/b${blockId}/event_record_r (发布)
  * - 请求payload: 2字节uint16_t，表示要读取的事件记录偏移量（0~N），小端序
@@ -123,9 +122,9 @@ let responseOrderStats = {
  * - 响应格式: 数据长度(2字节) + 事件记录偏移量(2字节) + 事件记录数据(128 * 2字节 = 256字节) = 260字节
  * - RecordOffset: 设备返回的字段，在响应的第2-3字节（小端序），表示设备内部的实际记录索引
  * - recordIndex: 代码中使用的变量，表示请求偏移量（offsetRead + sendIndex），用于标识和匹配请求与响应
- * 
+ *
  * 匹配策略：使用设备返回的RecordOffset直接匹配对应的请求等待器
- * 
+ *
  * @param {Object} responseData - 响应数据对象，包含RecordOffset, baseConfig, data, result等
  * @param {number} blockId - 堆ID
  * @param {Object} client - MQTT客户端（未使用，保留以兼容接口）
@@ -135,14 +134,15 @@ export function processEventRecordResponse(responseData, blockId, client) {
     return
   }
 
-  const { RecordOffset, RecordCount, records, baseConfig, data, result, rawRegisters, rawBuffer } = responseData
+  const { RecordOffset, RecordCount, records, baseConfig, data, result, rawRegisters, rawBuffer } =
+    responseData
 
   if (result?.error) {
     // 错误响应：批量请求错误
     // 注意：错误响应时，RecordOffset可能是undefined（因为baseConfig是空对象）
     // 错误响应是1字节错误码，无法确定具体是哪个请求出错
     // 策略：如果RecordOffset有效，使用它；否则，错误可能影响最近的请求或所有未完成的请求
-    
+
     if (RecordOffset !== undefined && !isNaN(RecordOffset) && RecordCount !== undefined) {
       // RecordOffset和RecordCount都有效，按原逻辑处理
       const recordCount = RecordCount || 1
@@ -155,7 +155,9 @@ export function processEventRecordResponse(responseData, blockId, client) {
           waiter.reject(new Error(data?.message || `参数错误 (code: ${data?.code})`))
         } else {
           // 如果没有找到等待器，说明可能是延迟响应或RecordOffset不匹配
-          console.warn(`[MQTT Child] 事件记录读取错误，但未找到对应的等待器: RecordOffset=${currentOffset}, error=${data?.message || `code: ${data?.code}`}`)
+          console.warn(
+            `[MQTT Child] 事件记录读取错误，但未找到对应的等待器: RecordOffset=${currentOffset}, error=${data?.message || `code: ${data?.code}`}`
+          )
         }
       }
     } else {
@@ -169,16 +171,20 @@ export function processEventRecordResponse(responseData, blockId, client) {
           eventRecordResponseWaiters.delete(firstWaiterKey)
           eventReadingCompletedCount++
           waiter.reject(new Error(data?.message || `参数错误 (code: ${data?.code})`))
-          console.warn(`[MQTT Child] 事件记录读取错误，RecordOffset无效，已处理第一个等待的记录: recordIndex=${firstWaiterKey}, error=${data?.message || `code: ${data?.code}`}`)
+          console.warn(
+            `[MQTT Child] 事件记录读取错误，RecordOffset无效，已处理第一个等待的记录: recordIndex=${firstWaiterKey}, error=${data?.message || `code: ${data?.code}`}`
+          )
         }
       } else {
-        console.warn(`[MQTT Child] 事件记录读取错误，但未找到任何等待器: error=${data?.message || `code: ${data?.code}`}`)
+        console.warn(
+          `[MQTT Child] 事件记录读取错误，但未找到任何等待器: error=${data?.message || `code: ${data?.code}`}`
+        )
       }
     }
   } else {
     // 成功响应：处理多条记录
     const recordCount = RecordCount || (records ? records.length : 1)
-    
+
     // 检测响应顺序（用于判断设备是否按顺序响应）- 使用第一条记录的偏移量
     responseOrderStats.total++
     if (responseOrderStats.firstResponse) {
@@ -193,37 +199,37 @@ export function processEventRecordResponse(responseData, blockId, client) {
       }
       lastReceivedRecordOffset = RecordOffset
     }
-    
+
     // 处理每条记录
     for (let i = 0; i < recordCount; i++) {
       // 【关键修复】新协议中每条记录都有自己的偏移量，应该使用记录中的RecordOffset，而不是计算值
       const record = records && records[i] ? records[i] : null
-      const recordOffset = record ? record.RecordOffset : (RecordOffset + i)  // 优先使用记录中的偏移量
-      const currentOffset = recordOffset  // 使用记录的实际偏移量
-      
+      const recordOffset = record ? record.RecordOffset : RecordOffset + i // 优先使用记录中的偏移量
+      const currentOffset = recordOffset // 使用记录的实际偏移量
+
       // 如果records数组存在，使用数组中的数据；否则使用向后兼容的单条记录数据
       const recordBaseConfig = record ? record.baseConfig : baseConfig
       const recordData = record ? record.data : data
       const recordRawRegisters = record ? record.rawRegisters : rawRegisters
       const recordRawBuffer = record ? record.rawBuffer : rawBuffer
-      
+
       // 查找对应的等待器（使用记录的实际偏移量）
       const waiter = eventRecordResponseWaiters.get(currentOffset)
-      
+
       // 如果找不到等待器，记录警告（但不影响功能）
       if (!waiter) {
         // 延迟响应或RecordOffset不匹配，静默处理
         continue
       }
-      
+
       // 找到对应的等待器，处理该条记录
       eventRecordResponseWaiters.delete(currentOffset)
       eventReadingCompletedCount++
-      
+
       // 记录映射关系验证
       mappingVerification.push({
         requestedRecordIndex: currentOffset, // 请求的recordIndex
-        deviceRecordOffset: currentOffset     // 设备返回的RecordOffset
+        deviceRecordOffset: currentOffset // 设备返回的RecordOffset
       })
 
       // 检查缓存是否已存在（覆盖旧数据，不影响功能）
@@ -271,16 +277,16 @@ export async function startReadingEvent(blockId, offsetRead, totalRead, exportDi
   eventReadingTotal = totalRead
   eventReadingCurrent = 0
   eventReadingCanceled = false
-  eventReadingError = false  // 重置错误标志
-  eventReadingSentCount = 0  // 重置已发送数量
-  eventReadingCompletedCount = 0  // 重置已完成数量
+  eventReadingError = false // 重置错误标志
+  eventReadingSentCount = 0 // 重置已发送数量
+  eventReadingCompletedCount = 0 // 重置已完成数量
   eventRecordDataCache.clear()
   eventRecordResponseWaiters.clear() // 清空等待器
   currentSaveDir = exportDir || ''
 
   // 重置映射关系验证
   mappingVerification = []
-  
+
   // 重置响应顺序统计
   lastReceivedRecordOffset = null
   responseOrderStats = {
@@ -290,11 +296,10 @@ export async function startReadingEvent(blockId, offsetRead, totalRead, exportDi
     firstResponse: true
   }
 
-
   // 并行发送模式：间隔20ms发送请求，不等待响应
   // 批量请求配置：每次最多10条记录
   const MAX_RECORDS_PER_REQUEST = 10
-  
+
   return new Promise((resolve, reject) => {
     let sendIndex = 0 // 当前发送索引（记录数）
     let sendTimer = null // 发送定时器
@@ -317,7 +322,7 @@ export async function startReadingEvent(blockId, offsetRead, totalRead, exportDi
     progressTimer = setInterval(updateProgress, 100)
 
     // 批量发送请求的函数（每次最多4条记录）
-    
+
     const sendRequest = (offset, count) => {
       if (eventReadingCanceled || !isReadingEvent) {
         return
@@ -327,8 +332,8 @@ export async function startReadingEvent(blockId, offsetRead, totalRead, exportDi
       const recordTopic = `bms/host/s2d/b${blockId}/event_record_r`
       // 根据协议：event_record_r的请求payload是偏移量值(2字节uint16_t) + 读取事件记录数量(2字节uint16_t)
       const payload = Buffer.alloc(4)
-      payload.writeUInt16LE(offset, 0)   // 偏移量
-      payload.writeUInt16LE(count, 2)    // 数量
+      payload.writeUInt16LE(offset, 0) // 偏移量
+      payload.writeUInt16LE(count, 2) // 数量
       const recordPayloadHex = payload.toString('hex')
 
       // 为本次请求的每条记录创建等待器
@@ -352,7 +357,9 @@ export async function startReadingEvent(blockId, offsetRead, totalRead, exportDi
       client.publish(recordTopic, payloadBuf, (err) => {
         if (err) {
           // 发布失败，清理所有等待器
-          console.error(`[MQTT Child] 发布读取请求失败: offset=${offset}, count=${count}, error=${err.message}`)
+          console.error(
+            `[MQTT Child] 发布读取请求失败: offset=${offset}, count=${count}, error=${err.message}`
+          )
           for (let i = 0; i < count; i++) {
             const recordIndex = offset + i
             const waiter = eventRecordResponseWaiters.get(recordIndex)
@@ -382,9 +389,9 @@ export async function startReadingEvent(blockId, offsetRead, totalRead, exportDi
         const currentOffset = offsetRead + sendIndex
         const remaining = totalRead - sendIndex
         const count = Math.min(remaining, MAX_RECORDS_PER_REQUEST)
-        
+
         sendRequest(currentOffset, count)
-        sendIndex += count  // 增加已发送的记录数
+        sendIndex += count // 增加已发送的记录数
 
         // 如果还有更多请求要发送，安排下一个
         if (sendIndex < totalRead) {
@@ -410,34 +417,39 @@ export async function startReadingEvent(blockId, offsetRead, totalRead, exportDi
       // 检查是否所有请求都已发送且所有响应都已收到
       // 注意：eventReadingSentCount 现在是请求数，eventReadingCompletedCount 是记录数
       const expectedRequestCount = Math.ceil(totalRead / MAX_RECORDS_PER_REQUEST)
-      if (eventReadingSentCount === expectedRequestCount && eventReadingCompletedCount === totalRead) {
+      if (
+        eventReadingSentCount === expectedRequestCount &&
+        eventReadingCompletedCount === totalRead
+      ) {
         clearInterval(monitorInterval)
         clearInterval(progressTimer)
         if (sendTimer) clearTimeout(sendTimer)
-        
+
         resolve()
         return
       }
     }, 100)
-  }).then(() => {
-    // 统一处理完成/取消通知
-    stopReadingEvent(blockId, eventReadingCanceled, eventReadingError)
-  }).catch((error) => {
-    // 致命错误处理
-    eventReadingError = true
-    console.error('[MQTT Child] 事件记录读取致命错误:', error)
-    process.send({
-      type: 'readEventError',
-      data: {
-        blockId,
-        error: error.message || '未知错误',
-        cachedCount: eventRecordDataCache.size,
-        totalRequested: eventReadingTotal,
-        failedAt: eventReadingCurrent
-      }
-    })
-    stopReadingEvent(blockId, eventReadingCanceled, eventReadingError)
   })
+    .then(() => {
+      // 统一处理完成/取消通知
+      stopReadingEvent(blockId, eventReadingCanceled, eventReadingError)
+    })
+    .catch((error) => {
+      // 致命错误处理
+      eventReadingError = true
+      console.error('[MQTT Child] 事件记录读取致命错误:', error)
+      process.send({
+        type: 'readEventError',
+        data: {
+          blockId,
+          error: error.message || '未知错误',
+          cachedCount: eventRecordDataCache.size,
+          totalRequested: eventReadingTotal,
+          failedAt: eventReadingCurrent
+        }
+      })
+      stopReadingEvent(blockId, eventReadingCanceled, eventReadingError)
+    })
 }
 
 /**
@@ -477,7 +489,9 @@ function stopReadingEvent(blockId, wasCanceled = false, hasError = false) {
       // 没有成功读取任何数据
       // 如果已经在catch块中发送了错误通知（hasError=true），就不应该再发送
       if (!hasError) {
-        console.error(`[MQTT Child] 事件记录读取失败: 未成功读取任何数据 (请求${eventReadingTotal}条，成功0条)`)
+        console.error(
+          `[MQTT Child] 事件记录读取失败: 未成功读取任何数据 (请求${eventReadingTotal}条，成功0条)`
+        )
         process.send({
           type: 'readEventError',
           data: {
@@ -496,7 +510,9 @@ function stopReadingEvent(blockId, wasCanceled = false, hasError = false) {
       // 因为部分数据已成功读取
       const isPartial = cachedCount < eventReadingTotal
       if (isPartial) {
-        console.warn(`[MQTT Child] 事件记录读取部分成功: blockId=${savedBlockId}, 缓存数据=${cachedCount}/${eventReadingTotal}`)
+        console.warn(
+          `[MQTT Child] 事件记录读取部分成功: blockId=${savedBlockId}, 缓存数据=${cachedCount}/${eventReadingTotal}`
+        )
       }
 
       try {
@@ -507,15 +523,21 @@ function stopReadingEvent(blockId, wasCanceled = false, hasError = false) {
 
       try {
         const sorted = Array.from(eventRecordDataCache.entries()).sort((a, b) => a[0] - b[0])
-        const tail = sorted.slice(Math.max(0, sorted.length - 100))
+        const tail = sorted.slice(Math.max(0, sorted.length - 1000))
         const rows = []
         let idCounter = 1
         const pad2 = (n) => String(n).padStart(2, '0')
         for (const [, rec] of tail) {
           const bc = rec.baseConfig || {}
-          const ts = (bc.Year !== undefined && bc.Month !== undefined && bc.Day !== undefined && bc.Hour !== undefined && bc.Minute !== undefined && bc.Second !== undefined)
-            ? `${bc.Year}-${bc.Month}-${bc.Day}-${pad2(bc.Hour)}:${pad2(bc.Minute)}:${pad2(bc.Second)}`
-            : '/'
+          const ts =
+            bc.Year !== undefined &&
+            bc.Month !== undefined &&
+            bc.Day !== undefined &&
+            bc.Hour !== undefined &&
+            bc.Minute !== undefined &&
+            bc.Second !== undefined
+              ? `${bc.Year}-${bc.Month}-${bc.Day}-${pad2(bc.Hour)}:${pad2(bc.Minute)}:${pad2(bc.Second)}`
+              : '/'
           const eventTypeNum = Number(bc.EventType || 0)
           const row = {
             ID: idCounter++,
@@ -525,13 +547,42 @@ function stopReadingEvent(blockId, wasCanceled = false, hasError = false) {
             Param2: formatEventRecordField('Param2', bc.Param2, bc),
             Param3: formatEventRecordField('Param3', bc.Param3, bc),
             Param4: formatEventRecordField('Param4', bc.Param4, bc),
-            SoftwareVersion: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('SoftwareVersion', bc.SoftwareVersion, bc),
-            SOXAlgorithmVersion: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('SOXAlgorithmVersion', bc.SOXAlgorithmVersion, bc),
-            ClusterExitMergeAlgorithmVersion: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('ClusterExitMergeAlgorithmVersion', bc.ClusterExitMergeAlgorithmVersion, bc),
-            NetworkCard2IPAddress: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('NetworkCard2IPAddress', bc.NetworkCard2IPAddress, bc),
-            StackRunStatus: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('StackRunStatus', bc.StackRunStatus, bc),
-            StackTotalFault: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('StackTotalFault', bc.StackTotalFault, bc),
-            StackChargeDischargeStatus: (eventTypeNum >= 300 && eventTypeNum <= 305) ? '/' : formatEventRecordField('StackChargeDischargeStatus', bc.StackChargeDischargeStatus, bc)
+            SoftwareVersion:
+              eventTypeNum >= 300 && eventTypeNum <= 305
+                ? '/'
+                : formatEventRecordField('SoftwareVersion', bc.SoftwareVersion, bc),
+            SOXAlgorithmVersion:
+              eventTypeNum >= 300 && eventTypeNum <= 305
+                ? '/'
+                : formatEventRecordField('SOXAlgorithmVersion', bc.SOXAlgorithmVersion, bc),
+            ClusterExitMergeAlgorithmVersion:
+              eventTypeNum >= 300 && eventTypeNum <= 305
+                ? '/'
+                : formatEventRecordField(
+                    'ClusterExitMergeAlgorithmVersion',
+                    bc.ClusterExitMergeAlgorithmVersion,
+                    bc
+                  ),
+            NetworkCard2IPAddress:
+              eventTypeNum >= 300 && eventTypeNum <= 305
+                ? '/'
+                : formatEventRecordField('NetworkCard2IPAddress', bc.NetworkCard2IPAddress, bc),
+            StackRunStatus:
+              eventTypeNum >= 300 && eventTypeNum <= 305
+                ? '/'
+                : formatEventRecordField('StackRunStatus', bc.StackRunStatus, bc),
+            StackTotalFault:
+              eventTypeNum >= 300 && eventTypeNum <= 305
+                ? '/'
+                : formatEventRecordField('StackTotalFault', bc.StackTotalFault, bc),
+            StackChargeDischargeStatus:
+              eventTypeNum >= 300 && eventTypeNum <= 305
+                ? '/'
+                : formatEventRecordField(
+                    'StackChargeDischargeStatus',
+                    bc.StackChargeDischargeStatus,
+                    bc
+                  )
           }
           rows.push(row)
         }
@@ -576,7 +627,8 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
   const now = new Date()
   const dateOnly = now.toISOString().split('T')[0] // YYYY-MM-DD
   // 优先使用调用方传入的保存目录；若未提供则回落到原有RAW_EXPORT_DIR
-  const baseDir = (typeof saveDir === 'string' && saveDir.trim().length > 0) ? saveDir : RAW_EXPORT_DIR
+  const baseDir =
+    typeof saveDir === 'string' && saveDir.trim().length > 0 ? saveDir : RAW_EXPORT_DIR
   const eventFolderPath = path.join(baseDir, `Event_${dateOnly}`)
 
   // 确保目录存在
@@ -628,17 +680,14 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
 
   // 需要合并的字段类别（参考reference项目，将相同class的字段合并为一个表头）
   // 注意：簇汇总模拟量三级告警需要按严重程度分开显示（严重/一般/轻微）
-  const mergeableClasses = [
-    '簇汇总硬件故障',
-    '堆硬件故障'
-  ]
+  const mergeableClasses = ['簇汇总硬件故障', '堆硬件故障']
 
   // 簇汇总模拟量三级告警的特殊合并规则：按严重程度分组
   // key: 合并后的表头名称, value: 匹配的字段key前缀
   const clusterAnalogAlarmMergeGroups = {
-    '严重故障': ['ClusterAnalogAlarm_Severe1', 'ClusterAnalogAlarm_Severe2'],
-    '一般故障': ['ClusterAnalogAlarm_Moderate1', 'ClusterAnalogAlarm_Moderate2'],
-    '轻微故障': ['ClusterAnalogAlarm_Mild1', 'ClusterAnalogAlarm_Mild2']
+    严重故障: ['ClusterAnalogAlarm_Severe1', 'ClusterAnalogAlarm_Severe2'],
+    一般故障: ['ClusterAnalogAlarm_Moderate1', 'ClusterAnalogAlarm_Moderate2'],
+    轻微故障: ['ClusterAnalogAlarm_Mild1', 'ClusterAnalogAlarm_Mild2']
   }
 
   // 用于跟踪需要合并的class：{ class: [field1, field2, ...] }
@@ -747,15 +796,14 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
   csvHeaders.push('CRC校验')
 
   // 写入表头（表头也需要CSV转义，以防label中包含逗号或引号）
-  const escapedHeaders = csvHeaders.map(header => {
+  const escapedHeaders = csvHeaders.map((header) => {
     const escaped = header.replace(/"/g, '""')
     return `"${escaped}"`
   })
   csvStream.write(escapedHeaders.join(',') + '\n')
 
   // 按recordIndex排序，写入数据行
-  const sortedRecords = Array.from(eventRecordDataCache.entries())
-    .sort((a, b) => a[0] - b[0]) // 按recordIndex排序
+  const sortedRecords = Array.from(eventRecordDataCache.entries()).sort((a, b) => a[0] - b[0]) // 按recordIndex排序
 
   let rowIndex = 1
   let skippedCount = 0
@@ -801,8 +849,14 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
 
         // 格式化时间戳：YYYY-M-D-HH:mm:ss
         // 注意：Year, Month, Day, Hour, Minute, Second 在parseEventRecordRAW中已经BCD解码
-        if (year !== undefined && month !== undefined && day !== undefined &&
-            hour !== undefined && minute !== undefined && second !== undefined) {
+        if (
+          year !== undefined &&
+          month !== undefined &&
+          day !== undefined &&
+          hour !== undefined &&
+          minute !== undefined &&
+          second !== undefined
+        ) {
           // 确保时分秒是两位数
           const pad2 = (num) => String(num).padStart(2, '0')
           const timestamp = `${year}-${month}-${day}-${pad2(hour)}:${pad2(minute)}:${pad2(second)}`
@@ -842,7 +896,8 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
         // 普通字段：改为输出该字段对应寄存器的原始十六进制值
         const idx = fieldRawIndexMap.get(fieldKey)
         if (idx !== undefined && rawRegisters[idx] !== undefined) {
-          const hexVal = '0x' + Number(rawRegisters[idx]).toString(16).toUpperCase().padStart(4, '0')
+          const hexVal =
+            '0x' + Number(rawRegisters[idx]).toString(16).toUpperCase().padStart(4, '0')
           const escapedValue = hexVal.replace(/"/g, '""')
           row.push(`"${escapedValue}"`)
         } else {
@@ -884,9 +939,13 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
           // 过滤掉"无故障"、空字符串和"/"
           // 参考reference项目：只有所有字段都无故障时，才显示"无故障"
           // 如果至少有一个字段有故障信息，就合并所有非"无故障"的值
-          if (cellValue && cellValue.trim() !== '' &&
-              cellValue !== '无故障' && cellValue !== '/' &&
-              cellValue !== '"/"') {
+          if (
+            cellValue &&
+            cellValue.trim() !== '' &&
+            cellValue !== '无故障' &&
+            cellValue !== '/' &&
+            cellValue !== '"/"'
+          ) {
             mergedValues.push(cellValue)
           }
         }
@@ -916,7 +975,9 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
 
       // 确保cellValue是字符串类型（防止formatEventRecordField返回非字符串）
       if (typeof cellValue !== 'string') {
-        console.warn(`[CSV生成] 记录${recordIndex} ${fieldKey}: formatEventRecordField返回了非字符串类型，值=${cellValue}，类型=${typeof cellValue}，已转换为字符串`)
+        console.warn(
+          `[CSV生成] 记录${recordIndex} ${fieldKey}: formatEventRecordField返回了非字符串类型，值=${cellValue}，类型=${typeof cellValue}，已转换为字符串`
+        )
         cellValue = String(cellValue)
       }
 
@@ -954,9 +1015,9 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
     csvStream.write(row.join(',') + '\n')
   }
 
-    // 关闭流
-    csvStream.end()
-  }
+  // 关闭流
+  csvStream.end()
+}
 
 /**
  * 取消读取事件记录
@@ -983,4 +1044,3 @@ export function getEventReadingState() {
     eventReadingError
   }
 }
-

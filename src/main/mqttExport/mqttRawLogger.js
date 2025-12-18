@@ -11,7 +11,13 @@
  */
 import fs from 'fs'
 import path from 'path'
-import { appendFileWithRetry, ensureDir, compressFileGzip, formatDateTime, getCachedFreeDiskSpace } from './utils'
+import {
+  appendFileWithRetry,
+  ensureDir,
+  compressFileGzip,
+  formatDateTime,
+  getCachedFreeDiskSpace
+} from './utils'
 import { RAW_EXPORT_DIR, SESSION_SUFFIX } from './paths'
 
 const RAW_HEADER = ['ID', '时间', '方向', '主题', '设备', 'PayloadHex'].join(',')
@@ -125,7 +131,11 @@ export async function logMessage({ topic, payloadHex, clientId, ts }) {
     if (free < MIN_FREE_SPACE && !bypassLowDiskCheck) {
       const nowTs = Date.now()
       if (nowTs - lastDiskWarningTs > DISK_WARNING_COOLDOWN_MS) {
-        try { if (process.connected) { process.send({ API: 'disk-space-warning' }) } } catch {}
+        try {
+          if (process.connected) {
+            process.send({ API: 'disk-space-warning' })
+          }
+        } catch {}
         lastDiskWarningTs = nowTs
       }
       return
@@ -133,7 +143,11 @@ export async function logMessage({ topic, payloadHex, clientId, ts }) {
     if (free < MIN_FREE_SPACE && bypassLowDiskCheck) {
       const nowTs = Date.now()
       if (nowTs - lastDiskWarningTs > DISK_WARNING_COOLDOWN_MS) {
-        try { if (process.connected) { process.send({ API: 'disk-space-warning' }) } } catch {}
+        try {
+          if (process.connected) {
+            process.send({ API: 'disk-space-warning' })
+          }
+        } catch {}
         lastDiskWarningTs = nowTs
       }
       // 继续写入，不阻断
@@ -178,7 +192,11 @@ export async function logAnyMessage({ topic, payloadHex, clientId, ts, direction
     if (free < MIN_FREE_SPACE && !bypassLowDiskCheck) {
       const nowTs = Date.now()
       if (nowTs - lastDiskWarningTs > DISK_WARNING_COOLDOWN_MS) {
-        try { if (process.connected) { process.send({ API: 'disk-space-warning' }) } } catch {}
+        try {
+          if (process.connected) {
+            process.send({ API: 'disk-space-warning' })
+          }
+        } catch {}
         lastDiskWarningTs = nowTs
       }
       return
@@ -186,7 +204,11 @@ export async function logAnyMessage({ topic, payloadHex, clientId, ts, direction
     if (free < MIN_FREE_SPACE && bypassLowDiskCheck) {
       const nowTs = Date.now()
       if (nowTs - lastDiskWarningTs > DISK_WARNING_COOLDOWN_MS) {
-        try { if (process.connected) { process.send({ API: 'disk-space-warning' }) } } catch {}
+        try {
+          if (process.connected) {
+            process.send({ API: 'disk-space-warning' })
+          }
+        } catch {}
         lastDiskWarningTs = nowTs
       }
       // 继续写入，不阻断
@@ -214,7 +236,9 @@ export async function logAnyMessage({ topic, payloadHex, clientId, ts, direction
     const tstr = formatDateTime(new Date(ts))
     const clientText = formatClientLabel(clientId)
     const payloadText = '"' + '0x' + String(payloadHex).toUpperCase().replace(/"/g, '""') + '"'
-    const row = [idVal, tstr, formatDirectionText(direction), topic, clientText, payloadText].join(',') + '\r\n'
+    const row =
+      [idVal, tstr, formatDirectionText(direction), topic, clientText, payloadText].join(',') +
+      '\r\n'
     await appendFileWithRetry(p, row)
   }
   await (writeChain = writeChain.then(job))

@@ -62,10 +62,10 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
   const statusText = computed(() => {
     // 使用简单的字符串映射，避免在computed中调用i18n
     const statusMap = {
-      'waiting': '未通讯',
-      'receiving': '通讯正常', 
-      'timeout': '通讯超时',
-      'unknown': '状态未知'
+      waiting: '未通讯',
+      receiving: '通讯正常',
+      timeout: '通讯超时',
+      unknown: '状态未知'
     }
     return statusMap[receptionStatus.value] || '状态未知'
   })
@@ -122,10 +122,10 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
   function markDataReceived(messageType = 'unknown') {
     const now = Date.now()
     const isFirstData = !hasReceivedData.value
-    
+
     // 【诊断】统计心跳接收
     heartbeatReceivedCount++
-    
+
     // 【诊断】检测心跳延迟
     // 阈值说明：考虑到throttle间隔2000ms，设置为5000ms（2.5倍余量）
     // 只有真正异常的延迟才会触发警告
@@ -133,15 +133,17 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
     if (timeSinceLastHeartbeat > 5000 && lastDataTime.value > 0) {
       heartbeatDelayWarningCount++
       console.warn(`[DataReception] ⚠️ 心跳延迟 ${timeSinceLastHeartbeat}ms (类型: ${messageType})`)
-      
+
       // 【关键诊断】连续延迟说明主线程被阻塞
       if (heartbeatDelayWarningCount > 3) {
-        console.error(`[DataReception] 🚨 连续${heartbeatDelayWarningCount}次心跳延迟，渲染主线程可能被阻塞！`)
+        console.error(
+          `[DataReception] 🚨 连续${heartbeatDelayWarningCount}次心跳延迟，渲染主线程可能被阻塞！`
+        )
       }
     } else {
       heartbeatDelayWarningCount = 0 // 重置连续延迟计数
     }
-    
+
     // 【诊断】每1秒输出统计（临时改为1秒，方便对比速率显示）
     // 用途：验证速率0KB/s时，实际是否真的无消息
     if (now - lastHeartbeatLogTime > 1000 && lastHeartbeatLogTime > 0) {
@@ -176,18 +178,18 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
 
   /**
    * 【数据速率】更新速率（接收来自MQTT子进程的计算结果）
-   * 
+   *
    * 新架构说明：
    * - 速率计算已迁移到MQTT子进程（mqtt.js）
    * - 基于原始MQTT payload大小计算，避免序列化开销
    * - 渲染进程只负责接收和显示速率值
-   * 
+   *
    * @param {number} rate - 速率值（KB/s）
    */
   function updateDataRate(rate) {
     const now = Date.now()
     rateUpdateCount++
-    
+
     // 【诊断】检测速率更新延迟（理论上每1秒更新一次）
     // 阈值说明：速率计算在MQTT子进程，理论每1000ms，设置为3000ms（3倍余量）
     // 避免正常的事件循环波动导致误报
@@ -195,10 +197,12 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
     if (timeSinceLastUpdate > 3000 && lastRateUpdateTime > 0) {
       rateUpdateDelayWarningCount++
       console.warn(`[DataReception] ⚠️ 速率更新延迟 ${timeSinceLastUpdate}ms (速率: ${rate} KB/s)`)
-      
+
       // 【关键诊断】如果速率更新延迟但心跳正常，说明速率消息被阻塞
       if (rateUpdateDelayWarningCount > 3) {
-        console.error(`[DataReception] 🚨 连续${rateUpdateDelayWarningCount}次速率更新延迟，可能是IPC或主线程阻塞！`)
+        console.error(
+          `[DataReception] 🚨 连续${rateUpdateDelayWarningCount}次速率更新延迟，可能是IPC或主线程阻塞！`
+        )
         console.error(`  - 当前速率: ${rate} KB/s`)
         console.error(`  - 上次更新: ${timeSinceLastUpdate}ms 前`)
         console.error(`  - 建议检查: 主进程事件循环、渲染进程主线程`)
@@ -206,7 +210,7 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
     } else {
       rateUpdateDelayWarningCount = 0
     }
-    
+
     lastRateUpdateTime = now
     dataRate.value = rate
   }
@@ -325,7 +329,7 @@ export const useDataReceptionStore = defineStore('dataReception', () => {
 
     // 方法
     markDataReceived,
-    updateDataRate,      // 【数据速率】导出更新函数，供外部调用
+    updateDataRate, // 【数据速率】导出更新函数，供外部调用
     startMonitoring,
     stopMonitoring,
     setTimeoutDuration

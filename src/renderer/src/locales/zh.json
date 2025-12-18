@@ -91,11 +91,11 @@
       "commandSent": "命令已发送",
       "sentToCount": "{0} 已发送到 {1} 个设备{2}",
       "someFailed": "，{0} 个失败",
-      "executeSuccess": "命令执行成功",
+      "executeSuccess": "命令下发成功",
       "executeFailed": "命令执行失败",
       "systemError": "系统错误",
       "errorDuringExec": "命令执行过程中发生错误",
-      "rcSuccess": "遥控命令执行成功",
+      "rcSuccess": "遥控命令下发成功",
       "rcFailed": "遥控命令执行失败",
       "unknownResponseCode": "未知应答码: 0x{0}"
     },
@@ -180,7 +180,7 @@
     }
   },
   "cluster": {
-    "block": "堆",
+    "block": "堆{0}",
     "cluster": "簇",
     "blockCluster": "堆{0}/簇{1}"
   },
@@ -284,7 +284,7 @@
     "guest": "访客",
     "logout": "注销",
     "settings": "设置",
-    "operationInfo": "运行信息",
+    "operationInfo": "单簇信息",
     "batteryInfo": "电池信息",
     "clusterVersion": "簇版本信息",
     "disconnection": "掉线信息",
@@ -338,7 +338,7 @@
     "operationGuide": {
       "title": "操作说明",
       "step1": "设置TFTP服务器IP（默认: 192.168.11.200）",
-      "step2": "选择升级文件",
+      "step2": "选择升级文件 (文件名必须为 RS-BMS-BAU.pkg)",
       "step3": "启动TFTP服务器",
       "step4": "点击\"开始升级\"按钮发送强制升级指令",
       "step5": "等待BAU设备响应并从TFTP服务器下载升级文件",
@@ -949,6 +949,7 @@
     "blockFaultOverview": "堆故障总览",
     "clusterFaultOverview": "簇{0}故障总览",
     "clusterFaultOverviewTab": "簇故障预览",
+    "selectBlock": "选择堆",
     "selectCluster": "选择簇",
     "indicatorLegend": {
       "severe": "严重",
@@ -1311,8 +1312,8 @@
       },
       "电流传感器类型": {
         "LEM-CAB500-C/SP5-012": "LEM-CAB500-C/SP5-012",
-        "LEM-DHAB-5/118": "LEM-DHAB-5/118",
-        "JC-JHAB-5/18": "JC-JHAB-5/18",
+        "LEM-DHAB-S/118": "LEM-DHAB-S/118",
+        "JC-JHAB-S/18": "JC-JHAB-S/18",
         "CG-FL2C-200A/75mV": "CG-FL2C-200A/75mV"
       },
       "电池类型": {
@@ -1359,7 +1360,7 @@
       "电池厂家": {
         "宁德280Ah(CB310)": "宁德280Ah(CB310)",
         "海辰280Ah(LFP71173207)": "海辰280Ah(LFP71173207)",
-        "兰280Ah(PC-0B1-72174L4-AH)": "兰280Ah(PC-0B1-72174L4-AH)",
+        "兰钧280Ah(PC-0B1-72174L4-AH)": "兰钧280Ah(PC-0B1-72174L4-AH)",
         "宁德280Ah(CB2W0)": "宁德280Ah(CB2W0)",
         "海辰280Ah(ST280P100A)": "海辰280Ah(ST280P100A)",
         "亿纬314Ah(MB31)": "亿纬314Ah(MB31)",
@@ -1483,7 +1484,8 @@
         }
       },
       "summaryClasses": {
-        "basicInfo": "堆基本信息",
+        "keyInfo": "堆运行信息",
+        "basicInfo": "充放电信息",
         "maxMinValues": "最大最小值",
         "statusInfo": "状态信息"
       },
@@ -2170,6 +2172,11 @@
       "权重校准信号": "权重校准信号",
       "SOH强制校准信号": "SOH强制校准信号",
       "上电SOH存储标志位复位": "上电SOH存储标志位复位",
+      "强制SOH校准": "强制SOH校准",
+      "权重校准": "权重校准",
+      "强制清除BCU故障": "强制清除BCU故障",
+      "重置记录Flash": "重置记录Flash",
+      "参数复位": "参数复位",
       "查询接触器执行策略结果": "查询接触器执行策略结果",
       "查询绝缘电阻检测执行结果": "查询绝缘电阻检测执行结果",
       "查询系统运行模式": "查询系统运行模式"
@@ -2785,6 +2792,7 @@
       "放电SOC同步点": "放电SOC同步点"
     },
     "remarks": {
+      "confirmLocalModeBeforeSetting": "请确认当前处于就地模式后再进行参数下设",
       "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；": "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；",
       "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；": "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；",
       "0-无PCS 1-双一力PCS": "0-无PCS 1-双一力PCS",

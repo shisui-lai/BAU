@@ -10,32 +10,24 @@ import { useI18n } from 'vue-i18n'
 export function useFtpFileManager() {
   const toast = useToast()
   const { t } = useI18n()
-  
+
   // 文件列表状态
   const files = ref([])
   const isLoading = ref(false)
   const recentUploadedFileNames = ref(new Set()) // 跟踪最近通过FTP上传的文件
-  
+
   // 计算属性
-  const uploadedFiles = computed(() => 
-    files.value.filter(file => file.fileName)
-  )
-  
-  const validFiles = computed(() => 
-    files.value.filter(file => file.isValid)
-  )
-  
-  const invalidFiles = computed(() =>
-    files.value.filter(file => !file.isValid)
-  )
+  const uploadedFiles = computed(() => files.value.filter((file) => file.fileName))
+
+  const validFiles = computed(() => files.value.filter((file) => file.isValid))
+
+  const invalidFiles = computed(() => files.value.filter((file) => !file.isValid))
 
   const recentUploadedFiles = computed(() =>
-    files.value.filter(file => recentUploadedFileNames.value.has(file.fileName))
+    files.value.filter((file) => recentUploadedFileNames.value.has(file.fileName))
   )
-  
-  const totalSize = computed(() => 
-    files.value.reduce((sum, file) => sum + (file.size || 0), 0)
-  )
+
+  const totalSize = computed(() => files.value.reduce((sum, file) => sum + (file.size || 0), 0))
 
   const totalSizeFormatted = computed(() => {
     const bytes = totalSize.value
@@ -56,9 +48,9 @@ export function useFtpFileManager() {
   //  处理文件事件
   const handleFileEvent = (_, eventData) => {
     const { type, data } = eventData
-    
+
     console.log('[FtpFileManager] 收到文件事件:', type, data)
-    
+
     switch (type) {
       case 'file-uploaded':
         handleFileUploaded(data)
@@ -89,7 +81,7 @@ export function useFtpFileManager() {
     recentUploadedFileNames.value.add(fileInfo.fileName)
 
     // 更新文件列表
-    const existingIndex = files.value.findIndex(f => f.fileName === fileInfo.fileName)
+    const existingIndex = files.value.findIndex((f) => f.fileName === fileInfo.fileName)
     if (existingIndex >= 0) {
       files.value[existingIndex] = { ...fileInfo, isRecentUpload: true }
     } else {
@@ -100,10 +92,12 @@ export function useFtpFileManager() {
     toast.add({
       severity: fileInfo.isValid ? 'success' : 'warn',
       summary: t('toast.deviceUpgrade.ftpFileUploadSuccess'),
-      detail: t('toast.deviceUpgrade.ftpFileUploadSuccessDetail', { 
-        fileName: fileInfo.fileName, 
-        size: fileInfo.sizeFormatted, 
-        status: fileInfo.isValid ? t('toast.deviceUpgrade.ftpFileUploadSuccessValid') : t('toast.deviceUpgrade.ftpFileUploadSuccessInvalid')
+      detail: t('toast.deviceUpgrade.ftpFileUploadSuccessDetail', {
+        fileName: fileInfo.fileName,
+        size: fileInfo.sizeFormatted,
+        status: fileInfo.isValid
+          ? t('toast.deviceUpgrade.ftpFileUploadSuccessValid')
+          : t('toast.deviceUpgrade.ftpFileUploadSuccessInvalid')
       }),
       life: 8000
     })
@@ -114,7 +108,9 @@ export function useFtpFileManager() {
         toast.add({
           severity: 'info',
           summary: t('toast.deviceUpgrade.deviceUpgradeReady'),
-          detail: t('toast.deviceUpgrade.deviceUpgradeReadyDetail', { fileName: fileInfo.fileName }),
+          detail: t('toast.deviceUpgrade.deviceUpgradeReadyDetail', {
+            fileName: fileInfo.fileName
+          }),
           life: 6000
         })
       }, 1000)
@@ -124,7 +120,7 @@ export function useFtpFileManager() {
   // 🔥 处理文件下载
   const handleFileDownloaded = (data) => {
     console.log('[FtpFileManager] 文件下载:', data.fileName)
-    
+
     toast.add({
       severity: 'info',
       summary: t('toast.deviceUpgrade.fileDownload'),
@@ -136,9 +132,9 @@ export function useFtpFileManager() {
   // 🔥 处理文件删除
   const handleFileDeleted = (data) => {
     console.log('[FtpFileManager] 文件删除:', data.fileName)
-    
-    files.value = files.value.filter(f => f.fileName !== data.fileName)
-    
+
+    files.value = files.value.filter((f) => f.fileName !== data.fileName)
+
     toast.add({
       severity: 'info',
       summary: '文件已删除',
@@ -150,10 +146,10 @@ export function useFtpFileManager() {
   // 🔥 处理文件重命名
   const handleFileRenamed = (data) => {
     console.log('[FtpFileManager] 文件重命名:', data.fileName)
-    
+
     // 刷新文件列表以获取最新状态
     refreshFileList()
-    
+
     toast.add({
       severity: 'info',
       summary: '文件已重命名',
@@ -165,7 +161,7 @@ export function useFtpFileManager() {
   // 🔥 处理上传失败
   const handleUploadFailed = (data) => {
     console.error('[FtpFileManager] 文件上传失败:', data)
-    
+
     toast.add({
       severity: 'error',
       summary: '文件上传失败',
@@ -179,10 +175,10 @@ export function useFtpFileManager() {
     try {
       isLoading.value = true
       const result = await window.electron.ipcRenderer.invoke('ftp-get-files')
-      
+
       if (result.success) {
         // 标记预存文件（非最近上传）
-        files.value = result.files.map(file => ({
+        files.value = result.files.map((file) => ({
           ...file,
           isRecentUpload: recentUploadedFileNames.value.has(file.fileName),
           source: recentUploadedFileNames.value.has(file.fileName) ? 'FTP上传' : '预存文件'
@@ -214,7 +210,7 @@ export function useFtpFileManager() {
   const deleteFile = async (fileName) => {
     try {
       const result = await window.electron.ipcRenderer.invoke('ftp-delete-file', fileName)
-      
+
       if (!result.success) {
         toast.add({
           severity: 'error',
@@ -239,21 +235,21 @@ export function useFtpFileManager() {
   const validateFile = async (fileName) => {
     try {
       const result = await window.electron.ipcRenderer.invoke('ftp-validate-file', fileName)
-      
+
       if (result.success) {
         // 更新文件列表中的验证状态
-        const fileIndex = files.value.findIndex(f => f.fileName === fileName)
+        const fileIndex = files.value.findIndex((f) => f.fileName === fileName)
         if (fileIndex >= 0) {
           files.value[fileIndex] = { ...files.value[fileIndex], ...result.fileInfo }
         }
-        
+
         toast.add({
           severity: result.isValid ? 'success' : 'warn',
           summary: '文件验证完成',
           detail: result.message,
           life: 4000
         })
-        
+
         return result.isValid
       } else {
         toast.add({
@@ -278,12 +274,12 @@ export function useFtpFileManager() {
 
   // 🔥 获取文件信息
   const getFileInfo = (fileName) => {
-    return files.value.find(f => f.fileName === fileName)
+    return files.value.find((f) => f.fileName === fileName)
   }
 
   // 🔥 检查文件是否存在
   const fileExists = (fileName) => {
-    return files.value.some(f => f.fileName === fileName)
+    return files.value.some((f) => f.fileName === fileName)
   }
 
   // 🔥 处理文件就绪事件（设备可下载）
@@ -292,8 +288,8 @@ export function useFtpFileManager() {
 
     toast.add({
       severity: 'success',
-          summary: t('toast.deviceUpgrade.deviceUpgradeReady'),
-          detail: eventData.message,
+      summary: t('toast.deviceUpgrade.deviceUpgradeReady'),
+      detail: eventData.message,
       life: 6000
     })
   }

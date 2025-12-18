@@ -7,14 +7,14 @@ export const useEventStore = defineStore('event', {
     current: 0,
     total: 0
   }),
-  
+
   getters: {
     percent: (state) => {
       if (state.total === 0) return 0
       return Math.floor((state.current / state.total) * 100)
     }
   },
-  
+
   actions: {
     /**
      * 开始导出
@@ -25,7 +25,7 @@ export const useEventStore = defineStore('event', {
       this.current = 0
       this.total = totalCount
     },
-    
+
     /**
      * 更新导出进度
      * @param {number} currentIndex - 当前已读取的记录数
@@ -41,7 +41,7 @@ export const useEventStore = defineStore('event', {
         this.complete()
       }
     },
-    
+
     /**
      * 完成导出
      */
@@ -49,7 +49,7 @@ export const useEventStore = defineStore('event', {
       this.isExporting = false
       // 保持current和total，以便显示最终结果
     },
-    
+
     /**
      * 取消导出
      */
@@ -58,7 +58,7 @@ export const useEventStore = defineStore('event', {
       this.current = 0
       this.total = 0
     },
-    
+
     /**
      * 导出失败
      */
@@ -69,5 +69,3 @@ export const useEventStore = defineStore('event', {
     }
   }
 })
-
-

@@ -1021,7 +1021,7 @@ function assignActionValue(elem, classification, ip) {
 const readModbusData_alarmData = async function (mtclient) {
   let ip = mtclient.mbsHost
   const ts = Date.now()
-  
+
   // 配置验证 - 在使用配置参数前先验证
   validateConfiguration(mtclient)
 
@@ -1287,7 +1287,7 @@ const readModbusData_alarmData = async function (mtclient) {
   } catch (e) {
     // 可恢复超时：端口仍打开且未停止 → 忽略，不触发重连
     if (isTimeoutError(e) && mtclient.client.isOpen && !mtclient.isStopped) {
-     // console.warn(`IP ${mtclient.mbsHost} 读取故障映射时发生短暂超时，继续后续读取`)
+      // console.warn(`IP ${mtclient.mbsHost} 读取故障映射时发生短暂超时，继续后续读取`)
       // 出错时使用空数组，不影响其他告警处理
       faultMapAlarms = []
     } else {
@@ -2218,7 +2218,7 @@ const readModbusData_balanceDataForCell = async function (mtclient) {
     }
     // 其它情况（非超时、端口已关、已手动停止或模块未激活）都视为致命错误，触发重连
     mtclient.mbsState = MBS_STATE_FAIL_READ
-   // console.error(`均衡数据致命读取错误 ${mtclient.mbsHost}: ${e.message}`)
+    // console.error(`均衡数据致命读取错误 ${mtclient.mbsHost}: ${e.message}`)
   }
 }
 const readModbusData_disconnectData = async function (mtclient) {
@@ -2492,7 +2492,7 @@ const readModbusData_PowerMap = async function (mtclient) {
         mtclient.client.isOpen &&
         mtclient.modules.PowerMap.isStoppedParams === false
       ) {
-       // console.warn(`IP ${ip} FC04PowerMap 读取短暂超时，pass=${pass}，跳过本次`)
+        // console.warn(`IP ${ip} FC04PowerMap 读取短暂超时，pass=${pass}，跳过本次`)
         continue
       }
 
@@ -2578,7 +2578,7 @@ const readModbusData_PCS = async function (mtclient) {
     }
     // 其它情况（非超时、端口已关、已手动停止或模块未激活）都视为致命错误，触发重连
     mtclient.mbsState = MBS_STATE_FAIL_READ
-   // console.error(`PCS读取错误 ${mtclient.mbsHost}: ${e.message}`)
+    // console.error(`PCS读取错误 ${mtclient.mbsHost}: ${e.message}`)
   }
 }
 const readModbusData_refrigeration = async function (mtclient) {
@@ -2770,7 +2770,7 @@ const readModbusData_DIDOConfig = async function (mtclient) {
       return
     }
     mtclient.mbsState = MBS_STATE_FAIL_READ
-   // console.error(`DIDO配置致命读取错误 ${mtclient.mbsHost}: ${e.message}`)
+    // console.error(`DIDO配置致命读取错误 ${mtclient.mbsHost}: ${e.message}`)
   }
 }
 // 导出获取当前动作值的函数

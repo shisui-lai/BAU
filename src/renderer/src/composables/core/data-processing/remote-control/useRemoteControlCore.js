@@ -665,6 +665,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
   const readingIntervalTimer = ref(null) // 定时读取的计时器引用，用于每2秒自动读取数据
   let isFirstReadAfterStart = false      // 标记是否是开始读取后的第一次，用于控制首次读取成功弹窗
   let isFirstErrorAfterStart = false     // 标记是否是开始读取后的第一次错误，用于控制首次错误弹窗
+  const readingPaused = ref(false)       // 停读暂停门禁
 
   // 批量更新优化 - 减少频繁的响应式触发
   let pendingUpdates = new Map()         // 待处理的参数更新
@@ -863,6 +864,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
      
       return
     }
+    readingPaused.value = false
     isCurrentlyReading.value = true // 设置读取状态为true，按钮变为"停止读取"
     isFirstReadAfterStart = true    // 标记这是开始读取后的第一次
     isFirstErrorAfterStart = true   // 标记这是开始读取后的第一次错误
@@ -879,6 +881,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
 
   // ========== 修正：支持单topic和多topic读取 ==========
   function sendParameterReadRequest(topic) {
+    if (readingPaused.value) return
     const readTemplate = remoteControlConfig.dataSource.readTopicTemplate
     const needDevice = templateNeedsDevice(readTemplate)
     const ids = needDevice ? getSelectedAddress() : null
@@ -944,6 +947,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     }
 
     // console.log(`[RemoteControlCore] 开始多topic读取: ${topics.join(', ')}`)
+    readingPaused.value = false
     isCurrentlyReading.value = true;
     isFirstReadAfterStart = true;
     isFirstErrorAfterStart = true;
@@ -983,6 +987,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
     isCurrentlyReading.value = false // 设置读取状态为false，按钮变为"开始读取"
     isFirstReadAfterStart = false    // 停止时重置首次读取标记
     isFirstErrorAfterStart = false   // 停止时重置首次错误标记
+    readingPaused.value = true
 
     // console.log('[RemoteControlCore] 读取状态已重置')
   }
@@ -1493,6 +1498,7 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
    * @param {Object} receivedData - 接收到的数据对象，格式: {frameKey, data}
    */
   function handleReceivedParameterData(receivedData) {
+    if (readingPaused.value) return
     console.log('[RemoteControlCore-Diag] 8. handleReceivedParameterData 开始执行，接收到数据:', JSON.parse(JSON.stringify(receivedData)))
     const normalized = normalizeReadData(receivedData)
     // 调试日志移除（保留接口位置便于后续排查）
@@ -1999,6 +2005,6 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
 
     // 默认值支持 - 新增功能
     initializeWithDefaults,       // 使用默认值初始化参数列表
-    getDefaultValueByType         // 根据类型获取默认值
+  getDefaultValueByType         // 根据类型获取默认值
   }
 }

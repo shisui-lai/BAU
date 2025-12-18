@@ -583,24 +583,30 @@ const isClusterAvailable = (clusterNum) => {
 
 // 全选1-10簇的状态（计算属性）
 const isAllSelected1 = computed(() => {
-  // 只检查可用的1-10簇是否全部被选中
+  let hasAvailable = false
   for (let i = 1; i <= 10; i++) {
-    if (isClusterAvailable(i) && !bcuSelection1.value.includes(i)) {
-      return false
+    if (isClusterAvailable(i)) {
+      hasAvailable = true
+      if (!bcuSelection1.value.includes(i)) {
+        return false
+      }
     }
   }
-  return true
+  return hasAvailable
 })
 
 // 全选11-20簇的状态（计算属性）
 const isAllSelected2 = computed(() => {
-  // 只检查可用的11-20簇是否全部被选中
+  let hasAvailable = false
   for (let i = 11; i <= 20; i++) {
-    if (isClusterAvailable(i) && !bcuSelection2.value.includes(i)) {
-      return false
+    if (isClusterAvailable(i)) {
+      hasAvailable = true
+      if (!bcuSelection2.value.includes(i)) {
+        return false
+      }
     }
   }
-  return true
+  return hasAvailable
 })
 
 // 切换全选1-10簇
@@ -755,11 +761,11 @@ const checkPwd = () => {
 
 // 取消密码输入
 const cancelPwd = () => {
-  showPasswordDialog.value = false
+  // 若是“确认密码”导致的对话框关闭，则不返回上一页
   if (pwdConfirmed.value) {
-    pwdConfirmed.value = false
     return
   }
+  // 取消或右上角关闭：保持原取消逻辑并返回上一页
   showCancelTip.value = true
   isBlurred.value = true
   setTimeout(() => {
@@ -862,7 +868,8 @@ onMounted(async () => {
     return
   }
 
-  // 密码已验证，直接初始化
+  // 密码已验证，直接展示页面内容并初始化
+  pwdConfirmed.value = true
   await initializePage()
 })
 
@@ -885,7 +892,7 @@ onUnmounted(() => {
 <!-- BAU设备升级界面 -->
 <template>
   <div class="page-wrapper">
-    <div class="card" v-if="!showPasswordDialog">
+    <div class="card" v-if="pwdConfirmed">
     <div class="upgrade-container">
       <!-- 左右布局：左侧(FTP配置+版本信息) + 右侧(设备升级) -->
       <div class="grid">
@@ -1045,7 +1052,7 @@ onUnmounted(() => {
                           :modelValue="isAllSelected1"
                           @update:modelValue="toggleSelectAll1"
                           :binary="true"
-                          :disabled="selectedUpgrade === '0xA000'"
+                          :disabled="selectedUpgrade === '0xA000' || clusterLimits.totalClusters < 1"
                         />
                         <label>{{ t('deviceUpgrade.buttons.selectAll') }}</label>
                       </div>
@@ -1074,7 +1081,7 @@ onUnmounted(() => {
                           :modelValue="isAllSelected2"
                           @update:modelValue="toggleSelectAll2"
                           :binary="true"
-                          :disabled="selectedUpgrade === '0xA000'"
+                          :disabled="selectedUpgrade === '0xA000' || clusterLimits.totalClusters < 11"
                         />
                         <label>{{ t('deviceUpgrade.buttons.selectAll') }}</label>
                       </div>
@@ -1153,7 +1160,7 @@ onUnmounted(() => {
     </div>
 
     <!-- 升级执行结果独立Card -->
-    <div class="card" style="margin-top: 1rem;">
+    <div class="card" v-if="pwdConfirmed" style="margin-top: 1rem;">
       <div class="content-card">
         <h3>{{ t('deviceUpgrade.sections.upgradeExecutionResult', '升级执行结果') }}</h3>
         <div class="card-content">

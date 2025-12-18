@@ -24,15 +24,22 @@ const toastService = useToast()
 const blockStore = useBlockStore()
 const { t, locale, te } = useI18n()
 const systemConfigStore = useSystemConfigStore()
-const { triggerConfigReload } = systemConfigStore
+const { triggerConfigReload, pausePeriodicRead, resumePeriodicRead } = systemConfigStore
 let bcListenersRegistered = false
+// 用于控制是否处理被动接收的公共参数，防止多客户端并发导致输入覆盖
+const waitingForCommonParam = ref(false)
 
 // 参数名称翻译函数
 const getParameterTranslation = (label) => {
   if (locale.value === 'zh') return label
-  return te(`blockConfigParamPage.parameters.${label}`) 
-    ? t(`blockConfigParamPage.parameters.${label}`) 
-    : label
+  if (te(`blockConfigParamPage.parameters.${label}`)) {
+    return t(`blockConfigParamPage.parameters.${label}`)
+  }
+  // 端口页优先复用设备管理页面的翻译结构
+  if (activeType.value === 'port' && te(`config.deviceManagementPage.portLabels.${label}`)) {
+    return t(`config.deviceManagementPage.portLabels.${label}`)
+  }
+  return label
 }
 
 // 备注翻译函数
@@ -51,12 +58,17 @@ const translateDropdownOptions = (options, parameterName) => {
   if (!options || !Array.isArray(options)) return options
   if (locale.value === 'zh') return options
   
-  return options.map(option => ({
-    ...option,
-    label: te(`blockConfigParamPage.dropdowns.${parameterName}.${option.label}`) 
-      ? t(`blockConfigParamPage.dropdowns.${parameterName}.${option.label}`) 
-      : option.label
-  }))
+  return options.map(option => {
+    // 优先使用本页面命名空间
+    if (te(`blockConfigParamPage.dropdowns.${parameterName}.${option.label}`)) {
+      return { ...option, label: t(`blockConfigParamPage.dropdowns.${parameterName}.${option.label}`) }
+    }
+    // 若未定义，复用设备管理页面的下拉翻译结构
+    if (te(`config.deviceManagementPage.dropdownOptions.${parameterName}.${option.label}`)) {
+      return { ...option, label: t(`config.deviceManagementPage.dropdownOptions.${parameterName}.${option.label}`) }
+    }
+    return { ...option }
+  })
 }
 
 // 页面类型映射：本页为堆级可读写（默认显示堆选择器与下发多选）
@@ -187,7 +199,7 @@ const portConfig = {
 }
 
 // ========== BlockConfigParam自动读取topic数组 ==========
-const allReadTopics = ['BLOCK_COMMON_PARAM', 'BLOCK_BATT_PARAM', 'BLOCK_COMM_DEV_CFG', 'BLOCK_OPERATE_CFG', 'BLOCK_SOC_PARAM', 'BLOCK_PORT_CFG']
+const allReadTopics = ['BLOCK_BATT_PARAM', 'BLOCK_COMM_DEV_CFG', 'BLOCK_OPERATE_CFG', 'BLOCK_SOC_PARAM', 'BLOCK_PORT_CFG']
 
 // 复用通用核心（block模式由usePageTypeDetection控制）
 const {
@@ -454,6 +466,7 @@ function sendParametersWithValidation(){
 
 // 统一的停止函数
 function stopAllReading() {
+  cancelAutoRead('BlockConfigParam')
   if (isReadingBattery.value) stopBatteryReading()
   if (isReadingCommDev.value) stopCommDevReading()
   if (isReadingOperate.value) stopOperateReading()
@@ -620,10 +633,10 @@ const renderParameterList = computed(() => {
 
   if (activeType.value === 'port') {
     const staticItems = [
-      { label: '网卡3 ip地址', key: 'Reserved_NIC3_IP', __static: true, value: '-' },
-      { label: '网卡3 默认网关', key: 'Reserved_NIC3_GW', __static: true, value: '-' },
-      { label: '网卡 ip地址', key: 'Reserved_NIC_IP', __static: true, value: '-' },
-      { label: '网卡 默认网关', key: 'Reserved_NIC_GW', __static: true, value: '-' }
+      { label: getParameterTranslation('网卡3 ip地址'), key: 'Reserved_NIC3_IP', __static: true, value: '-' },
+      { label: getParameterTranslation('网卡3 默认网关'), key: 'Reserved_NIC3_GW', __static: true, value: '-' },
+      { label: getParameterTranslation('网卡4 ip地址'), key: 'Reserved_NIC_IP', __static: true, value: '-' },
+      { label: getParameterTranslation('网卡4 默认网关'), key: 'Reserved_NIC_GW', __static: true, value: '-' }
     ]
     const insertIndex = mapped.findIndex(p => p.key === 'MQTT_ServerIP' || p.label === 'MQTT服务器IP' || p.originalLabel === 'MQTT服务器IP')
     if (insertIndex >= 0) {
@@ -673,6 +686,7 @@ function startReading(){
 }
 
 function stopReading(){
+  cancelAutoRead('BlockConfigParam')
   if (activeType.value === 'common') stopCommonReading()
   else if (activeType.value === 'batt') stopBatteryReading()
   else if (activeType.value === 'comm') stopCommDevReading()
@@ -812,6 +826,17 @@ function handleSocWriteEvent(event, mqttMessage){
 
 function handleCommonReadEvent(event, mqttMessage){
   if (mqttMessage.dataType !== 'BLOCK_COMMON_PARAM_R') return
+
+  // 过滤逻辑：只有当我们在等待数据（初始化/下发后）或正在手动读取时，才处理数据
+  // 否则，忽略可能由其他客户端触发的广播数据，防止覆盖用户输入
+  if (!waitingForCommonParam.value && !isReadingCommon.value) {
+    console.log('[BlockConfigParam] 忽略被动接收的公共参数数据，保护用户输入')
+    return
+  }
+
+  // 消费一次性等待标记
+  waitingForCommonParam.value = false
+
   retryLogic.markResponse()
   const parsed = parseParameterReadResponse(mqttMessage, '[useBlockCommonParam]', t('blockConfigParamPage.sections.commonConfig'))
   if (!parsed) return
@@ -827,6 +852,7 @@ function handleCommonWriteEvent(event, mqttMessage){
   handleCommonWriteResponse(parsed)
   const isSuccess = parsed?.result?.success === true || (mqttMessage.data?.code === 0xE0) || (mqttMessage.data?.code === 224)
   if (isSuccess) {
+    waitingForCommonParam.value = true // 下发成功后，允许接收一次最新的配置数据
     triggerConfigReload(1500)
   }
 }
@@ -849,6 +875,9 @@ function handlePortWriteEvent(event, mqttMessage){
 }
 
 onMounted(() => {
+  pausePeriodicRead('BlockConfigParam')
+  waitingForCommonParam.value = true // 进入页面时允许接收初始数据
+  sendCommonReadRequest()
   // 注册全局autoRead函数
   registerAutoReadFunction(autoReadMultiTopicOnce)
 
@@ -924,6 +953,9 @@ onMounted(() => {
 
 // keep-alive 激活时的处理
 onActivated(() => {
+  pausePeriodicRead('BlockConfigParam')
+  waitingForCommonParam.value = true // 激活页面时允许接收初始数据
+  sendCommonReadRequest()
   if (activeType.value === 'soc' || activeType.value === 'port' || activeType.value === 'common') {
     blockStore.setCurrentPageType('standalone')
     blockStore.setSelectedBlockForView('block1')
@@ -955,6 +987,7 @@ watch(activeType, (val) => {
 
 // keep-alive 失活时的处理
 onDeactivated(() => {
+  resumePeriodicRead('BlockConfigParam')
   cancelAutoRead('BlockConfigParam')
   stopBatteryReading()
   stopCommDevReading()
@@ -963,6 +996,7 @@ onDeactivated(() => {
 })
 
 onUnmounted(() => {
+  resumePeriodicRead('BlockConfigParam')
   // 取消统一调度器的待处理请求
   cancelAutoRead('BlockConfigParam')
 

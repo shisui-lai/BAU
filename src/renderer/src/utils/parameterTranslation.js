@@ -8,7 +8,7 @@ import { useI18n } from 'vue-i18n'
  */
 export function createParameterTranslator() {
   const { t, locale, te } = useI18n()
-  
+
   /**
    * 翻译参数数据
    * @param {Array|Object} data - 要翻译的数据
@@ -17,16 +17,16 @@ export function createParameterTranslator() {
    */
   return function translateParameterData(data, pageType) {
     if (!data) return data
-    
+
     // 处理数组数据
     if (Array.isArray(data)) {
       return data.map((item) => translateItem(item, pageType))
     }
-    
+
     // 处理单个对象
     return translateItem(data, pageType)
   }
-  
+
   /**
    * 翻译单个数据项
    * @param {Object} item - 数据项
@@ -35,9 +35,9 @@ export function createParameterTranslator() {
    */
   function translateItem(item, pageType) {
     if (!item || typeof item !== 'object') return item
-    
+
     const translatedItem = { ...item }
-    
+
     // 保存原始标签，用于下拉框检测
     if (item.label && typeof item.label === 'string') {
       translatedItem.originalLabel = item.label
@@ -47,20 +47,20 @@ export function createParameterTranslator() {
     if (labelKey && typeof labelKey === 'string') {
       translatedItem.label = translateLabel(labelKey, pageType)
     }
-    
+
     // 翻译remarks字段（备注信息）
     if (item.remarks && typeof item.remarks === 'string') {
       translatedItem.remarks = translateRemarks(item.remarks, pageType)
     }
-    
+
     // 处理嵌套的element数组（如modbus格式的分组数据）
     if (item.element && Array.isArray(item.element)) {
       translatedItem.element = item.element.map((el) => translateItem(el, pageType))
     }
-    
+
     return translatedItem
   }
-  
+
   /**
    * 翻译标签
    * @param {string} label - 原始标签
@@ -73,11 +73,11 @@ export function createParameterTranslator() {
     if (te(translationKey)) {
       return t(translationKey)
     }
-    
+
     // 翻译失败，返回原始标签
     return label
   }
-  
+
   /**
    * 翻译备注信息
    * @param {string} remarks - 原始备注
@@ -90,7 +90,7 @@ export function createParameterTranslator() {
     if (te(translationKey)) {
       return t(translationKey)
     }
-    
+
     // 翻译失败，返回原始备注
     return remarks
   }
@@ -104,22 +104,22 @@ export function createParameterTranslator() {
  */
 export function createRemarksTranslator(pageType) {
   const { t, locale, te } = useI18n()
-  
+
   return function translateRemarks(remarks) {
     if (!remarks || typeof remarks !== 'string') return remarks
-    
+
     // 如果是中文，直接返回
     if (locale.value === 'zh') {
       return remarks
     }
-    
+
     // 尝试翻译
     const translationKey = `config.${pageType}.remarks.${remarks}`
-    
+
     if (te(translationKey)) {
       return t(translationKey)
     }
-    
+
     // 翻译失败，返回原始备注
     return remarks
   }

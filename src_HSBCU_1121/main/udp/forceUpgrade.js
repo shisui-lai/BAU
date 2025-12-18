@@ -58,29 +58,22 @@ function startForceUpgrade(event, { targetIp, localInterface }) {
     function sendUpgradeCommand() {
       if (!udpClient || !isUpgrading) return
 
-      udpClient.send(
-        upgradeCommand,
-        0,
-        upgradeCommand.length,
-        TARGET_PORT,
-        TARGET_IP,
-        (err) => {
-          if (err) {
-            console.error('[Force Upgrade] 发送指令失败:', err.message)
-            // 发送错误时立即停止升级
-            stopForceUpgrade()
-            // 只发送一次错误通知
-            event.sender.send('force-upgrade-error', {
-              error: err.message
-            })
-          } else {
-            // console.log('[Force Upgrade] 已发送指令到', TARGET_IP)
-            event.sender.send('force-upgrade-sending', {
-              timestamp: Date.now()
-            })
-          }
+      udpClient.send(upgradeCommand, 0, upgradeCommand.length, TARGET_PORT, TARGET_IP, (err) => {
+        if (err) {
+          console.error('[Force Upgrade] 发送指令失败:', err.message)
+          // 发送错误时立即停止升级
+          stopForceUpgrade()
+          // 只发送一次错误通知
+          event.sender.send('force-upgrade-error', {
+            error: err.message
+          })
+        } else {
+          // console.log('[Force Upgrade] 已发送指令到', TARGET_IP)
+          event.sender.send('force-upgrade-sending', {
+            timestamp: Date.now()
+          })
         }
-      )
+      })
     }
 
     // 监听 BCU 的响应，注册是同步的，所以不会错过任何响应，异步触发消息回调函数
@@ -100,7 +93,7 @@ function startForceUpgrade(event, { targetIp, localInterface }) {
         const formattedMac = macAddress.match(/.{1,2}/g).join(':')
         const responseCode = msg[9]
 
-      /*   console.log('[Force Upgrade] 0xAFFD - 当前地址:', currentAddress)
+        /*   console.log('[Force Upgrade] 0xAFFD - 当前地址:', currentAddress)
         console.log('[Force Upgrade] 0xAFFD - MAC地址:', formattedMac)
         console.log('[Force Upgrade] 0xAFFD - 响应码:', responseCode.toString(16)) */
 
@@ -135,11 +128,11 @@ function startForceUpgrade(event, { targetIp, localInterface }) {
         const macAddress = msg.subarray(3, 9).toString('hex').toUpperCase()
         const formattedMac = macAddress.match(/.{1,2}/g).join(':')
         const responseCode = msg[9]
-        
-     /*    console.log('[Force Upgrade] 0xAFFE - 当前地址:', currentAddress)
+
+        /*    console.log('[Force Upgrade] 0xAFFE - 当前地址:', currentAddress)
         console.log('[Force Upgrade] 0xAFFE - MAC地址:', formattedMac)
         console.log('[Force Upgrade] 0xAFFE - 响应码:', responseCode.toString(16)) */
-        
+
         switch (responseCode) {
           case 0x00:
             //console.log('[Force Upgrade] 升级文件下载中')
@@ -151,7 +144,7 @@ function startForceUpgrade(event, { targetIp, localInterface }) {
             })
             break
           case 0x01:
-           // console.log('[Force Upgrade] 升级文件下载完成')
+            // console.log('[Force Upgrade] 升级文件下载完成')
             event.sender.send('force-upgrade-progress', {
               ip: rinfo.address,
               mac: formattedMac,
@@ -160,7 +153,7 @@ function startForceUpgrade(event, { targetIp, localInterface }) {
             })
             break
           case 0x02:
-           // console.log('[Force Upgrade] 程序升级完成')
+            // console.log('[Force Upgrade] 程序升级完成')
             event.sender.send('force-upgrade-success', {
               ip: rinfo.address,
               mac: formattedMac,
@@ -180,7 +173,7 @@ function startForceUpgrade(event, { targetIp, localInterface }) {
             stopForceUpgrade()
             break
           case 0xa2:
-           // console.log('[Force Upgrade] 升级错误')
+            // console.log('[Force Upgrade] 升级错误')
             event.sender.send('force-upgrade-failed', {
               ip: rinfo.address,
               mac: formattedMac,
@@ -219,7 +212,7 @@ function stopSendingCommand() {
     clearInterval(sendInterval)
     sendInterval = null
   }
-  
+
   // 不关闭UDP客户端，继续监听后续的升级进度响应
 }
 
@@ -256,8 +249,4 @@ function getUpgradeStatus() {
   return { isUpgrading }
 }
 
-export {
-  startForceUpgrade,
-  stopForceUpgrade,
-  getUpgradeStatus
-}
+export { startForceUpgrade, stopForceUpgrade, getUpgradeStatus }

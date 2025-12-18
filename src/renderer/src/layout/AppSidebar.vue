@@ -7,7 +7,7 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 // 显示版本号
-const version = 'test-v0.3.6 12.05'
+const version = 'test-v0.3.8 12.15'
 
 // 获取MQTT store
 const mqttStore = useMqttStore()
@@ -93,6 +93,7 @@ function onMqttStatusClick() {
   }
 
   span {
+    font-size: 1rem;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

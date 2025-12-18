@@ -269,6 +269,7 @@ function handleRemoteCommandResponseWithToast(commandType, data, blockId, cluste
     'force_ocv_calib': t('commandIssue.commands.强制OCV校准'),
     'weight_calib': t('commandIssue.commands.权重校准'),
     'force_soh_calib': t('commandIssue.commands.强制SOH校准'),
+    'soh_nvm_flag_reset': t('commandIssue.commands.上电SOH存储标志位复位'),
     'restore_ctrl_param': t('commandIssue.commands.参数复位')
   }
 
@@ -595,6 +596,7 @@ onMounted(() => {
     'FORCE_OCV_CALIB',
     'WEIGHT_CALIB',
     'FORCE_SOH_CALIB',
+    'SOH_NVM_FLAG_RESET',
     'RESTORE_CTRL_PARAM',
     // 反馈查询应答事件
     'GET_CONTACTOR_CTRL_RESULT',
@@ -655,6 +657,7 @@ onUnmounted(() => {
     'FORCE_OCV_CALIB',
     'WEIGHT_CALIB',
     'FORCE_SOH_CALIB',
+    'SOH_NVM_FLAG_RESET',
     'RESTORE_CTRL_PARAM',
     // 添加缺失的反馈查询应答事件
     'GET_CONTACTOR_CTRL_RESULT',

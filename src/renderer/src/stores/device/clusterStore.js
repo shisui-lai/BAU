@@ -4,69 +4,70 @@ import { ref, computed, watch } from 'vue'
 
 export const useClusterStore = defineStore('cluster', () => {
   // ================== 基础状态 ==================
-  
+
   // 所有可用的簇选项列表
   const availableClusters = ref([])
-  
+
   // 当前选中的簇（用于查看数据）
   const selectedClusterForView = ref(null)
-  
+
   // 选中的簇列表（用于批量下发）
   const selectedClustersForWrite = ref([])
-  
+
   // 当前页面类型（用于控制导航栏显示）
   const currentPageType = ref('standalone') // 'cluster' | 'clusterread' | 'standalone'
 
   // ================== 故障筛选状态 ==================
   // 故障页面专用的筛选状态管理
-  
+
   // 所有可用的堆选项列表（从故障数据中解析）
   const availableBlocks = ref([])
-  
+
   // 所有可用的簇选项列表（从故障数据中解析，用于故障筛选）
   const availableFaultClusters = ref([])
-  
+
   // 故障筛选模式：'all' | 'block' | 'cluster'
   const faultFilterMode = ref('all')
-  
+
   // 故障筛选 - 选中的堆列表（多选）
   const selectedBlocksForFault = ref([])
-  
+
   // 故障筛选 - 选中的簇列表（多选）
   const selectedClustersForFault = ref([])
 
   // ================== 计算属性 ==================
-  
+
   // 是否显示簇选择器（查看用下拉框）
   const showClusterSelector = computed(() => {
-    return currentPageType.value === 'cluster' || 
-           currentPageType.value === 'clusterread'
+    return currentPageType.value === 'cluster' || currentPageType.value === 'clusterread'
   })
-  
+
   // 是否显示下发多选框
   const showWriteSelector = computed(() => {
     return currentPageType.value === 'cluster' // 只有簇级遥调页面才需要下发功能
   })
-  
+
   // 是否全选状态
   const isAllSelected = computed(() => {
-    return availableClusters.value.length > 0 && 
-           selectedClustersForWrite.value.length === availableClusters.value.length
+    return (
+      availableClusters.value.length > 0 &&
+      selectedClustersForWrite.value.length === availableClusters.value.length
+    )
   })
-  
+
   // 全选按钮文本
   // const selectAllButtonText = computed(() => {
   //   return isAllSelected.value ? '清空' : '全选'
   // })
 
   // ================== 故障筛选计算属性 ==================
-  
+
   // 故障筛选状态文本描述
   // const faultFilterStatusText = computed(() => {
   //   if (faultFilterMode.value === 'all') {
   //     return '显示全部故障（包括堆告警和簇故障）'
   //   }
-    
+
   //   if (faultFilterMode.value === 'block') {
   //     if (selectedBlocksForFault.value.length === 0) {
   //       return '显示全部堆的故障（包括堆告警和簇故障）'
@@ -74,7 +75,7 @@ export const useClusterStore = defineStore('cluster', () => {
   //     const blockNames = selectedBlocksForFault.value.map(b => `堆${b}`).join('、')
   //     return `显示 ${blockNames} 的故障（包括堆告警和簇故障）`
   //   }
-    
+
   //   if (faultFilterMode.value === 'cluster') {
   //     if (selectedClustersForFault.value.length === 0) {
   //       return '显示全部簇的故障（不包括堆告警）'
@@ -87,24 +88,28 @@ export const useClusterStore = defineStore('cluster', () => {
   //       .join('、')
   //     return `显示 ${clusterNames} 的故障（不包括堆告警）`
   //   }
-    
+
   //   return ''
   // })
-  
+
   // 故障筛选 - 堆全选状态
   const isAllBlocksSelectedForFault = computed(() => {
-    return availableBlocks.value.length > 0 && 
-           selectedBlocksForFault.value.length === availableBlocks.value.length
+    return (
+      availableBlocks.value.length > 0 &&
+      selectedBlocksForFault.value.length === availableBlocks.value.length
+    )
   })
-  
+
   // 故障筛选 - 簇全选状态
   const isAllClustersSelectedForFault = computed(() => {
-    return availableFaultClusters.value.length > 0 && 
-           selectedClustersForFault.value.length === availableFaultClusters.value.length
+    return (
+      availableFaultClusters.value.length > 0 &&
+      selectedClustersForFault.value.length === availableFaultClusters.value.length
+    )
   })
 
   // ================== 簇选项管理 ==================
-  
+
   /**
    * 确保簇选项存在，如果不存在则添加
    * 【已禁用】原动态发现机制，现在完全依靠配置驱动方式
@@ -116,14 +121,14 @@ export const useClusterStore = defineStore('cluster', () => {
     if (!clusterKey || typeof clusterKey !== 'string' || !isValidClusterKey(clusterKey)) {
       return
     }
-    
+
     // 静默检查选项是否存在，不执行任何操作
-    const exists = availableClusters.value.some(option => option.value === clusterKey)
+    const exists = availableClusters.value.some((option) => option.value === clusterKey)
     if (!exists) {
       // 静默忽略，依靠配置驱动的初始化
       return
     }
-    
+
     // 【禁用】所有动态添加逻辑
     /*
     // 解析堆-簇信息
@@ -173,21 +178,19 @@ export const useClusterStore = defineStore('cluster', () => {
       console.warn('[clusterStore] replaceClusterOptions: newOptions must be array')
       return
     }
-    
-    const validOptions = newOptions.filter(option => {
-      const isValid = option && 
-                     typeof option.value === 'string' &&
-                     isValidClusterKey(option.value)
-      
+
+    const validOptions = newOptions.filter((option) => {
+      const isValid = option && typeof option.value === 'string' && isValidClusterKey(option.value)
+
       if (!isValid) {
         console.warn('[clusterStore] replaceClusterOptions: invalid option', option)
       }
-      
+
       return isValid
     })
-    
+
     // 为每个选项添加解析后的block和cluster信息
-    const enrichedOptions = validOptions.map(option => {
+    const enrichedOptions = validOptions.map((option) => {
       const parts = option.value.split('-')
       const block = parseInt(parts[0])
       const cluster = parseInt(parts[1])
@@ -197,7 +200,7 @@ export const useClusterStore = defineStore('cluster', () => {
         cluster: cluster
       }
     })
-    
+
     // 排序
     enrichedOptions.sort((a, b) => {
       if (a.block !== b.block) {
@@ -205,7 +208,7 @@ export const useClusterStore = defineStore('cluster', () => {
       }
       return a.cluster - b.cluster
     })
-    
+
     availableClusters.value = enrichedOptions
     // console.log('[clusterStore] replaceClusterOptions: replaced with', enrichedOptions.length, 'options')
   }
@@ -236,7 +239,7 @@ export const useClusterStore = defineStore('cluster', () => {
     }
 
     // 提取所有键值
-    const clusterKeys = clusters.map(c => c.value || c)
+    const clusterKeys = clusters.map((c) => c.value || c)
 
     // 优先级1：查找 1-1
     if (clusterKeys.includes('1-1')) {
@@ -244,7 +247,7 @@ export const useClusterStore = defineStore('cluster', () => {
     }
 
     // 优先级2：查找 1-x（堆1的其他簇）
-    const block1Clusters = clusterKeys.filter(key => key.startsWith('1-')).sort()
+    const block1Clusters = clusterKeys.filter((key) => key.startsWith('1-')).sort()
     if (block1Clusters.length > 0) {
       return block1Clusters[0]
     }
@@ -259,8 +262,6 @@ export const useClusterStore = defineStore('cluster', () => {
    * 延迟自动选择堆簇
    */
   function scheduleAutoSelect() {
-
-
     // 清除之前的定时器
     if (autoSelectTimer) {
       clearTimeout(autoSelectTimer)
@@ -268,7 +269,6 @@ export const useClusterStore = defineStore('cluster', () => {
 
     // 50ms后进行智能选择（减少延时）
     autoSelectTimer = setTimeout(() => {
-
       if (!selectedClusterForView.value && availableClusters.value.length > 0) {
         const bestCluster = findBestCluster(availableClusters.value)
         if (bestCluster) {
@@ -282,7 +282,7 @@ export const useClusterStore = defineStore('cluster', () => {
         }
       }
       autoSelectTimer = null
-    }, 200) 
+    }, 200)
   }
 
   // ================== 默认下发勾选（自动模式） ==================
@@ -335,7 +335,10 @@ export const useClusterStore = defineStore('cluster', () => {
       from: oldValue,
       to: clusterKey,
       timestamp: new Date().toISOString(),
-      stack: new Error().stack.split('\n').slice(1, 6).map(line => line.trim())
+      stack: new Error().stack
+        .split('\n')
+        .slice(1, 6)
+        .map((line) => line.trim())
     })
   }
 
@@ -359,9 +362,13 @@ export const useClusterStore = defineStore('cluster', () => {
     if (isAllSelected.value) {
       selectedClustersForWrite.value = []
     } else {
-      selectedClustersForWrite.value = availableClusters.value.map(option => option.value)
+      selectedClustersForWrite.value = availableClusters.value.map((option) => option.value)
     }
-    console.log('[clusterStore] toggleSelectAll:', selectedClustersForWrite.value.length, 'selected')
+    console.log(
+      '[clusterStore] toggleSelectAll:',
+      selectedClustersForWrite.value.length,
+      'selected'
+    )
   }
 
   /**
@@ -389,7 +396,7 @@ export const useClusterStore = defineStore('cluster', () => {
   }
 
   // ================== 故障筛选管理 ==================
-  
+
   /**
    * 从故障数据中解析并更新堆和簇选项
    * @param {Array} faultData - 故障数据数组
@@ -399,7 +406,7 @@ export const useClusterStore = defineStore('cluster', () => {
       console.warn('[clusterStore] updateFaultOptions: faultData must be array')
       return
     }
-    
+
     // 调试：检查输入数据
     console.log(`[故障筛选] updateFaultOptions 被调用，故障数量: ${faultData.length}`)
     if (faultData.length > 0) {
@@ -411,25 +418,25 @@ export const useClusterStore = defineStore('cluster', () => {
         clusterString: String(firstFault.cluster)
       })
     }
-    
+
     const blocks = new Set()
     const clusters = new Map()
-    
-    faultData.forEach(fault => {
+
+    faultData.forEach((fault) => {
       if (!fault.cluster) return
-      
+
       const clusterStr = String(fault.cluster)
-      
+
       // 处理堆-簇格式 "1-8"
       if (clusterStr.includes('-')) {
         const parts = clusterStr.split('-')
         if (parts.length === 2) {
           const blockNum = parseInt(parts[0])
           const clusterNum = parseInt(parts[1])
-          
+
           if (!isNaN(blockNum) && !isNaN(clusterNum)) {
             blocks.add(blockNum)
-            
+
             // 只有真正的簇故障（clusterNum > 0）才添加到簇选项中
             if (clusterNum > 0) {
               clusters.set(clusterStr, { block: blockNum, cluster: clusterNum })
@@ -444,28 +451,28 @@ export const useClusterStore = defineStore('cluster', () => {
         }
       }
     })
-    
+
     // 更新堆选项
     availableBlocks.value = Array.from(blocks)
       .sort((a, b) => a - b)
-      .map(block => ({
+      .map((block) => ({
         value: block,
-        label: `堆${block}`  // 添加 label 字段供 MultiSelect 使用
+        label: `堆${block}` // 添加 label 字段供 MultiSelect 使用
       }))
-    
+
     // 更新簇选项（故障专用）
     availableFaultClusters.value = Array.from(clusters.values())
       .sort((a, b) => {
         if (a.block !== b.block) return a.block - b.block
         return a.cluster - b.cluster
       })
-      .map(item => ({
+      .map((item) => ({
         value: `${item.block}-${item.cluster}`,
-        label: `堆${item.block}/簇${item.cluster}`,  // 添加 label 字段供 MultiSelect 使用
+        label: `堆${item.block}/簇${item.cluster}`, // 添加 label 字段供 MultiSelect 使用
         block: item.block,
         cluster: item.cluster
       }))
-    
+
     // 调试：检查解析结果
     console.log(`[故障筛选] 解析结果:`, {
       blocksCount: blocks.size,
@@ -475,7 +482,7 @@ export const useClusterStore = defineStore('cluster', () => {
       firstCluster: availableFaultClusters.value[0]
     })
   }
-  
+
   /**
    * 设置故障筛选模式
    * @param {'all' | 'block' | 'cluster'} mode - 筛选模式
@@ -490,17 +497,17 @@ export const useClusterStore = defineStore('cluster', () => {
 
     // 清理其他模式的选中状态，避免状态残留导致筛选混乱
     if (mode === 'block') {
-      selectedClustersForFault.value = []  // 切换到按堆筛选时，清空簇选择
+      selectedClustersForFault.value = [] // 切换到按堆筛选时，清空簇选择
     } else if (mode === 'cluster') {
-      selectedBlocksForFault.value = []   // 切换到按簇筛选时，清空堆选择
+      selectedBlocksForFault.value = [] // 切换到按簇筛选时，清空堆选择
     } else if (mode === 'all') {
-      selectedBlocksForFault.value = []   // 切换到显示全部时，清空所有选择
+      selectedBlocksForFault.value = [] // 切换到显示全部时，清空所有选择
       selectedClustersForFault.value = []
     }
 
     console.log('[clusterStore] setFaultFilterMode:', mode)
   }
-  
+
   /**
    * 设置故障筛选 - 选中的堆列表
    * @param {Array} blockNumbers - 堆号数组
@@ -513,7 +520,7 @@ export const useClusterStore = defineStore('cluster', () => {
     selectedBlocksForFault.value = [...blockNumbers]
     console.log('[clusterStore] setSelectedBlocksForFault:', blockNumbers)
   }
-  
+
   /**
    * 设置故障筛选 - 选中的簇列表
    * @param {Array} clusterKeys - 簇键值数组
@@ -526,7 +533,7 @@ export const useClusterStore = defineStore('cluster', () => {
     selectedClustersForFault.value = [...clusterKeys]
     console.log('[clusterStore] setSelectedClustersForFault:', clusterKeys)
   }
-  
+
   /**
    * 故障筛选 - 堆全选/清空切换
    */
@@ -534,11 +541,15 @@ export const useClusterStore = defineStore('cluster', () => {
     if (isAllBlocksSelectedForFault.value) {
       selectedBlocksForFault.value = []
     } else {
-      selectedBlocksForFault.value = availableBlocks.value.map(option => option.value)
+      selectedBlocksForFault.value = availableBlocks.value.map((option) => option.value)
     }
-    console.log('[clusterStore] toggleSelectAllBlocksForFault:', selectedBlocksForFault.value.length, 'selected')
+    console.log(
+      '[clusterStore] toggleSelectAllBlocksForFault:',
+      selectedBlocksForFault.value.length,
+      'selected'
+    )
   }
-  
+
   /**
    * 故障筛选 - 簇全选/清空切换
    */
@@ -546,11 +557,15 @@ export const useClusterStore = defineStore('cluster', () => {
     if (isAllClustersSelectedForFault.value) {
       selectedClustersForFault.value = []
     } else {
-      selectedClustersForFault.value = availableFaultClusters.value.map(option => option.value)
+      selectedClustersForFault.value = availableFaultClusters.value.map((option) => option.value)
     }
-    console.log('[clusterStore] toggleSelectAllClustersForFault:', selectedClustersForFault.value.length, 'selected')
+    console.log(
+      '[clusterStore] toggleSelectAllClustersForFault:',
+      selectedClustersForFault.value.length,
+      'selected'
+    )
   }
-  
+
   // 添加缓存机制
   let filterCache = {
     lastInput: null,
@@ -578,18 +593,25 @@ export const useClusterStore = defineStore('cluster', () => {
     const currentMode = faultFilterMode.value
     const currentSelectedBlocks = JSON.stringify([...selectedBlocksForFault.value].sort())
     const currentSelectedClusters = JSON.stringify([...selectedClustersForFault.value].sort())
-    const inputHash = allFaults.length + '_' + (allFaults[0]?.label || '') + '_' + (allFaults[allFaults.length-1]?.label || '')
+    const inputHash =
+      allFaults.length +
+      '_' +
+      (allFaults[0]?.label || '') +
+      '_' +
+      (allFaults[allFaults.length - 1]?.label || '')
 
-    if (filterCache.lastInput === inputHash &&
-        filterCache.lastMode === currentMode &&
-        filterCache.lastSelectedBlocks === currentSelectedBlocks &&
-        filterCache.lastSelectedClusters === currentSelectedClusters &&
-        filterCache.lastResult) {
+    if (
+      filterCache.lastInput === inputHash &&
+      filterCache.lastMode === currentMode &&
+      filterCache.lastSelectedBlocks === currentSelectedBlocks &&
+      filterCache.lastSelectedClusters === currentSelectedClusters &&
+      filterCache.lastResult
+    ) {
       // console.log('[性能优化] 使用缓存结果')
       return filterCache.lastResult
     }
 
-    const filtered = allFaults.filter(fault => {
+    const filtered = allFaults.filter((fault) => {
       if (!fault.cluster) {
         return false
       }
@@ -621,7 +643,6 @@ export const useClusterStore = defineStore('cluster', () => {
         return false
       }
 
-
       if (faultFilterMode.value === 'block') {
         // 按堆筛选：包括堆告警和该堆下的所有簇故障
         if (selectedBlocksForFault.value.length === 0) {
@@ -629,14 +650,12 @@ export const useClusterStore = defineStore('cluster', () => {
         }
 
         // 确保比较的是相同类型（都转为数字）
-        const selectedBlocks = selectedBlocksForFault.value.map(b => {
+        const selectedBlocks = selectedBlocksForFault.value.map((b) => {
           if (typeof b === 'number') return b
           const s = String(b)
           return s.startsWith('block') ? parseInt(s.replace('block', '')) : parseInt(s)
         })
         const result = selectedBlocks.includes(blockNum)
-
-
 
         return result
       }
@@ -644,17 +663,15 @@ export const useClusterStore = defineStore('cluster', () => {
       if (faultFilterMode.value === 'cluster') {
         // 按簇筛选：只包括指定的簇故障（不包括堆告警）
         if (!isClusterFault) {
-          return false  // 排除堆告警
+          return false // 排除堆告警
         }
 
         if (selectedClustersForFault.value.length === 0) {
-          return true  // 如果没有选中任何簇，显示所有簇故障
+          return true // 如果没有选中任何簇，显示所有簇故障
         }
 
         const selectedClusters = [...selectedClustersForFault.value]
         const isMatch = selectedClusters.includes(clusterStr)
-
-
 
         return isMatch
       }
@@ -673,7 +690,7 @@ export const useClusterStore = defineStore('cluster', () => {
   }
 
   // ================== 页面类型管理 ==================
-  
+
   /**
    * 设置当前页面类型
    * @param {'cluster' | 'clusterread' | 'standalone'} pageType - 页面类型
@@ -688,14 +705,14 @@ export const useClusterStore = defineStore('cluster', () => {
   }
 
   // ================== 工具方法 ==================
-  
+
   /**
    * 获取簇的显示名称
    * @param {string} clusterKey - 簇键值
    * @returns {string} 显示名称
    */
   function getClusterDisplayName(clusterKey) {
-    const option = availableClusters.value.find(opt => opt.value === clusterKey)
+    const option = availableClusters.value.find((opt) => opt.value === clusterKey)
     return option ? option.label : clusterKey
   }
 
@@ -708,23 +725,23 @@ export const useClusterStore = defineStore('cluster', () => {
     if (!clusterKey || typeof clusterKey !== 'string') {
       return false
     }
-    
+
     const parts = clusterKey.split('-')
     if (parts.length !== 2) {
       return false
     }
-    
+
     const blockNum = parseInt(parts[0])
     const clusterNum = parseInt(parts[1])
-    
+
     return !isNaN(blockNum) && !isNaN(clusterNum) && blockNum > 0 && clusterNum > 0
   }
 
   // ================== 系统配置驱动初始化 ==================
-  
+
   // 保存上一次的配置，用于检测变化
   let lastSystemConfig = null
-  
+
   /**
    * 检测系统配置是否发生变化
    * @param {Object} newConfig - 新的配置参数
@@ -734,15 +751,21 @@ export const useClusterStore = defineStore('cluster', () => {
     if (!lastSystemConfig) {
       return true // 首次配置，认为有变化
     }
-    
+
     const { BlockCount, ClusterCount1, ClusterCount2 } = newConfig
-    const { BlockCount: lastBlockCount, ClusterCount1: lastClusterCount1, ClusterCount2: lastClusterCount2 } = lastSystemConfig
-    
-    return BlockCount !== lastBlockCount || 
-           ClusterCount1 !== lastClusterCount1 || 
-           ClusterCount2 !== lastClusterCount2
+    const {
+      BlockCount: lastBlockCount,
+      ClusterCount1: lastClusterCount1,
+      ClusterCount2: lastClusterCount2
+    } = lastSystemConfig
+
+    return (
+      BlockCount !== lastBlockCount ||
+      ClusterCount1 !== lastClusterCount1 ||
+      ClusterCount2 !== lastClusterCount2
+    )
   }
-  
+
   /**
    * 检查当前选中的簇是否仍然有效
    * @param {Array} newOptions - 新的簇选项列表
@@ -752,10 +775,10 @@ export const useClusterStore = defineStore('cluster', () => {
     if (!selectedClusterForView.value) {
       return false
     }
-    
-    return newOptions.some(option => option.value === selectedClusterForView.value)
+
+    return newOptions.some((option) => option.value === selectedClusterForView.value)
   }
-  
+
   /**
    * 根据系统配置参数初始化堆簇结构
    * @param {Object} config - 配置参数 {BlockCount, ClusterCount1, ClusterCount2}
@@ -773,25 +796,26 @@ export const useClusterStore = defineStore('cluster', () => {
 
     // 检测配置是否发生变化
     const configChanged = hasSystemConfigChanged(config)
-    
+
     if (!configChanged) {
       return
     }
-    
-    console.log(`🔄 [簇配置] 配置更新: ${BlockCount}堆, 第1堆${ClusterCount1}簇, 第2堆${ClusterCount2}簇`)
-    
+
+    console.log(
+      `🔄 [簇配置] 配置更新: ${BlockCount}堆, 第1堆${ClusterCount1}簇, 第2堆${ClusterCount2}簇`
+    )
+
     // 保存当前配置
     lastSystemConfig = { ...config }
 
     // 【关键修复】在清空之前先保存旧选项，用于后续比较
-    const oldOptions = availableClusters.value.map(o => o.value)
+    const oldOptions = availableClusters.value.map((o) => o.value)
 
     // 根据配置生成簇选项
     const newOptions = []
 
     // 第一堆的簇
     if (BlockCount >= 1 && ClusterCount1 > 0) {
-
       for (let cluster = 1; cluster <= ClusterCount1; cluster++) {
         newOptions.push({
           value: `1-${cluster}`,
@@ -804,7 +828,6 @@ export const useClusterStore = defineStore('cluster', () => {
 
     // 第二堆的簇（如果存在）
     if (BlockCount >= 2 && ClusterCount2 > 0) {
-
       for (let cluster = 1; cluster <= ClusterCount2; cluster++) {
         newOptions.push({
           value: `2-${cluster}`,
@@ -824,35 +847,36 @@ export const useClusterStore = defineStore('cluster', () => {
     })
 
     // 比较新旧选项内容，只有内容变化时才更新
-    const newOptionsValues = newOptions.map(o => o.value)
-    const isSame = oldOptions.length === newOptionsValues.length && 
-                   oldOptions.every((val, idx) => val === newOptionsValues[idx])
-    
+    const newOptionsValues = newOptions.map((o) => o.value)
+    const isSame =
+      oldOptions.length === newOptionsValues.length &&
+      oldOptions.every((val, idx) => val === newOptionsValues[idx])
+
     // 只有内容变化时才更新，避免不必要的响应式更新导致闪烁
     if (!isSame) {
       // 清空现有选项（只有在需要更新时才清空）
       clearClusterOptions()
-      
+
       // 先更新 availableClusters，确保响应式更新
       availableClusters.value = newOptions
-      
+
       // 清理 selectedClustersForWrite 中的无效簇（在 availableClusters 更新后）
-      const validClusterKeys = new Set(newOptions.map(opt => opt.value))
+      const validClusterKeys = new Set(newOptions.map((opt) => opt.value))
       const beforeCleanCount = selectedClustersForWrite.value.length
       // 使用数组替换方式确保响应式更新
-      const cleanedSelection = selectedClustersForWrite.value.filter(
-        key => validClusterKeys.has(key)
+      const cleanedSelection = selectedClustersForWrite.value.filter((key) =>
+        validClusterKeys.has(key)
       )
       selectedClustersForWrite.value = cleanedSelection
       const afterCleanCount = selectedClustersForWrite.value.length
-      
+
       if (beforeCleanCount !== afterCleanCount) {
         console.log(`🧹 [簇配置] 清理了 ${beforeCleanCount - afterCleanCount} 个无效的批量下发选择`)
       }
 
       // 检查当前选择是否仍然有效
       const currentSelectionValid = isCurrentSelectionValid(newOptions)
-      
+
       // 如果当前选择无效，触发重新选择
       if (!currentSelectionValid && newOptions.length > 0) {
         scheduleAutoSelect()
@@ -861,20 +885,20 @@ export const useClusterStore = defineStore('cluster', () => {
   }
 
   // ================== 返回接口 ==================
-  
+
   return {
     // ========== 原有状态（保持不变） ==========
     availableClusters,
     selectedClusterForView,
     selectedClustersForWrite,
     currentPageType,
-    
+
     // ========== 原有计算属性（保持不变） ==========
     showClusterSelector,
     showWriteSelector,
     isAllSelected,
     // selectAllButtonText,
-    
+
     // ========== 原有方法（保持不变） ==========
     ensureClusterOption,
     replaceClusterOptions,
@@ -887,22 +911,22 @@ export const useClusterStore = defineStore('cluster', () => {
     setCurrentPageType,
     getClusterDisplayName,
     isValidClusterKey,
-    
+
     // ========== 新增：系统配置驱动初始化 ==========
     initializeFromSystemConfig,
-    
+
     // ========== 新增：故障筛选状态 ==========
     availableBlocks,
     availableFaultClusters,
     faultFilterMode,
     selectedBlocksForFault,
     selectedClustersForFault,
-    
+
     // ========== 新增：故障筛选计算属性 ==========
     // faultFilterStatusText,
     isAllBlocksSelectedForFault,
     isAllClustersSelectedForFault,
-    
+
     // ========== 新增：故障筛选方法 ==========
     updateFaultOptions,
     setFaultFilterMode,
@@ -912,7 +936,7 @@ export const useClusterStore = defineStore('cluster', () => {
     toggleSelectAllClustersForFault,
     filterFaultData
   }
-}) 
+})
 
 /*
 ================== 堆数据功能使用说明 ==================
@@ -959,4 +983,4 @@ clusterStore.setSelectedBlockForView(1) // 选择堆1
 - 堆数据不分簇，所以不需要考虑簇级筛选
 - 堆告警功能已在故障筛选中预留，但暂时注释掉
 - 保持与现有簇功能的一致性和兼容性
-*/ 
+*/

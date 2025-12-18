@@ -6,52 +6,127 @@
         <!-- 堆汇总信息标签页 -->
       <TabPanel :header="t('config.blockInfoPage.sections.summaryInfo')">
           <div class="info-content" v-if="activeTabIndex === 0">
-            <div v-if="processedSummaryData.length === 0" class="empty-message">
+            <div v-if="summarySections.length === 0" class="empty-message">
               {{ selectedBlock ? t('config.blockInfoPage.messages.noData') : t('config.blockInfoPage.messages.selectBlock') }}
             </div>
-            <div v-else class="table-wrapper">
-              <table class="lightweight-table block-summary-table">
-                <thead>
-                  <tr>
-                    <th style="min-width:200px">{{ t('config.blockInfoPage.table.parameterName') }}</th>
-                    <th style="min-width:120px">{{ t('config.blockInfoPage.table.actualValue') }}</th>
-                    <th style="min-width:80px">{{ t('config.blockInfoPage.table.unit') }}</th>
-                    <th style="min-width:200px">{{ t('config.blockInfoPage.table.parameterName') }}</th>
-                    <th style="min-width:120px">{{ t('config.blockInfoPage.table.actualValue') }}</th>
-                    <th style="min-width:80px">{{ t('config.blockInfoPage.table.unit') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, index) in processedSummaryData" :key="index" :class="{ 'striped': index % 2 === 1 }">
-                    <td class="font-medium">{{ row.leftLabelTranslated }}</td>
-                    <td>
-                      <div v-if="row.leftRenderType === 'cluster-bits'" class="cluster-bits">
-                        <div v-for="(checked, i) in row.leftBits" :key="i" class="cluster-bit-item">
+            <div v-else class="groups-container">
+              <div v-for="group in summarySections" :key="group.title" class="group-section">
+                <div class="group-header">
+                  <span class="group-icon">{{ group.title === '状态信息' ? '⚠️' : '📊' }}</span>
+                  <h5 class="group-title">{{ group.titleTranslated || group.title }}</h5>
+                </div>
+                <!-- 堆运行信息分组：先渲染普通项，再单独渲染簇状态行 -->
+                <div v-if="group.title === '堆运行信息'">
+                  <div :class="['items-grid', 'items-grid-key']">
+                    <div 
+                      v-for="item in group.items.filter(it => !it.isClusterStatus)" 
+                      :key="item.key || item.labelTranslated" 
+                      :class="['item-card', item.cardClass || '']"
+                    >
+                      <div class="item-label">{{ item.labelTranslated }}</div>
+                      <div class="item-value" :class="item.valueClass || ''">
+                        {{ item.valueFormatted }}<span v-if="item.unitDisplay && item.unitDisplay !== '-'" class="item-unit">{{ item.unitDisplay }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="cluster-row">
+                    <div 
+                      v-for="item in group.items.filter(it => it.isClusterStatus)" 
+                      :key="item.key || item.labelTranslated" 
+                      :class="['item-card', 'cluster-status-card', item.key === 'EnableClusterStatus' ? 'enable-bits' : (item.key === 'CutoutClusterStatus' ? 'cutout-bits' : '')]"
+                    >
+                      <div class="item-label">{{ item.labelTranslated }}</div>
+                      <div v-if="item.renderType === 'cluster-bits' && item.rows" class="cluster-bits-rows">
+                        <div v-for="(row, r) in item.rows" :key="r" class="cluster-bits-row">
+                          <div v-for="(checked, i) in row" :key="i" class="cluster-bit-item">
+                            <label>
+                              <input type="checkbox" :checked="checked" class="bit-checkbox" tabindex="-1" @click.prevent />
+                              <span class="bit-label">{{ (r === 0 ? (item.rangeStart || 1) : ((item.rangeStart || 1) + 10)) + i }}</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else-if="item.renderType === 'cluster-bits'" class="cluster-bits">
+                        <div v-for="(checked, i) in item.bits" :key="i" class="cluster-bit-item">
                           <label>
-                            <input type="checkbox" :checked="checked" disabled />
-                            <span class="bit-label">{{ (row.leftRangeStart || 1) + i }}</span>
+                            <input type="checkbox" :checked="checked" class="bit-checkbox" tabindex="-1" @click.prevent />
+                            <span class="bit-label">{{ (item.rangeStart || 1) + i }}</span>
                           </label>
                         </div>
                       </div>
-                      <span v-else>{{ row.leftValueFormatted }}</span>
-                    </td>
-                    <td>{{ row.leftUnitDisplay }}</td>
-                    <td class="font-medium">{{ row.rightLabelTranslated }}</td>
-                    <td>
-                      <div v-if="row.rightRenderType === 'cluster-bits'" class="cluster-bits">
-                        <div v-for="(checked, i) in row.rightBits" :key="i" class="cluster-bit-item">
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 最大最小值分组：按类别容器内排布（簇电压、簇SOC、单体电压、单体温度等） -->
+                <div v-else-if="group.title === '最大最小值' && group.subGroups && group.subGroups.length">
+                  <div class="subgroups-container">
+                    <div v-for="sg in group.subGroups" :key="sg.title" class="subgroup-section">
+                      <div class="subgroup-header">
+                        <h6 class="subgroup-title">{{ sg.title }}</h6>
+                      </div>
+                      <div class="items-grid">
+                        <div 
+                          v-for="item in sg.items" 
+                          :key="item.key || item.labelTranslated" 
+                          :class="['item-card', item.cardClass || '']"
+                        >
+                          <div class="item-label">{{ item.labelTranslated }}</div>
+                          <div class="item-value" :class="item.valueClass || ''">
+                            {{ item.valueFormatted }}<span v-if="item.unitDisplay && item.unitDisplay !== '-'" class="item-unit">{{ item.unitDisplay }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="group.otherItems && group.otherItems.length" class="items-grid">
+                    <div 
+                      v-for="item in group.otherItems" 
+                      :key="item.key || item.labelTranslated" 
+                      :class="['item-card', item.cardClass || '']"
+                    >
+                      <div class="item-label">{{ item.labelTranslated }}</div>
+                      <div class="item-value">
+                        {{ item.valueFormatted }}<span v-if="item.unitDisplay && item.unitDisplay !== '-'" class="item-unit">{{ item.unitDisplay }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- 其他分组保持原逻辑 -->
+                <div v-else>
+                  <div :class="['items-grid']">
+                    <div 
+                      v-for="item in group.items" 
+                      :key="item.key || item.labelTranslated" 
+                      :class="['item-card', item.cardClass || '']"
+                    >
+                      <div class="item-label">{{ item.labelTranslated }}</div>
+                      <div v-if="item.renderType === 'cluster-bits' && item.rows" class="cluster-bits-rows">
+                        <div v-for="(row, r) in item.rows" :key="r" class="cluster-bits-row">
+                          <div v-for="(checked, i) in row" :key="i" class="cluster-bit-item">
+                            <label>
+                              <input type="checkbox" :checked="checked" class="bit-checkbox" tabindex="-1" @click.prevent />
+                              <span class="bit-label">{{ (r === 0 ? (item.rangeStart || 1) : ((item.rangeStart || 1) + 10)) + i }}</span>
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else-if="item.renderType === 'cluster-bits'" class="cluster-bits">
+                        <div v-for="(checked, i) in item.bits" :key="i" class="cluster-bit-item">
                           <label>
-                            <input type="checkbox" :checked="checked" disabled />
-                            <span class="bit-label">{{ (row.rightRangeStart || 1) + i }}</span>
+                            <input type="checkbox" :checked="checked" class="bit-checkbox" tabindex="-1" @click.prevent />
+                            <span class="bit-label">{{ (item.rangeStart || 1) + i }}</span>
                           </label>
                         </div>
                       </div>
-                      <span v-else>{{ row.rightValueFormatted }}</span>
-                    </td>
-                    <td>{{ row.rightUnitDisplay }}</td>
-                  </tr>
-                </tbody>
-              </table>
+                      <div v-else class="item-value" :class="item.valueClass || ''">
+                        {{ item.valueFormatted }}<span v-if="item.unitDisplay && item.unitDisplay !== '-'" class="item-unit">{{ item.unitDisplay }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>
             </div>
           </div>
         </TabPanel>
@@ -59,26 +134,24 @@
         <!-- 堆系统概要信息标签页 -->
         <TabPanel :header="t('config.blockInfoPage.sections.systemAbstract')">
           <div class="info-content" v-if="activeTabIndex === 1">
-            <div v-if="processedSysAbstractData.length === 0" class="empty-message">
+            <div v-if="sysAbstractSections.length === 0" class="empty-message">
               {{ selectedBlock ? t('config.blockInfoPage.messages.noData') : t('config.blockInfoPage.messages.selectBlock') }}
             </div>
-            <div v-else class="table-wrapper">
-              <table class="lightweight-table sys-abstract-table">
-                <thead>
-                  <tr>
-                    <th style="width: 200px">{{ t('config.blockInfoPage.table.parameterName') }}</th>
-                    <th style="width: 150px">{{ t('config.blockInfoPage.table.actualValue') }}</th>
-                    <th style="width: 80px">{{ t('config.blockInfoPage.table.unit') }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="(row, index) in processedSysAbstractData" :key="index" :class="{ 'striped': index % 2 === 1 }">
-                    <td>{{ row.labelTranslated }}</td>
-                    <td>{{ row.valueFormatted }}</td>
-                    <td>{{ row.unitDisplay }}</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div v-else class="groups-container">
+              <div v-for="group in sysAbstractSections" :key="group.title" class="group-section">
+                <div class="group-header">
+                  <span class="group-icon">📈</span>
+                  <h5 class="group-title">{{ group.titleTranslated || group.title }}</h5>
+                </div>
+                <div class="items-grid">
+                  <div v-for="item in group.items" :key="item.key || item.labelTranslated" :class="['item-card', item.cardClass || '']">
+                    <div class="item-label">{{ item.labelTranslated }}</div>
+                    <div class="item-value">
+                      {{ item.valueFormatted }}<span v-if="item.unitDisplay && item.unitDisplay !== '-'" class="item-unit">{{ item.unitDisplay }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </TabPanel>
@@ -93,7 +166,6 @@ import { useI18n } from 'vue-i18n'
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import { pickBlockSummary, parseBlockSummary } from '@/composables/core/data-processing/block/parseBlockSummary'
 import { pickBlockSysAbstract, parseBlockSysAbstract } from '@/composables/core/data-processing/block/parseBlockSysAbstract'
-import { useBlockStore } from '@/stores/device/blockStore'
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import { BLOCK_SUMMARY, BLOCK_SYS_ABSTRACT } from '../../../../main/table.js'
@@ -104,7 +176,7 @@ const { t, te, locale } = useI18n()
 const activeTabIndex = ref(0)
 
 // 使用堆选择composable
-const { blockOptions, selectedBlock } = useBlockSelect()
+const { selectedBlock } = useBlockSelect()
 
 // 获取字段单位信息
 const getFieldUnit = (label) => {
@@ -136,54 +208,128 @@ const translateParameterName = (name) => {
   return getLabelTranslation(name)
 }
 
-// 使用堆store
-const blockStore = useBlockStore()
+// 分组标题翻译（堆汇总）
+const translateSummaryClassTitle = (cls) => {
+  const map = {
+    '堆运行信息': t('config.blockInfoPage.summaryClasses.keyInfo'),
+    '堆基本信息': t('config.blockInfoPage.summaryClasses.basicInfo'),
+    '最大最小值': t('config.blockInfoPage.summaryClasses.maxMinValues'),
+    '状态信息': t('config.blockInfoPage.summaryClasses.statusInfo')
+  }
+  return map[cls] || cls
+}
 
-// 堆汇总数据（原始数据）
-const blockSummaryData = ref([])
+// 分组标题翻译（系统概要）
+const translateSysAbstractClassTitle = (cls) => {
+  const map = {
+    '单体电压概要': t('config.blockInfoPage.sysAbstractClasses.cellVoltageSummary'),
+    '单体温度概要': t('config.blockInfoPage.sysAbstractClasses.cellTempSummary'),
+    'BMU电压概要': t('config.blockInfoPage.sysAbstractClasses.bmuVoltageSummary'),
+    'BMU电路板温度概要': t('config.blockInfoPage.sysAbstractClasses.bmuPcbTempSummary'),
+    '单体SOC概要': t('config.blockInfoPage.sysAbstractClasses.cellSocSummary'),
+    '单体SOH概要': t('config.blockInfoPage.sysAbstractClasses.cellSohSummary'),
+    '动力接插件温度概要': t('config.blockInfoPage.sysAbstractClasses.powerConnectorTempSummary'),
+    '簇SOC概要': t('config.blockInfoPage.sysAbstractClasses.clusterSocSummary'),
+    '簇电压概要': t('config.blockInfoPage.sysAbstractClasses.clusterVoltageSummary'),
+    '簇电流概要': t('config.blockInfoPage.sysAbstractClasses.clusterCurrentSummary')
+  }
+  return map[cls] || cls
+}
 
-// 堆系统概要数据（原始数据）
-const blockSysAbstractData = ref([])
+// 使用堆store（已移除未使用引用）
 
-// 预处理堆汇总数据（避免模板中重复调用函数）
-const processedSummaryData = computed(() => {
-  return blockSummaryData.value.map(row => ({
-    // 左侧列数据
-    leftLabelTranslated: translateParameterName(row.leftLabel),
-    leftValueFormatted: formatValue(row.leftValue, row.leftScale, row.leftLabel),
-    leftUnitDisplay: getFieldUnit(row.leftLabel) || '-',
-    leftRenderType: row.leftRenderType,
-    leftBits: row.leftBits,
-    leftRangeStart: row.leftRangeStart,
-    // 右侧列数据
-    rightLabelTranslated: row.rightLabel ? translateParameterName(row.rightLabel) : '',
-    rightValueFormatted: row.rightLabel ? formatValue(row.rightValue, row.rightScale, row.rightLabel) : '-',
-    rightUnitDisplay: row.rightLabel ? (getFieldUnit(row.rightLabel) || '-') : '-',
-    rightRenderType: row.rightRenderType,
-    rightBits: row.rightBits,
-    rightRangeStart: row.rightRangeStart
-  }))
-})
+const summarySections = ref([])
+const sysAbstractSections = ref([])
 
+// 按“大类”分配统一的点缀样式（颜色）
+const accentClassForSummaryClass = (cls) => {
+  if (cls === '堆运行信息') return 'accent-green'
+  if (cls === '堆基本信息') return 'accent-soft'
+  if (cls === '最大最小值') return 'accent-soft'
+  if (cls === '状态信息') return 'accent-soft'
+  return ''
+}
 
-// 预处理堆系统概要数据（避免模板中重复调用函数）
-const processedSysAbstractData = computed(() => {
-  return blockSysAbstractData.value.map(row => ({
-    labelTranslated: translateParameterName(row.label),
-    valueFormatted: formatValue(row.value, row.scale, row.label),
-    unitDisplay: getFieldUnit(row.label) || '-'
-  }))
-})
+const accentClassForSysAbstractClass = (_cls) => 'accent-soft'
 
+// 故障状态值到颜色class映射
+const faultStateClassForRawValue = (raw) => {
+  const v = (raw && typeof raw === 'object' && 'raw' in raw) ? raw.raw : raw
+  if (v === 0) return 'text-green-500'
+  if (v === 1) return 'text-yellow-500'
+  if (v === 2) return 'text-orange-500'
+  if (v === 3) return 'text-red-500'
+  return ''
+}
+
+// 关键信息统一标签列表（用于避免占位重复）
+const KEY_LABELS = [
+  '堆电压', '堆电流', '堆SOC',
+  '堆最大允许充电功率', '堆最大允许放电功率',
+  '绝缘电阻R+', '绝缘电阻R-',
+  '簇总数', '在线簇数'
+]
+
+// 最大最小值分类分组（在脚本内）
+const categorizeMaxMinItems = (items = []) => {
+  const labelOf = (it) => it?.label || it?.key || ''
+  const groups = [
+    // 第一排：堆单体电压、堆单体温度
+    {
+      title: '堆单体电压相关',
+      match: new Set([
+        '堆单体电压最大值', '堆单体电压最大值簇号', '堆单体电压最大值节号',
+        '堆单体电压最小值', '堆单体电压最小值簇号', '堆单体电压最小值节号',
+        '堆单体电压压差极差值', '堆单体平均电压'
+      ])
+    },
+    {
+      title: '堆单体温度相关',
+      match: new Set([
+        '堆单体温度最大值', '堆单体温度最大值簇号', '堆单体温度最大值节号',
+        '堆单体温度最小值', '堆单体温度最小值簇号', '堆单体温度最小值节号',
+        '堆单体温度温差极差值', '堆单体平均温度'
+      ])
+    },
+    // 第二排：簇电压、簇SOC
+    {
+      title: '簇电压相关',
+      match: new Set(['簇电压最大值', '簇电压最大值簇号', '簇电压最小值', '簇电压最小值簇号'])
+    },
+    {
+      title: '簇SOC相关',
+      match: new Set(['簇SOC最大值', '簇SOC最大值簇号', '簇SOC最小值', '簇SOC最小值簇号'])
+    },
+    // 第三排：允许与跳闸限制相关参数
+    {
+      title: '堆允许与跳闸限制相关',
+      match: new Set([
+        '堆最大允许充电电流', '堆最大允许放电电流',
+        '堆最大允许充电电压', '堆最小允许放电电压',
+        '堆最大跳闸限制充电电流', '堆最大跳闸限制放电电流',
+        '堆最大跳闸限制充电电压', '堆最大跳闸限制放电电压',
+        '堆最大允许充电单体电压', '堆最小允许放电单体电压'
+      ])
+    }
+  ]
+  return groups
+    .map(g => ({
+      title: g.title,
+      items: items.filter(it => g.match.has(labelOf(it)))
+        .map(it => ({
+          ...it,
+          labelTranslated: translateParameterName(labelOf(it)),
+          unitDisplay: it.unitDisplay || getFieldUnit(labelOf(it)) || '-',
+          cardClass: accentClassForSummaryClass('最大最小值')
+        }))
+    }))
+    .filter(sg => (sg.items || []).length > 0)
+}
 
  
 
 
-// 获取堆显示名称
-const getBlockDisplayName = (blockKey) => {
-  const option = blockOptions.value.find(opt => opt.value === blockKey)
-  return option ? option.label : blockKey
-}
+// 获取堆显示名称（未使用，移除）
 
 // 状态字段映射 - 使用翻译函数
 const STATUS_MAPPINGS = computed(() => ({
@@ -256,70 +402,7 @@ const formatValue = (value, scale = 1, label = '') => {
   return value
 }
 
-// 生成堆汇总信息占位符数据
-const generateSummaryPlaceholders = () => {
-  // 根据table.js中的BLOCK_SUMMARY表结构生成占位符
-  // 这里我们使用实际的数据结构来生成占位符
-  const summaryClasses = [
-    '堆基本信息',
-    '最大最小值', 
-    '状态信息'
-  ]
-  
-  const placeholderData = []
-  let itemIndex = 0
-  
-  // 为每个类别生成占位符
-  summaryClasses.forEach(className => {
-    // 根据类别生成对应的占位符项
-    const itemsPerClass = {
-      '堆基本信息': [
-        '簇总数', '在线簇数', '堆电压', '堆电流', '堆SOC', '堆SOH', '堆SOE', '堆SOP',
-        '堆充电SOP', '堆放电SOP', '绝缘电阻R+', '绝缘电阻R-', '堆最大允许充电功率',
-        '堆最大允许放电功率', '堆最大允许充电电流', '堆最大允许放电电流',
-        '堆最大允许充电电压', '堆最大允许放电电压', '堆最大跳闸限制充电电流',
-        '堆最大跳闸限制放电电流', '堆最大跳闸限制充电电压', '堆最大跳闸限制放电电压',
-        '堆最大允许充电单体电压', '堆最小允许放电单体电压', '堆单体平均电压',
-        '堆单体平均温度', '簇间压差', '簇间电流差', '簇间SOC差', '堆额定容量',
-        '堆额定电量', '堆剩余容量', '堆剩余电量', '堆可充电量', '堆可放电量',
-        '堆单次充电电量', '堆单次放电电量', '堆单次充电容量', '堆单次放电容量',
-        '堆日充电电量', '堆日放电电量', '堆累计充电量', '堆累计放电量'
-      ],
-      '最大最小值': [
-        '簇电压最大值', '簇电压最大值簇号', '簇电压最小值', '簇电压最小值簇号',
-        '簇SOC最大值', '簇SOC最大值簇号', '簇SOC最小值', '簇SOC最小值簇号',
-        '堆单体电压最大值', '堆单体电压最大值簇号', '堆单体电压最大值节号',
-        '堆单体电压最小值', '堆单体电压最小值簇号', '堆单体电压最小值节号',
-        '堆单体电压压差极差值', '堆单体温度最大值', '堆单体温度最大值簇号',
-        '堆单体温度最大值节号', '堆单体温度最小值', '堆单体温度最小值簇号',
-        '堆单体温度最小值节号', '堆单体温度温差极差值'
-      ],
-      '状态信息': [
-        '堆故障状态', '堆运行状态', '设备系统状态', '电池堆禁充禁放状态',
-        '电池堆的充放电状态', '电池系统循环次数', '系统心跳'
-      ]
-    }
-    
-    const classItems = itemsPerClass[className] || []
-    
-    // 将类别中的项目按左右两列排列
-    for (let i = 0; i < classItems.length; i += 2) {
-      const leftItem = classItems[i]
-      const rightItem = classItems[i + 1]
-      
-      placeholderData.push({
-        leftLabel: leftItem,
-        leftValue: null,
-        leftScale: 1,
-        rightLabel: rightItem || '',
-        rightValue: null,
-        rightScale: 1
-      })
-    }
-  })
-  
-  return placeholderData
-}
+// 生成堆汇总信息占位符数据（未使用，移除）
 
 // 生成堆系统概要信息占位符数据
 const generateSysAbstractPlaceholders = () => {
@@ -408,126 +491,289 @@ const generateSysAbstractPlaceholders = () => {
   return placeholderData
 }
 
+const generateSummaryGroupPlaceholders = () => {
+  const summaryClasses = ['堆运行信息', '堆基本信息', '最大最小值', '状态信息']
+  const itemsPerClass = {
+    '堆运行信息': [
+      '堆电压', '堆电流', '堆SOC',
+      '堆最大允许充电功率', '堆最大允许放电功率',
+      '电池堆禁充禁放状态', '堆故障状态', '堆运行状态',
+      '簇间压差', '簇间电流差', '簇间SOC差',
+      '绝缘电阻R+', '绝缘电阻R-',
+      '簇总数', '在线簇数'
+    ],
+    '堆基本信息': [
+      '簇总数', '在线簇数', '堆电压', '堆电流', '堆SOC', '堆SOH', '堆SOE', '堆SOP',
+      '堆充电SOP', '堆放电SOP', '绝缘电阻R+', '绝缘电阻R-', '堆最大允许充电功率',
+      '堆最大允许放电功率', '堆额定容量',
+      '堆额定电量', '堆剩余容量', '堆剩余电量', '堆可充电量', '堆可放电量',
+      '堆单次充电电量', '堆单次放电电量', '堆单次充电容量', '堆单次放电容量',
+      '堆日充电电量', '堆日放电电量', '堆累计充电量', '堆累计放电量'
+    ],
+    '最大最小值': [
+      '簇电压最大值', '簇电压最大值簇号', '簇电压最小值', '簇电压最小值簇号',
+      '簇SOC最大值', '簇SOC最大值簇号', '簇SOC最小值', '簇SOC最小值簇号',
+      '堆单体电压最大值', '堆单体电压最大值簇号', '堆单体电压最大值节号',
+      '堆单体电压最小值', '堆单体电压最小值簇号', '堆单体电压最小值节号',
+      '堆单体电压压差极差值', '堆单体温度最大值', '堆单体温度最大值簇号',
+      '堆单体温度最大值节号', '堆单体温度最小值', '堆单体温度最小值簇号',
+      '堆单体温度最小值节号', '堆单体温度温差极差值',
+      '堆单体平均电压', '堆单体平均温度',
+      '堆最大允许充电电流', '堆最大允许放电电流',
+      '堆最大允许充电电压', '堆最小允许放电电压',
+      '堆最大跳闸限制充电电流', '堆最大跳闸限制放电电流',
+      '堆最大跳闸限制充电电压', '堆最大跳闸限制放电电压',
+      '堆最大允许充电单体电压', '堆最小允许放电单体电压'
+    ],
+    '状态信息': [
+      '堆故障状态', '堆运行状态', '设备系统状态', '电池堆禁充禁放状态',
+      '电池堆的充放电状态', '电池系统循环次数', '系统心跳'
+    ]
+  }
+  return summaryClasses.map(cls => {
+    const baseLabels = (itemsPerClass[cls] || [])
+      .filter(label => cls !== '堆基本信息' ? true : !KEY_LABELS.includes(label))
+    const baseItems = baseLabels.map(label => ({
+      key: label,
+      labelTranslated: translateParameterName(label),
+      valueFormatted: '-',
+      unitDisplay: getFieldUnit(label) || '-',
+      renderType: 'text',
+      cardClass: accentClassForSummaryClass(cls)
+    }))
+    if (cls === '堆运行信息') {
+      const rowFalse = Array.from({ length: 10 }, () => false)
+      baseItems.push({
+        key: 'EnableClusterStatus',
+        labelTranslated: translateParameterName('使能簇状态'),
+        renderType: 'cluster-bits',
+        rows: [rowFalse, rowFalse],
+        rangeStart: 1,
+        isClusterStatus: true
+      })
+      baseItems.push({
+        key: 'CutoutClusterStatus',
+        labelTranslated: translateParameterName('切出簇状态'),
+        renderType: 'cluster-bits',
+        rows: [rowFalse, rowFalse],
+        rangeStart: 1,
+        isClusterStatus: true
+      })
+    }
+    const section = {
+      title: cls,
+      titleTranslated: translateSummaryClassTitle(cls),
+      items: baseItems
+    }
+    if (cls === '最大最小值') {
+      section.subGroups = categorizeMaxMinItems(baseItems)
+    }
+    return section
+  })
+}
+
 // 更新堆汇总显示数据
 const updateBlockSummaryData = () => {
   if (!selectedBlock.value) {
-    // 没有选择堆时，显示占位符数据
-    blockSummaryData.value = generateSummaryPlaceholders()
+    summarySections.value = generateSummaryGroupPlaceholders()
     return
   }
-  
   try {
-    // 获取所有类别的数据
-    const allClasses = [
-      '堆基本信息',
-      '最大最小值', 
-      '状态信息'
-    ]
-    
+    const allClasses = ['堆基本信息', '最大最小值', '状态信息']
     const data = pickBlockSummary(selectedBlock.value, allClasses)
-    
-    // 收集所有需要显示的数据项
-    const allItems = []
-    data.forEach(section => {
-      if (section.element && Array.isArray(section.element)) {
-        section.element.forEach(item => {
-          // 数据过滤：只显示需要的数据
-          if (item.label && item.label.includes('预留') || item.label.includes('保留') || item.label.includes('跳过')) {
-            return
-          }
-          allItems.push({
-            label: item.label || item.key,
-            value: item.value,
-            unit: item.unit || '',
-            remark: item.remark || '',
-            scale: item.scale,
-            class: section.class
-          })
-        })
-      }
-    })
-    
-    // 提取并移除需要聚合显示的寄存器
-    const takeByLabel = (lbl) => {
-      const idx = allItems.findIndex(it => it.label === lbl)
-      if (idx >= 0) return allItems.splice(idx, 1)[0]
-      return null
-    }
-    const enable1 = takeByLabel('使能簇状态1')
-    const enable2 = takeByLabel('使能簇状态2')
-    const cutout1 = takeByLabel('切出簇状态1')
-    const cutout2 = takeByLabel('切出簇状态2')
-
-    const buildBits = (val) => Array.from({ length: 10 }, (_, i) => Boolean(((Number(val) || 0) >> i) & 1))
-
-    // 将数据转换为左右两列的格式
-    const tableData = []
-    for (let i = 0; i < allItems.length; i += 2) {
-      const leftItem = allItems[i]
-      const rightItem = allItems[i + 1]
-      
-      tableData.push({
-        leftLabel: leftItem.label,
-        leftValue: leftItem.value,
-        leftScale: leftItem.scale,
-        rightLabel: rightItem ? rightItem.label : '',
-        rightValue: rightItem ? rightItem.value : null,
-        rightScale: rightItem ? rightItem.scale : 1
+    const groupMap = new Map()
+  data.forEach(section => {
+    const items = []
+    if (section.element && Array.isArray(section.element)) {
+      section.element.forEach(item => {
+        const l = item.label || item.key
+        if ((l || '').includes('预留') || (l || '').includes('保留') || (l || '').includes('跳过')) return
+        const baseItem = {
+          key: item.key,
+          label: l,
+          labelTranslated: translateParameterName(l),
+          valueFormatted: formatValue(item.value, item.scale, l),
+          unitDisplay: item.unit || '-',
+          renderType: 'text',
+          rawValue: item.value,
+          cardClass: accentClassForSummaryClass(section.class)
+        }
+        // 堆故障状态：应用颜色
+        if (l === '堆故障状态') {
+          baseItem.valueClass = faultStateClassForRawValue(item.value)
+        }
+        items.push(baseItem)
       })
     }
-
-    // 追加聚合显示的两行（使能簇状态 / 切出簇状态）
+    groupMap.set(section.class, items)
+  })
+  // 将部分“堆基本信息”中的平均值与允许/跳闸限制相关项，调整到“最大最小值”分组
+  const moveToMaxMinLabels = [
+    '堆单体平均电压', '堆单体平均温度',
+    '堆最大允许充电电流', '堆最大允许放电电流',
+    '堆最大允许充电电压', '堆最小允许放电电压',
+    '堆最大跳闸限制充电电流', '堆最大跳闸限制放电电流',
+    '堆最大跳闸限制充电电压', '堆最大跳闸限制放电电压',
+    '堆最大允许充电单体电压', '堆最小允许放电单体电压'
+  ]
+  const takeFromAny = (label) => {
+    for (const [cls, arr] of groupMap.entries()) {
+      const idx = arr.findIndex(i => i.label === label)
+      if (idx >= 0) return arr.splice(idx, 1)[0]
+    }
+    return null
+  }
+  const maxMinAdds = []
+  moveToMaxMinLabels.forEach(lbl => {
+    const item = takeFromAny(lbl)
+    if (item) maxMinAdds.push(item)
+  })
+  if (maxMinAdds.length) {
+    const mm = groupMap.get('最大最小值') || []
+    mm.push(...maxMinAdds)
+    groupMap.set('最大最小值', mm)
+  }
+    const keyLabels = KEY_LABELS.concat(['电池堆禁充禁放状态', '堆故障状态', '堆运行状态'])
+    const takeFromGroup = (label) => {
+      for (const [cls, arr] of groupMap.entries()) {
+        const idx = arr.findIndex(i => i.label === label)
+        if (idx >= 0) {
+          return arr.splice(idx, 1)[0]
+        }
+      }
+      return null
+    }
+    const keyItems = keyLabels.map(label => {
+      const found = takeFromGroup(label)
+      if (found) {
+        found.cardClass = accentClassForSummaryClass('堆运行信息')
+        return found
+      }
+      return {
+        key: label,
+        label: label,
+        labelTranslated: translateParameterName(label),
+        valueFormatted: '-',
+        unitDisplay: getFieldUnit(label) || '-',
+        renderType: 'text',
+        cardClass: accentClassForSummaryClass('堆运行信息')
+      }
+    })
+    // 将“簇间压差/电流差/SOC差”从“堆基本信息”移到“堆运行信息”，并插入到“堆运行状态”之后
+    const moveToKeyLabels = ['簇间压差', '簇间电流差', '簇间SOC差']
+    const takeFromBasic = (label) => {
+      const basicItems = groupMap.get('堆基本信息') || []
+      const idx = basicItems.findIndex(i => i.label === label)
+      if (idx >= 0) {
+        const item = basicItems.splice(idx, 1)[0]
+        groupMap.set('堆基本信息', basicItems)
+        return item
+      }
+      return null
+    }
+    const interClusterItems = moveToKeyLabels
+      .map(lbl => takeFromBasic(lbl))
+      .filter(Boolean)
+      .map(it => ({
+        ...it,
+        labelTranslated: translateParameterName(it.label || it.key),
+        unitDisplay: it.unitDisplay || getFieldUnit(it.label || it.key) || '-',
+        cardClass: accentClassForSummaryClass('堆运行信息')
+      }))
+    if (interClusterItems.length) {
+      const runStateIdx = keyItems.findIndex(i => i.label === '堆运行状态')
+      const insertPos = runStateIdx >= 0 ? runStateIdx + 1 : keyItems.findIndex(i => !i.isClusterStatus)
+      keyItems.splice(insertPos >= 0 ? insertPos : keyItems.length, 0, ...interClusterItems)
+    }
+    const statusItems = groupMap.get('状态信息') || []
+    const findAndRemove = (label) => {
+      const idx = statusItems.findIndex(i => i.label === label)
+      if (idx >= 0) return statusItems.splice(idx, 1)[0]
+      return null
+    }
+    const enable1 = findAndRemove('使能簇状态1')
+    const enable2 = findAndRemove('使能簇状态2')
+    const cutout1 = findAndRemove('切出簇状态1')
+    const cutout2 = findAndRemove('切出簇状态2')
+    const bits10 = (val) => Array.from({ length: 10 }, (_, i) => Boolean(((Number(val) || 0) >> i) & 1))
     if (enable1 || enable2) {
-      tableData.push({
-        leftLabel: '使能簇状态1',
-        leftRenderType: 'cluster-bits',
-        leftBits: buildBits(enable1 ? enable1.value : 0),
-        leftRangeStart: 1,
-        rightLabel: '使能簇状态2',
-        rightRenderType: 'cluster-bits',
-        rightBits: buildBits(enable2 ? enable2.value : 0),
-        rightRangeStart: 11
+      const bits = [
+        ...bits10(enable1 ? enable1.rawValue : 0),
+        ...bits10(enable2 ? enable2.rawValue : 0)
+      ]
+      keyItems.push({
+        key: 'EnableClusterStatus',
+        label: '使能簇状态',
+        labelTranslated: translateParameterName('使能簇状态'),
+        renderType: 'cluster-bits',
+        bits,
+        rows: [bits.slice(0, 10), bits.slice(10)],
+        rangeStart: 1,
+        isClusterStatus: true
       })
     }
     if (cutout1 || cutout2) {
-      tableData.push({
-        leftLabel: '切出簇状态1',
-        leftRenderType: 'cluster-bits',
-        leftBits: buildBits(cutout1 ? cutout1.value : 0),
-        leftRangeStart: 1,
-        rightLabel: '切出簇状态2',
-        rightRenderType: 'cluster-bits',
-        rightBits: buildBits(cutout2 ? cutout2.value : 0),
-        rightRangeStart: 11
+      const bits = [
+        ...bits10(cutout1 ? cutout1.rawValue : 0),
+        ...bits10(cutout2 ? cutout2.rawValue : 0)
+      ]
+      keyItems.push({
+        key: 'CutoutClusterStatus',
+        label: '切出簇状态',
+        labelTranslated: translateParameterName('切出簇状态'),
+        renderType: 'cluster-bits',
+        bits,
+        rows: [bits.slice(0, 10), bits.slice(10)],
+        rangeStart: 1,
+        isClusterStatus: true
       })
     }
-    
-    // 如果没有数据，使用占位符
-    if (tableData.length === 0) {
-      tableData.push(...generateSummaryPlaceholders())
+    groupMap.set('堆运行信息', keyItems)
+    groupMap.set('状态信息', statusItems)
+    const ordered = ['堆运行信息', '堆基本信息', '最大最小值', '状态信息'].map(title => {
+      const items = groupMap.get(title) || []
+      if (title === '最大最小值') {
+    // 为“最大最小值”分组应用统一样式
+    const subGroups = categorizeMaxMinItems(items)
+    const matched = new Set()
+    subGroups.forEach(sg => sg.items.forEach(it => matched.add(it.label || it.key)))
+    const otherItems = items
+      .filter(it => !matched.has(it.label || it.key))
+      .map(it => ({ ...it, cardClass: accentClassForSummaryClass('最大最小值') }))
+    return {
+      title,
+      titleTranslated: translateSummaryClassTitle(title),
+      items: items.map(it => ({ ...it, cardClass: accentClassForSummaryClass(title) })),
+      subGroups,
+      otherItems
     }
-    
-    blockSummaryData.value = tableData
-    // console.log(`[BlockInfo] 更新堆${selectedBlock.value}汇总数据，共${tableData.length}行记录`)
+  }
+  return {
+    title,
+    titleTranslated: translateSummaryClassTitle(title),
+    items: items.map(it => ({ ...it, cardClass: accentClassForSummaryClass(title) }))
+  }
+})
+    if (!ordered.some(g => (g.items || []).length)) {
+      summarySections.value = generateSummaryGroupPlaceholders()
+    } else {
+      summarySections.value = ordered
+    }
   } catch (error) {
-    console.error('[BlockInfo] 更新堆汇总数据失败:', error)
-    // 出错时也显示占位符
-    blockSummaryData.value = generateSummaryPlaceholders()
+    summarySections.value = generateSummaryGroupPlaceholders()
   }
 }
 
 // 更新堆系统概要显示数据
 const updateBlockSysAbstractData = () => {
   if (!selectedBlock.value) {
-    // 没有选择堆时，显示占位符数据
-    blockSysAbstractData.value = generateSysAbstractPlaceholders()
+    sysAbstractSections.value = generateSysAbstractPlaceholders()
     return
   }
-  
   try {
-    const data = pickBlockSysAbstract(selectedBlock.value.toString(), [
+    const classes = [
       '单体电压概要',
-      '单体温度概要', 
+      '单体温度概要',
       'BMU电压概要',
       'BMU电路板温度概要',
       '单体SOC概要',
@@ -536,26 +782,28 @@ const updateBlockSysAbstractData = () => {
       '簇SOC概要',
       '簇电压概要',
       '簇电流概要'
-    ])
-    
-    const allData = []
-    Object.values(data).forEach(classData => {
-      // 过滤掉隐藏的字段（预留字段）
-      const visibleData = classData.filter(item => !item.hidden)
-      allData.push(...visibleData)
+    ]
+    const data = pickBlockSysAbstract(selectedBlock.value.toString(), classes)
+    const sections = classes.map(cls => {
+      const classData = data[cls] || []
+      const items = classData.filter(item => !item.hidden).map(item => ({
+        key: item.key,
+        label: item.label,
+        labelTranslated: translateParameterName(item.label),
+        valueFormatted: formatValue(item.value, item.scale, item.label),
+        unitDisplay: item.unit || '-',
+        renderType: 'text',
+        cardClass: accentClassForSysAbstractClass(cls)
+      }))
+      return { title: cls, titleTranslated: translateSysAbstractClassTitle(cls), items }
     })
-    
-    // 如果没有数据，使用占位符
-    if (allData.length === 0) {
-      allData.push(...generateSysAbstractPlaceholders())
+    if (!sections.some(s => (s.items || []).length)) {
+      sysAbstractSections.value = generateSysAbstractPlaceholders()
+    } else {
+      sysAbstractSections.value = sections
     }
-    
-    blockSysAbstractData.value = allData
-    // console.log(`[BlockInfo] 更新堆${selectedBlock.value}系统概要数据，共${allData.length}行记录`)
   } catch (error) {
-    console.error('[BlockInfo] 更新堆系统概要数据失败:', error)
-    // 出错时也显示占位符
-    blockSysAbstractData.value = generateSysAbstractPlaceholders()
+    sysAbstractSections.value = generateSysAbstractPlaceholders()
   }
 }
 
@@ -675,11 +923,48 @@ watch(selectedBlock, handleBlockChange)
   min-height: 32px; /* 更紧凑高度 */
   display: flex;
   align-items: center;
+  position: relative;
+  overflow: hidden;
 }
 
 :deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link:hover) {
   background: var(--surface-hover);
   color: var(--text-color);
+  transform: translateY(-0.5px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+:deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link::after) {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary-color), rgba(255,255,255,0.35), var(--primary-color));
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+:deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link:hover::after) {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+:deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link::before) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%);
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+:deep(.p-tabview .p-tabview-nav li .p-tabview-nav-link:hover::before) {
+  opacity: 1;
+  animation: tab-glint 1.2s linear;
 }
 
 .cluster-bits {
@@ -690,20 +975,35 @@ watch(selectedBlock, handleBlockChange)
 .cluster-bit-item {
   display: inline-flex;
   align-items: center;
+  gap: 4px;
+}
+.cluster-bit-item label {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
 }
 .cluster-bit-item input[type="checkbox"] {
   margin-right: 4px;
 }
-:deep(.bit-label) {
+.cluster-status-card input[type="checkbox"] {
+  accent-color: #22c55e;
+}
+.bit-label {
+  display: inline-block;
   font-size: 12px;
   color: var(--text-color-secondary);
 }
-:deep(.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link) {
-  background: var(--surface-card);
-  color: var(--primary-color);
-  border-color: var(--surface-border);
-  border-bottom-color: var(--surface-card);
+.cluster-status-card .bit-label {
+  color: #16a34a;
 }
+:deep(.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link) {
+  background: transparent;
+  color: var(--primary-color);
+  border-color: transparent;
+}
+
+/* 选中标签不需要特殊高亮效果，仅保留主题色 */
 
 :deep(.p-tabview .p-tabview-panels) {
   background: var(--surface-card);
@@ -817,5 +1117,194 @@ watch(selectedBlock, handleBlockChange)
   to {
     opacity: 1;
   }
+}
+
+@keyframes tab-glint {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+
+/* 分组卡片 + 紧凑网格布局 */
+.groups-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.group-section {
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface-card);
+  padding: 0.75rem 0.75rem 1rem 0.75rem;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.25rem 0.5rem 0.25rem;
+  border-bottom: 2px solid var(--surface-border);
+}
+
+.group-icon {
+  font-size: 1rem;
+}
+
+.group-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+/* 最大最小值的子分组容器样式 */
+.subgroups-container {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.6rem 0.25rem 0 0.25rem;
+}
+
+.subgroup-section {
+  border: 1px dashed var(--surface-border);
+  border-radius: 8px;
+  background: var(--surface-0);
+  padding: 0.5rem 0.5rem 0.75rem 0.5rem;
+}
+
+.subgroup-header {
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px dashed var(--surface-border);
+}
+
+.subgroup-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.6rem;
+  padding: 0.6rem 0.25rem 0 0.25rem;
+}
+
+.item-card {
+  border: 1px solid var(--surface-border);
+  border-radius: 6px;
+  background: var(--surface-0);
+  padding: 0.6rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 3.25rem;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.18s ease;
+}
+
+.item-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--surface-border);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+
+.item-label {
+  font-size: 1.0rem;
+  color: var(--text-color-secondary);
+  font-weight: 500;
+}
+
+.item-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+/* 故障等级文本颜色 */
+.text-green-500 { color: #22c55e; }
+.text-red-500   { color: #ef4444; }
+.text-orange-500{ color: #f59e0b; }
+.text-yellow-500{ color: #fbbf24; }
+.text-cyan-500  { color: #06b6d4; }
+.text-gray-400  { color: #9ca3af; }
+
+.item-unit {
+  margin-left: 4px;
+  font-size: 0.9rem;
+  color: var(--text-color-secondary);
+}
+
+.items-grid-key .item-card {
+  background: transparent;
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px rgba(42, 180, 120, 0.28), 0 8px 16px rgba(42, 180, 120, 0.22);
+}
+.items-grid-key .item-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1.5px rgba(42, 180, 120, 0.36), 0 10px 22px rgba(42, 180, 120, 0.30);
+}
+
+.items-grid-key .item-card .item-label,
+.items-grid-key .item-card .item-value {
+  color: #6ee7b7;
+  -webkit-text-stroke: 0;
+  -webkit-text-fill-color: initial;
+  text-shadow: none;
+}
+.item-card.accent-green { border-color: #10b981; }
+.item-card.accent-soft { border-color: #739fd8; }
+.cluster-status-card {
+  border-color: #10b981;
+  border-width: 1px;
+}
+.cluster-status-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(42, 180, 120, 0.36);
+  box-shadow: 0 0 0 1.5px rgba(42, 180, 120, 0.36), 0 10px 22px rgba(42, 180, 120, 0.30);
+}
+.cluster-status-card.enable-bits {
+  background: transparent;
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px rgba(42, 180, 120, 0.28), 0 8px 16px rgba(42, 180, 120, 0.22);
+}
+.cluster-status-card.cutout-bits {
+  background: transparent;
+  border-color: #10b981;
+  box-shadow: 0 0 0 1px rgba(42, 180, 120, 0.28), 0 8px 16px rgba(42, 180, 120, 0.22);
+}
+.cluster-status-card.enable-bits .item-label,
+.cluster-status-card.enable-bits .item-value,
+.cluster-status-card.cutout-bits .item-label,
+.cluster-status-card.cutout-bits .item-value {
+  color: #6ee7b7;
+  -webkit-text-stroke: 0;
+  -webkit-text-fill-color: initial;
+  text-shadow: none;
+}
+.cluster-status-card input.bit-checkbox { pointer-events: none; cursor: default; }
+.cluster-status-card.enable-bits input.bit-checkbox { accent-color: #10b981; }
+.cluster-status-card.cutout-bits input.bit-checkbox { accent-color: #10b981; }
+.cluster-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
+}
+.cluster-bits-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cluster-bits-row {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px 10px;
 }
 </style>

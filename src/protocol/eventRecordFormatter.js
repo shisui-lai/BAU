@@ -324,7 +324,7 @@ const FAULT_BIT_MAPS = {
     '消防设备通信故障', // Bit3
     'BMU通信故障', // Bit4
     'CAN霍尔通信故障', // Bit5
-    'BCU通信故障', // Bit6
+    'BCU内网通讯故障', // Bit6
     '菊花链通信故障', // Bit7
     'AFE通信故障', // Bit8
     '预留', // Bit9
@@ -468,6 +468,12 @@ function parseWriteStatus(raw) {
   const statusMap = { 0: 'SD卡路径不存在', 1: '写成功', 2: '写失败' }
   return statusMap[raw] !== undefined ? statusMap[raw] : `${raw}(未定义)`
 }
+function parseWriteFailReason(raw) {
+  if (raw === 0) return '/'
+  const reasonMap = { 1: 'CMD13错误', 2: 'CMD8错误', 3: '心跳超时', 4: '写数据错误' }
+  const reason = reasonMap[raw] !== undefined ? reasonMap[raw] : `${raw}(未定义)`
+  return `错误原因:${reason}`
+}
 
 /**
  * 辅助函数：解析通讯状态
@@ -564,6 +570,14 @@ function parseResetAction(raw) {
  */
 function parseContactorSelfTest(raw) {
   const statusMap = { 0: '关闭接触器自检指令', 1: '开启接触器自检指令' }
+  return statusMap[raw] !== undefined ? statusMap[raw] : `${raw}(未定义)`
+}
+
+/**
+ * 辅助函数：解析周期性绝缘检测指令
+ */
+function parsePeriodicInsulationDetect(raw) {
+  const statusMap = { 0: '关闭周期性绝缘检测指令', 1: '开启周期性绝缘检测指令' }
   return statusMap[raw] !== undefined ? statusMap[raw] : `${raw}(未定义)`
 }
 
@@ -949,7 +963,7 @@ const EVENT_PARAM_MAPPING = {
     // SD卡写入状态变化
     param1: { label: '上一次写入状态', parse: (raw) => `上一次:${parseWriteStatus(raw)}` },
     param2: { label: '当前写入状态', parse: (raw) => `当前:${parseWriteStatus(raw)}` },
-    param3: { label: '/', parse: parseNull },
+    param3: { label: '写失败原因', parse: parseWriteFailReason },
     param4: { label: '/', parse: parseNull }
   },
   109: {
@@ -1157,8 +1171,14 @@ const EVENT_PARAM_MAPPING = {
   253: {
     // 下设周期性绝缘检测指令
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次', parse: (raw) => `上一次:${parseContactorSelfTest(raw)}` },
-    param3: { label: '当前', parse: (raw) => `当前:${parseContactorSelfTest(raw)}` },
+    param2: {
+      label: '上一次周期性绝缘检测指令',
+      parse: (raw) => `上一次:${parsePeriodicInsulationDetect(raw)}`
+    },
+    param3: {
+      label: '当前周期性绝缘检测指令',
+      parse: (raw) => `当前:${parsePeriodicInsulationDetect(raw)}`
+    },
     param4: { label: '/', parse: parseNull }
   },
   254: {

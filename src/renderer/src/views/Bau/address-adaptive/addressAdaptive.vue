@@ -53,7 +53,12 @@ const bmuResultFields = computed(() => [
 
 // 状态管理
 const bcuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 30, queryTimer: null })
-const bmuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 30, queryTimer: null })
+const bmuStatus = ref({ isExecuting: false, queryCount: 0, maxQueryCount: 50, queryTimer: null })
+// 按钮禁用状态
+const bcuButtonDisabled = ref(false)
+const bmuButtonDisabled = ref(false)
+const bcuButtonTimer = ref(null)
+const bmuButtonTimer = ref(null)
 const bcuResult = ref(null)
 // BMU结果改为数组，支持多个簇的结果显示
 const bmuResults = ref([])
@@ -62,6 +67,7 @@ const bmuResults = ref([])
 const canExecuteBcu = computed(() => {
   const count = parseInt(bcuParams.value.bcuTotalAddrCount)
   return !bcuStatus.value.isExecuting &&
+         !bcuButtonDisabled.value &&
          bcuParams.value.bcuStartAddr.trim() !== '' &&
          bcuParams.value.bcuTotalAddrCount.trim() !== '' &&
          count >= 1
@@ -70,6 +76,7 @@ const canExecuteBcu = computed(() => {
 const canExecuteBmu = computed(() => {
   const count = parseInt(bmuParams.value.bmuTotalAddrCount)
   return !bmuStatus.value.isExecuting &&
+         !bmuButtonDisabled.value &&
          bmuParams.value.bmuStartAddr.trim() !== '' &&
          bmuParams.value.bmuTotalAddrCount.trim() !== '' &&
          count >= 1 &&
@@ -178,6 +185,8 @@ function handleRemoteCommandResponseWithToast(msg) {
 
   // 统一处理dataType，转换为小写
   const commandType = dataType ? dataType.toLowerCase() : 'unknown'
+  
+  console.log(`[AddressAdaptive] 收到遥控命令应答: commandType=${commandType}, topic=${topic}`)
 
   // 获取设备显示名称
   const deviceName = t('toast.remoteControl.deviceName.block', { blockId })
@@ -209,6 +218,7 @@ function handleRemoteCommandResponseWithToast(msg) {
     const errorCodeHex = `0x${data.code.toString(16).toUpperCase()}`
 
     if (isSuccess) {
+      console.log(`[AddressAdaptive] 命令执行成功: ${commandType}, 准备启动查询`)
       toast.add({
         severity: 'success',
       summary: t('toast.bauAddressDetection.remoteCommandSuccess'),
@@ -238,8 +248,18 @@ function handleRemoteCommandResponseWithToast(msg) {
       // 失败时停止执行状态
       if (commandType === 'bcu_adaptive_addr') {
         bcuStatus.value.isExecuting = false
+        // 确保清理定时器
+        if (bcuStatus.value.queryTimer) {
+          clearInterval(bcuStatus.value.queryTimer)
+          bcuStatus.value.queryTimer = null
+        }
       } else if (commandType === 'bmu_adaptive_addr') {
         bmuStatus.value.isExecuting = false
+        // 确保清理定时器
+        if (bmuStatus.value.queryTimer) {
+          clearInterval(bmuStatus.value.queryTimer)
+          bmuStatus.value.queryTimer = null
+        }
       }
     }
   } else {
@@ -416,6 +436,14 @@ const parseAdaptive4Registers = (data, type) => {
  */
 const startBcuAdaptive = async () => {
   try {
+    // 禁用按钮10秒
+    bcuButtonDisabled.value = true
+    if (bcuButtonTimer.value) clearTimeout(bcuButtonTimer.value)
+    bcuButtonTimer.value = setTimeout(() => {
+      bcuButtonDisabled.value = false
+      bcuButtonTimer.value = null
+    }, 10000)
+
     bcuStatus.value.isExecuting = true
     bcuResult.value = null
 
@@ -431,6 +459,7 @@ const startBcuAdaptive = async () => {
 
     // 动态生成topic
     const topic = buildTopic('bms/host/s2d/b{block}/bcu_adaptive_addr')
+    console.log(`[AddressAdaptive] 下发BCU地址自适应命令: topic=${topic}, params=${serializedParams}`)
     await window.electronAPI.mqttPublish(topic, serializedParams)
 
     // 立即显示下发toast
@@ -460,6 +489,22 @@ const startBcuAdaptive = async () => {
  */
 const startBmuAdaptive = async () => {
   try {
+    // 清理之前的查询定时器，防止旧的查询结果干扰
+    if (bmuStatus.value.queryTimer) {
+      clearInterval(bmuStatus.value.queryTimer)
+      bmuStatus.value.queryTimer = null
+    }
+
+    console.log('[Debug] 点击BMU开始按钮: 时间戳', Date.now())
+
+    // 禁用按钮10秒
+    bmuButtonDisabled.value = true
+    if (bmuButtonTimer.value) clearTimeout(bmuButtonTimer.value)
+    bmuButtonTimer.value = setTimeout(() => {
+      bmuButtonDisabled.value = false
+      bmuButtonTimer.value = null
+    }, 10000)
+
     bmuStatus.value.isExecuting = true
     bmuResults.value = [] // 清空之前的结果
 
@@ -478,6 +523,7 @@ const startBmuAdaptive = async () => {
 
     // 动态生成topic
     const topic = buildTopic('bms/host/s2d/b{block}/bmu_adaptive_addr')
+    console.log(`[AddressAdaptive] 下发BMU地址自适应命令: topic=${topic}, params=${serializedParams}, cluster=${selectedCluster.value}`)
     await window.electronAPI.mqttPublish(topic, serializedParams)
 
     // 获取显示文本
@@ -517,6 +563,7 @@ function onRemoteCommandResponse(_e, msg) {
 const queryBcuResult = async () => {
   try {
     const topic = buildTopic('bms/host/s2d/b{block}/get_bcu_adaptive_addr_result')
+    console.log(`[AddressAdaptive] 发送BCU查询请求: topic=${topic}, count=${bcuStatus.value.queryCount}/${bcuStatus.value.maxQueryCount}`)
     await window.electronAPI.mqttPublish(topic, 'FF')
   } catch (error) {
     console.error('[AddressAdaptive] BCU查询失败:', error)
@@ -532,8 +579,9 @@ const queryBmuResult = async () => {
     const queryCluster = selectedCluster.value
     const clusterHex = queryCluster.replace('0x', '')
     const topic = buildTopic('bms/host/s2d/b{block}/get_bmu_adaptive_addr_result')
+    console.log(`[AddressAdaptive] 发送BMU查询请求: topic=${topic}, cluster=${clusterHex}, count=${bmuStatus.value.queryCount}/${bmuStatus.value.maxQueryCount}`)
     await window.electronAPI.mqttPublish(topic, clusterHex)
-    console.log('[AddressAdaptive] BMU查询参数:', clusterHex)
+    // console.log('[AddressAdaptive] BMU查询参数:', clusterHex) // 已合并到上方日志
   } catch (error) {
     console.error('[AddressAdaptive] BMU查询失败:', error)
   }
@@ -549,6 +597,7 @@ const startBcuPeriodicQuery = () => {
   }
 
   // 立即执行第一次查询
+  console.log('[AddressAdaptive] 开始BCU周期性查询...')
   queryBcuResult()
   bcuStatus.value.queryCount = 1
 
@@ -558,12 +607,12 @@ const startBcuPeriodicQuery = () => {
       // 达到最大查询次数，停止查询
       clearInterval(bcuStatus.value.queryTimer)
       bcuStatus.value.queryTimer = null
-      console.log('[AddressAdaptive] BCU查询已完成，共查询30次')
+      console.log('[AddressAdaptive] BCU查询已完成，达到最大次数30次')
       return
     }
 
-    queryBcuResult()
     bcuStatus.value.queryCount++
+    queryBcuResult()
   }, 1000) // 每秒查询一次
 }
 
@@ -595,9 +644,10 @@ const startBmuPeriodicQuery = () => {
 }
 
 /**
- * 处理BCU查询结果 - 参考Order.vue的处理方式
+ * 处理BCU查询结果
  */
 const handleBcuQueryResult = (_e, msg) => {
+  console.log('[AddressAdaptive] 收到BCU查询结果:', msg)
   // 参考Order.vue，解构事件消息
   const { data } = msg
 
@@ -759,6 +809,16 @@ onUnmounted(() => {
   if (bmuStatus.value.queryTimer) {
     clearInterval(bmuStatus.value.queryTimer)
     bmuStatus.value.queryTimer = null
+  }
+
+  // 清理按钮定时器
+  if (bcuButtonTimer.value) {
+    clearTimeout(bcuButtonTimer.value)
+    bcuButtonTimer.value = null
+  }
+  if (bmuButtonTimer.value) {
+    clearTimeout(bmuButtonTimer.value)
+    bmuButtonTimer.value = null
   }
 
   // 移除事件监听器
@@ -1025,6 +1085,13 @@ onUnmounted(() => {
 
 .config-button {
   flex: 1;
+}
+
+.config-button:disabled {
+  background-color: var(--surface-400, #ccc) !important;
+  border-color: var(--surface-400, #ccc) !important;
+  color: var(--text-color-secondary, #666) !important;
+  opacity: 1 !important;
 }
 
 /* 结果区域 */

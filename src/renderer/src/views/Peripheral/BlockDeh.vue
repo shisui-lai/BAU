@@ -72,6 +72,12 @@ const getCurrentDehFields = () => {
   }
 }
 
+const getDecimalsByScale = (scale) => {
+  if (!scale || scale === 1) return 0
+  const s = String(scale)
+  return s.length - 1
+}
+
 const getTemplateData = () => {
   const fields = getCurrentDehFields()
   return fields.map(field => ({
@@ -96,6 +102,10 @@ const parseRawData = (rawData) => {
     if (field.scale && field.scale !== 1) value = value / field.scale
     let displayValue = value
     if (field.map && field.map[value] !== undefined) displayValue = field.map[value]
+    if (!field.map && typeof value === 'number') {
+      const decimals = getDecimalsByScale(field.scale)
+      displayValue = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString()
+    }
     return { class: field.class, label: field.label, value: displayValue, rawValue: value, key: field.key, unit: getFieldUnit(field), hide: field.hide === true }
   })
 }
@@ -130,7 +140,6 @@ const unregisterListener = () => {
 
 const formatValue = (value) => {
   if (value === null || value === undefined || value === '---') return '---'
-  if (typeof value === 'number') return value.toFixed(2)
   return String(value)
 }
 

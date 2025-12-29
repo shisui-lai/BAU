@@ -1,7 +1,7 @@
 <!-- 堆报警阈值页面 - 参考簇告警阈值实现，使用堆下拉与单一topic(block_fault_dns) -->
 <script setup>
 import { useToast } from 'primevue/usetoast'
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, onDeactivated, ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRawInputCache, isNumericType, validateNumericInput } from '@/composables/utils/useParameterInput'
@@ -252,7 +252,8 @@ onUnmounted(() => {
     ipc.removeAllListeners('BLOCK_FAULT_DNS_R', handleReadEvent)
     ipc.removeAllListeners('BLOCK_FAULT_DNS_W', handleWriteEvent)
   }
-  if (isCurrentlyReading.value) stopParameterReading()
+  // 无条件停止读取，防止状态不同步导致的定时器残留
+  stopParameterReading()
 
   // 清理重试逻辑资源
   retryLogic.cleanup()

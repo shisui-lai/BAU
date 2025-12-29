@@ -11,7 +11,7 @@
     "language": "语言",
     "rememberMe": "记住密码",
     "company": "东方日升储能技术有限公司",
-    "version": "版本 v1.0.0"
+    "version": "版本 v0.4.3"
   },
   "toast": {
     "common": {
@@ -286,6 +286,7 @@
     "settings": "设置",
     "operationInfo": "单簇信息",
     "batteryInfo": "电池信息",
+    "gpioData": "GPIO数据",
     "clusterVersion": "簇版本信息",
     "disconnection": "掉线信息",
     "faultOverview": "故障预览",
@@ -1042,7 +1043,7 @@
       "FireDeviceCommFault2": "消防设备通信故障",
       "BMUCommFault2": "BMU通信故障",
       "CANHallCommFault2": "CAN霍尔通信故障",
-      "BCUCommFault2": "BCU通信故障",
+      "BCUCommFault": "BCU内网通讯故障",
       "DaisyChainCommFault": "菊花链通信故障",
       "AFECommFault2": "AFE通信故障",
       "BCUEnvSensorFault2": "BCU环境传感器故障",
@@ -1066,7 +1067,7 @@
       "BMU1PowerConnectorTempDisconnected2": "BMU 1号 动力接插件温度断线",
       "BMU2PowerConnectorTempDisconnected2": "BMU 2号 动力接插件温度断线",
       "AFECommLost2": "AFE通讯失联",
-      "BCUCommFault22": "BCU通讯故障"
+      "BCUCommFault_Stack": "BCU通讯故障"
     }
   },
   "didoStatus": {
@@ -1846,7 +1847,7 @@
         "portConfig": "系统端口配置参数"
       },
       "labels": {
-        "remoteLocalMode": "远方就地模式",
+        "remoteLocalMode": "远方就地场景",
         "splitClusterFlag": "分簇控制标志位",
         "emsDisconnectEnable": "EMS通讯故障断接触器使能",
         "maintainMode": "运维模式",
@@ -1887,7 +1888,7 @@
         "ipFormatErrorDetail": "以下IP地址格式不正确，请修正后再下发：\n{0}"
       },
       "dropdownOptions": {
-        "远方就地模式": {
+        "远方就地场景": {
           "远方": "远方",
           "就地": "就地"
         },
@@ -2351,6 +2352,7 @@
       "totalCapacity": "总容量",
       "remainingCapacity": "剩余容量",
       "status": "状态",
+      "writeFailReason": "写失败原因",
       "productCode": "产品编码",
       "hardwareVersion": "硬件版本",
       "softwareVersion": "软件版本",
@@ -2380,6 +2382,13 @@
       "writeSuccess": "写成功",
       "writeFailed": "写失败",
       "unknownStatus": "未知状态"
+    },
+    "failReason": {
+      "noError": "无错误",
+      "cmd13Error": "CMD13错误",
+      "cmd8Error": "CMD8错误",
+      "heartbeatTimeout": "心跳超时",
+      "writeDataError": "写数据错误"
     }
   },
   "blockAlarmThresholdPage": {
@@ -2792,6 +2801,7 @@
       "放电SOC同步点": "放电SOC同步点"
     },
     "remarks": {
+      "remoteLocalMode": "远方场景：仅支持统一动作接触器与清除保留故障\n就地场景：参数设置与其余操作务必先切换到就地场景！",
       "confirmLocalModeBeforeSetting": "请确认当前处于就地模式后再进行参数下设",
       "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；": "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；",
       "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；": "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；",

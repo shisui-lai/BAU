@@ -42,6 +42,17 @@ const router = createRouter({
             )
         },
         {
+          path: '/Cluster/gpio',
+          name: 'gpio',
+          component: () =>
+            import(
+              /* webpackPrefetch: true */
+              /* webpackChunkName: "gpio" */
+              '@/views/Cluster/gpio.vue'
+            ),
+          meta: { visibleForGuest: true }
+        },
+        {
           path: '/Cluster/cellData',
           name: 'cellData',
           component: () =>

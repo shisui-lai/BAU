@@ -95,9 +95,9 @@ const executeReadOperations = async (mtclient) => {
       await executeModuleRead(mtclient, 'PCS', readModbusData_PCS)
       await executeModuleRead(mtclient, 'refrigeration', readModbusData_refrigeration)
       await executeModuleRead(mtclient, 'dehum', readModbusData_Dehum)
-      await executeModuleRead(mtclient, 'fire', readModbusData_Fire),
+      ;(await executeModuleRead(mtclient, 'fire', readModbusData_Fire),
         await executeModuleRead(mtclient, 'FaultConfig', readModbusData_FaultConfig),
-        await executeModuleRead(mtclient, 'DIDOConfig', readModbusData_DIDOConfig)
+        await executeModuleRead(mtclient, 'DIDOConfig', readModbusData_DIDOConfig))
     }
   } catch (e) {
     console.error('[读取操作失败]', e)

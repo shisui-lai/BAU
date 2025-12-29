@@ -39,6 +39,28 @@ const getParameterTranslation = (label) => {
   if (activeType.value === 'port' && te(`config.deviceManagementPage.portLabels.${label}`)) {
     return t(`config.deviceManagementPage.portLabels.${label}`)
   }
+  // 公共参数页复用设备管理页面的 labels 结构（通过原始中文label到键名的映射）
+  if (activeType.value === 'common') {
+    const dmLabelKeyMap = {
+      '远方就地场景': 'remoteLocalMode',
+      '分簇控制标志位': 'splitClusterFlag',
+      'EMS通讯故障断接触器使能': 'emsDisconnectEnable',
+      '运维模式': 'maintainMode',
+      '内测模式': 'internalTestMode',
+      '实时数据记录周期': 'realTimeRecordPeriod',
+      '当前堆数': 'blockCount',
+      '第一堆下簇数': 'clusterCount1',
+      '第二堆下簇数': 'clusterCount2',
+      '第三堆下簇数': 'clusterCount3',
+      '第四堆下簇数': 'clusterCount4',
+      '第五堆下簇数': 'clusterCount5',
+      '第六堆下簇数': 'clusterCount6'
+    }
+    const mapped = dmLabelKeyMap[label]
+    if (mapped && te(`config.deviceManagementPage.labels.${mapped}`)) {
+      return t(`config.deviceManagementPage.labels.${mapped}`)
+    }
+  }
   return label
 }
 
@@ -993,6 +1015,8 @@ onDeactivated(() => {
   stopCommDevReading()
   stopOperateReading()
   stopCommonReading()
+  stopPortReading()
+  stopSocReading()
 })
 
 onUnmounted(() => {
@@ -1004,6 +1028,9 @@ onUnmounted(() => {
   stopBatteryReading()
   stopCommDevReading()
   stopOperateReading()
+  stopCommonReading()
+  stopPortReading()
+  stopSocReading()
 
   // 清理事件监听器
   const ipc = window.electron?.ipcRenderer
@@ -1218,7 +1245,7 @@ function selectAllClusters(parameterDefinition) {
       </Column>
       <Column :header="t('blockConfigParamPage.table.remarks')" style="width: 320px">
         <template #body="{ data }">
-          <span v-if="data" class="text-sm whitespace-pre-line">{{ getRemarksTranslation(activeType==='batt' ? getBatteryRemarks(data) : (data.remarks || getParameterRemarkText())) }}</span>
+          <span v-if="data" class="text-sm" style="white-space: pre-line">{{ getRemarksTranslation(activeType==='batt' ? getBatteryRemarks(data) : (data.remarks || getParameterRemarkText())) }}</span>
         </template>
       </Column>
     </DataTable>

@@ -111,6 +111,12 @@ const getCurrentPcsFields = () => {
   }
 }
 
+const getDecimalsByScale = (scale) => {
+  if (!scale || scale === 1) return 0
+  const s = String(scale)
+  return s.length - 1
+}
+
 // 生成模板数据
 const getTemplateData = () => {
   const fields = getCurrentPcsFields()
@@ -159,6 +165,10 @@ const parseRawData = (rawData) => {
     let displayValue = value
     if (field.map && field.map[value] !== undefined) {
       displayValue = field.map[value]
+    }
+    if (!field.map && typeof value === 'number') {
+      const decimals = getDecimalsByScale(field.scale)
+      displayValue = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString()
     }
 
     return {
@@ -222,10 +232,6 @@ const unregisterListener = () => {
 const formatValue = (value) => {
   if (value === null || value === undefined || value === '---') {
     return '---'
-  }
-
-  if (typeof value === 'number') {
-    return value.toFixed(2)
   }
 
   return String(value)

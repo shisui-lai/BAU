@@ -1779,7 +1779,7 @@ function getArray_ConfigParamSys1(params, mtclient) {
     })
   }
   for (let i = 0; i < 16; i++) {
-    basicConfig.element.push({
+    ;(basicConfig.element.push({
       id: i + 35,
       label: `AFE${i + 1}的虚拟电池偏移位置1`,
       value: params[34 + 2 * i],
@@ -1792,7 +1792,7 @@ function getArray_ConfigParamSys1(params, mtclient) {
         value: params[35 + 2 * i],
         min: 0,
         max: 16
-      })
+      }))
   }
   let addressArray = generateRange(0x0000, 0x0041)
   /*   const writeValueArray = Array.from({ length: 69 }, () => '') */

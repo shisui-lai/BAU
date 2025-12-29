@@ -17,6 +17,8 @@ export interface PackField {
   meta?: {
   bmu        : number
   cellInBmu  : number
+  afe?       : number
+  gpio?      : number
   }
   valid?: boolean;   // 新增：标记字段是否有效  
   
@@ -526,6 +528,24 @@ export function IO_STATUS_SCHEMA(bmuTotal: number): PackField[] {
       );
     }
   return schema;
+}
+
+export function BMU_DEBUG_SCHEMA(bmuTotal: number, afePerBmu: number): PackField[] {
+  const schema: PackField[] = []
+  for (let b = 1; b <= bmuTotal; b++) {
+    for (let a = 1; a <= afePerBmu; a++) {
+      for (let g = 1; g <= 9; g++) {
+         schema.push({
+           class: `BMU${b}`,
+           key: `Bmu${b}_Afe${a}_Gpio${g}`,
+           label: `AFE${a} - GPIO${g} 电压`,
+           type: 'u16',
+           meta: { bmu: b, cellInBmu: 0, afe: a, gpio: g }
+         })
+      }
+    }
+  }
+  return schema
 }
 
 

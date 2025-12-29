@@ -59,7 +59,8 @@ import {
   parseFactoryCalibrationRAW,
   parseSysRunTimeRAW,
   parseEventRecordFlagRAW,
-  parseEventRecordRAW
+  parseEventRecordRAW,
+  parseBmuDebugRAW
 } from '../protocol/utils'
 import {
   startReadingEvent,
@@ -684,7 +685,10 @@ const TOPIC_TABLE_MAP = {
   bmu_adaptive_addr: createRemoteCommandParser('bmu_adaptive_addr'),
 
   // 删除事件记录 - BAU应答
-  clear_event_record_num: createRemoteCommandParser('clear_event_record_num')
+  clear_event_record_num: createRemoteCommandParser('clear_event_record_num'),
+
+  // BMU 调试数据
+  bmu_debug: parseBmuDebugRAW
 }
 
 // 动态MQTT连接管理

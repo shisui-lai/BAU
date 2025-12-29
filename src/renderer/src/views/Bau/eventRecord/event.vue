@@ -1349,7 +1349,7 @@ watch(
 }
 
 .group-card {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--surface-border);
   border-radius: 8px;
   padding: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -1361,34 +1361,34 @@ watch(
 .lightweight-table {
   border-collapse: collapse;
   width: 100%;
-  background-color: #1f2937; /* 深色背景 */
-  color: #ffffff; /* 默认白色文字 */
+  background-color: var(--surface-card);
+  color: var(--text-color);
   
   thead {
-    background-color: #374151; /* 深灰色表头背景 */
+    background-color: var(--surface-section);
     
     th {
       padding: 0.5rem;
       text-align: left;
-      border: 1px solid #4b5563; /* 深色边框 */
+      border: 1px solid var(--surface-border);
       font-weight: 600;
-      color: #ffffff; /* 白色文字 */
+      color: var(--text-color);
     }
   }
   
   tbody {
     tr {
-      border-bottom: 1px solid #4b5563; /* 深色边框 */
-      background-color: #1f2937; /* 深色背景 */
+      border-bottom: 1px solid var(--surface-border);
+      background-color: var(--surface-card);
       
       &.striped {
-        background-color: #374151; /* 稍微不同的深色，用于条纹效果 */
+        background-color: var(--surface-ground);
       }
       
       td {
         padding: 0.5rem;
-        border: 1px solid #4b5563; /* 深色边框 */
-        color: #ffffff; /* 默认白色文字 */
+        border: 1px solid var(--surface-border);
+        color: var(--text-color);
       }
     }
   }
@@ -1407,7 +1407,7 @@ watch(
 }
 
 .text-default {
-  color: #ffffff; /* 白色，在深色背景下可见 */
+  color: var(--text-color);
 }
 
 /* 导出卡片样式 */

@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-container">
-    <!-- 顶部标题栏 (Tech HUD Style) -->
+    <!-- 顶部标题栏（科技 HUD 风格） -->
     <div class="tech-header-container" ref="headerContainer">
       <canvas ref="headerCanvas" class="header-canvas"></canvas>
       
@@ -8,10 +8,10 @@
         <!-- 左侧翼：系统装饰/导航 -->
         <div class="hud-wing left-wing">
            <div class="wing-content">
-              <!-- Company Logo Module -->
+          <!-- 公司标识模块 -->
               <div class="logo-module">
                  <div class="logo-text">
-                    <div class="logo-main">SYL</div>
+                    <div class="logo-main">RISEN</div>
                     <div class="logo-sub">A RISEN GROUP COMPANY</div>
                  </div>
               </div>
@@ -61,9 +61,9 @@
       </div>
     </div>
 
-    <!--主要内容区域 -->
+    <!-- 主要内容区域 -->
     <div class="dashboard-content">
-      <!-- 顶部关键指标 Grid (10个数据点) -->
+      <!-- 顶部关键指标网格（10 个数据点） -->
       <div class="kpi-grid">
         <div class="kpi-card" v-for="(item, index) in kpiItems" :key="index" @click="handleCardClick(item)">
           <div class="kpi-icon">
@@ -82,7 +82,7 @@
       <!-- 中间核心展示区 (Split 50/50) -->
       <div class="main-section status-row-container">
         
-        <!-- Left Column: Real-time Battery Status -->
+        <!-- 左列：电池实时状态 -->
         <div class="status-col left-col geo-structure-box">
            <canvas ref="panelCanvasLeft" class="panel-canvas"></canvas>
            <!-- 单个栏目标题（避免每个堆的标题绝对定位造成重叠） -->
@@ -190,20 +190,102 @@
         </div>
         </div>
 
-        <!-- Right Column: Placeholder -->
+        <!-- 右列：占位 -->
         <div class="status-col right-col geo-structure-box">
             <canvas ref="panelCanvasRight" class="panel-canvas"></canvas>
             <div class="card-header">
-               <h3>待定功能区</h3>
+               <h3>外围设备概览</h3>
             </div>
-            <div class="placeholder-content">
-               <span>Reserved Area</span>
+            <div class="peripheral-icons-wrapper">
+            <div class="peripheral-icons">
+              <!-- PCS 模块 -->
+              <div class="device-item clickable" @click="navigatePeripheral('pcs')">
+                <div class="device-badge ring-spin pcs">
+                  <div class="badge-core">
+                    <div class="pcs-cabinet">
+                      <div class="cabinet-body"></div>
+                      <div class="panel"></div>
+                      <div class="vents"></div>
+                      <div class="leds"><span></span><span></span><span></span></div>
+                      <div class="port-lines left"></div>
+                      <div class="port-lines right"></div>
+                      <div class="electric-mark"></div>
+                      <div class="foot"></div>
+                    </div>
+                  </div>
+                  <div class="ring-decor"></div>
+                </div>
+                <div class="badge-label">堆PCS</div>
+              </div>
+              <!-- 液冷机 -->
+              <div class="device-item clickable" @click="navigatePeripheral('cooling')">
+                <div class="device-badge cooling">
+                  <div class="cooling-card">
+                    <div class="radiator-grid"></div>
+                    <div class="fan fan-left">
+                      <div class="rotor">
+                        <span class="blade"></span>
+                        <span class="blade"></span>
+                        <span class="blade"></span>
+                        <div class="hub"></div>
+                      </div>
+                    </div>
+                    <div class="fan fan-right">
+                      <div class="rotor">
+                        <span class="blade"></span>
+                        <span class="blade"></span>
+                        <span class="blade"></span>
+                        <div class="hub"></div>
+                      </div>
+                    </div>
+                    <div class="accent-lines">
+                      <span class="accent left"></span>
+                      <span class="accent right"></span>
+                    </div>
+                    <div class="frost-particles">
+                      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="badge-label">堆制冷设备</div>
+              </div>
+              <!-- 电表 -->
+              <div class="device-item">
+                <div class="device-badge meter">
+                  <div class="badge-core">
+                    <div class="meter-core">
+                      <div class="gauge">
+                        <div class="ticks"></div>
+                        <div class="needle"></div>
+                      </div>
+                      <div class="digital-display"></div>
+                    </div>
+                  </div>
+                  <div class="ring-decor"></div>
+                </div>
+                <div class="badge-label">电表</div>
+              </div>
+              <!-- 其他 -->
+              <div class="device-item">
+                <div class="device-badge other">
+                  <div class="badge-core">
+                    <i class="pi pi-bell"></i>
+                    <span class="badge-title">其他</span>
+                  </div>
+                  <span class="pulse"></span>
+                  <span class="pulse pulse-2"></span>
+                  <span class="orbit-dot"></span>
+                  <div class="ring-decor"></div>
+                </div>
+                <div class="badge-label">外设状态</div>
+              </div>
+            </div>
             </div>
         </div>
 
       </div>
       
-      <!-- 底部：电池簇状态监控 (按堆显示) -->
+      <!-- 底部：电池簇状态监控（按堆显示） -->
       <div class="bottom-section system-overview geo-structure-box">
          <canvas ref="panelCanvasBottom" class="panel-canvas"></canvas>
          <div class="card-header">
@@ -225,52 +307,58 @@
                        :class="cluster.status"
                        @click="navigateToClusterInfo(block.value, cluster.id)"
                   >
-                     <!-- Scheme A: Holographic Energy Conduit -->
+                        <!-- 方案 A：全息能量导管 -->
                      <div class="holo-conduit" :class="{ 
                         active: cluster.contactorClosed, 
                         charging: cluster.status === 'charging', 
                         discharging: cluster.status === 'discharging' 
                      }">
-                        <!-- Busbar Connector (Horizontal Line) -->
+                           <!-- 母排连接（横线） -->
                         <div class="busbar-connector"></div>
 
-                        <!-- Upper Conduit (Busbar to Switch) -->
+                        <!-- 上部导管（母排到开关） -->
                         <div class="conduit-upper">
                            <div class="beam-core"></div>
                            <div class="flow-arrows" v-if="cluster.status === 'charging' || cluster.status === 'discharging'"></div>
                         </div>
 
-                        <!-- Connection Joint (Pivot for Switch) -->
+                        <!-- 连接节点（开关转轴） -->
                         <div class="conduit-joint"></div>
                         
-                        <!-- Mechanical Switch (Integrated) -->
+                        <!-- 机械开关（集成） -->
                         <div class="mechanical-switch" :class="{ closed: cluster.contactorClosed }">
-                           <!-- Removed terminals to prevent interference -->
+                           <!-- 已移除端子以避免干扰 -->
                            <div class="switch-blade">
                               <div class="beam-core"></div>
                               <div class="flow-arrows" v-if="cluster.status === 'charging' || cluster.status === 'discharging'"></div>
                            </div>
                         </div>
 
-                        <!-- Lower Conduit (Switch to Battery) -->
+                        <!-- 下部导管（开关至电池） -->
                         <div class="conduit-lower">
                            <div class="beam-core"></div>
                            <div class="flow-arrows" v-if="cluster.status === 'charging' || cluster.status === 'discharging'"></div>
                         </div>
                      </div>
 
-                     <!-- Battery Model (Heap Style Scaled Down) -->
+                     <!-- 电池模型（堆风格缩小版） -->
                      <div class="battery-cap"></div>
                      <div class="battery-glass-body">
-                        <!-- Liquid with Wave & Bubbles -->
+                        <!-- 液体（波浪与气泡） -->
                         <div class="battery-liquid" :style="{ height: cluster.soc + '%' }">
                            <div class="liquid-surface" v-if="cluster.soc > 0"></div>
                            <div class="liquid-bubbles" v-if="cluster.soc > 0"></div>
                         </div>
                         
-                        <!-- Overlay Info (V, A, SOC) -->
+                        <!-- 叠加信息（V、A、SOC） -->
                         <div class="battery-overlay-content">
                            <div class="cluster-overlay-data">
+                               <!-- 微型功率状态 -->
+                               <div class="power-status mini" v-if="cluster.status === 'charging' || cluster.status === 'discharging'">
+                                  <i class="pi pi-angle-double-down charging-icon" v-if="cluster.status === 'charging'"></i>
+                                  <i class="pi pi-angle-double-up discharging-icon" v-if="cluster.status === 'discharging'"></i>
+                                  <span>{{ cluster.status === 'charging' ? '充电' : '放电' }}</span>
+                               </div>
                               <div class="data-row"><span class="val">{{ cluster.volt }}</span><span class="unit">V</span></div>
                               <div class="data-row"><span class="val">{{ cluster.curr }}</span><span class="unit">A</span></div>
                               <div class="soc-row"><span class="val">{{ cluster.soc }}</span><span class="unit">%</span></div>
@@ -285,18 +373,11 @@
                                 <span class="sep">|</span>
                                 <span class="val">{{ cluster.tmin }}</span><span class="unit">℃</span>
                               </div>
-                               
-                               <!-- Mini Power Status -->
-                               <div class="power-status mini" v-if="cluster.status === 'charging' || cluster.status === 'discharging'">
-                                  <i class="pi pi-angle-double-down charging-icon" v-if="cluster.status === 'charging'"></i>
-                                  <i class="pi pi-angle-double-up discharging-icon" v-if="cluster.status === 'discharging'"></i>
-                                  <span>{{ cluster.status === 'charging' ? '充电' : '放电' }}</span>
-                               </div>
                            </div>
                         </div>
                      </div>
                      
-                     <!-- Cluster Label -->
+                     <!-- 簇标签 -->
                      <div class="cluster-label-text">簇{{ cluster.id }}</div>
                   </div>
                </div>
@@ -753,6 +834,15 @@ const navigateToClusterInfo = (blockId, clusterId) => {
     console.warn('setSelectedClusterForView failed:', e)
   }
   router.push({ path: '/Cluster/cellData', query: { block: blkNum, cluster: clusterId } })
+}
+
+// 外围设备导航
+const navigatePeripheral = (type) => {
+  if (type === 'pcs') {
+    router.push({ name: 'BlockPcs' })
+  } else if (type === 'cooling') {
+    router.push({ name: 'BlockRef' })
+  }
 }
 
 // ========== 数据获取辅助 ==========
@@ -1212,7 +1302,7 @@ const getBlockClusterStates = (blockId) => {
   width: 100%;
   height: auto;
   min-height: 100vh;
-  background-color: var(--surface-ground);
+  background-color: #0d1623;
   color: #e0e0e0;
   display: flex;
   flex-direction: column;
@@ -1221,14 +1311,14 @@ const getBlockClusterStates = (blockId) => {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* Header - Tech HUD Style */
+/* 头部 - 科技 HUD 风格 */
 .tech-header-container {
   height: 80px;
   position: relative;
   width: 100%;
   flex-shrink: 0;
   z-index: 10;
-  /* Dark background for the whole strip */
+  /* 整条区域的深色背景 */
   background: linear-gradient(to bottom, #0d1623 0%, rgba(13, 22, 35, 0.8) 100%);
 }
 
@@ -1249,7 +1339,7 @@ const getBlockClusterStates = (blockId) => {
   align-items: flex-start;
 }
 
-/* Wings */
+/* 两侧翼区 */
 .hud-wing {
   flex: 1;
   height: 100%;
@@ -1266,7 +1356,7 @@ const getBlockClusterStates = (blockId) => {
 .left-wing .wing-content { justify-content: flex-start; }
 .right-wing .wing-content { justify-content: flex-end; gap: 20px; }
 
-/* Center */
+/* 中央区域 */
 .hud-center {
   flex: 0 0 auto;
   min-width: 400px;
@@ -1277,7 +1367,7 @@ const getBlockClusterStates = (blockId) => {
   clip-path: polygon(0 0, 100% 0, 85% 100%, 15% 100%);
   position: relative;
   
-  /* Top accent */
+  /* 顶部点缀线 */
   &::before {
     content: '';
     position: absolute;
@@ -1312,7 +1402,7 @@ const getBlockClusterStates = (blockId) => {
   margin-top: 4px;
 }
 
-/* Modules (Slanted) */
+/* 模块（斜切造型） */
 .status-module, .time-module {
   background: rgba(16, 33, 58, 0.8);
   border: 1px solid rgba(79, 172, 254, 0.3);
@@ -1365,7 +1455,7 @@ const getBlockClusterStates = (blockId) => {
   }
 }
 
-/* Un-skew content */
+/* 取消斜切后的内容矫正 */
 .module-icon, .module-text, .time-main, .date-sub, .system-indicator {
   transform: skewX(20deg);
 }
@@ -1373,7 +1463,7 @@ const getBlockClusterStates = (blockId) => {
 .module-icon {
   font-size: 1.5rem;
   margin-right: 10px;
-  color: inherit; /* Follow parent color */
+  color: inherit; /* 继承父级颜色 */
 }
 
 .module-text {
@@ -1386,7 +1476,7 @@ const getBlockClusterStates = (blockId) => {
 
 .time-module {
   flex-direction: column;
-  align-items: flex-end; /* Align right inside the skewed box */
+  align-items: flex-end; /* 在斜切盒内向右对齐底部 */
   min-width: 120px;
   
   .time-main {
@@ -1401,12 +1491,12 @@ const getBlockClusterStates = (blockId) => {
   }
 }
 
-/* Logo Module (Left) */
+/* 标识模块（左侧） */
 .logo-module {
   background: linear-gradient(90deg, rgba(16, 33, 58, 0.95), rgba(16, 33, 58, 0.6));
   border-left: 4px solid #4facfe;
   border-bottom: 1px solid rgba(79, 172, 254, 0.3);
-  transform: skewX(20deg); /* Reversed direction */
+  transform: skewX(20deg); /* 反向斜切 */
   padding: 8px 30px;
   display: flex;
   align-items: center;
@@ -1418,7 +1508,7 @@ const getBlockClusterStates = (blockId) => {
   transition: all 0.3s;
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
   
-  /* Decorative corner */
+  /* 装饰性角标 */
   &::after {
      content: '';
      position: absolute;
@@ -1436,7 +1526,7 @@ const getBlockClusterStates = (blockId) => {
 }
 
 .logo-text {
-  transform: skewX(-20deg); /* Counter-skew reversed */
+  transform: skewX(-20deg); /* 反向抵消斜切 */
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1468,7 +1558,7 @@ const getBlockClusterStates = (blockId) => {
 }
 
 
-/* Content */
+/* 内容区 */
 .dashboard-content {
   flex: 1;
   padding: 10px 20px 20px 20px;
@@ -1478,7 +1568,7 @@ const getBlockClusterStates = (blockId) => {
   gap: 15px; /* 增加间距 */
 }
 
-/* KPI Grid */
+/* KPI 指标网格 */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -1508,7 +1598,7 @@ const getBlockClusterStates = (blockId) => {
   cursor: pointer;
   overflow: hidden;
   
-  /* Corner markers via background gradient on the SHARP corners (TR, BL) */
+  /* 通过背景渐变在尖角（右上、左下）绘制角标 */
   background-image: 
     linear-gradient(to left, #4facfe 2px, transparent 2px),
     linear-gradient(to bottom, #4facfe 2px, transparent 2px),
@@ -1520,7 +1610,7 @@ const getBlockClusterStates = (blockId) => {
   background-size: 10px 10px;
   background-repeat: no-repeat;
   
-  /* Pseudo-elements for wrapping border effect */
+  /* 使用伪元素实现包裹式边框效果 */
   &::before, &::after {
     content: '';
     position: absolute;
@@ -1530,7 +1620,7 @@ const getBlockClusterStates = (blockId) => {
     box-shadow: 0 0 8px #4facfe;
   }
 
-  /* Top Line */
+  /* 顶部边线 */
   &::before {
     top: 0;
     left: 50%;
@@ -1539,7 +1629,7 @@ const getBlockClusterStates = (blockId) => {
     height: 2px;
   }
   
-  /* Bottom Line */
+  /* 底部边线 */
   &::after {
     bottom: 0;
     left: 50%;
@@ -1548,20 +1638,16 @@ const getBlockClusterStates = (blockId) => {
     height: 2px;
   }
 
-  /* We need two more for Left and Right to simulate wrapping.
-     Since we can't add DOM elements easily, we'll use background-image manipulation on hover 
-     OR we can use a trick with box-shadow if clip-path wasn't there.
-     With clip-path, box-shadow is clipped. 
-     Best approach with existing DOM: Use background gradients that expand.
-  */
+  /* 需要模拟左右边框。由于不易增加 DOM 元素，改用背景渐变的扩展方式；
+     clip-path 会裁剪 box-shadow，因此采用可扩展的背景渐变来实现包裹效果。 */
 }
 
 .kpi-card:hover {
   background: rgba(16, 33, 58, 0.9);
-  filter: drop-shadow(0 0 8px rgba(79, 172, 254, 0.8)); /* Stronger glow around the whole shape */
+  filter: drop-shadow(0 0 8px rgba(79, 172, 254, 0.8)); /* 整体形状更强的外发光 */
   transform: translateY(-3px);
   
-  /* Expand Top/Bottom Lines */
+  /* 扩展上下边线 */
   &::before {
     width: 100%;
     opacity: 1;
@@ -1573,18 +1659,18 @@ const getBlockClusterStates = (blockId) => {
     box-shadow: 0 0 12px #4facfe;
   }
   
-  /* Add Left/Right borders via background gradient animation */
+  /* 通过背景渐变动画添加左右边框 */
   background-image: 
-    linear-gradient(#4facfe, #4facfe), /* Left */
-    linear-gradient(#4facfe, #4facfe), /* Right */
-    linear-gradient(to left, #4facfe 2px, transparent 2px), /* Corner markers kept? No, override */
+    linear-gradient(#4facfe, #4facfe), /* 左侧 */
+    linear-gradient(#4facfe, #4facfe), /* 右侧 */
+    linear-gradient(to left, #4facfe 2px, transparent 2px), /* 角标是否保留？否，进行覆盖 */
     linear-gradient(to bottom, #4facfe 2px, transparent 2px),
     linear-gradient(to right, #4facfe 2px, transparent 2px),
     linear-gradient(to top, #4facfe 2px, transparent 2px);
     
   background-size: 
-    2px 100%, /* Left height */
-    2px 100%, /* Right height */
+    2px 100%, /* 左侧高度 */
+    2px 100%, /* 右侧高度 */
     10px 10px, 10px 10px, 10px 10px, 10px 10px;
     
   background-position: 
@@ -1596,7 +1682,7 @@ const getBlockClusterStates = (blockId) => {
   background-repeat: no-repeat;
 }
   
-  /* Remove old pseudo-elements logic */
+  /* 移除旧的伪元素逻辑 */
 
   
   .kpi-icon {
@@ -1656,10 +1742,351 @@ const getBlockClusterStates = (blockId) => {
     }
   }
 
+  /* 外围设备动画图标 */
+  .peripheral-icons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+    height: auto;
+    margin: 0;
+    justify-items: center;
+    align-items: center;
+    width: 100%;
+    padding: 0 14px;
+  }
+.peripheral-icons-wrapper {
+  height: calc(100% - 32px);
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+  .device-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .device-item.clickable { cursor: pointer; }
+  .badge-label {
+    font-size: 0.85rem;
+    color: #a6d8ff;
+    text-shadow: 0 0 8px rgba(79,172,254,0.35);
+  }
+  .device-badge {
+    position: relative;
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background: radial-gradient(120px 120px at 50% 35%, rgba(79,172,254,0.25), rgba(13,22,35,0.6));
+    border: 1px solid rgba(79,172,254,0.35);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.35), inset 0 0 18px rgba(79,172,254,0.25);
+    overflow: hidden;
+  }
+  .device-badge::after {
+    content: '';
+    position: absolute;
+    top: 8px; left: 8px; right: 8px;
+    height: 18px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.02));
+    filter: blur(0.5px);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .device-badge .ring-decor {
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    border: 1px dashed rgba(166,216,255,0.22);
+    animation: ringDash 6s linear infinite;
+  }
+  @keyframes ringDash {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .device-badge .badge-core {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #e8f6ff;
+    z-index: 2;
+  }
+  .device-badge .badge-core i {
+    font-size: 1.2rem;
+    filter: drop-shadow(0 0 6px rgba(79,172,254,0.55));
+  }
+  .device-badge .badge-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(79,172,254,0.65);
+  }
+  /* PCS：旋转光环强调 */
+  .device-badge.ring-spin::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, rgba(79,172,254,0.0), rgba(79,172,254,0.9), rgba(79,172,254,0.0) 55%);
+    filter: blur(6px);
+    animation: spinGlow 3.5s linear infinite;
+  }
+  @keyframes spinGlow { to { transform: rotate(360deg); } }
+  .device-badge.pcs {
+    background: radial-gradient(120px 120px at 50% 35%, rgba(79,172,254,0.35), rgba(13,22,35,0.65));
+  }
+  /* 环绕小光点（更高级感） */
+  .device-badge .orbit-dot {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #a6d8ff;
+    box-shadow: 0 0 10px #4facfe, 0 0 18px rgba(79,172,254,0.55);
+    transform-origin: center;
+    animation: orbitOne 4s linear infinite;
+    z-index: 3;
+  }
+  @keyframes orbitOne {
+    from { transform: translate(-50%, -50%) rotate(0deg) translateX(48px); }
+    to   { transform: translate(-50%, -50%) rotate(360deg) translateX(48px); }
+  }
+  @keyframes orbitTwo {
+    from { transform: translate(-50%, -50%) rotate(0deg) translateX(35px); }
+    to   { transform: translate(-50%, -50%) rotate(360deg) translateX(35px); }
+  }
+  /* 液冷机：新徽章（非圆形）+ 栅格 + 双风扇 */
+  .device-badge.cooling {
+    border-radius: 12px;
+    clip-path: polygon(8% 0, 92% 0, 100% 14%, 100% 86%, 92% 100%, 8% 100%, 0 86%, 0 14%);
+    background: linear-gradient(180deg, rgba(33,61,92,0.85), rgba(20,36,62,0.85));
+    border: 1px solid rgba(79,172,254,0.35);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.35), inset 0 0 12px rgba(79,172,254,0.22);
+  }
+  .device-badge.cooling::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    clip-path: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px rgba(166,216,255,0.45), 0 0 12px rgba(79,172,254,0.25);
+    animation: badgeEdgePulse 4.8s ease-in-out infinite;
+    z-index: 1;
+  }
+  .device-badge.cooling .cooling-card {
+    position: absolute;
+    inset: 0;
+  }
+  .device-badge.cooling .radiator-grid {
+    position: absolute;
+    left: 8px; right: 8px; top: 10px; bottom: 10px;
+    border-radius: 8px;
+    background: repeating-linear-gradient(
+      90deg,
+      rgba(166,216,255,0.28) 0 2px,
+      transparent 2px 12px
+    );
+    border: 1px solid rgba(166,216,255,0.35);
+  }
+  .device-badge.cooling .fan {
+    position: absolute;
+    width: 34px; height: 34px;
+    z-index: 2;
+  }
+  /* 风扇外环（虚线圈，独立缓慢旋转） */
+  .device-badge.cooling .fan::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 30px; height: 30px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px dashed rgba(166,216,255,0.45);
+    animation: ringSpin 10s linear infinite;
+    z-index: 1;
+  }
+  @keyframes ringSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+  .device-badge.cooling .fan-left { left: 28%; top: 50%; transform: translate(-50%, -50%); }
+  .device-badge.cooling .fan-right { left: 72%; top: 50%; transform: translate(-50%, -50%); }
+  .device-badge.cooling .fan .rotor {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 100%; height: 100%;
+    transform: translate(-50%, -50%);
+    transform-origin: 50% 50%;
+    animation: fanSpin 2.2s linear infinite;
+    z-index: 3;
+  }
+  @keyframes fanSpin {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to   { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+  .device-badge.cooling .blade {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 4px; height: 18px;
+    transform-origin: 50% 100%;
+    background: rgba(166,216,255,0.98);
+    border-radius: 2px;
+  }
+  .device-badge.cooling .blade:nth-child(1) { transform: translate(-50%, -100%) rotate(0deg); }
+  .device-badge.cooling .blade:nth-child(2) { transform: translate(-50%, -100%) rotate(120deg); }
+  .device-badge.cooling .blade:nth-child(3) { transform: translate(-50%, -100%) rotate(240deg); }
+  .device-badge.cooling .hub {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 7px; height: 7px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(79,172,254,0.85);
+    box-shadow: 0 0 4px rgba(79,172,254,0.55);
+  }
+  .device-badge.cooling .accent-lines .accent {
+    position: absolute;
+    top: 8px; bottom: 8px;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(79,172,254,0.0), rgba(79,172,254,0.6), rgba(79,172,254,0.0));
+    box-shadow: 0 0 8px rgba(79,172,254,0.35);
+    opacity: 0.7;
+  }
+  .device-badge.cooling .accent.left { left: 6px; }
+  .device-badge.cooling .accent.right { right: 6px; }
+  /* 徽章内冷流特效：两条水平冷流线左右漂移 */
+  .device-badge.cooling .cooling-card::before,
+  .device-badge.cooling .cooling-card::after {
+    content: '';
+    position: absolute;
+    left: 10px; right: 10px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, rgba(79,172,254,0.0), rgba(79,172,254,0.65), rgba(79,172,254,0.0));
+    opacity: 0.6;
+    animation: flowDrift 4.5s linear infinite;
+  }
+  .device-badge.cooling .cooling-card::before { top: 26%; }
+  .device-badge.cooling .cooling-card::after { bottom: 26%; animation-duration: 5.5s; }
+  @keyframes flowDrift {
+    0% { background-position: 0 0; }
+    100% { background-position: 120% 0; }
+  }
+  @keyframes badgeEdgePulse {
+    0% { opacity: 0.18; }
+    50% { opacity: 0.38; }
+    100% { opacity: 0.18; }
+  }
+  .device-badge.cooling .frost-particles {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 0; height: 0;
+    transform: translate(-50%, -50%);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .device-badge.cooling .frost-particles span {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 3px; height: 3px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #a6d8ff;
+    box-shadow: 0 0 6px rgba(79,172,254,0.55);
+    animation: frostOrbit 8s linear infinite;
+  }
+  .device-badge.cooling .frost-particles span:nth-child(1) { --r: 28px; animation-duration: 7.5s; animation-delay: -0.5s; }
+  .device-badge.cooling .frost-particles span:nth-child(2) { --r: 34px; animation-duration: 9.2s; animation-delay: -1.2s; }
+  .device-badge.cooling .frost-particles span:nth-child(3) { --r: 40px; animation-duration: 10.5s; animation-delay: -0.8s; }
+  .device-badge.cooling .frost-particles span:nth-child(4) { --r: 24px; animation-duration: 8.3s; animation-delay: -1.7s; }
+  .device-badge.cooling .frost-particles span:nth-child(5) { --r: 42px; animation-duration: 11.2s; animation-delay: -0.3s; }
+  .device-badge.cooling .frost-particles span:nth-child(6) { --r: 30px; animation-duration: 12s;  animation-delay: -1.0s; }
+  .device-badge.cooling .frost-particles span:nth-child(7) { --r: 36px; animation-duration: 9.8s;  animation-delay: -0.6s; }
+  .device-badge.cooling .frost-particles span:nth-child(8) { --r: 22px; animation-duration: 8.7s;  animation-delay: -1.3s; }
+  .device-badge.cooling .frost-particles span:nth-child(9) { --r: 38px; animation-duration: 10.8s; animation-delay: -0.9s; }
+  .device-badge.cooling .frost-particles span:nth-child(10){ --r: 26px; animation-duration: 8.9s;  animation-delay: -1.5s; }
+  @keyframes frostOrbit {
+    from { transform: translate(-50%, -50%) rotate(0deg) translateX(var(--r)); }
+    to   { transform: translate(-50%, -50%) rotate(360deg) translateX(var(--r)); }
+  }
+  /* 电表中心结构：指针式表盘 + 数字显示条 */
+  .meter-core {
+    position: relative;
+    width: 72px; height: 60px;
+  }
+  .meter-core .gauge {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 60px; height: 60px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(255,255,255,0.08), transparent 70%);
+    box-shadow: inset 0 0 12px rgba(250,173,20,0.35);
+    clip-path: inset(0 0 50% 0);
+  }
+  .meter-core .ticks {
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    border: 1px dashed rgba(250,173,20,0.45);
+    filter: drop-shadow(0 0 6px rgba(250,173,20,0.25));
+    clip-path: inset(0 0 50% 0);
+  }
+  .meter-core .needle {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 2px; height: 28px;
+    transform: translate(-50%, -100%);
+    background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(250,173,20,0.85));
+    transform-origin: 50% 100%;
+    border-radius: 2px;
+    animation: needleSwingSemi 2.8s ease-in-out infinite;
+  }
+  .meter-core .digital-display {
+    position: absolute;
+    left: 50%; bottom: 2px;
+    width: 40px; height: 12px;
+    transform: translateX(-50%);
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(20,34,60,0.9), rgba(15,26,46,0.85));
+    box-shadow: inset 0 0 6px rgba(79,172,254,0.25);
+    border: 1px solid rgba(166,216,255,0.25);
+  }
+  /* 电表：仪表盘与指针摆动 */
+  .device-badge.meter {
+    background: radial-gradient(120px 120px at 50% 35%, rgba(250,173,20,0.18), rgba(13,22,35,0.65));
+  }
+  @keyframes needleSwingSemi {
+    0% { transform: translate(-50%, -100%) rotate(-70deg); }
+    50% { transform: translate(-50%, -100%) rotate(70deg); }
+    100% { transform: translate(-50%, -100%) rotate(-70deg); }
+  }
+  /* 其他：脉冲环 */
+  .device-badge.other {
+    background: radial-gradient(120px 120px at 50% 35%, rgba(82,196,26,0.22), rgba(13,22,35,0.65));
+  }
+  .device-badge.other .pulse {
+    position: absolute;
+    inset: -2px;
+    border-radius: 50%;
+    border: 2px solid rgba(166,216,255,0.35);
+    animation: pulseRing 2.6s ease-out infinite;
+  }
+  .device-badge.other .pulse-2 { animation-delay: 0.9s; }
+  @keyframes pulseRing {
+    0% { transform: scale(0.85); opacity: 0.75; }
+    70% { transform: scale(1.15); opacity: 0.1; }
+    100% { transform: scale(1.2); opacity: 0; }
+  }
 
-/* Main Section */
+/* 主体区域 */
 .main-section {
-  flex: 3;
+  flex: 0 0 auto;
   display: flex; /* 改为 Flex 布局支持多堆 */
   flex-direction: row;
   gap: 20px;
@@ -1668,7 +2095,7 @@ const getBlockClusterStates = (blockId) => {
   padding-bottom: 0;
 }
 
-/* Tech Border Box (Shared Style for other areas) */
+/* 技术边框盒（其他区域的通用样式） */
 .tech-border-box {
   position: relative;
   background: rgba(13, 22, 35, 0.6);
@@ -1676,7 +2103,7 @@ const getBlockClusterStates = (blockId) => {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(79, 172, 254, 0.05);
   backdrop-filter: blur(5px);
   
-  /* Top accent */
+  /* 顶部点缀线 */
   &::before {
     content: '';
     position: absolute;
@@ -1686,7 +2113,7 @@ const getBlockClusterStates = (blockId) => {
     z-index: 1;
   }
 
-  /* Corner Accents */
+  /* 角落点缀 */
   &::after {
     content: '';
     position: absolute;
@@ -1704,7 +2131,7 @@ const getBlockClusterStates = (blockId) => {
   }
 }
 
-/* Geometric Structure Box (Panel Style - Canvas Based) */
+/* 几何结构盒（面板风格，基于画布） */
 .geo-structure-box {
   position: relative;
   z-index: 0;
@@ -1712,7 +2139,7 @@ const getBlockClusterStates = (blockId) => {
   overflow: visible;
   background: transparent;
   border: none;
-  box-shadow: none; /* Canvas handles the shadow/glow */
+  box-shadow: none; /* 阴影/发光由画布负责 */
 }
 
 .panel-canvas {
@@ -1725,18 +2152,18 @@ const getBlockClusterStates = (blockId) => {
   pointer-events: none;
 }
 
-/* Header - Positioned to match Canvas Title Area */
+/* 标题栏 —— 与画布标题区域对齐的定位 */
 .geo-structure-box .card-header {
   position: absolute;
   top: 0;
   left: 0;
-  height: 32px; /* Matches headerH in drawTechPanel */
+  height: 32px; /* 与 drawTechPanel 中的 headerH 一致 */
   display: flex;
   align-items: center;
   z-index: 2;
   padding-left: 15px;
   width: 100%;
-  pointer-events: none; /* Let clicks pass through if needed, but text selects */
+  pointer-events: none; /* 允许点击穿透但文本可选中 */
   
   h3 {
     margin: 0;
@@ -1752,12 +2179,12 @@ const getBlockClusterStates = (blockId) => {
   }
 }
 
-/* Clean up old deco elements that might interfere */
+/* 清理可能干扰的旧装饰元素 */
 .header-deco-line {
   display: none;
 }
 
-/* Adjustments for content */
+/* 内容区调整 */
 .geo-structure-box .battery-display-area,
 .geo-structure-box .placeholder-content {
   margin-top: 5px; /* 整体上移 */
@@ -1766,7 +2193,7 @@ const getBlockClusterStates = (blockId) => {
 .status-row-container {
   display: flex;
   gap: 20px;
-  flex: 1;
+  /* flex: 1; */
   min-height: 240px; /* Ensure minimum height */
 }
 
@@ -1839,19 +2266,19 @@ const getBlockClusterStates = (blockId) => {
   }
 }
 
-/* 3D Battery Model */
+/* 3D 电池模型 */
 .battery-display-area {
   flex: 1;
   display: flex;
-  flex-direction: row; /* Ensure row layout */
+  flex-direction: row; /* 确保水平布局 */
   align-items: center;
-  justify-content: flex-start; /* Move to left */
-  gap: 10px; /* Integrated spacing for compact layout */
+  justify-content: flex-start; /* 向左对齐 */
+  gap: 10px; /* 紧凑布局的内置间距 */
   padding: 0 0 10px 20px; /* 上边距减小，整体上移 */
-  overflow: hidden; /* Prevent overflow triggering scrollbars */
+  overflow: hidden; /* 防止溢出触发滚动条 */
 }
 
-/* Electrical Params (New) */
+/* 电气参数（新增） */
 .electrical-params {
   display: flex;
   flex-direction: column;
@@ -1889,8 +2316,8 @@ const getBlockClusterStates = (blockId) => {
   align-items: center;
   gap: 8px;
   margin-bottom: 5px;
-  color: #fff; /* White text */
-  font-size: 0.9rem; /* Increased size */
+  color: #fff; /* 白色文字 */
+  font-size: 0.9rem; /* 字号略增 */
   font-weight: 500;
   
   i { font-size: 1rem; }
@@ -1937,8 +2364,92 @@ const getBlockClusterStates = (blockId) => {
   }
 }
 
-.voltage-card .param-progress { color: #00e5ff; }
-.current-card .param-progress { color: #faad14; }
+  .voltage-card .param-progress { color: #00e5ff; }
+  .current-card .param-progress { color: #faad14; }
+
+  /* PCS机柜造型 */
+  .pcs-cabinet {
+    position: relative;
+    width: 64px; height: 56px;
+  }
+  .pcs-cabinet .cabinet-body {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 40px; height: 52px;
+    transform: translate(-50%, -50%);
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(20,34,60,0.95), rgba(15,26,46,0.85));
+    border: 1px solid rgba(166,216,255,0.35);
+    box-shadow: inset 0 0 12px rgba(79,172,254,0.2), 0 0 10px rgba(79,172,254,0.25);
+  }
+  .pcs-cabinet .panel {
+    position: absolute;
+    left: 50%; top: 26%;
+    width: 26px; height: 16px;
+    transform: translateX(-50%);
+    border-radius: 3px;
+    background: linear-gradient(180deg, rgba(28,48,78,0.9), rgba(20,36,62,0.85));
+    border: 1px solid rgba(166,216,255,0.3);
+    box-shadow: inset 0 0 8px rgba(79,172,254,0.25);
+  }
+  .pcs-cabinet .vents {
+    position: absolute;
+    left: 50%; bottom: 8px;
+    width: 32px; height: 10px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, rgba(166,216,255,0.2) 2px, transparent 2px) repeat;
+    background-size: 6px 100%;
+    border-radius: 2px;
+    opacity: 0.8;
+  }
+  .pcs-cabinet .leds {
+    position: absolute;
+    left: 50%; top: 8px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+  }
+  .pcs-cabinet .leds span {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    box-shadow: 0 0 6px currentColor;
+    animation: ledPulse 2.2s ease-in-out infinite;
+  }
+  .pcs-cabinet .leds span:nth-child(1) { background: #52c41a; color: #52c41a; animation-delay: 0s; }
+  .pcs-cabinet .leds span:nth-child(2) { background: #faad14; color: #faad14; animation-delay: 0.3s; }
+  .pcs-cabinet .leds span:nth-child(3) { background: #ff4d4f; color: #ff4d4f; animation-delay: 0.6s; }
+  @keyframes ledPulse {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+  .pcs-cabinet .port-lines {
+    position: absolute;
+    top: 50%;
+    width: 22px; height: 2px;
+    background: linear-gradient(90deg, rgba(79,172,254,0.0), rgba(79,172,254,0.8), rgba(79,172,254,0.0));
+    box-shadow: 0 0 8px rgba(79,172,254,0.45);
+    opacity: 0.85;
+  }
+  .pcs-cabinet .port-lines.left { left: -6px; transform: translateY(-50%); }
+  .pcs-cabinet .port-lines.right { right: -6px; transform: translateY(-50%); }
+  .pcs-cabinet .foot {
+    position: absolute;
+    left: 50%; bottom: -2px;
+    width: 24px; height: 3px;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    background: rgba(79,172,254,0.4);
+    box-shadow: 0 0 8px rgba(79,172,254,0.45);
+  }
+  .pcs-cabinet .electric-mark {
+    position: absolute;
+    left: 68%; top: 64%;
+    width: 12px; height: 18px;
+    transform: translate(-50%, -50%);
+    clip-path: polygon(50% 0, 40% 30%, 60% 30%, 35% 60%, 55% 60%, 30% 100%, 70% 60%, 50% 60%, 65% 30%, 45% 30%);
+    background: linear-gradient(180deg, #ffd54f, #faad14);
+    box-shadow: 0 0 8px rgba(250,173,20,0.7), 0 0 14px rgba(250,173,20,0.4);
+  }
 
 @keyframes scan-bar {
   0% { width: 40%; opacity: 0.6; }
@@ -1947,8 +2458,8 @@ const getBlockClusterStates = (blockId) => {
 
 
 .battery-model-3d {
-  width: 100px; /* Reduced from 140px */
-  height: 160px; /* Reduced from 240px */
+  width: 100px; /* 由 140px 缩减为 100px */
+  height: 160px; /* 由 240px 缩减为 160px */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1964,8 +2475,8 @@ const getBlockClusterStates = (blockId) => {
 }
 
 .battery-cap {
-  width: 40px; /* Reduced from 60px */
-  height: 10px; /* Reduced from 15px */
+  width: 40px; /* 由 60px 缩减为 40px */
+  height: 10px; /* 由 15px 缩减为 10px */
   background: #2a2f3a;
   border: 1px solid #555;
   border-bottom: none;
@@ -2001,7 +2512,7 @@ const getBlockClusterStates = (blockId) => {
   box-shadow: 0 0 20px currentColor;
   opacity: 0.85;
   
-  /* Wave Surface */
+/* 波面 */
   .liquid-surface {
     position: absolute;
     top: -10px;
@@ -2050,7 +2561,7 @@ const getBlockClusterStates = (blockId) => {
   .soc-number {
     display: flex;
     align-items: baseline;
-    .val { font-size: 1.8rem; font-weight: bold; font-family: 'Segoe UI'; } /* Reduced font size */
+  .val { font-size: 1.8rem; font-weight: bold; font-family: 'Segoe UI'; } /* 字号下调 */
     .unit { font-size: 0.8rem; margin-left: 2px; opacity: 0.8; }
   }
   
@@ -2076,13 +2587,13 @@ const getBlockClusterStates = (blockId) => {
   }
 }
 
-/* Status Rings (SVG) */
+/* 状态圆环（SVG） */
 .status-rings {
   display: flex;
-  flex-direction: column; /* Keep vertical for SOH and Efficiency */
+  flex-direction: column; /* 保持竖排以展示 SOH 与效率 */
   gap: 15px;
   justify-content: center;
-  /* margin-left: 15px; Removed spacing, handled by gap */
+  /* 移除左侧间距，改由 gap 控制 */
 }
 
 .ring-item {
@@ -2093,7 +2604,7 @@ const getBlockClusterStates = (blockId) => {
 }
 
 .tech-ring {
-  width: 60px; /* Reduced from 70px */
+  width: 60px; /* 由 70px 缩减为 60px */
   height: 60px;
   position: relative;
   
@@ -2114,14 +2625,14 @@ const getBlockClusterStates = (blockId) => {
     fill: none;
     stroke-width: 2.8;
     stroke-linecap: round;
-    stroke: #52c41a; /* Default color */
+    stroke: #52c41a; /* 默认颜色 */
     animation: progress 1s ease-out forwards;
-    /* filter: drop-shadow(0 0 2px #52c41a); Reduced shadow */
+    /* 阴影减弱 */
   }
   
   .circular-chart.blue .circle {
     stroke: #1890ff;
-    /* filter: drop-shadow(0 0 2px #1890ff); */
+    /* 阴影减弱（蓝色） */
   }
   
   .ring-text {
@@ -2146,7 +2657,7 @@ const getBlockClusterStates = (blockId) => {
   margin-top: 4px;
 }
 
-/* Ring Status Colors */
+/* 圆环状态颜色 */
 .circular-chart.status-normal .circle { stroke: #52c41a; }
 .circular-chart.status-minor .circle { stroke: #faad14; }
 .circular-chart.status-general .circle { stroke: #fa8c16; }
@@ -2191,25 +2702,25 @@ const getBlockClusterStates = (blockId) => {
   100% { opacity: 1; transform: scale(1.2); }
 }
 
-/* Bottom Section */
+/* 底部区域 */
 .bottom-section {
   flex: 0 0 auto;
-  /* Tech border box applied via class */
+  /* 技术边框盒通过类名应用 */
   display: flex;
   flex-direction: column;
   min-height: auto;
   overflow: visible;
-  padding-top: 35px; /* Increase padding to clear the header */
+  padding-top: 35px; /* 增加上内边距以避开标题 */
 }
 
 .heaps-container {
   flex: 0 0 auto;
   overflow: visible;
   display: flex;
-  flex-direction: column; /* Stack stacks vertically */
+  flex-direction: column; /* 多堆纵向排布 */
   gap: 20px;
   padding-right: 5px;
-  padding-top: 2px; /* Reduced top spacing above heap-title */
+  padding-top: 2px; /* 减小标题上方间距 */
   
   &::-webkit-scrollbar { width: 6px; height: 6px; }
   &::-webkit-scrollbar-track { background: #1a1f2e; }
@@ -2218,7 +2729,7 @@ const getBlockClusterStates = (blockId) => {
 
 .heap-section {
   width: 100%;
-  /* Removed individual card styling to unify into one container */
+  /* 移除单卡样式，统一到一容器 */
   display: flex;
   flex-direction: column;
 }
@@ -2254,7 +2765,7 @@ const getBlockClusterStates = (blockId) => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  justify-content: center; /* Center clusters */
+  justify-content: center; /* 居中排列簇 */
   padding: 10px 0;
 }
 
@@ -2268,7 +2779,7 @@ const getBlockClusterStates = (blockId) => {
   align-items: center;
   cursor: pointer;
   
-  /* Busbar Logic for row edges (classes assigned via JS) */
+  /* 母排行边缘逻辑（通过 JS 赋类） */
   &.row-first .busbar-connector {
      left: 50%;
      right: -60px;
@@ -2290,44 +2801,44 @@ const getBlockClusterStates = (blockId) => {
      border-bottom-right-radius: 4px;
   }
 
-  /* Disconnected State Opacity - Removed as requested */
+  /* 失联态透明度 —— 按要求移除 */
   /* &.disconnected { opacity: 0.6; } */
 
-  /* Scheme A: Dark Industrial Conduit Styles */
+  /* 方案 A：暗色工业导管风格 */
   .holo-conduit {
     position: absolute;
     top: -50px;
     left: 50%;
     transform: translateX(-50%);
     width: 40px;
-    height: 50px; /* Reduced from 60px to shorten lower tube */
+  height: 50px; /* 由 60px 缩至 50px，缩短下方管道 */
     display: flex;
     flex-direction: column;
     align-items: center;
     z-index: 5;
   }
 
-  /* Busbar Logic - Matched to Conduit Texture */
+  /* 母排逻辑 —— 匹配导管纹理 */
   .busbar-connector {
     position: absolute;
     top: -4px;
     height: 8px;
-    /* Vertical gradient for horizontal cylinder effect, matching tube colors */
+    /* 垂直渐变模拟水平圆柱效果，匹配管道配色 */
     background: linear-gradient(180deg, #444 0%, #999 40%, #ccc 50%, #999 60%, #444 100%);
     border-top: 1px solid #333;
     border-bottom: 1px solid #333;
     box-shadow: 0 1px 2px rgba(0,0,0,0.5);
-    z-index: 2; /* Above conduit */
+    z-index: 2; /* 高于导管层 */
     left: -65px; 
     right: -65px;
   }
   
-  /* Upper Conduit Segment (Fixed) */
+  /* 上部导管段（固定） */
   .conduit-upper {
     width: 8px;
     height: 26px;
     
-    /* Metal Texture Pipe */
+    /* 金属纹理管道 */
     background: linear-gradient(90deg, #3a3a3a 0%, #666 42%, #5b5b5b 50%, #666 58%, #3a3a3a 100%);
     border-left: 1px solid #333;
     border-right: 1px solid #333;
@@ -2338,50 +2849,50 @@ const getBlockClusterStates = (blockId) => {
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
     box-shadow: inset 0 0 1px rgba(0,0,0,0.3);
-    z-index: 1; /* Below busbar (z-index 2) */
+    z-index: 1; /* 低于母排（z-index 2） */
   }
 
-  /* Connection Joint (Pivot) - Positioned at end of Upper Conduit */
+  /* 连接节点（转轴）—— 位于上部导管末端 */
   .conduit-joint {
-    width: 10px; /* Kept original width, slightly wider than tube */
-    height: 4px; /* Kept original height */
+    width: 10px; /* 保持原宽度，略宽于管道 */
+    height: 4px; /* 保持原高度 */
     background: linear-gradient(90deg, #333, #666, #333);
     border: 1px solid #222;
     border-radius: 1px;
-    margin-top: -1px; /* Center on the junction */
-    z-index: 11; /* Top layer */
+    margin-top: -1px; /* 在连接处居中对齐 */
+    z-index: 11; /* 最高层级 */
     box-shadow: 0 1px 2px rgba(0,0,0,0.5);
     
-    /* Rotation Removed - Static Joint */
+  /* 移除旋转，节点静止 */
     transform: none;
   }
   
-  /* Lower Conduit Segment (Fixed) */
+  /* 下部导管段（固定） */
   .conduit-lower {
-    flex: 1; /* Takes remaining space */
-    width: 8px; /* Match Upper Conduit width */
+    flex: 1; /* 占据剩余空间 */
+    width: 8px; /* 与上部导管宽度一致 */
     
-    /* Metal Texture Pipe */
+    /* 金属纹理管道 */
     background: linear-gradient(90deg, #3a3a3a 0%, #666 42%, #7a7a7a 50%, #666 58%, #3a3a3a 100%);
     border-left: 1px solid #333;
     border-right: 1px solid #333;
     
     position: relative;
     overflow: hidden;
-    margin-top: 10px; /* Reduce gap to keep alignment with extended upper conduit */
+    margin-top: 10px; /* 减少间距以与延长的上导管对齐 */
     box-shadow: inset 0 0 1px rgba(0,0,0,0.3);
   }
   
-  /* Removed old conduit-beam styles */
+  /* 移除旧的导管能量条样式 */
 
-  /* Active/Charging State - Inner Glow for Upper/Lower Conduits */
+  /* 活跃/充电状态 —— 上下导管的内发光 */
   .holo-conduit.active .conduit-upper,
   .holo-conduit.active .conduit-lower {
     box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.3);
   }
 
-  /* Beam Core - The Energy (Silver/White) */
+  /* 能量条核心（银白色） */
   .beam-core {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -2392,19 +2903,19 @@ const getBlockClusterStates = (blockId) => {
   }
 
   .holo-conduit.active .beam-core {
-    opacity: 0.1; /* Faint glow when connected */
+    opacity: 0.1; /* 连接时弱发光 */
   }
 
   .holo-conduit.charging .beam-core {
     background: #fff;
-    box-shadow: 0 0 12px rgba(255, 255, 255, 1.0); /* Stronger glow */
-    opacity: 0.8; /* Increased opacity */
+    box-shadow: 0 0 12px rgba(255, 255, 255, 1.0); /* 更强的发光 */
+    opacity: 0.8; /* 不透明度提升 */
   }
 
   .holo-conduit.discharging .beam-core {
     background: #fff;
-    box-shadow: 0 0 12px rgba(255, 255, 255, 1.0); /* Stronger glow */
-    opacity: 0.8; /* Increased opacity */
+    box-shadow: 0 0 12px rgba(255, 255, 255, 1.0); /* 更强的发光 */
+    opacity: 0.8; /* 不透明度提升 */
   }
 
   .flow-arrows {
@@ -2413,7 +2924,7 @@ const getBlockClusterStates = (blockId) => {
     background-size: 100% 72px;
     background-repeat: repeat-y;
     z-index: 2;
-    opacity: 1.0; /* Full opacity for arrows */
+    opacity: 1.0; /* 箭头完全不透明 */
     mix-blend-mode: screen;
     filter: brightness(1.45) contrast(1.15) drop-shadow(0 0 4px rgba(255,255,255,1)) drop-shadow(0 0 1px rgba(0,0,0,0.35));
   }
@@ -2422,67 +2933,64 @@ const getBlockClusterStates = (blockId) => {
 
   .holo-conduit.charging .flow-arrows {
     animation: flow-down 2s linear infinite;
-    /* Down Arrows (Group of 3) */
+  /* 向下箭头（3 组） */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 60' fill='white'%3E%3Cpath d='M4 5 L12 13 L20 5 L20 9 L12 17 L4 9 Z' /%3E%3Cpath d='M4 20 L12 28 L20 20 L20 24 L12 32 L4 24 Z' /%3E%3Cpath d='M4 35 L12 43 L20 35 L20 39 L12 47 L4 39 Z' /%3E%3C/svg%3E");
   }
 
   .holo-conduit.discharging .flow-arrows {
     animation: flow-up 2s linear infinite;
-    /* Up Arrows (Group of 3) */
+  /* 向上箭头（3 组） */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 60' fill='white'%3E%3Cpath d='M4 17 L12 9 L20 17 L20 13 L12 5 L4 13 Z' /%3E%3Cpath d='M4 32 L12 24 L20 32 L20 28 L12 20 L4 28 Z' /%3E%3Cpath d='M4 47 L12 39 L20 47 L20 43 L12 35 L4 43 Z' /%3E%3C/svg%3E");
   }
 
-  /* Mechanical Switch Styles */
+/* 机械开关样式 */
   .mechanical-switch {
     position: absolute;
-    top: 24px; /* Adjusted to align with increased Upper Conduit length */
+    top: 24px; /* 调整以对齐延长的上导管长度 */
     left: 50%;
     transform: translateX(-50%);
     width: 16px;
     height: 16px;
-    z-index: 10; /* Below joint */
+    z-index: 10; /* 低于连接节点 */
     pointer-events: none;
   }
 
   .switch-blade {
     position: absolute;
-    top: 0; /* Anchor to hinge point */
+    top: 0; /* 锚定到铰接点 */
     left: 50%;
     width: 5px;
-    height: 18px; /* Shortened blade length */
+    height: 18px; /* 刀片长度缩短为 18px */
     background: #5b5b5b;
     border: 1px solid #333;
     border-radius: 1px;
     
-    transform-origin: top center; /* Hinge at top */
-    transform: translateX(-50%) rotate(-45deg); /* Open state */
+    transform-origin: top center; /* 顶部为铰接点 */
+    transform: translateX(-50%) rotate(-45deg); /* 打开状态 */
     transition: transform 0.3s cubic-bezier(0.4, 2, 0.55, 0.44);
     box-shadow: none;
-    overflow: hidden; /* Contain particles */
+    overflow: hidden; /* 包含粒子 */
   }
   
-  /* Particle Flow inside Switch */
+/* 开关内部的粒子流 */
   .switch-blade .beam-core {
-    opacity: 0; /* Hidden by default */
+    opacity: 0; /* 默认隐藏 */
   }
   
-  /* Only show beam when closed or carefully managed? 
-     Actually, if it's open, the beam inside the blade will rotate with it. 
-     This is physically correct for a conductive blade carrying charge! 
-     But usually charge only flows when closed. 
-     So we hide it when open, show when closed/charging.
-  */
+  /* 仅在关闭或需要时显示能量束：
+     打开状态下刀片内部的能量束会随之旋转，这是导电刀片的物理表现；
+     但通常电荷只在闭合时流动，因此打开时隐藏，闭合/充电时显示。 */
   .mechanical-switch.closed .switch-blade .beam-core {
-      opacity: 0.1; /* Match .holo-conduit.active .beam-core */
+    opacity: 0.1; /* 与 .holo-conduit.active .beam-core 保持一致 */
   }
 
 
-  /* Sync Flow Animation Phase */
+/* 同步流动动画的相位 */
   .switch-blade .flow-arrows {
-    background-position-y: -24px; /* Offset to match updated vertical position */
+  background-position-y: -24px; /* 纵向偏移以匹配更新后的垂直位置 */
   }
 
-  /* Charging/Discharging States for Switch Blade Particles */
+/* 开关刀片粒子的充/放电状态 */
   .holo-conduit.charging .mechanical-switch.closed .switch-blade .beam-core {
     background: #fff;
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
@@ -2506,14 +3014,14 @@ const getBlockClusterStates = (blockId) => {
      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 60' fill='white'%3E%3Cpath d='M4 17 L12 9 L20 17 L20 13 L12 5 L4 13 Z' /%3E%3Cpath d='M4 32 L12 24 L20 32 L20 28 L12 20 L4 28 Z' /%3E%3Cpath d='M4 47 L12 39 L20 47 L20 43 L12 35 L4 43 Z' /%3E%3C/svg%3E");
   }
 
-  /* Switch Handle (Insulator) */
+/* 开关手柄（绝缘体） */
   .switch-blade::after {
     content: '';
     position: absolute;
     bottom: -4px;
     left: 50%;
     transform: translateX(-50%);
-    width: 3px; /* Increased from 5px */
+    width: 3px; /* 由 5px 调整为 3px */
     height: 3px;
     background: linear-gradient(to bottom, #333, #111);
     border: 1px solid #000;
@@ -2523,12 +3031,12 @@ const getBlockClusterStates = (blockId) => {
   
   .mechanical-switch.closed .switch-blade {
     width: 8px;
-    transform: translateX(-50%) rotate(0deg); /* Closed - Aligns with tube */
-    box-shadow: inset 0 0 2px rgba(0,0,0,0.5); /* Match tube shadow */
-    border-color: #333; /* Match tube border */
+    transform: translateX(-50%) rotate(0deg); /* 关闭状态 —— 与管道对齐 */
+    box-shadow: inset 0 0 2px rgba(0,0,0,0.5); /* 匹配管道阴影 */
+    border-color: #333; /* 匹配管道边框色 */
   }
 
-  /* Internal Info Overlay */
+/* 内部信息叠层 */
   .cluster-overlay-data {
     display: flex;
     flex-direction: column;
@@ -2567,7 +3075,7 @@ const getBlockClusterStates = (blockId) => {
     }
     
     .power-status.mini {
-       margin-top: 2px;
+       margin-bottom: 2px;
        font-size: 0.6rem;
        padding: 1px 4px;
        background: rgba(0,0,0,0.6);

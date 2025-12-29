@@ -214,7 +214,7 @@ const FAULT_NAMES_MAP = computed(() => ({
     'FireDeviceCommFault2': t('faultOverview.faultNames.FireDeviceCommFault2'),
     'BMUCommFault2': t('faultOverview.faultNames.BMUCommFault2'),
     'CANHallCommFault2': t('faultOverview.faultNames.CANHallCommFault2'),
-    'BCUCommFault2': t('faultOverview.faultNames.BCUCommFault2'),
+    'BCUCommFault': t('faultOverview.faultNames.BCUCommFault'),
     'DaisyChainCommFault': t('faultOverview.faultNames.DaisyChainCommFault'),
     'AFECommFault2': t('faultOverview.faultNames.AFECommFault2'),
     'BCUEnvSensorFault2': t('faultOverview.faultNames.BCUEnvSensorFault2'),
@@ -238,7 +238,7 @@ const FAULT_NAMES_MAP = computed(() => ({
     'BMU1PowerConnectorTempDisconnected2': t('faultOverview.faultNames.BMU1PowerConnectorTempDisconnected2'),
     'BMU2PowerConnectorTempDisconnected2': t('faultOverview.faultNames.BMU2PowerConnectorTempDisconnected2'),
     'AFECommLost2': t('faultOverview.faultNames.AFECommLost2'),
-    'BCUCommFault22': t('faultOverview.faultNames.BCUCommFault22')
+    'BCUCommFault_Stack': t('faultOverview.faultNames.BCUCommFault_Stack')
   }))
 
 // 使用堆选择composable

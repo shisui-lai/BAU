@@ -70,6 +70,11 @@ export const useUpgradeStore = defineStore('upgrade', () => {
 
   const setUpgradeFile = (file) => {
     upgradeFile.value = file
+    // 当用户主动重新选择文件时，重置升级状态，防止因未收到应答而导致按钮死锁
+    if (upgradeStatus.value.isUpgrading) {
+      console.log('[Upgrade] 用户更换文件，强制重置升级状态')
+      setUpgradeStatus('idle', t('toast.deviceUpgrade.fileSelected'))
+    }
   }
 
   const updateUpgradeParams = (params) => {

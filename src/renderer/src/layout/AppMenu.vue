@@ -56,7 +56,8 @@ const rawMenuItems = ref([
     items: [
       { labelKey: 'menu.batteryInfo', icon: 'pi pi-home', route: '/Cluster/cellData', roles: ['admin', 'guest'] },
       { labelKey: 'menu.clusterVersion', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.didoStatus', icon: 'pi pi-table', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] }
+      { labelKey: 'menu.didoStatus', icon: 'pi pi-table', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.gpioData', icon: 'pi pi-bolt', route: '/Cluster/gpio', roles: ['admin', 'guest'] }
     ]
   },
   {

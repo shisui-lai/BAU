@@ -10,9 +10,11 @@ import {
   BROKENWIRE_SCHEMA,
   BALANCE_STATUS_SCHEMA,
   CLU_ANALOG_FAULT_LEVEL_SUM_SCHEMA,
-  CLU_ANALOG_FAULT_GRADE_SCHEMA
+  CLU_ANALOG_FAULT_GRADE_SCHEMA,
+  BMU_DEBUG_SCHEMA
 } from '../main/packSchemaFactory' //动态表解析
 import {
+  BMU_DEBUG_HEADER,
   SYS_BASE_PARAM_R,
   ERROR_CODES,
   CLUSTER_DNS_PARAM_R,
@@ -44,6 +46,53 @@ import {
   EVENT_RECORD_FLAG_R,
   EVENT_RECORD_R
 } from '../main/table'
+
+/* ---------- BMU Debug Data Parser ---------- */
+export function parseBmuDebugRAW(hex) {
+  try {
+    const buf = toBuf(hex)
+    const view = dv(buf)
+
+    // 1. Parse Header
+    const headerRes = parseByTable(view, BMU_DEBUG_HEADER, 0)
+    const header = headerRes.baseConfig
+
+    // 2. Generate Schema
+    const schema = BMU_DEBUG_SCHEMA(header.bmuTotal, header.afePerBmu)
+
+    // 3. Parse Body
+    const bodyRes = parseByTable(view, schema, 4)
+    const body = bodyRes.baseConfig
+
+    // 4. Transform to UI format
+    const result = {}
+    for (let b = 1; b <= header.bmuTotal; b++) {
+      const bmuKey = `BMU ${b}`
+      result[bmuKey] = []
+
+      for (let a = 1; a <= header.afePerBmu; a++) {
+        for (let g = 1; g <= 9; g++) {
+          const key = `Bmu${b}_Afe${a}_Gpio${g}`
+          const val = body[key]
+
+          if (val !== undefined) {
+            result[bmuKey].push({
+              bmuIndex: b,
+              bmuAFEString: `AFE ${a} - GPIO ${g}`,
+              value: val
+            })
+          }
+        }
+      }
+    }
+
+    return { data: result }
+  } catch (error) {
+    console.error('Error parsing BMU debug data:', error)
+    return { data: {} }
+  }
+}
+
 export const toBuf = (hex) => Buffer.from(hex.replace(/\s+/g, ''), 'hex')
 export const dv = (buf) => new DataView(buf.buffer, buf.byteOffset, buf.byteLength)
 

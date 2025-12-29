@@ -94,13 +94,25 @@ const storageOptions = computed(() => [
   { label: t('topBar.export.enableSemantic'), value: 'semantic' },
   { label: t('topBar.export.enableRaw'), value: 'raw' }
 ])
-const storageEnabled = ref([])
+
+const STORAGE_KEY = 'app_topbar_storage_enabled'
+const getStoredEnabled = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : ['semantic', 'raw']
+  } catch (e) {
+    return ['semantic', 'raw']
+  }
+}
+
+const storageEnabled = ref(getStoredEnabled())
 function sendExportConfig() {
   const semantic = storageEnabled.value.includes('semantic')
   const raw = storageEnabled.value.includes('raw')
   window.electron?.ipcRenderer?.send('set-export-config', { semantic, raw })
 }
-watch(storageEnabled, () => {
+watch(storageEnabled, (newVal) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
   sendExportConfig()
 })
 watch(() => mqttStore.isConnected, (val) => {
@@ -116,6 +128,7 @@ function handleClearStorageEnabled() {
 }
 onMounted(() => {
   window.addEventListener('clear-storage-enabled', handleClearStorageEnabled)
+  sendExportConfig()
 })
 onUnmounted(() => {
   window.removeEventListener('clear-storage-enabled', handleClearStorageEnabled)

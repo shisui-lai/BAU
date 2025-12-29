@@ -249,7 +249,7 @@ export const DROPDOWN_CONFIGS = {
   block_remote_control: {
     // 系统堆通用配置参数（BLOCK_COMMON_PARAM）
     block_common_param: {
-      远方就地模式: [
+      远方就地场景: [
         { label: '远方', value: 0 },
         { label: '就地', value: 1 }
       ],

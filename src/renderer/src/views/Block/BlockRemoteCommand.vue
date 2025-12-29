@@ -151,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, onDeactivated } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useI18n } from 'vue-i18n'
 import { useRemoteCommand } from '@/composables/core/data-processing/remote-control/useRemoteCommand'
@@ -520,6 +520,12 @@ onMounted(() => {
   
   // 初始化下拉框默认值
   initializeDropdownDefaults()
+})
+
+onDeactivated(() => {
+  // 停止监听器
+  stopRemoteCommandListeners()
+  stopFeedbackPolling()
 })
 
 // 初始化下拉框默认选中第一个选项

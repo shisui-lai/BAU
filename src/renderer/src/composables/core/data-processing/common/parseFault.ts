@@ -357,6 +357,7 @@ export const sortedAllFaults = shallowRef<FaultRecord[]>([])
 // 增量更新优化：避免每次都重新排序所有数据
 let lastDataHash = ''
 let sortedCache: (FaultRecord & { cluster: string })[] = []
+const clusterMutationCounter = new Map<string, number>()
 
 
 
@@ -374,7 +375,8 @@ watch(
           const level = fault.levelTag || 'mild'
           counts[level as keyof typeof counts]++
         }
-        return `${cluster}:${counts.severe}-${counts.medium}-${counts.mild}-${counts.none}`
+        const mc = clusterMutationCounter.get(cluster) ?? 0
+        return `${cluster}:${counts.severe}-${counts.medium}-${counts.mild}-${counts.none}-${mc}`
       })
       .join('|')
 
@@ -652,13 +654,16 @@ export function parseFault (msg: any) {
               globalTemp,  // 全局温度序号
               dataType     // MQTT频道类型
             })
+            clusterMutationCounter.set(key, (clusterMutationCounter.get(key) ?? 0) + 1)
           }
         } else {
           // 只有当故障确实存在时才删除（故障恢复）
           if (map.has(label)) {    
             map.delete(label)          // 故障恢复
+            clusterMutationCounter.set(key, (clusterMutationCounter.get(key) ?? 0) + 1)
             if (map.size === 0) {
               rawFaultData.delete(key); // 清理空集群
+              clusterMutationCounter.delete(key)
             }
           }
         }
@@ -672,8 +677,10 @@ export function parseFault (msg: any) {
           // 只有当故障确实存在时才删除（故障恢复）
           if (map.has(label)) {
             map.delete(label)
+            clusterMutationCounter.set(key, (clusterMutationCounter.get(key) ?? 0) + 1)
             if (map.size === 0) {
               rawFaultData.delete(key); // 清理空集群
+              clusterMutationCounter.delete(key)
             }
           }
           return
@@ -789,6 +796,7 @@ export function parseFault (msg: any) {
             globalTemp,  // 全局温度序号
             dataType     // MQTT频道类型
           })
+          clusterMutationCounter.set(key, (clusterMutationCounter.get(key) ?? 0) + 1)
         }
       }
     })
@@ -821,6 +829,7 @@ function cleanupInvalidClusterFaults(validClusters: Array<{value: string}>) {
     if (!validKeys.has(clusterKey) && !validBlockKeys.has(clusterKey)) {
       cleanedCount += faultMap.size
       rawFaultData.delete(clusterKey) // 删除整个堆簇的故障数据
+      clusterMutationCounter.delete(clusterKey)
     }
   }
   
@@ -850,13 +859,14 @@ watch(
       if (hasChanged) {
         cleanupInvalidClusterFaults(newClusters)
       }
-    } else if (newClusters && newClusters.length === 0) {
-      // 如果配置变为空，清理所有故障数据
-      rawFaultData.clear()
-      throttledUpdate()
-    }
-  },
-  { deep: true }
+  } else if (newClusters && newClusters.length === 0) {
+    // 如果配置变为空，清理所有故障数据
+    rawFaultData.clear()
+    clusterMutationCounter.clear()
+    throttledUpdate()
+  }
+},
+{ deep: true }
 )
 
 /* ---------- 调试工具（生产环境可移除） ---------- */

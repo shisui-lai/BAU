@@ -564,9 +564,8 @@ onUnmounted(() => {
   }
   
   // 停止参数读取（如在轮询中）
-  if (isCurrentlyReading.value) {
-    stopParameterReading()
-  }
+  // 无条件停止读取，防止状态不同步导致的定时器残留
+  stopParameterReading()
 
   // 清理重试逻辑资源
   retryLogic.cleanup()
@@ -780,7 +779,7 @@ function getPortLabelTranslation(label) {
                 <label>{{ t('config.deviceManagementPage.labels.remoteLocalMode') }}</label>
                 <Dropdown
                   v-model="mdlRemoteLocalMode"
-                  :options="getTranslatedDropdownOptions('远方就地模式')"
+                  :options="getTranslatedDropdownOptions('远方就地场景')"
                   optionLabel="label"
                   optionValue="value"
                   :disabled="isCurrentlyReading"

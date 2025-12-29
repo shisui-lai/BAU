@@ -29,6 +29,12 @@
                 <Tag :value="sdCardStatusText" :severity="getSdCardStatusSeverity()" />
               </div>
             </div>
+            <div class="info-item">
+              <span class="info-label">{{ t('blockVersionPage.labels.writeFailReason') }}</span>
+              <div class="info-value">
+                <Tag :value="sdCardWriteFailReasonText" :severity="getSdCardWriteFailSeverity()" />
+              </div>
+            </div>
           </div>
         </template>
       </Card>
@@ -122,6 +128,7 @@ const FIELD_TEMPLATES = {
     'SD卡总容量',
     'SD卡剩余容量',
     'SD卡状态',
+    'SD卡写失败原因',
     'BAU产品编码',
     'BAU硬件版本号',
     'BAU软件版本号',
@@ -214,6 +221,37 @@ const getSdCardStatusSeverity = () => {
   if (status === '2') return 'danger' // 写失败
   if (status === '0') return 'warning' // SD卡路径不存在
   return 'info' // 默认
+}
+
+// SD卡写失败原因文本
+const sdCardWriteFailReasonText = computed(() => {
+  const reason = getVersionValue('SD卡写失败原因')
+  const clean = reason
+    .replace(/\s*GB$/, '')
+    .replace(/\s*MB$/, '')
+    .replace(/\s*KB$/, '')
+  switch (clean) {
+    case '0':
+      return t('blockVersionPage.failReason.noError')
+    case '1':
+      return t('blockVersionPage.failReason.cmd13Error')
+    case '2':
+      return t('blockVersionPage.failReason.cmd8Error')
+    case '3':
+      return t('blockVersionPage.failReason.heartbeatTimeout')
+    case '4':
+      return t('blockVersionPage.failReason.writeDataError')
+    default:
+      return clean || '–'
+  }
+})
+
+// SD卡写失败原因严重程度
+const getSdCardWriteFailSeverity = () => {
+  const text = sdCardWriteFailReasonText.value
+  if (!text || text === '–') return 'info'
+  if (text === t('blockVersionPage.failReason.noError')) return 'success'
+  return 'danger'
 }
 
 const formatValue = (value, scale) => {

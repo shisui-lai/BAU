@@ -195,7 +195,6 @@ export function useFaultOverview() {
       'MainNegHighSideFeedbackFault2',
       'PrechargeHighSideFeedbackFault2',
       'BMUDeviceCommFault2',
-      'BCUCommFault22',
       'SingleCellDropped2',
       'SingleTempProbeDropped2',
       'AFECommLost2'
@@ -250,7 +249,7 @@ export function useFaultOverview() {
       消防设备通信故障: 'FireDeviceCommFault2',
       BMU通信故障: 'BMUCommFault2',
       CAN霍尔通信故障: 'CANHallCommFault2',
-      BCU通信故障: 'BCUCommFault2',
+      BCU内网通讯故障: 'BCUCommFault',
       菊花链通信故障: 'DaisyChainCommFault',
       afe通信故障: 'AFECommFault2',
       bcu环境传感器故障: 'BCUEnvSensorFault2',
@@ -274,7 +273,8 @@ export function useFaultOverview() {
       'BMU 1号 动力接插件温度断线': 'BMU1PowerConnectorTempDisconnected2',
       'BMU 2号 动力接插件温度断线': 'BMU2PowerConnectorTempDisconnected2',
       AFE通讯失联: 'AFECommLost2',
-      BCU通讯故障: 'BCUCommFault22'
+      BCU通讯故障: 'BCUCommFault_Stack',
+      BCU通信故障: 'BCUCommFault_Stack'
     }
 
     hwData.forEach((section) => {

@@ -11,7 +11,7 @@
     "language": "Language",
     "rememberMe": "Remember Password",
     "company": "Risen Energy Storage Technology company.",
-    "version": "Version v1.0.0"
+    "version": "Version v0.4.3"
   },
   "toast": {
     "common": {
@@ -290,6 +290,7 @@
     "settings": "Settings",
     "operationInfo": "Cluster Info",
     "batteryInfo": "Battery Info",
+    "gpioData": "GPIO Data",
     "clusterVersion": "Cluster version",
     "disconnection": "Disconnect Info",
     "faultOverview": "Fault Overview",
@@ -1049,7 +1050,7 @@
       "FireDeviceCommFault2": "Fire Device Communication Fault",
       "BMUCommFault2": "BMU Communication Fault",
       "CANHallCommFault2": "CAN Hall Communication Fault",
-      "BCUCommFault2": "BCU Communication Fault",
+      "BCUCommFault": "BCU Internal Network Communication Fault",
       "DaisyChainCommFault": "Daisy Chain Communication Fault",
       "AFECommFault2": "AFE Communication Fault",
       "BCUEnvSensorFault2": "BCU Environmental Sensor Fault",
@@ -1073,7 +1074,7 @@
       "BMU1PowerConnectorTempDisconnected2": "BMU 1 Power Connector Temp Disconnected",
       "BMU2PowerConnectorTempDisconnected2": "BMU 2 Power Connector Temp Disconnected",
       "AFECommLost2": "AFE Communication Lost",
-      "BCUCommFault22": "BCU Communication Fault"
+      "BCUCommFault_Stack": "BCU Communication Fault"
     }
   },
   "didoStatus": {
@@ -2524,7 +2525,7 @@
         "portConfig": "System Port Configuration"
       },
       "labels": {
-        "remoteLocalMode": "Remote/Local Mode",
+        "remoteLocalMode": "Remote/Local Scenario",
         "splitClusterFlag": "Split Cluster Flag",
         "emsDisconnectEnable": "EMS Comm Fault Trips Contactor",
         "maintainMode": "Maintenance Mode",
@@ -2565,7 +2566,7 @@
         "ipFormatErrorDetail": "The following IP addresses are invalid, please fix before sending:\n{0}"
       },
       "dropdownOptions": {
-        "远方就地模式": {
+        "远方就地场景": {
           "远方": "Remote",
           "就地": "Local"
         },
@@ -3025,6 +3026,7 @@
       "totalCapacity": "Total Capacity",
       "remainingCapacity": "Remaining Capacity",
       "status": "Status",
+      "writeFailReason": "Write Fail Reason",
       "productCode": "Product Code",
       "hardwareVersion": "Hardware Version",
       "softwareVersion": "Software Version",
@@ -3054,6 +3056,13 @@
       "writeSuccess": "Write Success",
       "writeFailed": "Write Failed",
       "unknownStatus": "Unknown Status"
+    },
+    "failReason": {
+      "noError": "No Error",
+      "cmd13Error": "CMD13 Error",
+      "cmd8Error": "CMD8 Error",
+      "heartbeatTimeout": "Heartbeat Timeout",
+      "writeDataError": "Write Data Error"
     }
   },
   "blockAlarmThresholdPage": {
@@ -3376,6 +3385,7 @@
       "ipAddress": "192.168.1.1"
     },
     "parameters": {
+      "远方就地场景": "Remote/Local Scenario",
       "实时数据记录周期": "Real-time Data Record Period",
       "当前堆数": "Current Block Count",
       "BMU总数量": "Total BMU Count",
@@ -3490,6 +3500,7 @@
       "簇间SOC同步开关": "Cluster SOC Sync Switch"
     },
     "remarks": {
+      "remoteLocalMode": "Remote scenario: Only supports unified contactor action and reserved fault clearing\nLocal scenario: Parameter settings and other operations must switch to local scenario first!",
       "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；": "Each AFE can have different cell count; Total cells under BMU shall not exceed 128;",
       "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；": "Each AFE can have different temp count; Total temps under BMU shall not exceed 128;",
       "0-无PCS 1-双一力PCS": "0-No PCS 1-Dual One Power PCS",

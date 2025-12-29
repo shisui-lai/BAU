@@ -1159,11 +1159,10 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <!-- 升级执行结果独立Card -->
-    <div class="card" v-if="pwdConfirmed" style="margin-top: 1rem;">
-      <div class="content-card">
-        <h3>{{ t('deviceUpgrade.sections.upgradeExecutionResult', '升级执行结果') }}</h3>
-        <div class="card-content">
+    <!-- 升级执行结果（置于主体容器内） -->
+    <div class="content-card" v-if="pwdConfirmed" style="margin-top: 0rem;">
+      <h3>{{ t('deviceUpgrade.sections.upgradeExecutionResult', '升级执行结果') }}</h3>
+      <div class="card-content">
           <!-- BAU升级执行结果详情 -->
           <div class="upgrade-result-section">
             <h4>{{ t('deviceUpgrade.sections.bauUpgradeResult', 'BAU升级执行结果') }}</h4>
@@ -1273,7 +1272,6 @@ onUnmounted(() => {
               <span class="text-sm text-color-secondary">{{ t('deviceUpgrade.messages.noUpgradeResult', '暂无升级结果，请先启动BCU/BMU升级') }}</span>
             </div>
           </div>
-        </div>
       </div>
     </div>
   </div>

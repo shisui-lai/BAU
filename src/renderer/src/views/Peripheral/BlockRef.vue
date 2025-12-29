@@ -147,20 +147,39 @@ const getTemplateData = () => {
   }))
 }
 
-// 解析bit字段
-const parseBitField = (value, bitMap) => {
+// 解析bit字段（根据父字段语义进行区分）
+const parseBitField = (value, bitMap, parentKey) => {
   const result = []
   for (const [bitIndex, label] of Object.entries(bitMap)) {
     const bit = parseInt(bitIndex)
     const isSet = (value & (1 << bit)) !== 0
+    let display
+    if (parentKey === 'relayOutputStatus') {
+      // 继电器输出：大多数位 1=运行,0=停机；报警输出位 1=正常,0=故障
+      display = (label === '报警输出') ? (isSet ? '正常' : '故障') : (isSet ? '运行' : '停机')
+    } else if (parentKey && parentKey.startsWith('faultStatus')) {
+      // 故障状态：1=有故障，0=无故障（显示为“故障/无故障”）
+      display = isSet ? '故障' : '无故障'
+    } else {
+      // 其它位字段的通用兜底
+      display = isSet
+        ? (label.includes('故障') || label.includes('报警') ? '故障' : '运行')
+        : (label.includes('故障') || label.includes('报警') ? '正常' : '停机')
+    }
     result.push({
-      label: label,
-      value: isSet ? (label.includes('故障') || label.includes('报警') ? '故障' : '运行') : (label.includes('故障') || label.includes('报警') ? '正常' : '停机'),
+      label,
+      value: display,
       bitIndex: bit,
       rawValue: isSet ? 1 : 0
     })
   }
   return result
+}
+
+const getDecimalsByScale = (scale) => {
+  if (!scale || scale === 1) return 0
+  const s = String(scale)
+  return s.length - 1
 }
 
 // 解析原始数据
@@ -203,7 +222,7 @@ const parseRawData = (rawData) => {
         key: field.key,
         type: 'bit',
         bitMap: field.bitMap,
-        bitData: parseBitField(rawData[index], field.bitMap)
+        bitData: parseBitField(rawData[index], field.bitMap, field.key)
       }
     }
     
@@ -211,6 +230,10 @@ const parseRawData = (rawData) => {
     let displayValue = value
     if (field.map && field.map[value] !== undefined) {
       displayValue = field.map[value]
+    }
+    if (!field.map && typeof value === 'number') {
+      const decimals = getDecimalsByScale(field.scale)
+      displayValue = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString()
     }
     
     return {
@@ -363,10 +386,6 @@ const unregisterListener = () => {
 const formatValue = (value) => {
   if (value === null || value === undefined || value === '---') {
     return '---'
-  }
-
-  if (typeof value === 'number') {
-    return value.toFixed(2)
   }
 
   return String(value)

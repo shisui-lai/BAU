@@ -57,7 +57,6 @@ export const useSystemConfigStore = defineStore('systemConfig', () => {
     // 更新配置状态
     systemConfig.value = { ...config }
     isConfigLoaded.value = true
-    
 
     try {
       // 更新簇store和堆store
@@ -66,7 +65,6 @@ export const useSystemConfigStore = defineStore('systemConfig', () => {
 
       clusterStore.initializeFromSystemConfig(config)
       blockStore.initializeFromSystemConfig(config)
-      
     } catch (error) {
       console.error('[SystemConfigStore] 更新store时发生错误:', error)
     }

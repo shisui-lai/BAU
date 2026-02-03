@@ -36,9 +36,9 @@ export const DROPDOWN_CONFIGS = {
       制冷设备类型: [
         { label: '无制冷设备', value: 65535 },
         { label: '科诺威水冷机', value: 1 },
-        { label: '英维克', value: 2 },
+        { label: '英维克-EMW50HFNC1A', value: 2 },
         { label: '埃森特交流空调', value: 3 },
-        { label: '英维克-EMW30-50-80', value: 4 },
+        { label: '英维克-EMW-30-50-80', value: 4 },
         { label: '均能水冷机-1', value: 5 }
       ],
       除湿机设备类型: [
@@ -61,6 +61,19 @@ export const DROPDOWN_CONFIGS = {
       BMU温度数据类型: [
         { label: '普通模式', value: 0 },
         { label: '高精度模式', value: 1 }
+      ],
+      水冷机策略模式: [
+        { label: '户外柜', value: 0 },
+        { label: '工商业', value: 1 }
+      ],
+      高压箱是否存在: [
+        { label: '不存在', value: 0 },
+        { label: '存在', value: 1 }
+      ],
+      除湿机控制模式: [
+        { label: '单独控制', value: 0 },
+        { label: '基数地址控制', value: 1 },
+        { label: '偶数地址控制', value: 2 }
       ],
       禁止使能簇: [
         { label: '禁止', value: 0x5bb5 },
@@ -281,15 +294,27 @@ export const DROPDOWN_CONFIGS = {
     block_comm_dev_cfg: {
       PCS类型: [
         { label: '无PCS', value: 0 },
-        { label: '双一力PCS', value: 1 }
+        { label: '双一力PCS(RS485)', value: 1 },
+        { label: '禾望PCS', value: 2 },
+        { label: '科华PCS', value: 3 },
+        { label: '迈格瑞能PCS', value: 4 },
+        { label: '盛宏PCS', value: 5 },
+        { label: '双一力PCS(CAN)', value: 6 }
       ],
       制冷设备类型: [
         { label: '无制冷设备', value: 0 },
-        { label: '三河同飞', value: 1 }
+        { label: '三河同飞', value: 1 },
+        { label: '英维克0513', value: 2 },
+        { label: '英维克70513', value: 3 },
+        { label: '柯诺威1', value: 4 },
+        { label: '柯诺威2', value: 5 },
+        { label: '均能', value: 6 }
       ],
       除湿空调类型: [
         { label: '无除湿空调', value: 0 },
-        { label: '三河同飞', value: 1 }
+        { label: '三河同飞', value: 1 },
+        { label: '英维克U3-EC', value: 2 },
+        { label: 'E-J000113', value: 3 }
       ],
       'I/O控制板类型': [
         { label: '无I/O控制板', value: 0 },
@@ -298,6 +323,14 @@ export const DROPDOWN_CONFIGS = {
       'I/O控制板网卡选择': [
         { label: '网卡1', value: 0 },
         { label: '网卡2', value: 1 }
+      ],
+      电表类型: [
+        { label: '无电表', value: 0 },
+        { label: '安科瑞DTSD1352', value: 1 }
+      ],
+      消防设备类型: [
+        { label: '无消防设备', value: 0 },
+        { label: '翼捷', value: 1 }
       ]
     },
 
@@ -320,6 +353,37 @@ export const DROPDOWN_CONFIGS = {
         { label: '使能', value: 1 }
       ]
     },
+    block_ref_param: {
+      控温模式: [
+        { label: '单堆独立控温', value: 0 },
+        { label: '单堆分段控温', value: 1 },
+        { label: '多堆联合控温', value: 2 }
+      ],
+      '运行状态制冷-下设控制模式': [
+        { label: '回水', value: 0 },
+        { label: '出水', value: 1 },
+        { label: '监控温度(最大最小温度)', value: 2 },
+        { label: '监控温度(平均温度)', value: 3 }
+      ],
+      '非运行状态制冷-下设控制模式': [
+        { label: '回水', value: 0 },
+        { label: '出水', value: 1 },
+        { label: '监控温度(最大最小温度)', value: 2 },
+        { label: '监控温度(平均温度)', value: 3 }
+      ],
+      '运行状态加热-下设控制模式': [
+        { label: '回水', value: 0 },
+        { label: '出水', value: 1 },
+        { label: '监控温度(最大最小温度)', value: 2 },
+        { label: '监控温度(平均温度)', value: 3 }
+      ],
+      '非运行状态加热-下设控制模式': [
+        { label: '回水', value: 0 },
+        { label: '出水', value: 1 },
+        { label: '监控温度(最大最小温度)', value: 2 },
+        { label: '监控温度(平均温度)', value: 3 }
+      ]
+    },
     // 4) 系统堆SOC配置参数
     block_soc_param: {
       簇间SOC同步开关: [
@@ -336,111 +400,6 @@ export const DROPDOWN_CONFIGS = {
   // ========== 堆端口配置数据配置 ==========
   block_port_config: {
     block_port_cfg: {
-      'CAN1通讯速率/仲裁域速率': [
-        { label: '50K', value: 0 },
-        { label: '100K', value: 1 },
-        { label: '125K', value: 2 },
-        { label: '250K', value: 3 },
-        { label: '默认 500K', value: 4 },
-        { label: '1M', value: 5 }
-      ],
-      CAN1数据域波特率: [
-        { label: '无效/不支持', value: 0 },
-        { label: '250K', value: 1 },
-        { label: '500K', value: 2 },
-        { label: '800K', value: 3 },
-        { label: '1M', value: 4 }
-      ],
-      'CAN2通讯速率/仲裁域速率': [
-        { label: '50K', value: 0 },
-        { label: '100K', value: 1 },
-        { label: '125K', value: 2 },
-        { label: '250K', value: 3 },
-        { label: '默认 500K', value: 4 },
-        { label: '1M', value: 5 }
-      ],
-      CAN2数据域波特率: [
-        { label: '无效/不支持', value: 0 },
-        { label: '250K', value: 1 },
-        { label: '500K', value: 2 },
-        { label: '800K', value: 3 },
-        { label: '1M', value: 4 }
-      ],
-      'CAN3通讯速率/仲裁域速率': [
-        { label: '50K', value: 0 },
-        { label: '100K', value: 1 },
-        { label: '125K', value: 2 },
-        { label: '250K', value: 3 },
-        { label: '默认 500K', value: 4 },
-        { label: '1M', value: 5 }
-      ],
-      CAN3数据域波特率: [
-        { label: '无效/不支持', value: 0 },
-        { label: '250K', value: 1 },
-        { label: '500K', value: 2 },
-        { label: '800K', value: 3 },
-        { label: '1M', value: 4 }
-      ],
-      'RS485-1通讯速率': [
-        { label: '1200', value: 0 },
-        { label: '2400', value: 1 },
-        { label: '4800', value: 2 },
-        { label: '9600', value: 3 },
-        { label: '19200', value: 4 },
-        { label: '38400', value: 5 },
-        { label: '57600', value: 6 },
-        { label: '115200', value: 7 }
-      ],
-      'RS485-2通讯速率': [
-        { label: '1200', value: 0 },
-        { label: '2400', value: 1 },
-        { label: '4800', value: 2 },
-        { label: '9600', value: 3 },
-        { label: '19200', value: 4 },
-        { label: '38400', value: 5 },
-        { label: '57600', value: 6 },
-        { label: '115200', value: 7 }
-      ],
-      'RS485-3通讯速率': [
-        { label: '1200', value: 0 },
-        { label: '2400', value: 1 },
-        { label: '4800', value: 2 },
-        { label: '9600', value: 3 },
-        { label: '19200', value: 4 },
-        { label: '38400', value: 5 },
-        { label: '57600', value: 6 },
-        { label: '115200', value: 7 }
-      ],
-      'RS485-4通讯速率': [
-        { label: '1200', value: 0 },
-        { label: '2400', value: 1 },
-        { label: '4800', value: 2 },
-        { label: '9600', value: 3 },
-        { label: '19200', value: 4 },
-        { label: '38400', value: 5 },
-        { label: '57600', value: 6 },
-        { label: '115200', value: 7 }
-      ],
-      'RS485-5通讯速率': [
-        { label: '1200', value: 0 },
-        { label: '2400', value: 1 },
-        { label: '4800', value: 2 },
-        { label: '9600', value: 3 },
-        { label: '19200', value: 4 },
-        { label: '38400', value: 5 },
-        { label: '57600', value: 6 },
-        { label: '115200', value: 7 }
-      ],
-      'RS485-6通讯速率': [
-        { label: '1200', value: 0 },
-        { label: '2400', value: 1 },
-        { label: '4800', value: 2 },
-        { label: '9600', value: 3 },
-        { label: '19200', value: 4 },
-        { label: '38400', value: 5 },
-        { label: '57600', value: 6 },
-        { label: '115200', value: 7 }
-      ],
       网卡1速度: [
         { label: '100M', value: 0 },
         { label: '10M', value: 1 }

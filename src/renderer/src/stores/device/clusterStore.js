@@ -289,12 +289,9 @@ export const useClusterStore = defineStore('cluster', () => {
   // 需求：在簇级遥调页面，如果未选择下发目标，则默认勾选当前查看簇；
   // 当用户在导航下拉切换当前簇时，若仍处于自动模式（未手动多选），则同步为新簇。
 
-  // 记录“自动模式”下的上一次查看簇，用于判断是否应跟随切换
-  let lastAutoViewCluster = null
-
   function isAutoWriteSelection() {
     const sel = selectedClustersForWrite.value
-    return sel.length <= 1 && (sel.length === 0 || sel[0] === lastAutoViewCluster)
+    return sel.length <= 1
   }
 
   // 页面类型切换到簇级遥调时，初始化默认选择
@@ -304,10 +301,9 @@ export const useClusterStore = defineStore('cluster', () => {
       if (!selectedClusterForView.value && availableClusters.value.length > 0) {
         scheduleAutoSelect()
       }
-      // 默认勾选当前查看簇（仅在未手动选择时）
-      if (selectedClusterForView.value && selectedClustersForWrite.value.length === 0) {
+      // 默认/单选模式：勾选当前查看簇
+      if (selectedClusterForView.value && selectedClustersForWrite.value.length <= 1) {
         selectedClustersForWrite.value = [selectedClusterForView.value]
-        lastAutoViewCluster = selectedClusterForView.value
       }
     }
   })
@@ -318,7 +314,6 @@ export const useClusterStore = defineStore('cluster', () => {
     if (currentPageType.value !== 'cluster') return
     if (isAutoWriteSelection()) {
       selectedClustersForWrite.value = [newVal]
-      lastAutoViewCluster = newVal
     }
   })
 

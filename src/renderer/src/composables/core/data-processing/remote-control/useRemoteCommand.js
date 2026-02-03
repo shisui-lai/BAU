@@ -318,6 +318,37 @@ function createExecuteRemoteCommand(selectorMode, store, getCommandConfigFunc, t
       if (configType === 'button') {
         // 按钮类型使用配置中的默认值
         commandValue = config.defaultValue || config.value || 1
+      } else if (configType === 'input') {
+        if (config.inputType === 'password' && config.requiredValue !== undefined) {
+          if (String(value) !== String(config.requiredValue)) {
+            return {
+              success: false,
+              error: t('toast.bauAddressDetection.passwordError')
+            }
+          }
+        }
+        if (config.inputType === 'number') {
+          const num = Number(value)
+          if (value == null || value === '' || Number.isNaN(num)) {
+            return {
+              success: false,
+              error: t('toast.blockRemoteCommand.invalidInput')
+            }
+          }
+          if (typeof config.min === 'number' && num < config.min) {
+            return {
+              success: false,
+              error: t('toast.blockRemoteCommand.invalidInput')
+            }
+          }
+          if (typeof config.max === 'number' && num > config.max) {
+            return {
+              success: false,
+              error: t('toast.blockRemoteCommand.invalidInput')
+            }
+          }
+          commandValue = typeof config.scale === 'number' ? Math.round(num * config.scale) : num
+        }
       }
 
       console.log(`[遥控命令] 开始执行命令: ${config.name}`, {
@@ -1087,6 +1118,10 @@ function initializeCheckboxStates() {
       allControlCommands.forEach((command) => {
         if (command.uiType === 'dropdown' && command.options && command.options.length > 0) {
           selectedValues[command.id] = command.options[0].value
+        }
+        // 初始化输入框类型
+        if (command.type === 'input') {
+          selectedValues[command.id] = null
         }
       })
     }

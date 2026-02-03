@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import { diagLogger } from '../diagnosticLogger.js'
 
 export function createMessageHandler(processManager, mainWindow) {
   let busyDialogShowing = false
@@ -9,6 +10,7 @@ export function createMessageHandler(processManager, mainWindow) {
       try {
         mainWindow.webContents.send('disk-space-warning')
       } catch {}
+      diagLogger.warn('forward-disk-space-warning', 'sent')
       return
     }
     if (msg.API === 'save-excel') {
@@ -22,6 +24,7 @@ export function createMessageHandler(processManager, mainWindow) {
             currentTask.send({ API: 'save-excel-decision', decision })
           }
           busyDialogShowing = false
+          diagLogger.info('save-excel-decision', decision)
         })
       } catch (e) {
         busyDialogShowing = false
@@ -37,6 +40,7 @@ export function createMessageHandler(processManager, mainWindow) {
         mainWindow.webContents.send('data-rate-update', msg.data)
         pendingSetImmediateCount--
       })
+      diagLogger.debug('forward-data-rate-update', '', { rate: msg?.data?.rate })
       return
     }
 
@@ -46,6 +50,7 @@ export function createMessageHandler(processManager, mainWindow) {
         mainWindow.webContents.send('update-readEventProgress', msg.data)
         pendingSetImmediateCount--
       })
+      diagLogger.debug('forward-readEventProgress', '', { data: msg.data })
       return
     }
 
@@ -55,6 +60,7 @@ export function createMessageHandler(processManager, mainWindow) {
         mainWindow.webContents.send('export-completed', msg.data)
         pendingSetImmediateCount--
       })
+      diagLogger.info('forward-readEventCompleted', '', { data: msg.data })
       return
     }
 
@@ -63,6 +69,9 @@ export function createMessageHandler(processManager, mainWindow) {
       setImmediate(() => {
         mainWindow.webContents.send('readEventRecentFinal', msg.data)
         pendingSetImmediateCount--
+      })
+      diagLogger.info('forward-readEventRecentFinal', '', {
+        count: Array.isArray(msg?.data?.rows) ? msg.data.rows.length : 0
       })
       return
     }
@@ -73,6 +82,7 @@ export function createMessageHandler(processManager, mainWindow) {
         mainWindow.webContents.send('readEventErrorFromMain', msg.data)
         pendingSetImmediateCount--
       })
+      diagLogger.error('forward-readEventError', '', { data: msg.data })
       return
     }
 
@@ -82,6 +92,7 @@ export function createMessageHandler(processManager, mainWindow) {
         mainWindow.webContents.send('export-canceled', msg.data)
         pendingSetImmediateCount--
       })
+      diagLogger.warn('forward-readEventCanceled', '', { data: msg.data })
       return
     }
 
@@ -91,6 +102,9 @@ export function createMessageHandler(processManager, mainWindow) {
       mainWindow.webContents.send(msg.type, msg.data)
       pendingSetImmediateCount--
     })
+    if (msg.type === 'crash-summary') {
+      diagLogger.error('forward-crash-summary', msg.data)
+    }
 
     // 心跳透传（仅业务数据）
     if (
@@ -113,6 +127,7 @@ export function createMessageHandler(processManager, mainWindow) {
         })
         pendingSetImmediateCount--
       })
+      diagLogger.debug('forward-heartbeat', '', { type: msg.type })
     }
   }
 }
@@ -128,5 +143,6 @@ export function registerDiskSpaceDecisionForwarder(processManager) {
         // no child task available
       }
     } catch {}
+    diagLogger.info('disk-space-decision', decision)
   })
 }

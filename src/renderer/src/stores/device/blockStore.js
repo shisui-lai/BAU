@@ -1,6 +1,6 @@
 // 全局堆选择状态管理 - 统一管理所有页面的堆选择状态
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 export const useBlockStore = defineStore('block', () => {
   // ================== 基础状态 ==================
@@ -197,6 +197,28 @@ export const useBlockStore = defineStore('block', () => {
       autoSelectTimer = null
     }, 100)
   }
+
+  function isAutoWriteSelection() {
+    const sel = selectedBlocksForWrite.value
+    return sel.length <= 1
+  }
+  watch(currentPageType, (newType) => {
+    if (newType === 'block') {
+      if (!selectedBlockForView.value && availableBlocks.value.length > 0) {
+        scheduleAutoSelect()
+      }
+      if (selectedBlockForView.value && selectedBlocksForWrite.value.length <= 1) {
+        selectedBlocksForWrite.value = [selectedBlockForView.value]
+      }
+    }
+  })
+  watch(selectedBlockForView, (newVal) => {
+    if (!newVal) return
+    if (currentPageType.value !== 'block') return
+    if (isAutoWriteSelection()) {
+      selectedBlocksForWrite.value = [newVal]
+    }
+  })
 
   // ================== 选择管理 ==================
 

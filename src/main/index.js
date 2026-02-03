@@ -15,6 +15,7 @@ import icon from '../../resources/icon.png?asset'
 const { fork } = require('child_process')
 import { processManager } from './handlers/processManager.js'
 import crashLogger from './crashLogger.js'
+import { diagLogger } from './diagnosticLogger.js'
 // FTP服务器功能将在下面通过require导入
 import {
   // 网卡选择功能相关处理器 - 统一BAU操作方式
@@ -43,11 +44,19 @@ let quitting = false
 import forkPath1 from './mqtt.js?modulePath'
 import { createMessageHandler, registerDiskSpaceDecisionForwarder } from './ipc/childBridge.js'
 
+try {
+  app.commandLine.appendSwitch('disable-background-timer-throttling')
+  app.commandLine.appendSwitch('disable-renderer-backgrounding')
+  app.commandLine.appendSwitch('disable-backgrounding-occluded-windows')
+} catch {}
+
 // 默认导出目录
 let DEFAULT_EXPORT_DIR = join(process.cwd(), 'EventExports')
 
 // MQTT子进程将在createWindow函数中通过进程管理器启动
 console.log('[Main] 准备使用进程管理器管理MQTT子进程...')
+diagLogger.init()
+diagLogger.info('main-init', 'start', { pid: process.pid })
 
 // 文件选择对话框
 ipcMain.handle('show-open-dialog', async () => {
@@ -102,12 +111,14 @@ process.on('uncaughtException', (err) => {
   // 静默处理某些已知的无害错误
   if (err?.message?.includes('Object has been destroyed')) {
     console.warn('[UNCAUGHT] Object已销毁错误（已忽略）:', err.message)
+    diagLogger.warn('main-uncaught-ignored', err.message)
     return
   }
 
   // 记录崩溃日志
   console.error('[UNCAUGHT EXCEPTION] 捕获到未处理的异常:', err)
   crashLogger.logCrash(err, 'uncaughtException')
+  diagLogger.crash('main-uncaught', err)
 
   // 对于严重错误，可以选择退出应用
   // 注意：某些错误可能不需要退出，需要根据实际情况判断
@@ -126,22 +137,26 @@ process.on('unhandledRejection', (reason, promise) => {
   // 将Promise拒绝转换为Error对象以便记录
   const error = reason instanceof Error ? reason : new Error(String(reason))
   crashLogger.logCrash(error, 'unhandledRejection')
+  diagLogger.crash('main-unhandledRejection', error)
 })
 
 // 捕获多重Promise拒绝（已处理但又被拒绝的Promise）
 process.on('rejectionHandled', (promise) => {
   console.warn('[REJECTION HANDLED] Promise拒绝已被延迟处理')
+  diagLogger.warn('main-rejectionHandled', 'handled')
 })
 
 // 监听进程警告
 process.on('warning', (warning) => {
   console.warn('[PROCESS WARNING]', warning.name, warning.message)
   console.warn('[PROCESS WARNING] Stack:', warning.stack)
+  diagLogger.warn('main-warning', warning.message, { name: warning.name })
 })
 
 // 捕获渲染进程崩溃（最常见的闪退原因！）
 app.on('render-process-gone', (event, webContents, details) => {
   console.error('[RENDER PROCESS GONE] 渲染进程崩溃!', details)
+  diagLogger.error('render-process-gone', details.reason, { exitCode: details.exitCode })
 
   const error = new Error(`渲染进程崩溃: ${details.reason}`)
   error.exitCode = details.exitCode
@@ -163,6 +178,10 @@ app.on('render-process-gone', (event, webContents, details) => {
 // 捕获子进程崩溃（包括GPU进程等）
 app.on('child-process-gone', (event, details) => {
   console.error('[CHILD PROCESS GONE] 子进程崩溃!', details)
+  diagLogger.error('child-process-gone', details.reason, {
+    type: details.type,
+    exitCode: details.exitCode
+  })
 
   const error = new Error(`子进程崩溃: ${details.type} - ${details.reason}`)
   error.exitCode = details.exitCode
@@ -185,6 +204,7 @@ app.on('child-process-gone', (event, details) => {
 // SIGTERM - 系统请求终止（最常见）
 process.on('SIGTERM', () => {
   console.error('[SIGTERM] 收到系统终止信号！应用即将被强制关闭')
+  diagLogger.error('system-sigterm', 'terminate')
 
   const error = new Error('应用被系统强制终止 (SIGTERM)')
   error.signal = 'SIGTERM'
@@ -203,6 +223,7 @@ process.on('SIGTERM', () => {
 // SIGINT - 中断信号（Ctrl+C，或系统中断）
 process.on('SIGINT', () => {
   console.error('[SIGINT] 收到中断信号！')
+  diagLogger.error('system-sigint', 'interrupt')
 
   const error = new Error('应用被中断 (SIGINT)')
   error.signal = 'SIGINT'
@@ -358,10 +379,13 @@ function createWindow() {
       contextIsolation: true,
       enableRemoteModule: false,
       nodeIntegration: false,
-      // 明确启用硬件加速（默认为true，但显式声明更清晰）
-      hardwareAcceleration: true
+      hardwareAcceleration: true,
+      devTools: true
     }
   })
+  try {
+    mainWindow.webContents.setBackgroundThrottling(false)
+  } catch {}
   mainWindow.on('close', (event) => {
     if (quitting) return
     // 阻止默认关闭行为
@@ -462,7 +486,7 @@ function createWindow() {
     return { action: 'deny' }
   })
 
-  const menu = Menu.buildFromTemplate([
+  const menuTemplate = [
     {
       label: 'Language',
       submenu: [
@@ -502,7 +526,8 @@ function createWindow() {
         }
       ]
     }
-  ])
+  ]
+  const menu = Menu.buildFromTemplate(menuTemplate)
   Menu.setApplicationMenu(menu)
 
   // HMR for renderer base on electron-vite cli.
@@ -566,6 +591,9 @@ function createWindow() {
   // MQTT连接管理
   ipcMain.handle('mqtt-connect', async (_e, config) => {
     console.log('[Main] 🔗 收到MQTT连接请求:', config)
+    try {
+      processManager.setLastConnectConfig(config)
+    } catch {}
 
     return new Promise((resolve) => {
       const currentTask = processManager.getMQTTTask()
@@ -628,6 +656,9 @@ function createWindow() {
 
   // MQTT断开连接
   ipcMain.handle('mqtt-disconnect', async (_e) => {
+    try {
+      processManager.setDesiredDisconnected()
+    } catch {}
     return new Promise((resolve) => {
       const currentTask = processManager.getMQTTTask()
       if (!currentTask || currentTask.killed) {
@@ -681,6 +712,9 @@ function createWindow() {
   })
 
   ipcMain.on('set-export-config', (_event, { semantic, raw }) => {
+    try {
+      processManager.setLastExportEnable(semantic, raw)
+    } catch {}
     const mqttTask = processManager.getMQTTTask()
     if (mqttTask && !mqttTask.killed) {
       mqttTask.send({ cmd: 'SET_EXPORT_ENABLE', semantic, raw })
@@ -698,6 +732,19 @@ function createWindow() {
   // 手动重启MQTT进程 - 允许用户在界面上手动触发重启
   ipcMain.handle('restart-mqtt-process', async () => {
     processManager.restartProcess('manual')
+    return { success: true }
+  })
+  ipcMain.handle('diagnostic-log:get-path', async () => {
+    return { dir: diagLogger.getLogDir(), file: diagLogger.getCurrentFile() }
+  })
+  ipcMain.handle('diagnostic-log:get-recent', async (_e, maxBytes) => {
+    const lines = await diagLogger.getRecentLines(
+      typeof maxBytes === 'number' ? maxBytes : undefined
+    )
+    return { lines }
+  })
+  ipcMain.handle('diagnostic-log:open-dir', async () => {
+    await diagLogger.openDir()
     return { success: true }
   })
 

@@ -11,7 +11,7 @@
     "language": "语言",
     "rememberMe": "记住密码",
     "company": "东方日升储能技术有限公司",
-    "version": "版本 v0.4.3"
+    "version": "版本 v0.6.8"
   },
   "toast": {
     "common": {
@@ -184,6 +184,553 @@
     "cluster": "簇",
     "blockCluster": "堆{0}/簇{1}"
   },
+  "cluster_peripheral": {
+    "pcs": {
+      "types": {
+        "none": "无PCS",
+        "xingxing_pcs": "星星PCS",
+        "syl_pcs_01": "双一力PCS-01",
+        "kehua_pcs": "科华PCS"
+      },
+      "none": {
+        "fields": {
+          "totalVoltage": "总电压(V)",
+          "totalCurrent": "总电流(A)",
+          "soc": "SOC(%)",
+          "soh": "SOH(%)",
+          "soe": "SOE(%)",
+          "ratedTotalVoltage": "额定总压(V)",
+          "ratedCapacity": "额定容量(Ah)",
+          "remainingCapacity": "剩余容量(Ah)",
+          "ratedEnergy": "额定电量(kWh)",
+          "remainingEnergy": "剩余电量(kWh)",
+          "maxDischargePower": "最大允许放电功率(kW)",
+          "maxChargePower": "最大允许充电功率(kW)",
+          "faultStatus": "故障状态",
+          "maxChargeCellVoltage": "最大允许充电单体电压(mV)",
+          "minDischargeCellVoltage": "最小允许放电单体电压(mV)",
+          "maxChargeTotalVoltage": "最大允许充电总压(V)",
+          "minDischargeTotalVoltage": "最小允许放电总压(V)",
+          "bcuStateMachine": "BCU状态机",
+          "chargeStatus": "充电状态",
+          "dischargeStatus": "放电状态",
+          "hvCloseStatus": "高压闭合状态"
+        },
+        "valueMap": {
+          "faultStatus": { "0": "正常", "1": "一级报警", "2": "二级报警", "3": "三级报警" },
+          "bcuStateMachine": { "0": "初始化", "1": "待机", "2": "充电", "3": "放电" },
+          "chargeStatus": { "0": "允许充电", "1": "禁止充电" },
+          "dischargeStatus": { "0": "允许放电", "1": "禁止放电" },
+          "hvCloseStatus": { "0": "断开", "1": "闭合" }
+        }
+      },
+      "xingxing_pcs": {
+        "fields": {
+          "totalVoltage": "总电压(V)",
+          "totalCurrent": "总电流(A)",
+          "soc": "SOC(%)",
+          "soh": "SOH(%)",
+          "soe": "SOE(%)",
+          "ratedTotalVoltage": "额定总压(V)",
+          "ratedCapacity": "额定容量(Ah)",
+          "remainingCapacity": "剩余容量(Ah)",
+          "ratedEnergy": "额定电量(kWh)",
+          "remainingEnergy": "剩余电量(kWh)",
+          "maxDischargePower": "最大允许放电功率(kW)",
+          "maxChargePower": "最大允许充电功率(kW)",
+          "faultStatus": "故障状态",
+          "maxChargeCellVoltage": "最大允许充电单体电压(mV)",
+          "minDischargeCellVoltage": "最小允许放电单体电压(mV)",
+          "maxChargeTotalVoltage": "最大允许充电总压(V)",
+          "minDischargeTotalVoltage": "最小允许放电总压(V)",
+          "bcuStateMachine": "BCU状态机",
+          "chargeStatus": "充电状态",
+          "dischargeStatus": "放电状态",
+          "hvCloseStatus": "高压闭合状态"
+        },
+        "valueMap": {
+          "faultStatus": { "0": "正常", "1": "一级报警", "2": "二级报警", "3": "三级报警" },
+          "bcuStateMachine": { "0": "初始化", "1": "待机", "2": "充电", "3": "放电" },
+          "chargeStatus": { "0": "允许充电", "1": "禁止充电" },
+          "dischargeStatus": { "0": "允许放电", "1": "禁止放电" },
+          "hvCloseStatus": { "0": "断开", "1": "闭合" }
+        }
+      },
+      "syl_pcs_01": {
+        "fields": {
+          "totalVoltage": "总电压(V)",
+          "totalCurrent": "电池组充/放电总电流(A)",
+          "soc": "SOC(%)",
+          "soh": "SOH(%)",
+          "soe": "SOE(%)",
+          "ratedVoltage": "额定电压(V)",
+          "ratedCurrent": "额定电流(A)",
+          "ratedCapacity": "额定容量(Ah)",
+          "dischargeEndVoltage": "放电截止电压(V)",
+          "chargeEndVoltage": "充电截止电压(V)",
+          "maxDischargeCurrent": "最大放电电流(A)",
+          "maxChargeCurrent": "最大充电电流(A)",
+          "maxDischargePower": "最大允许放电功率(kW)",
+          "maxChargePower": "最大允许充电功率(kW)",
+          "totalAlarm": "总告警",
+          "totalFault": "总故障",
+          "hvDisconnectStatus": "高压断开状态",
+          "chargeStatus": "充电状态",
+          "dischargeStatus": "放电状态",
+          "bmsStateMachine": "BMS状态机",
+          "bmsHeartbeat": "BMS心跳"
+        },
+        "valueMap": {
+          "totalAlarm": { "0": "无告警", "1": "有一级或二级报警" },
+          "totalFault": { "0": "正常", "1": "有三级报警" },
+          "hvDisconnectStatus": { "0": "闭合", "1": "断开" },
+          "chargeStatus": { "0": "允许充电", "1": "禁止充电" },
+          "dischargeStatus": { "0": "允许放电", "1": "禁止放电" },
+          "bmsStateMachine": { "0": "初始化", "1": "停机", "2": "待机", "3": "充电", "4": "放电", "5": "故障" }
+        }
+      },
+      "kehua_pcs": {
+        "fields": {
+          "batteryVoltage": "电池电压(V)",
+          "pcsRunState": "PCS运行状态",
+          "acStatus": "交流电状态",
+          "bmsSystemState": "BMS系统状态",
+          "bmsHeartbeat": "BMS心跳",
+          "batteryCurrent": "电池电流(A)",
+          "soc": "SOC(%)",
+          "soh": "SOH(%)",
+          "maxChargeCurrent": "最大允许充电电流(A)",
+          "maxDischargeCurrent": "最大允许放电电流(A)",
+          "maxChargeVoltage": "最大允许充电电压(V)",
+          "maxDischargeVoltage": "最大允许放电电压(V)",
+          "availableChargeEnergy": "可用充电电量(kWh)",
+          "availableDischargeEnergy": "可用放电电量(kWh)"
+        },
+        "valueMap": {
+          "pcsRunState": { "0": "停止", "1": "备用", "2": "故障", "3": "充电", "4": "放电", "5": "充电降额", "6": "放电降额" },
+          "acStatus": { "0": "无交流电", "1": "有交流电" },
+          "bmsSystemState": { "0": "初始", "1": "正常", "2": "禁止充电", "3": "禁止放电", "4": "告警", "5": "故障", "6": "待机", "7": "预留" }
+        }
+      }
+    },
+    "ref": {
+      "types": {
+        "none": "无制冷设备",
+        "kno_water_cooler": "科诺威水冷机",
+        "envicool_emw50": "英维克-EMW50HFNC1A",
+        "essent_ac": "埃森特交流空调",
+        "envicool_emw_series": "英维克-EMW-30-50-80",
+        "junneng_water_cooler": "均能水冷机-1"
+      },
+      "none": {
+        "fields": {
+          "mode": "模式",
+          "setTemp": "设定温度(℃)",
+          "inletTemp": "进水温度(℃)",
+          "outletTemp": "出水温度(℃)",
+          "ambientTemp": "环境温度(℃)",
+          "exhaustTemp": "排气温度(℃)",
+          "inletPressure": "进水压力(Bar)",
+          "outletPressure": "出水压力(Bar)",
+          "suctionPressure": "吸气压力(Bar)",
+          "dischargePressure": "排气压力(Bar)",
+          "pumpSpeed": "水泵转速(%)",
+          "fanSpeed": "风机转速(%)",
+          "compressorSpeed": "压缩机转速",
+          "heartbeat": "心跳",
+          "softwareVersion": "软件版本",
+          "alarmLevel": "故障等级",
+          "faultCode1_b0": "高压压力过高",
+          "faultCode1_b1": "低压压力过低",
+          "faultCode1_b2": "水泵故障",
+          "faultCode1_b3": "PTC过温故障",
+          "faultCode1_b4": "风扇故障",
+          "faultCode1_b5": "出水温度传感器故障",
+          "faultCode1_b6": "进水温度传感器故障",
+          "faultCode1_b7": "环境温度传感器故障",
+          "faultCode1_b8": "高压压力开关故障",
+          "faultCode1_b9": "进水压力传感器故障",
+          "faultCode1_b10": "出水压力传感器故障",
+          "faultCode1_b11": "高压压力传感器故障",
+          "faultCode1_b12": "低压压力传感器故障",
+          "faultCode1_b13": "压缩机通信故障",
+          "faultCode1_b14": "压缩机控制器故障",
+          "faultCode1_b15": "BMS通信丢失故障",
+          "faultCode2_b0": "进水压力过低故障",
+          "faultCode2_b1": "出水压力过高故障",
+          "faultCode2_b2": "高压继电器1故障",
+          "faultCode2_b3": "高压继电器2故障",
+          "faultCode2_b4": "ACDC1过压故障",
+          "faultCode2_b5": "ACDC1欠压故障",
+          "faultCode2_b6": "ACDC2欠压故障",
+          "faultCode2_b7": "ACDC2过压故障",
+          "faultCode2_b8": "水阀故障",
+          "faultCode2_b9": "排气温度传感器故障",
+          "faultCode2_b10": "水压差过低故障",
+          "faultCode2_b11": "水压差过高故障",
+          "faultCode2_b12": "水阀通讯故障",
+          "faultCode2_b13": "预留",
+          "faultCode2_b14": "预留",
+          "faultCode2_b15": "预留"
+        },
+        "valueMap": {
+          "mode": { "0": "待机", "1": "制冷", "2": "加热", "3": "自循环（只开启水泵）" },
+          "alarmLevel": { "0": "无故障", "1": "一级故障", "2": "二级故障", "3": "三级故障" },
+          "faultCode1_b0": { "0": "正常", "1": "故障" },
+          "faultCode1_b1": { "0": "正常", "1": "故障" },
+          "faultCode1_b2": { "0": "正常", "1": "故障" },
+          "faultCode1_b3": { "0": "正常", "1": "故障" },
+          "faultCode1_b4": { "0": "正常", "1": "故障" },
+          "faultCode1_b5": { "0": "正常", "1": "故障" },
+          "faultCode1_b6": { "0": "正常", "1": "故障" },
+          "faultCode1_b7": { "0": "正常", "1": "故障" },
+          "faultCode1_b8": { "0": "正常", "1": "故障" },
+          "faultCode1_b9": { "0": "正常", "1": "故障" },
+          "faultCode1_b10": { "0": "正常", "1": "故障" },
+          "faultCode1_b11": { "0": "正常", "1": "故障" },
+          "faultCode1_b12": { "0": "正常", "1": "故障" },
+          "faultCode1_b13": { "0": "正常", "1": "故障" },
+          "faultCode1_b14": { "0": "正常", "1": "故障" },
+          "faultCode1_b15": { "0": "正常", "1": "故障" },
+          "faultCode2_b0": { "0": "正常", "1": "故障" },
+          "faultCode2_b1": { "0": "正常", "1": "故障" },
+          "faultCode2_b2": { "0": "正常", "1": "故障" },
+          "faultCode2_b3": { "0": "正常", "1": "故障" },
+          "faultCode2_b4": { "0": "正常", "1": "故障" },
+          "faultCode2_b5": { "0": "正常", "1": "故障" },
+          "faultCode2_b6": { "0": "正常", "1": "故障" },
+          "faultCode2_b7": { "0": "正常", "1": "故障" },
+          "faultCode2_b8": { "0": "正常", "1": "故障" },
+          "faultCode2_b9": { "0": "正常", "1": "故障" },
+          "faultCode2_b10": { "0": "正常", "1": "故障" },
+          "faultCode2_b11": { "0": "正常", "1": "故障" },
+          "faultCode2_b12": { "0": "正常", "1": "故障" },
+          "faultCode2_b13": { "0": "正常", "1": "故障" },
+          "faultCode2_b14": { "0": "正常", "1": "故障" },
+          "faultCode2_b15": { "0": "正常", "1": "故障" }
+        }
+      },
+      "kno_water_cooler": {
+        "fields": {
+          "mode": "模式",
+          "setTemp": "设定温度(℃)",
+          "inletTemp": "进水温度(℃)",
+          "outletTemp": "出水温度(℃)",
+          "ambientTemp": "环境温度(℃)",
+          "exhaustTemp": "排气温度(℃)",
+          "inletPressure": "进水压力(Bar)",
+          "outletPressure": "出水压力(Bar)",
+          "suctionPressure": "吸气压力(Bar)",
+          "dischargePressure": "排气压力(Bar)",
+          "pumpSpeed": "水泵转速(%)",
+          "fanSpeed": "风机转速(%)",
+          "compressorSpeed": "压缩机转速",
+          "heartbeat": "心跳",
+          "softwareVersion": "软件版本",
+          "alarmLevel": "故障等级",
+          "faultCode1_b0": "高压压力过高",
+          "faultCode1_b1": "低压压力过低",
+          "faultCode1_b2": "水泵故障",
+          "faultCode1_b3": "PTC过温故障",
+          "faultCode1_b4": "风扇故障",
+          "faultCode1_b5": "出水温度传感器故障",
+          "faultCode1_b6": "进水温度传感器故障",
+          "faultCode1_b7": "环境温度传感器故障",
+          "faultCode1_b8": "高压压力开关故障",
+          "faultCode1_b9": "进水压力传感器故障",
+          "faultCode1_b10": "出水压力传感器故障",
+          "faultCode1_b11": "高压压力传感器故障",
+          "faultCode1_b12": "低压压力传感器故障",
+          "faultCode1_b13": "压缩机通信故障",
+          "faultCode1_b14": "压缩机控制器故障",
+          "faultCode1_b15": "BMS通信丢失故障",
+          "faultCode2_b0": "进水压力过低故障",
+          "faultCode2_b1": "出水压力过高故障",
+          "faultCode2_b2": "高压继电器1故障",
+          "faultCode2_b3": "高压继电器2故障",
+          "faultCode2_b4": "ACDC1过压故障",
+          "faultCode2_b5": "ACDC1欠压故障",
+          "faultCode2_b6": "ACDC2欠压故障",
+          "faultCode2_b7": "ACDC2过压故障",
+          "faultCode2_b8": "水阀故障",
+          "faultCode2_b9": "排气温度传感器故障",
+          "faultCode2_b10": "水压差过低故障",
+          "faultCode2_b11": "水压差过高故障",
+          "faultCode2_b12": "水阀通讯故障",
+          "faultCode2_b13": "预留",
+          "faultCode2_b14": "预留",
+          "faultCode2_b15": "预留"
+        },
+        "valueMap": {
+          "mode": { "0": "待机", "1": "制冷", "2": "加热", "3": "自循环（只开启水泵）" },
+          "alarmLevel": { "0": "无故障", "1": "一级故障", "2": "二级故障", "3": "三级故障" },
+          "faultCode1_b0": { "0": "正常", "1": "故障" },
+          "faultCode1_b1": { "0": "正常", "1": "故障" },
+          "faultCode1_b2": { "0": "正常", "1": "故障" },
+          "faultCode1_b3": { "0": "正常", "1": "故障" },
+          "faultCode1_b4": { "0": "正常", "1": "故障" },
+          "faultCode1_b5": { "0": "正常", "1": "故障" },
+          "faultCode1_b6": { "0": "正常", "1": "故障" },
+          "faultCode1_b7": { "0": "正常", "1": "故障" },
+          "faultCode1_b8": { "0": "正常", "1": "故障" },
+          "faultCode1_b9": { "0": "正常", "1": "故障" },
+          "faultCode1_b10": { "0": "正常", "1": "故障" },
+          "faultCode1_b11": { "0": "正常", "1": "故障" },
+          "faultCode1_b12": { "0": "正常", "1": "故障" },
+          "faultCode1_b13": { "0": "正常", "1": "故障" },
+          "faultCode1_b14": { "0": "正常", "1": "故障" },
+          "faultCode1_b15": { "0": "正常", "1": "故障" },
+          "faultCode2_b0": { "0": "正常", "1": "故障" },
+          "faultCode2_b1": { "0": "正常", "1": "故障" },
+          "faultCode2_b2": { "0": "正常", "1": "故障" },
+          "faultCode2_b3": { "0": "正常", "1": "故障" },
+          "faultCode2_b4": { "0": "正常", "1": "故障" },
+          "faultCode2_b5": { "0": "正常", "1": "故障" },
+          "faultCode2_b6": { "0": "正常", "1": "故障" },
+          "faultCode2_b7": { "0": "正常", "1": "故障" },
+          "faultCode2_b8": { "0": "正常", "1": "故障" },
+          "faultCode2_b9": { "0": "正常", "1": "故障" },
+          "faultCode2_b10": { "0": "正常", "1": "故障" },
+          "faultCode2_b11": { "0": "正常", "1": "故障" },
+          "faultCode2_b12": { "0": "正常", "1": "故障" },
+          "faultCode2_b13": { "0": "正常", "1": "故障" },
+          "faultCode2_b14": { "0": "正常", "1": "故障" },
+          "faultCode2_b15": { "0": "正常", "1": "故障" }
+        }
+      },
+      "envicool_emw50": {
+        "fields": {
+          "cellMaxTemp": "电芯最大温度(℃)",
+          "cellMinTemp": "电芯最小温度(℃)",
+          "cellAvgTemp": "电芯平均温度(℃)",
+          "coolPoint": "制冷点(℃)",
+          "heatPoint": "加热点(℃)",
+          "coolHysteresis": "制冷回差(℃)",
+          "heatHysteresis": "加热回差(℃)",
+          "outletWaterTemp": "出水温度(℃)",
+          "returnWaterTemp": "回水温度(℃)",
+          "exhaustTemp": "排气温度(℃)",
+          "ambientTemp": "环境温度(℃)",
+          "inletPressure": "进水压力(Bar)",
+          "outletPressure": "出水压力(Bar)",
+          "outletHighTemp": "出水高温",
+          "outletLowTemp": "出水低温",
+          "outletTempSensorFault": "出水温感故障",
+          "returnTempSensorFault": "回水温感故障",
+          "inverterCommFault": "变频器通讯故障",
+          "highPressureLock": "系统高压锁定",
+          "lowPressureLock": "系统低压锁定",
+          "exhaustHighTempLock": "排气温度过高锁定",
+          "inverterOverCurrentLock": "变频器过流锁定",
+          "inverterOverTempLock": "变频器过温锁定",
+          "inverterOverVoltLock": "变频器过压锁定",
+          "inverterUnderVoltLock": "变频器欠压锁定",
+          "inverterPhaseLossLock": "变频器缺相锁定",
+          "inverterOtherFaultLock": "变频器其他故障锁定",
+          "waterSupplyAlarm": "补水告警",
+          "systemPressureHighAlarm": "系统压力过高告警",
+          "outletPressureHighAlarm": "出水压力过高告警",
+          "pumpSpeed": "水泵当前转速(%)",
+          "pumpStatus": "水泵状态",
+          "heartbeat": "心跳",
+          "compressorStatus": "压缩机状态",
+          "sysMode": "当前系统模式",
+          "switchStatus": "系统开关机"
+        },
+        "valueMap": {
+          "outletHighTemp": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "outletLowTemp": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "outletTempSensorFault": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "returnTempSensorFault": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "inverterCommFault": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "highPressureLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "lowPressureLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "exhaustHighTempLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "inverterOverCurrentLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "inverterOverTempLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "inverterOverVoltLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "inverterUnderVoltLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "inverterPhaseLossLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "inverterOtherFaultLock": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "waterSupplyAlarm": { "0": "正常", "1": "缺水", "255": "告警未使能" },
+          "systemPressureHighAlarm": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "outletPressureHighAlarm": { "0": "正常", "1": "告警", "255": "告警未使能" },
+          "pumpStatus": { "0": "关闭", "1": "开启" },
+          "compressorStatus": { "0": "关闭", "1": "开启" },
+          "sysMode": { "0": "停止", "1": "内循环", "2": "制冷", "3": "加热", "4": "全自动", "5": "补水" },
+          "switchStatus": { "0": "关机", "1": "开机" }
+        }
+      }
+    },
+    "deh": {
+      "types": {
+        "none": "无除湿空调",
+        "cluster_deh_01": "01-除湿机-1",
+        "cluster_deh_ej000113": "02-除湿机-E-J-000113"
+      },
+      "none": {
+        "fields": {
+          "atomizationModuleFault": "雾化模块状态",
+          "atomizationWorkStatus": "雾化工作状态",
+          "faultCircuitStatus": "故障回路状态",
+          "humidityCircuitStatus": "控湿回路状态",
+          "tempCircuitStatus": "控温回路状态",
+          "tempControlMode": "控温方式",
+          "fanModuleFault": "风机模块回路状态",
+          "dehumidifyModuleFault": "除湿模块回路状态",
+          "humiditySensorFault": "湿度传感器状态",
+          "externalTempSensorFault": "外部温度传感器状态",
+          "internalTempSensorFault": "内部温度传感器状态",
+          "defrostStatus": "化霜状态",
+          "humidityManualSwitch": "控湿手动开关",
+          "tempManualSwitch": "控温手动开关",
+          "highTempAlarm": "高温告警",
+          "dewPointLoopStatus": "露点温度回路工作状态",
+          "internalTemp": "内部温度值(℃)",
+          "ambientTemp": "环境温度值(℃)",
+          "ambientHumidity": "环境湿度值(%RH)",
+          "internalTemp2": "内部温度值2(℃)",
+          "dewPointTemp": "露点温度(℃)",
+          "reserved30006": "备用3",
+          "reserved30007": "备用4",
+          "reserved30008": "备用5",
+          "tempStart": "控温开启值(℃)",
+          "tempStop": "控温停止值(℃)",
+          "humidityStart": "控湿开启值(%RH)",
+          "humidityStop": "控湿停止值(%RH)",
+          "tempAlarmHigh": "温度报警上限值(℃)",
+          "tempAlarmLow": "温度报警下限值(℃)",
+          "dewPointStart": "露点温度启动值(℃)",
+          "dewPointDiff": "露点温度回差值(℃)"
+        },
+        "valueMap": {
+          "atomizationModuleFault": { "0": "正常", "1": "故障" },
+          "atomizationWorkStatus": { "0": "关闭", "1": "开启" },
+          "faultCircuitStatus": { "0": "关闭", "1": "开启" },
+          "humidityCircuitStatus": { "0": "停止", "1": "开启" },
+          "tempCircuitStatus": { "0": "停止", "1": "开启" },
+          "tempControlMode": { "0": "降温", "1": "升温" },
+          "fanModuleFault": { "0": "正常", "1": "故障" },
+          "dehumidifyModuleFault": { "0": "正常", "1": "故障" },
+          "humiditySensorFault": { "0": "正常", "1": "故障" },
+          "externalTempSensorFault": { "0": "正常", "1": "故障" },
+          "internalTempSensorFault": { "0": "正常", "1": "故障" },
+          "defrostStatus": { "0": "正常", "1": "正在化霜" },
+          "humidityManualSwitch": { "0": "正常", "1": "手动开" },
+          "tempManualSwitch": { "0": "正常", "1": "手动开" },
+          "highTempAlarm": { "0": "正常", "1": "告警" },
+          "dewPointLoopStatus": { "0": "关闭", "1": "开启" }
+        }
+      },
+      "cluster_deh_01": {
+        "fields": {
+          "atomizationModuleFault": "雾化模块状态",
+          "atomizationWorkStatus": "雾化工作状态",
+          "faultCircuitStatus": "故障回路状态",
+          "humidityCircuitStatus": "控湿回路状态",
+          "tempCircuitStatus": "控温回路状态",
+          "tempControlMode": "控温方式",
+          "fanModuleFault": "风机模块回路状态",
+          "dehumidifyModuleFault": "除湿模块回路状态",
+          "humiditySensorFault": "湿度传感器状态",
+          "externalTempSensorFault": "外部温度传感器状态",
+          "internalTempSensorFault": "内部温度传感器状态",
+          "defrostStatus": "化霜状态",
+          "humidityManualSwitch": "控湿手动开关",
+          "tempManualSwitch": "控温手动开关",
+          "highTempAlarm": "高温告警",
+          "dewPointLoopStatus": "露点温度回路工作状态",
+          "internalTemp": "内部温度值(℃)",
+          "ambientTemp": "环境温度值(℃)",
+          "ambientHumidity": "环境湿度值(%RH)",
+          "internalTemp2": "内部温度值2(℃)",
+          "dewPointTemp": "露点温度(℃)",
+          "reserved30006": "备用3",
+          "reserved30007": "备用4",
+          "reserved30008": "备用5",
+          "tempStart": "控温开启值(℃)",
+          "tempStop": "控温停止值(℃)",
+          "humidityStart": "控湿开启值(%RH)",
+          "humidityStop": "控湿停止值(%RH)",
+          "tempAlarmHigh": "温度报警上限值(℃)",
+          "tempAlarmLow": "温度报警下限值(℃)",
+          "dewPointStart": "露点温度启动值(℃)",
+          "dewPointDiff": "露点温度回差值(℃)"
+        },
+        "valueMap": {
+          "atomizationModuleFault": { "0": "正常", "1": "故障" },
+          "atomizationWorkStatus": { "0": "关闭", "1": "开启" },
+          "faultCircuitStatus": { "0": "关闭", "1": "开启" },
+          "humidityCircuitStatus": { "0": "停止", "1": "开启" },
+          "tempCircuitStatus": { "0": "停止", "1": "开启" },
+          "tempControlMode": { "0": "降温", "1": "升温" },
+          "fanModuleFault": { "0": "正常", "1": "故障" },
+          "dehumidifyModuleFault": { "0": "正常", "1": "故障" },
+          "humiditySensorFault": { "0": "正常", "1": "故障" },
+          "externalTempSensorFault": { "0": "正常", "1": "故障" },
+          "internalTempSensorFault": { "0": "正常", "1": "故障" },
+          "defrostStatus": { "0": "正常", "1": "正在化霜" },
+          "humidityManualSwitch": { "0": "正常", "1": "手动开" },
+          "tempManualSwitch": { "0": "正常", "1": "手动开" },
+          "highTempAlarm": { "0": "正常", "1": "告警" },
+          "dewPointLoopStatus": { "0": "关闭", "1": "开启" }
+        }
+      },
+      "cluster_deh_ej000113": {
+        "fields": {
+          "humidityCircuitStatus": "控湿回路状态",
+          "tempCircuitStatus": "控温回路状态",
+          "tempControlMode": "控温方式",
+          "fanModuleFault": "风机模块回路状态",
+          "dehumidifyModuleFault": "除湿模块回路状态",
+          "humiditySensorFault": "湿度传感器状态",
+          "externalTempSensorFault": "外部温度传感器状态",
+          "reservedStatusBit7": "预留",
+          "defrostStatus": "化霜状态",
+          "humidityManualSwitch": "控湿手工开关",
+          "tempManualSwitch": "控温手动开关",
+          "highTempAlarm": "高温告警",
+          "dewPointLoopStatus": "露点温度回路工作状态",
+          "reservedStatusBit13": "预留",
+          "reservedStatusBit14": "预留",
+          "reservedStatusBit15": "预留",
+          "ambientTemp": "环境温度值(℃)",
+          "ambientHumidity": "环境湿度值(%RH)",
+          "reserved2": "备用2",
+          "dewPointTempWorkState": "露点温度回路工作状态(℃)",
+          "reserved3": "备用3",
+          "reserved4": "备用4",
+          "reserved5": "备用5",
+          "tempStart": "控温开启值(℃)",
+          "tempStop": "控温停止值(℃)",
+          "humidityStart": "控湿开启值(%RH)",
+          "humidityStop": "控湿关闭值(%RH)",
+          "highTempAlarmHigh": "高温报警上限值(℃)",
+          "highTempAlarmLow": "高温报警下限值(℃)",
+          "dewPointStart": "露点温度启动值(℃)",
+          "dewPointDiff": "露点温度回差值(℃)"
+        },
+        "valueMap": {
+          "humidityCircuitStatus": { "0": "停止", "1": "开启" },
+          "tempCircuitStatus": { "0": "停止", "1": "开启" },
+          "tempControlMode": { "0": "降温", "1": "升温" },
+          "fanModuleFault": { "0": "正常", "1": "故障" },
+          "dehumidifyModuleFault": { "0": "正常", "1": "故障" },
+          "humiditySensorFault": { "0": "正常", "1": "故障" },
+          "externalTempSensorFault": { "0": "正常", "1": "故障" },
+          "reservedStatusBit7": { "0": "0", "1": "1" },
+          "defrostStatus": { "0": "正常", "1": "正在化霜" },
+          "humidityManualSwitch": { "0": "自动", "1": "手动开" },
+          "tempManualSwitch": { "0": "自动", "1": "手动开" },
+          "highTempAlarm": { "0": "正常", "1": "告警" },
+          "dewPointLoopStatus": { "0": "关闭", "1": "开启" },
+          "reservedStatusBit13": { "0": "0", "1": "1" },
+          "reservedStatusBit14": { "0": "0", "1": "1" },
+          "reservedStatusBit15": { "0": "0", "1": "1" }
+        }
+      }
+    }
+  },
   "bauAddressDetectionPage": {
     "title": "BAU地址探测",
     "sections": {
@@ -286,6 +833,9 @@
     "settings": "设置",
     "operationInfo": "单簇信息",
     "batteryInfo": "电池信息",
+    "clusterPcs": "PCS",
+    "clusterRef": "制冷设备",
+    "clusterDehumi": "除湿空调",
     "gpioData": "GPIO数据",
     "clusterVersion": "簇版本信息",
     "disconnection": "掉线信息",
@@ -317,10 +867,12 @@
     "faultsGroup": "故障告警",
     "bauAddressDetection": "BAU地址探测",
     "deviceManagement": "设备管理",
-    "peripheralDevices": "外围设备",
+    "peripheralDevices": "堆外围设备",
     "pcsDevice": "堆PCS设备",
     "refDevice": "堆制冷设备",
-    "dehDevice": "堆除湿空调"
+    "dehDevice": "堆除湿空调",
+    "meterDevice": "堆电表设备",
+    "fireDevice": "堆消防设备"
   },
   "forceUpgrade": {
     "tftpServerConfig": "TFTP服务器配置",
@@ -1156,9 +1708,10 @@
       "typeSystemDeviceConfig": "系统及设备类型配置",
       "basicFilterConfig": "单体电压温度滤波配置",
       "delayConfig": "延时配置",
-      "tempDeviceConfig": "设备温度配置",
+      "tempDeviceConfig": "制冷设备配置",
       "currentSensorConfig": "电流传感器配置",
-      "batteryParamConfig": "电池参数配置"
+      "batteryParamConfig": "电池参数配置",
+      "outdoorWaterCoolingConfig": "户外柜水冷机配置"
     },
     "errors": {
       "ipFormatError": "IP地址格式错误",
@@ -1198,9 +1751,15 @@
         "无制冷设备": "无制冷设备",
         "科诺威水冷机": "科诺威水冷机",
         "英维克": "英维克",
+        "英维克-EMW50HFNC1A": "英维克-EMW50HFNC1A",
+        "英维克-EMW-30-50-80": "英维克-EMW-30-50-80",
         "埃森特交流空调": "埃森特交流空调",
-        "英维克-EMW30-50-80": "英维克-EMW30-50-80",
         "均能水冷机-1": "均能水冷机-1"
+      },
+      "除湿空调类型": {
+        "无除湿空调": "无除湿空调",
+        "01-除湿机-1": "01-除湿机-1",
+        "02-除湿机-E-J-000113": "02-除湿机-E-J-000113"
       },
       "除湿机设备类型": {
         "无除湿机设备": "无除湿机设备",
@@ -1502,6 +2061,13 @@
         "clusterVoltageSummary": "簇电压概要",
         "clusterCurrentSummary": "簇电流概要"
       },
+      "maxMinSubGroups": {
+        "cellVoltageRelated": "堆单体电压相关",
+        "cellTempRelated": "堆单体温度相关",
+        "clusterVoltageRelated": "簇电压相关",
+        "clusterSocRelated": "簇SOC相关",
+        "allowedTripsRelated": "堆允许与跳闸限制相关"
+      },
       "parameters": {
         "簇总数": "簇总数",
         "在线簇数": "在线簇数",
@@ -1776,7 +2342,7 @@
         "1个BMU下最多支持16个AFE": "1个BMU下最多支持16个AFE",
         "单个AFE下电池数量可以为空，但BMU下总电池数不能超过128": "单个AFE下电池数量可以为空，但BMU下总电池数不能超过128",
         "格式：YYYYMMDDNNNN（12位数字）": "格式：YYYYMMDDNNNN（12位数字）",
-        "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克；3：埃森特交流空调；4：英维克-EMW30-50-80；5：均能水冷机-1": "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克；3：埃森特交流空调；4：英维克-EMW30-50-80；5：均能水冷机-1",
+      "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克-EMW50HFNC1A；3：埃森特交流空调；4：英维克-EMW-30-50-80；5：均能水冷机-1": "0xFFFF：无制冷设备；1：科诺威水冷机；2：英维克-EMW50HFNC1A；3：埃森特交流空调；4：英维克-EMW-30-50-80；5：均能水冷机-1",
         "0xFFFF：无除湿机设备；1：除湿机-01；2：02-除湿机-E-J-000113": "0xFFFF：无除湿机设备；1：除湿机-01；2：02-除湿机-E-J-000113"
       }
     },
@@ -2017,6 +2583,11 @@
         }
       },
       "portLabels": {
+        "生产编码": "生产编码",
+        "年": "年",
+        "月": "月",
+        "日": "日",
+        "编号": "编号",
         "CAN1通讯速率/仲裁域速率": "CAN1通讯速率/仲裁域速率",
         "CAN1数据域波特率": "CAN1数据域波特率",
         "CAN2通讯速率/仲裁域速率": "CAN2通讯速率/仲裁域速率",
@@ -2180,7 +2751,11 @@
       "参数复位": "参数复位",
       "查询接触器执行策略结果": "查询接触器执行策略结果",
       "查询绝缘电阻检测执行结果": "查询绝缘电阻检测执行结果",
-      "查询系统运行模式": "查询系统运行模式"
+      "查询系统运行模式": "查询系统运行模式",
+      "复位可配置默认参数次数": "复位可配置默认参数次数",
+      "擦除可配置默认参数区": "擦除可配置默认参数区",
+      "SOX-EKFSOC": "SOX-EKFSOC",
+      "SOX-EKF协方差": "SOX-EKF协方差"
     },
     "commandOptions": {
       "设置BCU充电操作": "设置BCU充电操作",
@@ -2284,7 +2859,12 @@
       "确定要执行接触器自检操作吗？": "确定要执行接触器自检操作吗？",
       "确定要执行重启BAU操作吗？": "确定要执行重启BAU操作吗？",
       "确定要执行SD卡记录控制操作吗？": "确定要执行SD卡记录控制操作吗？",
-      "确定要设置堆SOC值吗？": "确定要设置堆SOC值吗？"
+      "确定要设置堆SOC值吗？": "确定要设置堆SOC值吗？",
+      "确定要复位可配置默认参数次数吗？": "确定要复位可配置默认参数次数吗？",
+      "确定要擦除可配置默认参数区吗？": "确定要擦除可配置默认参数区吗？",
+      "确定要设置SOX-EKFSOC吗？": "确定要设置SOX-EKFSOC吗？",
+      "确定要设置SOX-EKF协方差吗？": "确定要设置SOX-EKF协方差吗？",
+      "确定要强制复位BCU吗？": "确定要强制复位BCU吗？"
     },
     "dialogs": {
       "bitControl": "bit位控制",
@@ -2662,6 +3242,7 @@
       "batteryConfig": "系统簇端电池配置参数",
       "commDevConfig": "系统外围设备配置参数",
       "operateConfig": "系统操作配置参数",
+      "refConfig": "系统水冷机配置参数",
       "socConfig": "系统堆SOC配置参数",
       "portConfig": "系统端口配置参数",
       "commonConfig": "堆系统基本配置"
@@ -2805,9 +3386,9 @@
       "confirmLocalModeBeforeSetting": "请确认当前处于就地模式后再进行参数下设",
       "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；": "每个AFE下电池数量可配置不同；BMU下总电池数不超过128；",
       "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；": "每个AFE下温度数量可配置不同；BMU下总温度数不超过128；",
-      "0-无PCS 1-双一力PCS": "0-无PCS 1-双一力PCS",
-      "0-无制冷设备 1-科诺威水冷机 2-英维克 3-埃森特交流空调 4-英维克-EMW30-50-80 5-均能水冷机-1": "0-无制冷设备 1-科诺威水冷机 2-英维克 3-埃森特交流空调 4-英维克-EMW30-50-80 5-均能水冷机-1",
-      "0-无除湿空调 1-除湿机-01 2-02-除湿机-E-J-000113": "0-无除湿空调 1-除湿机-01 2-02-除湿机-E-J-000113",
+      "0：无PCS 1：双一力PCS(RS485) 2：禾望PCS 3：科华PCS 4：迈格瑞能PCS 5：盛宏PCS 6：双一力PCS(CAN)": "0：无PCS 1：双一力PCS(RS485) 2：禾望PCS 3：科华PCS 4：迈格瑞能PCS 5：盛宏PCS 6：双一力PCS(CAN)",
+      "0：无制冷设备 1：三河同飞 2：英维克0513 3：英维克70513 4：柯诺威1 5：柯诺威2 6：均能": "0：无制冷设备 1：三河同飞 2：英维克0513 3：英维克70513 4：柯诺威1 5：柯诺威2 6：均能",
+      "0：无除湿空调 1：三河同飞 2：英维克U3-EC 3：E-J000113": "0：无除湿空调 1：三河同飞 2：英维克U3-EC 3：E-J000113",
       "0-无I/O控制板 1-艾莫讯": "0-无I/O控制板 1-艾莫讯",
       "0-网卡1 1-网卡2": "0-网卡1 1-网卡2",
       "PCS数量范围：0-65535": "PCS数量范围：0-65535",
@@ -2825,15 +3406,27 @@
     "dropdowns": {
       "PCS类型": {
         "无PCS": "无PCS",
-        "双一力PCS": "双一力PCS"
+        "双一力PCS(RS485)": "双一力PCS(RS485)",
+        "禾望PCS": "禾望PCS",
+        "科华PCS": "科华PCS",
+        "迈格瑞能PCS": "迈格瑞能PCS",
+        "盛宏PCS": "盛宏PCS",
+        "双一力PCS(CAN)": "双一力PCS(CAN)"
       },
       "制冷设备类型": {
         "无制冷设备": "无制冷设备",
-        "三河同飞": "三河同飞"
+        "三河同飞": "三河同飞",
+        "英维克0513": "英维克0513",
+        "英维克70513": "英维克70513",
+        "柯诺威1": "柯诺威1",
+        "柯诺威2": "柯诺威2",
+        "均能": "均能"
       },
       "除湿空调类型": {
         "无除湿空调": "无除湿空调",
-        "三河同飞": "三河同飞"
+        "三河同飞": "三河同飞",
+        "英维克U3-EC": "英维克U3-EC",
+        "E-J000113": "E-J000113"
       },
       "I/O控制板类型": {
         "无I/O控制板": "无I/O控制板",
@@ -2955,7 +3548,9 @@
       "复位系统堆告警安装参数": "复位系统堆告警安装参数",
       "复位系统SOC配置参数": "复位系统SOC配置参数",
       "复位事件记录标志": "复位事件记录标志",
-      "复位系统系统运行时间": "复位系统系统运行时间"
+      "复位系统运行时间": "复位系统运行时间",
+      "复位系统水冷机配置参数": "复位系统水冷机配置参数",
+      "复位系统配置化映射参数": "复位系统配置化映射参数"
     }
   },
   "alarmInfoPage": {
@@ -2980,7 +3575,7 @@
         "faultDescription": "故障",
         "blockClusterNumber": "堆/簇号",
         "bmuNumber": "BMU 编号",
-        "cell": "Cell",
+        "cell": "Cell/AFE",
         "globalSequence": "全局序号",
         "faultLevel": "故障等级"
       }
@@ -3521,6 +4116,16 @@
       "写事件记录开始位置": "Write Event Record Start Position",
       "删除事件记录开始位置": "Delete Event Record Start Position",
       "等待删除事件记录数量": "Pending Delete Event Record Count"
+    },
+    "duration": {
+      "day": "{n}天",
+      "day_plural": "{n}天",
+      "hour": "{n}小时",
+      "hour_plural": "{n}小时",
+      "minute": "{n}分钟",
+      "minute_plural": "{n}分钟",
+      "second": "{n}秒",
+      "second_plural": "{n}秒"
     }
   },
   "about": {
@@ -3541,12 +4146,430 @@
       "blockSelect": "堆选择",
       "type": "PCS型号",
       "selectType": "请选择PCS型号",
+      "types": {
+        "none": "无PCS",
+        "shuangyili": "双一力PCS",
+        "hewang": "禾望PCS",
+        "kehua": "科华PCS",
+        "maigereneng": "迈格瑞能PCS",
+        "shenghong": "盛宏PCS",
+        "shuangyili_can": "双一力PCS(CAN)"
+      },
       "commStatus": "通讯状态",
       "fieldName": "字段名称",
       "fieldValue": "字段值",
       "unknownType": "未知型号",
       "noData": "暂无PCS数据",
-      "templateDataTip": "当前显示的是所选PCS型号的数据结构模板"
+      "templateDataTip": "当前显示的是所选PCS型号的数据结构模板",
+      "shuangyili": {
+        "fields": {
+          "dataLength": "数据长度",
+          "pcsAddress": "PCS地址",
+          "commStatus": "PCS通讯状态",
+          "totalVoltage": "总电压(V)",
+          "totalCurrent": "电池组充/放电总电流(A)",
+          "soc": "SOC(%)",
+          "soh": "SOH(%)",
+          "soe": "SOE(%)",
+          "ratedVoltage": "额定电压(V)",
+          "ratedCurrent": "额定电流(A)",
+          "ratedCapacity": "额定容量(Ah)",
+          "dischargeEndVoltage": "放电截止电压(V)",
+          "chargeEndVoltage": "充电截止电压(V)",
+          "maxDischargeCurrent": "最大放电电流(A)",
+          "maxChargeCurrent": "最大充电电流(A)",
+          "maxDischargepower": "最大允许放电功率(kW)",
+          "maxChargePower": "最大允许充电功率(kW)",
+          "totalAlarm": "总告警",
+          "totalFault": "总故障",
+          "hvDisconnectStatus": "高压断开状态",
+          "chargeStatus": "充电状态",
+          "dischargeStatus": "放电状态",
+          "bmsStateMachine": "BMS状态机",
+          "bmsHeartbeat": "BMS心跳"
+        },
+        "valueMap": {
+          "pcsAddress": {
+            "1": "第1堆",
+            "2": "第2堆"
+          },
+          "commStatus": {
+            "0": "正常",
+            "1": "通讯异常"
+          },
+          "totalAlarm": {
+            "0": "无告警",
+            "1": "有一级或二级报警"
+          },
+          "totalFault": {
+            "0": "正常",
+            "1": "有三级报警"
+          },
+          "hvDisconnectStatus": {
+            "0": "闭合",
+            "1": "断开"
+          },
+          "chargeStatus": {
+            "0": "允许充电",
+            "1": "禁止充电"
+          },
+          "dischargeStatus": {
+            "0": "允许放电",
+            "1": "禁止放电"
+          },
+          "bmsStateMachine": {
+            "0": "初始化",
+            "1": "停机",
+            "2": "待机",
+            "3": "充电",
+            "4": "放电",
+            "5": "故障"
+          }
+        }
+      },
+      "hewang": {
+        "fields": {
+          "dataLength": "数据长度",
+          "pcsAddress": "PCS地址",
+          "commStatus": "PCS通讯状态",
+          "workStatus": "工作状态信息",
+          "maxChargeCurrent": "系统可接受的最大充电电流(A)",
+          "maxDischargeCurrent": "系统可接受的最大放电电流(A)",
+          "batterySoc": "电池组SOC(%)",
+          "maxChargePower": "系统可接受的最大充电功率(kW)",
+          "maxDischargePower": "系统可接受的最大放电功率(kW)"
+        },
+        "valueMap": {
+          "pcsAddress": {
+            "1": "第1堆",
+            "2": "第2堆"
+          },
+          "commStatus": {
+            "0": "正常",
+            "1": "通讯异常"
+          },
+          "workStatus": {
+            "4369": "充满",
+            "8738": "放空",
+            "21845": "待机",
+            "43690": "跳机",
+            "48059": "正常"
+          }
+        }
+      },
+      "kehua": {
+        "fields": {
+          "dataLength": "数据长度",
+          "pcsAddress": "PCS地址",
+          "commStatus": "PCS通讯状态",
+          "batteryVoltageWrite": "电池电压(V)(PCS写)",
+          "pcsStatusWord": "PCS状态字",
+          "pcsRunState": "PCS运行状态",
+          "pcsAcStatus": "交流电状态",
+          "bmsStatusWord": "BMS状态",
+          "bmsSystemState": "BMS系统状态",
+          "bmsHeartbeat": "BMS心跳",
+          "reserved": "保留",
+          "batteryVoltage": "电池电压(V)(PCS读)",
+          "batteryCurrent": "电池电流(A)",
+          "soc": "SOC(%)",
+          "soh": "SOH(%)",
+          "maxChargeCurrent": "最大允许充电电流(A)",
+          "maxDischargeCurrent": "最大允许放电电流(A)",
+          "maxChargeVoltage": "最大允许充电电压(V)",
+          "maxDischargeVoltage": "最大允许放电电压(V)",
+          "availableChargeEnergy": "可用充电电量(kWh)",
+          "availableDischargeEnergy": "可用放电电量(kWh)"
+        },
+        "valueMap": {
+          "pcsAddress": {
+            "1": "第1堆",
+            "2": "第2堆"
+          },
+          "commStatus": {
+            "0": "正常",
+            "1": "通讯异常"
+          },
+          "pcsRunState": {
+            "0": "停止",
+            "1": "备用",
+            "2": "故障",
+            "3": "充电",
+            "4": "放电",
+            "5": "充电降额",
+            "6": "放电降额"
+          },
+          "pcsAcStatus": {
+            "0": "无交流电",
+            "1": "有交流电"
+          },
+          "bmsSystemState": {
+            "0": "Initial",
+            "1": "Normal",
+            "2": "Charge disabled",
+            "3": "Discharge disabled",
+            "4": "Alarm",
+            "5": "Fault",
+            "6": "Standby",
+            "7": "Reserved"
+          }
+        }
+      },
+      "maigereneng": {
+        "fields": {
+          "dataLength": "数据长度",
+          "pcsAddress": "PCS地址",
+          "commStatus": "PCS通讯状态",
+          "workStatus": "工作状态信息",
+          "maxChargeCurrent": "当前系统最大允许充电电流(A)",
+          "maxDischargeCurrent": "当前系统最大允许放电电流(A)",
+          "stackSoc": "电池堆SOC(%)",
+          "chargeableEnergy": "电池堆可充电量(kWh)",
+          "dischargeableEnergy": "电池堆可放电量(kWh)",
+          "stackVoltage": "电池堆总电压(V)",
+          "stackCurrent": "电池堆总电流(A)",
+          "cellMaxSoc": "电池堆单体最高SOC(%)",
+          "cellMinSoc": "电池堆单体最低SOC(%)",
+          "cellMaxVoltage": "电池堆单体最高电压(V)",
+          "cellMinVoltage": "电池堆单体最低电压(V)",
+          "cellMaxTemp": "电池堆单体最高温度(℃)",
+          "cellMinTemp": "电池堆单体最低温度(℃)",
+          "maxChargePower": "当前系统最大允许充电功率(kW)",
+          "maxDischargePower": "当前系统最大允许放电功率(kW)"
+        },
+        "valueMap": {
+          "pcsAddress": {
+            "1": "第1堆",
+            "2": "第2堆"
+          },
+          "commStatus": {
+            "0": "正常",
+            "1": "通讯异常"
+          },
+          "workStatus": {
+            "4369": "充满",
+            "8738": "放空",
+            "21845": "待机",
+            "43690": "跳机",
+            "48059": "正常"
+          }
+        }
+      },
+      "shenghong": {
+        "fields": {
+          "dataLength": "数据长度",
+          "pcsAddress": "PCS地址",
+          "commStatus": "PCS通讯状态",
+          "maxChargeCurrent": "最大允许充电电流(A)",
+          "maxDischargeCurrent": "最大允许放电电流(A)",
+          "totalVoltage": "总电压(V)",
+          "totalCurrent": "总电流(A)",
+          "totalSoc": "总SOC(%)",
+          "totalSoh": "总SOH(%)",
+          "maxChargeVoltage": "最大允许充电电压(V)",
+          "statusFlag": "电池状态字",
+          "statusFlagBit15": "备用状态15",
+          "statusFlagBit14": "备用状态14",
+          "statusFlagBit13": "备用状态13",
+          "statusFlagBit12": "备用状态12",
+          "statusFlagBit11": "备用状态11",
+          "statusFlagBit10": "备用状态10",
+          "statusFlagBit9": "备用状态9",
+          "statusFlagBit8": "备用状态8",
+          "statusFlagBit7": "充电接触器闭合状态",
+          "statusFlagBit6": "放电接触器闭合状态",
+          "statusFlagBit5": "充满状态",
+          "statusFlagBit4": "放空状态",
+          "statusFlagBit3": "强制充电状态",
+          "statusFlagBit2": "备用状态2",
+          "statusFlagBit1": "备用状态1",
+          "statusFlagBit0": "备用状态0",
+          "alarmLight": "轻度告警",
+          "alarmMedium": "中度告警",
+          "alarmSevere": "严重告警",
+          "alarmLightBit15": "轻度-单体欠压",
+          "alarmLightBit14": "轻度-单体过压",
+          "alarmLightBit13": "轻度-总压低",
+          "alarmLightBit12": "轻度-总压高",
+          "alarmLightBit11": "轻度-单体欠温",
+          "alarmLightBit10": "轻度-单体过温",
+          "alarmLightBit9": "轻度-单体SOC过低",
+          "alarmLightBit8": "轻度-单体SOC过高",
+          "alarmLightBit7": "轻度-放电过流",
+          "alarmLightBit6": "轻度-充电过流",
+          "alarmLightBit5": "轻度-绝缘故障",
+          "alarmLightBit4": "轻度-电压差异过大",
+          "alarmLightBit3": "轻度-温度差异过大",
+          "alarmLightBit2": "轻度-备用告警2",
+          "alarmLightBit1": "轻度-备用告警1",
+          "alarmLightBit0": "轻度-备用告警0",
+          "alarmMediumBit15": "中度-单体欠压",
+          "alarmMediumBit14": "中度-单体过压",
+          "alarmMediumBit13": "中度-总压低",
+          "alarmMediumBit12": "中度-总压高",
+          "alarmMediumBit11": "中度-单体欠温",
+          "alarmMediumBit10": "中度-单体过温",
+          "alarmMediumBit9": "中度-单体SOC过低",
+          "alarmMediumBit8": "中度-单体SOC过高",
+          "alarmMediumBit7": "中度-放电过流",
+          "alarmMediumBit6": "中度-充电过流",
+          "alarmMediumBit5": "中度-绝缘故障",
+          "alarmMediumBit4": "中度-电压差异过大",
+          "alarmMediumBit3": "中度-温度差异过大",
+          "alarmMediumBit2": "中度-备用告警2",
+          "alarmMediumBit1": "中度-备用告警1",
+          "alarmMediumBit0": "中度-备用告警0",
+          "alarmSevereBit15": "严重-单体欠压",
+          "alarmSevereBit14": "严重-单体过压",
+          "alarmSevereBit13": "严重-总压低",
+          "alarmSevereBit12": "严重-总压高",
+          "alarmSevereBit11": "严重-单体欠温",
+          "alarmSevereBit10": "严重-单体过温",
+          "alarmSevereBit9": "严重-单体SOC过低",
+          "alarmSevereBit8": "严重-单体SOC过高",
+          "alarmSevereBit7": "严重-放电过流",
+          "alarmSevereBit6": "严重-充电过流",
+          "alarmSevereBit5": "严重-绝缘故障",
+          "alarmSevereBit4": "严重-电压差异过大",
+          "alarmSevereBit3": "严重-温度差异过大",
+          "alarmSevereBit2": "严重-备用告警2",
+          "alarmSevereBit1": "严重-备用告警1",
+          "alarmSevereBit0": "严重-备用告警0",
+          "cellMinVoltage": "单体最低电池电压(V)",
+          "cellMinVoltageIndex": "单体最低电池电压编号",
+          "cellMaxVoltage": "单体最高电池电压(V)",
+          "cellMaxVoltageIndex": "单体最高电池电压编号",
+          "cellMinTemp": "单体最低电池温度(℃)",
+          "cellMinTempIndex": "单体最低电池温度编号",
+          "cellMaxTemp": "单体最高电池温度(℃)",
+          "cellMaxTempIndex": "单体最高电池温度编号",
+          "heartbeat": "生命帧心跳值"
+        },
+        "valueMap": {
+          "pcsAddress": {
+            "1": "第1堆",
+            "2": "第2堆"
+          },
+          "commStatus": {
+            "0": "正常",
+            "1": "通讯异常"
+          },
+          "alarmLightBit15": { "0": "无故障", "1": "有故障" },
+          "alarmLightBit14": { "0": "无故障", "1": "有故障" },
+          "alarmLightBit13": { "0": "无故障", "1": "有故障" },
+          "alarmLightBit12": { "0": "无故障", "1": "有故障" },
+          "alarmLightBit11": { "0": "无故障", "1": "有故障" },
+          "alarmLightBit10": { "0": "无故障", "1": "有故障" },
+          "alarmLightBit9":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit8":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit7":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit6":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit5":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit4":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit3":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit2":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit1":  { "0": "无故障", "1": "有故障" },
+          "alarmLightBit0":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit15": { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit14": { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit13": { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit12": { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit11": { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit10": { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit9":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit8":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit7":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit6":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit5":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit4":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit3":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit2":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit1":  { "0": "无故障", "1": "有故障" },
+          "alarmMediumBit0":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit15": { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit14": { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit13": { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit12": { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit11": { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit10": { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit9":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit8":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit7":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit6":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit5":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit4":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit3":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit2":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit1":  { "0": "无故障", "1": "有故障" },
+          "alarmSevereBit0":  { "0": "无故障", "1": "有故障" }
+        }
+      },
+      "shuangyili_can": {
+        "fields": {
+          "dataLength": "数据长度",
+          "pcsAddress": "PCS地址",
+          "commStatus": "PCS通讯状态",
+          "totalVoltage": "总电压(V)",
+          "totalCurrent": "电池组充/放电总电流(A)",
+          "soc": "SOC(%)",
+          "soh": "SOH(%)",
+          "soe": "SOE(%)",
+          "ratedVoltage": "额定电压(V)",
+          "ratedCurrent": "额定电流(A)",
+          "ratedCapacity": "额定容量(Ah)",
+          "dischargeEndVoltage": "放电截止电压(V)",
+          "chargeEndVoltage": "充电截止电压(V)",
+          "maxDischargeCurrent": "最大放电电流(A)",
+          "maxChargeCurrent": "最大充电电流(A)",
+          "maxDischargepower": "最大允许放电功率(kW)",
+          "maxChargePower": "最大允许充电功率(kW)",
+          "totalAlarm": "总告警",
+          "totalFault": "总故障",
+          "hvDisconnectStatus": "高压断开状态",
+          "chargeStatus": "充电状态",
+          "dischargeStatus": "放电状态",
+          "bmsStateMachine": "BMS状态机",
+          "bmsHeartbeat": "BMS心跳"
+        },
+        "valueMap": {
+          "pcsAddress": {
+            "1": "第1堆",
+            "2": "第2堆"
+          },
+          "commStatus": {
+            "0": "正常",
+            "1": "通讯异常"
+          },
+          "totalAlarm": {
+            "0": "无告警",
+            "1": "有一级或二级报警"
+          },
+          "totalFault": {
+            "0": "正常",
+            "1": "有三级报警"
+          },
+          "hvDisconnectStatus": {
+            "0": "闭合",
+            "1": "断开"
+          },
+          "chargeStatus": {
+            "0": "允许充电",
+            "1": "禁止充电"
+          },
+          "dischargeStatus": {
+            "0": "允许放电",
+            "1": "禁止放电"
+          },
+          "bmsStateMachine": {
+            "0": "初始化",
+            "1": "停机",
+            "2": "待机",
+            "3": "充电",
+            "4": "放电",
+            "5": "故障"
+          }
+        }
+      }
     },
     "ref": {
       "title": "制冷设备",
@@ -3559,7 +4582,569 @@
       "fieldValue": "字段值",
       "unknownType": "未知型号",
       "noData": "暂无制冷设备数据",
-      "templateDataTip": "当前显示的是所选制冷设备型号的数据结构模板"
+      "templateDataTip": "当前显示的是所选制冷设备型号的数据结构模板",
+      "sections": {
+        "basic": "基本信息",
+        "fault": "故障"
+      },
+      "types": {
+        "none": "无制冷设备",
+        "sanhetongfei": "三河同飞",
+        "yingweike0513": "英维克0513",
+        "yingweike70513": "英维克70513",
+        "kenuowei1": "柯诺威1(T-A-000040)",
+        "kenuowei2": "柯诺威2(T-A-000048)",
+        "junneng": "均能"
+      },
+      "sanhetongfei": {
+        "fields": {
+          "refAddress": "制冷设备地址",
+          "commStatus": "制冷设备通讯状态",
+          "operatingStatus": "运行状态",
+          "supplyLiquidTemp": "供液温度(℃)",
+          "returnLiquidTemp": "回液温度(℃)",
+          "systemEvap1InletTemp": "系统蒸发1进口温度(℃)",
+          "systemEvap2InletTemp": "系统蒸发2进口温度(℃)",
+          "evapOutlet1Temp": "蒸发出口1温度(℃)",
+          "evapOutlet2Temp": "蒸发出口2温度(℃)",
+          "condenser1TempHighPressure1": "冷凝温度1/高压1压力(℃/bar)",
+          "condenser2TempHighPressure2": "冷凝温度2/高压2压力(℃/bar)",
+          "throttle1ElecExpansionOpening": "节流1电膨当前开度(步)",
+          "throttle2ElecExpansionOpening": "节流2电膨当前开度(步)",
+          "ambientTemp": "环境温度(℃)",
+          "supplyWaterPressure": "供水压力(bar)",
+          "returnWaterPressure": "回水压力(bar)",
+          "operatingMode": "工作模式",
+          "coolingMode": "制冷方式",
+          "coolingSetValue": "制冷设置值(℃)",
+          "coolingControlHysteresis": "制冷控制回差(℃)",
+          "heatingSetValue": "制热设置值(℃)",
+          "heatingControlHysteresis": "制热控制回差(℃)",
+          "tempControlTarget": "控温对象",
+          "highLiquidTempPoint": "液温过高点(℃)",
+          "lowLiquidTempPoint": "液温过低点(℃)",
+          "lowReturnLiquidPressurePoint": "回液压力过低点(bar)",
+          "highOutletLiquidPressurePoint": "出液压力过高点(bar)",
+          "remoteSignal": "远程信号",
+          "autoRestartDelayTime": "自启动延时时间(s)",
+          "communicationAddress": "通信地址",
+          "baudRate": "波特率",
+          "lowFlowPumpCutOffAlarmValue": "流量低切泵报警值",
+          "highConductivityPoint": "电导率过高点",
+          "conductivityResetHysteresis": "电导率复位回差",
+          "relayOutputStatus_b0": "供水泵",
+          "relayOutputStatus_b1": "供水泵2",
+          "relayOutputStatus_b2": "风机1",
+          "relayOutputStatus_b3": "风机2",
+          "relayOutputStatus_b4": "加热带1",
+          "relayOutputStatus_b5": "加热管",
+          "relayOutputStatus_b6": "报警输出",
+          "relayOutputStatus_b7": "补液电磁阀",
+          "relayOutputStatus_b8": "补液泵",
+          "relayOutputStatus_b9": "加热带2",
+          "faultStatus1_b2": "系统1低压",
+          "faultStatus1_b3": "系统2低压",
+          "faultStatus1_b4": "压机过载",
+          "faultStatus1_b5": "液位故障",
+          "faultStatus1_b6": "供水泵过载",
+          "faultStatus1_b7": "供水泵2过载",
+          "faultStatus1_b9": "加热管故障",
+          "faultStatus1_b10": "风机1过载",
+          "faultStatus1_b11": "风机2过载",
+          "faultStatus1_b12": "相序错误",
+          "faultStatus1_b13": "备用故障",
+          "faultStatus1_b14": "流量故障",
+          "faultStatus1_b15": "气体压差故障",
+          "faultStatus2_b0": "液温探头故障",
+          "faultStatus2_b1": "回液探头故障",
+          "faultStatus2_b2": "蒸进1探头故障",
+          "faultStatus2_b3": "蒸进2探头故障",
+          "faultStatus2_b4": "蒸出1探头故障",
+          "faultStatus2_b5": "蒸出2探头故障",
+          "faultStatus2_b6": "冷凝1探头故障",
+          "faultStatus2_b7": "冷凝2探头故障",
+          "faultStatus2_b8": "液温过高",
+          "faultStatus2_b10": "高压故障",
+          "faultStatus2_b11": "高压2故障",
+          "faultStatus2_b12": "高压报警锁定",
+          "faultStatus2_b13": "高压报警锁定",
+          "faultStatus2_b14": "2#冷凝温度未建立",
+          "faultStatus3_b0": "供水压力传感器故障",
+          "faultStatus3_b1": "补水压力传感器故障",
+          "faultStatus3_b2": "电导率传感器故障",
+          "faultStatus3_b3": "电导率过高",
+          "faultStatus3_b4": "主板IIC出错",
+          "faultStatus3_b6": "变频器1通讯故障",
+          "faultStatus3_b7": "变频器1其它故障",
+          "faultStatus3_b8": "变频器2通讯故障",
+          "faultStatus3_b9": "变频器2其它故障",
+          "faultStatus3_b12": "回水压力过低故障",
+          "faultStatus3_b13": "供水压力过高故障",
+          "faultStatus3_b14": "液温过低",
+          "faultStatus3_b15": "第三方通讯故障",
+          "faultStatus4_b0": "环温探头故障",
+          "faultStatus4_b1": "水泵变频器通讯故障",
+          "faultStatus4_b2": "水泵变频器其它故障",
+          "faultStatus4_b3": "低压1传感器故障",
+          "faultStatus4_b4": "低压2传感器故障",
+          "faultStatus4_b5": "高压1传感器故障",
+          "faultStatus4_b6": "高压2传感器故障",
+          "faultStatus4_b12": "三相电模块通讯故障",
+          "faultStatus4_b13": "三相电模块其它故障",
+          "faultStatus5_b0": "风机1故障",
+          "faultStatus5_b1": "风机2故障",
+          "faultStatus5_b2": "风机3故障",
+          "faultStatus5_b3": "风机4故障",
+          "faultStatus5_b4": "风机5故障",
+          "faultStatus5_b5": "风机6故障",
+          "faultStatus5_b6": "风机模块通讯故障",
+          "faultStatus5_b9": "泵1流量低",
+          "faultStatus5_b10": "泵2流量低",
+          "faultStatus5_b11": "流量低",
+          "faultStatus5_b12": "漏液报警",
+          "faultStatus5_b13": "排气温度探头故障",
+          "faultStatus5_b14": "排气温度过高",
+          "faultStatus5_b15": "排气温度过高锁定"
+        },
+        "bits": {
+          "faultStatus1": {
+            "2": "系统1低压",
+            "3": "系统2低压",
+            "4": "压机过载",
+            "5": "液位故障",
+            "6": "供水泵过载",
+            "7": "供水泵2过载",
+            "9": "加热管故障",
+            "10": "风机1过载",
+            "11": "风机2过载",
+            "12": "相序错误",
+            "13": "备用故障",
+            "14": "流量故障",
+            "15": "气体压差故障"
+          },
+          "faultStatus2": {
+            "0": "液温探头故障",
+            "1": "回液探头故障",
+            "2": "蒸进1探头故障",
+            "3": "蒸进2探头故障",
+            "4": "蒸出1探头故障",
+            "5": "蒸出2探头故障",
+            "6": "冷凝1探头故障",
+            "7": "冷凝2探头故障",
+            "8": "液温过高",
+            "10": "高压故障",
+            "11": "高压2故障",
+            "12": "高压报警锁定",
+            "13": "高压报警锁定",
+            "14": "2#冷凝温度未建立"
+          },
+          "faultStatus3": {
+            "0": "供水压力传感器故障",
+            "1": "补水压力传感器故障",
+            "2": "电导率传感器故障",
+            "3": "电导率过高",
+            "4": "主板IIC出错",
+            "6": "变频器1通讯故障",
+            "7": "变频器1其它故障",
+            "8": "变频器2通讯故障",
+            "9": "变频器2其它故障",
+            "12": "回水压力过低故障",
+            "13": "供水压力过高故障",
+            "14": "液温过低",
+            "15": "第三方通讯故障"
+          },
+          "faultStatus4": {
+            "0": "环温探头故障",
+            "1": "水泵变频器通讯故障",
+            "2": "水泵变频器其它故障",
+            "3": "低压1传感器故障",
+            "4": "低压2传感器故障",
+            "5": "高压1传感器故障",
+            "6": "高压2传感器故障",
+            "12": "三相电模块通讯故障",
+            "13": "三相电模块其它故障"
+          },
+          "faultStatus5": {
+            "0": "风机1故障",
+            "1": "风机2故障",
+            "2": "风机3故障",
+            "3": "风机4故障",
+            "4": "风机5故障",
+            "5": "风机6故障",
+            "6": "风机模块通讯故障",
+            "9": "泵1流量低",
+            "10": "泵2流量低",
+            "11": "流量低",
+            "12": "漏液报警",
+            "13": "排气温度探头故障",
+            "14": "排气温度过高",
+            "15": "排气温度过高锁定"
+          }
+        },
+        "valueMap": {
+          "refAddress": { "1": "第1堆", "2": "第2堆" },
+          "commStatus": { "0": "正常", "1": "通讯异常" },
+          "operatingStatus": { "0": "空闲", "1": "准备启动", "2": "运行", "3": "延时停机", "4": "故障" },
+          "relayOutputStatus_b0": { "0": "停机", "1": "运行" },
+          "relayOutputStatus_b1": { "0": "停机", "1": "运行" },
+          "relayOutputStatus_b2": { "0": "停机", "1": "运行" },
+          "relayOutputStatus_b3": { "0": "停机", "1": "运行" },
+          "relayOutputStatus_b4": { "0": "停机", "1": "运行" },
+          "relayOutputStatus_b5": { "0": "停机", "1": "运行" },
+          "relayOutputStatus_b6": { "0": "故障", "1": "正常" },
+          "relayOutputStatus_b7": { "0": "停机", "1": "运行" },
+          "relayOutputStatus_b8": { "0": "停机", "1": "运行" },
+          "relayOutputStatus_b9": { "0": "停机", "1": "运行" },
+          "operatingMode": { "0": "通过启动/停止进行开/关机控制", "1": "待机情况下，延时自动启动机组", "2": "远程控制开关闭合时，延时自动启动机组" },
+          "coolingMode": { "0": "关机模式", "1": "制冷", "2": "加热", "3": "自循环", "4": "自动" },
+          "tempControlTarget": { "0": "出液", "1": "回液" },
+          "remoteSignal": { "0": "禁用", "1": "启用" },
+          "baudRate": { "0": "9600", "1": "4800", "2": "19200" },
+          "faultStatus1_b2": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b3": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b4": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b5": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b6": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b7": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b9": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b10": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b11": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b12": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b13": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b14": { "0": "无故障", "1": "故障" },
+          "faultStatus1_b15": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b0": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b1": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b2": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b3": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b4": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b5": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b6": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b7": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b8": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b10": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b11": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b12": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b13": { "0": "无故障", "1": "故障" },
+          "faultStatus2_b14": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b0": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b1": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b2": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b3": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b4": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b6": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b7": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b8": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b9": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b12": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b13": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b14": { "0": "无故障", "1": "故障" },
+          "faultStatus3_b15": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b0": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b1": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b2": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b3": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b4": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b5": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b6": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b12": { "0": "无故障", "1": "故障" },
+          "faultStatus4_b13": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b0": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b1": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b2": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b3": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b4": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b5": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b6": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b9": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b10": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b11": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b12": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b13": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b14": { "0": "无故障", "1": "故障" },
+          "faultStatus5_b15": { "0": "无故障", "1": "故障" }
+        }
+      },
+      "common": {
+        "run": "运行",
+        "stop": "停机",
+        "normal": "正常",
+        "fault": "故障",
+        "bits": {
+          "relayOutputStatus": {
+            "0": "供水泵",
+            "1": "供水泵2",
+            "2": "风机1",
+            "3": "风机2",
+            "4": "加热带1",
+            "5": "加热管",
+            "6": "报警输出",
+            "7": "补液电磁阀",
+            "8": "补液泵",
+            "9": "加热带2"
+          }
+        }
+      }
+    }
+    ,
+    "fire": {
+      "title": "堆消防设备",
+      "subtitle": "堆消防设备数据监控",
+      "blockSelect": "堆选择",
+      "fieldName": "字段名称",
+      "fieldValue": "字段值"
+    }
+    ,
+    "deh": {
+      "title": "除湿空调",
+      "subtitle": "除湿系统数据监控",
+      "blockSelect": "堆选择",
+      "type": "除湿空调型号",
+      "selectType": "请选择除湿空调型号",
+      "commStatus": "通讯状态",
+      "fieldName": "字段名称",
+      "fieldValue": "字段值",
+      "unknownType": "未知型号",
+      "noData": "暂无除湿空调数据",
+      "templateDataTip": "当前显示的是所选除湿空调型号的数据结构模板",
+      "types": {
+        "none": "无除湿空调",
+        "sanhetongfei": "三河同飞除湿空调",
+        "yingweikeU3EC": "英维克U3-EC除湿机",
+        "ej000113": "除湿机-E-J-000113"
+      },
+      "fields": {
+        "dataLength": "数据长度",
+        "dehAddress": "除湿空调地址",
+        "commStatus": "除湿空调通讯状态",
+        "machineStatus": "整机状态",
+        "internalFan": "内风机",
+        "externalFan": "外风机",
+        "compressor": "压缩机",
+        "electricHeater": "电加热",
+        "defrostTemp": "融霜温度(℃)",
+        "condensationTemp": "冷凝温度(℃)",
+        "cabinetTemp": "柜内温度(℃)",
+        "cabinetHumidity": "柜内湿度(%)",
+        "airOutletTemp": "出风温度(℃)",
+        "highTempAlarm": "高温告警",
+        "lowTempAlarm": "低温告警",
+        "highHumidityAlarm": "高湿告警",
+        "lowHumidityAlarm": "低湿告警",
+        "coilAntiFreeze": "盘管防冻",
+        "defrostProbeFault": "容霜探头故障",
+        "condensationProbeFault": "冷凝探头故障",
+        "cabinetTempProbeFault": "柜内温度探头故障",
+        "airOutletHumidityProbeFault": "出风湿度探头故障",
+        "humidityProbeFault": "湿度探头故障",
+        "internalFanFault": "内风机故障",
+        "compressorFault": "压缩机故障",
+        "highPressureAlarm": "高压告警",
+        "lowPressureAlarm": "低压告警",
+        "phaseSequenceAlarm": "相序报警",
+        "refrigerationPoint": "制冷点(℃)",
+        "refrigerationHysteresis": "制冷回差(℃)",
+        "heatingPoint": "加热点(℃)",
+        "heatingHysteresis": "加热回差(℃)",
+        "dehumidificationPoint": "除湿点(%)",
+        "dehumidificationHysteresis": "除湿回差(%)",
+        "cabinetTempOverheatPoint": "柜内温度过高点(℃)",
+        "cabinetTempUnderheatPoint": "柜内温度过低点(℃)",
+        "cabinetHumidityOverheatPoint": "柜内湿度过高点(%)",
+        "monitoringSwitch": "监控开关机",
+        "forcedMode": "强制模式"
+      },
+      "valueMap": {
+        "dehAddress": {
+          "1": "第1堆",
+          "2": "第2堆"
+        },
+        "commStatus": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "machineStatus": {
+          "0": "停止",
+          "1": "运行"
+        },
+        "internalFan": {
+          "0": "停止",
+          "1": "运行"
+        },
+        "externalFan": {
+          "0": "停止",
+          "1": "运行"
+        },
+        "compressor": {
+          "0": "停止",
+          "1": "运行"
+        },
+        "electricHeater": {
+          "0": "停止",
+          "1": "运行"
+        },
+        "highTempAlarm": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "lowTempAlarm": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "highHumidityAlarm": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "lowHumidityAlarm": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "coilAntiFreeze": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "defrostProbeFault": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "condensationProbeFault": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "cabinetTempProbeFault": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "airOutletHumidityProbeFault": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "humidityProbeFault": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "internalFanFault": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "compressorFault": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "highPressureAlarm": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "lowPressureAlarm": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "phaseSequenceAlarm": {
+          "0": "正常",
+          "1": "报警"
+        },
+        "monitoringSwitch": {
+          "0": "关机",
+          "1": "开机"
+        },
+        "forcedMode": {
+          "0": "自动",
+          "1": "强制制冷",
+          "2": "强制制热",
+          "3": "强制送风",
+          "4": "强制待机"
+        }
+      }
+    }
+  ,
+    "meter": {
+      "title": "电表",
+      "subtitle": "堆电表数据监控",
+      "blockSelect": "堆选择",
+      "type": "电表型号",
+      "selectType": "请选择电表型号",
+      "fieldName": "字段名称",
+      "fieldValue": "字段值",
+      "unknownType": "未知型号",
+      "noData": "暂无电表数据",
+      "templateDataTip": "当前显示的是所选电表型号的数据结构模板",
+      "types": {
+        "none": "无电表",
+        "dtsd1352": "安科瑞DTSD1352"
+      }
+    }
+  },
+  "dashboardPage": {
+    "header": {
+      "mainTitle": "东方日升电池管理系统",
+      "subTitle": "RISEN ENERGY STORAGE SYSTEM-BMS"
+    },
+    "modules": {
+      "sd": { "label": "SD卡" },
+      "linkStatus": { "label": "连接状态" }
+    },
+    "sections": {
+      "realtimeStatus": "实时状态数据",
+      "peripheralOverview": "外围设备概览",
+      "clusterStatusMonitor": "电池簇状态监控"
+    },
+    "labels": {
+      "blockVoltage": "堆电压",
+      "blockCurrent": "堆电流",
+      "faultStatus": "故障状态",
+      "cluster": "簇{0}",
+      "configClustersCount": "(配置簇数: {0})",
+      "notSelected": "未选择"
+    },
+    "states": {
+      "charging": "充电中",
+      "discharging": "放电中",
+      "idle": "静置"
+    },
+    "systemMode": {
+      "idle": "静置",
+      "charging": "充电",
+      "discharging": "放电",
+      "openCircuit": "开路",
+      "selfCheck": "自检"
+    },
+    "faultState": {
+      "none": "无故障",
+      "minor": "轻微故障",
+      "general": "一般故障",
+      "critical": "严重故障"
+    },
+    "sdCard": {
+      "status": {
+        "pathNotFound": "SD卡路径不存在",
+        "writeSuccess": "写成功",
+        "writeFailed": "写失败",
+        "unknown": "未知"
+      }
+    },
+    "peripherals": {
+      "blockPcs": "堆PCS",
+      "blockCooling": "堆制冷设备",
+      "meter": "电表",
+      "other": "其他",
+      "status": "外设状态"
+    },
+    "kpi": {
+      "stackStatus": "堆运行状态",
+      "totalCharge": "累计充电量(kWh)",
+      "totalDischarge": "累计放电量(kWh)",
+      "ratedEnergy": "堆额定电量(kWh)",
+      "dailyCharge": "当日累计充电电量(kWh)",
+      "dailyDischarge": "当日累计放电电量(kWh)",
+      "realtimePower": "堆实时功率(kW)",
+      "cycleCount": "电池系统循环次数",
+      "maxChargePower": "允许充电功率(kW)",
+      "maxDischargePower": "允许放电功率(kW)",
+      "clustersTotal": "簇总数",
+      "clustersOnline": "在线簇数"
+    },
+    "common": {
+      "unknown": "未知"
     }
   }
 }

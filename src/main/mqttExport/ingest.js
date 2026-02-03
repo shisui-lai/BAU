@@ -49,6 +49,7 @@ export function processCellVolt({ topic, hex, blockId, clusterId, baseConfig, da
   let perBmuExpected = 0
   for (let a = 0; a < perBmu; a++) perBmuExpected += counts[a] || 0
   const perBmuOk = dataList.every((p) => p.cells.length === perBmuExpected)
+  // if (false && total === expectedTotal && perBmuOk) {
   if (total === expectedTotal && perBmuOk) {
     cacheSampleSemantic('cellVoltage', dataList, deviceId, Date.now(), baseConfig)
   }
@@ -89,6 +90,7 @@ export function processCellTemp({ topic, hex, blockId, clusterId, baseConfig, da
   let perBmuExpected = 0
   for (let a = 0; a < perBmu; a++) perBmuExpected += counts[a] || 0
   const perBmuOk = dataList.every((p) => p.cells.length === perBmuExpected)
+  // if (false && total === expectedTotal && perBmuOk) {
   if (total === expectedTotal && perBmuOk) {
     cacheSampleSemantic('cellTemperature', dataList, deviceId, Date.now(), baseConfig)
   }
@@ -129,6 +131,7 @@ export function processCellSoc({ topic, hex, blockId, clusterId, baseConfig, dat
   let perBmuExpected = 0
   for (let a = 0; a < perBmu; a++) perBmuExpected += counts[a] || 0
   const perBmuOk = dataList.every((p) => p.cells.length === perBmuExpected)
+  // if (false && total === expectedTotal && perBmuOk) {
   if (total === expectedTotal && perBmuOk) {
     cacheSampleSemantic('cellSOC', dataList, deviceId, Date.now(), baseConfig)
   }
@@ -169,6 +172,7 @@ export function processCellSoh({ topic, hex, blockId, clusterId, baseConfig, dat
   let perBmuExpected = 0
   for (let a = 0; a < perBmu; a++) perBmuExpected += counts[a] || 0
   const perBmuOk = dataList.every((p) => p.cells.length === perBmuExpected)
+  // if (false && total === expectedTotal && perBmuOk) {
   if (total === expectedTotal && perBmuOk) {
     cacheSampleSemantic('cellSOH', dataList, deviceId, Date.now(), baseConfig)
   }

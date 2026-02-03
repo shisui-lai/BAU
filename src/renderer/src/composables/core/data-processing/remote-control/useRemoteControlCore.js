@@ -639,8 +639,23 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
 
   // 抽象：从选择键解析出设备地址（blockNumber, clusterNumber）
   function getSelectedAddress() {
-    // 如果未选择，尝试使用 dataSource.defaultAddress 作为回退
+    const readTemplate = remoteControlConfig?.dataSource?.readTopicTemplate
+    const templateNeedDevice = templateNeedsDevice(readTemplate)
     const defaultAddress = remoteControlConfig?.dataSource?.defaultAddress
+
+    if (!templateNeedDevice) {
+      if (defaultAddress && typeof defaultAddress.blockNumber === 'number') {
+        return {
+          blockNumber: defaultAddress.blockNumber,
+          clusterNumber: defaultAddress.clusterNumber ?? (selectorMode === 'cluster' ? 1 : 0)
+        }
+      }
+      return {
+        blockNumber: 1,
+        clusterNumber: selectorMode === 'cluster' ? 1 : 0
+      }
+    }
+
     if (
       !selectedKeyRef ||
       typeof selectedKeyRef.value === 'undefined' ||

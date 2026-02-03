@@ -95,24 +95,13 @@ const storageOptions = computed(() => [
   { label: t('topBar.export.enableRaw'), value: 'raw' }
 ])
 
-const STORAGE_KEY = 'app_topbar_storage_enabled'
-const getStoredEnabled = () => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : ['semantic', 'raw']
-  } catch (e) {
-    return ['semantic', 'raw']
-  }
-}
-
-const storageEnabled = ref(getStoredEnabled())
+const storageEnabled = ref(['semantic'])
 function sendExportConfig() {
   const semantic = storageEnabled.value.includes('semantic')
   const raw = storageEnabled.value.includes('raw')
   window.electron?.ipcRenderer?.send('set-export-config', { semantic, raw })
 }
 watch(storageEnabled, (newVal) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal))
   sendExportConfig()
 })
 watch(() => mqttStore.isConnected, (val) => {
@@ -147,12 +136,24 @@ onUnmounted(() => {
 
       <!-- 首页按钮 -->
       <button class="p-link layout-topbar-button home-button" @click="$router.push('/dashboard')" title="返回首页">
-        <i class="pi pi-th-large"></i>
+        <i class="pi pi-home"></i>
       </button>
+      
+      <!-- 存储使能多选框（置于最前） -->
+      <div class="storage-enable-area">
+        <MultiSelect
+          v-model="storageEnabled"
+          :options="storageOptions"
+          optionLabel="label"
+          optionValue="value"
+          :placeholder="t('topBar.storageEnable')"
+          class="cluster-write-multiselect"
+          :maxSelectedLabels="0"
+        />
+      </div>
       
       <!-- 簇选择器区域 - 根据页面类型显示 -->
       <div class="cluster-selector-area" v-if="clusterStore.showClusterSelector">
-        <!-- 查看簇单选下拉 -->
         <div class="cluster-view-selector">
           <Dropdown
             v-model="clusterStore.selectedClusterForView"
@@ -164,8 +165,6 @@ onUnmounted(() => {
             :disabled="clusterStore.availableClusters.length === 0"
           />
         </div>
-        
-        <!-- 批量下发多选框 -->
         <div class="cluster-write-selector" v-if="clusterStore.showWriteSelector">
           <MultiSelect
             v-model="clusterStore.selectedClustersForWrite"
@@ -179,19 +178,6 @@ onUnmounted(() => {
             :maxSelectedLabels="0"
           />
         </div>
-      </div>
-
-      <!-- 存储使能多选框（位于簇选择器与下发选择之后，靠左排布） -->
-      <div class="storage-enable-area">
-        <MultiSelect
-          v-model="storageEnabled"
-          :options="storageOptions"
-          optionLabel="label"
-          optionValue="value"
-          :placeholder="t('topBar.storageEnable')"
-          class="cluster-write-multiselect"
-          :maxSelectedLabels="0"
-        />
       </div>
       
       <!-- 堆选择器区域 - 根据页面类型显示 -->
@@ -416,6 +402,22 @@ onUnmounted(() => {
   letter-spacing: 0.5px;
   line-height: 1;
   margin-top: 0.25rem;
+}
+
+/* 首页按钮专属覆盖：提高特异性并置于通用规则之后，确保生效 */
+.layout-topbar-button.home-button {
+  margin-left: 0rem;
+  border-radius: 0;
+  width: 2rem;
+  height: 2.8rem;
+  color: var(--primary-color);
+}
+.layout-topbar-button.home-button i {
+  font-size: 2.2rem;
+}
+.layout-topbar-button.home-button:enabled:hover {
+  background-color: transparent;
+  color: var(--primary-color);
 }
 
 /* 版本信息 */

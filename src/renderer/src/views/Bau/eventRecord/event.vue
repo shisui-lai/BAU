@@ -456,9 +456,37 @@ const isInvalidTime = (val) => {
 }
 
 const formatTimeValue = (val) => {
-  // 参考reference项目：如果是数字且大于0，格式化为"xx 分钟"
   if (typeof val === 'number' && val > 0) {
-    return `${val} 分钟`
+    const n = val
+    if (locale.value === 'zh') return `${n} 分钟`
+    return t(n === 1 ? 'eventTime.duration.minute' : 'eventTime.duration.minute_plural', { n })
+  }
+  if (typeof val === 'string') {
+    if (locale.value !== 'zh') {
+      const parts = []
+      const dm = val.match(/(\d+)\s*天/)
+      if (dm) {
+        const n = parseInt(dm[1])
+        parts.push(t(n === 1 ? 'eventTime.duration.day' : 'eventTime.duration.day_plural', { n }))
+      }
+      const hm = val.match(/(\d+)\s*小时/)
+      if (hm) {
+        const n = parseInt(hm[1])
+        parts.push(t(n === 1 ? 'eventTime.duration.hour' : 'eventTime.duration.hour_plural', { n }))
+      }
+      const mm = val.match(/(\d+)\s*分钟/)
+      if (mm) {
+        const n = parseInt(mm[1])
+        parts.push(t(n === 1 ? 'eventTime.duration.minute' : 'eventTime.duration.minute_plural', { n }))
+      }
+      const sm = val.match(/(\d+)\s*秒/)
+      if (sm) {
+        const n = parseInt(sm[1])
+        parts.push(t(n === 1 ? 'eventTime.duration.second' : 'eventTime.duration.second_plural', { n }))
+      }
+      if (parts.length) return parts.join(' ')
+    }
+    return val
   }
   return val
 }
@@ -483,8 +511,7 @@ const isGreaterThanZero = (val) => {
       const kbValue = parseFloat(kbMatch[1])
       return !isNaN(kbValue) && kbValue > 0
     }
-    // 检查是否为时间格式（如 '35分钟'）
-    const timeMatch = val.match(/^(\d+)\s*分钟/)
+    const timeMatch = val.match(/^(\d+)\s*(分钟|minute|minutes|hour|hours|day|days|second|seconds)/i)
     if (timeMatch) {
       const timeValue = parseInt(timeMatch[1])
       return !isNaN(timeValue) && timeValue > 0

@@ -4,6 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const net = require('net')
 const { ipcMain } = require('electron')
+import { diagLogger } from './diagnosticLogger.js'
 
 let ftpServer = null
 // 基于应用路径的FTP根目录隔离
@@ -15,6 +16,9 @@ let mainWindow = null
 // 添加日志确认路径
 console.log(`[FTP] 应用路径: ${appPath}`)
 console.log(`[FTP] FTP根目录: ${FTP_ROOT}`)
+try {
+  diagLogger.info('ftp-init', 'ready', { appPath, FTP_ROOT })
+} catch {}
 
 // 检查端口是否被占用
 function checkPortInUse(port) {
@@ -40,6 +44,9 @@ if (!fs.existsSync(FTP_ROOT)) {
 // 设置主窗口引用
 function setMainWindow(window) {
   mainWindow = window
+  try {
+    diagLogger.info('ftp-setMainWindow', 'set', { hasWindow: !!mainWindow })
+  } catch {}
 }
 
 // 获取FTP根目录
@@ -56,6 +63,9 @@ function notifyFileEvent(eventType, data) {
       timestamp: new Date().toISOString()
     })
   }
+  try {
+    diagLogger.info('ftp-file-event', eventType, data)
+  } catch {}
 }
 
 // 获取文件详细信息
@@ -125,10 +135,16 @@ function setupConnectionFileEvents(connection) {
         error: error.message,
         timestamp: new Date().toISOString()
       })
+      try {
+        diagLogger.error('ftp-STOR', 'failed', { fileName, error: error.message })
+      } catch {}
       return
     }
 
     console.log(`[FTP] 文件上传成功: ${fileName}`)
+    try {
+      diagLogger.info('ftp-STOR', 'success', { fileName })
+    } catch {}
 
     // 等待文件写入完成后再获取信息
     setTimeout(() => {
@@ -151,6 +167,9 @@ function setupConnectionFileEvents(connection) {
 
       // 通知前端
       notifyFileEvent('file-uploaded', enhancedFileInfo)
+      try {
+        diagLogger.info('ftp-uploaded', 'ready', enhancedFileInfo)
+      } catch {}
 
       // 如果文件有效，发送额外的就绪通知
       if (enhancedFileInfo.isValid) {
@@ -160,6 +179,9 @@ function setupConnectionFileEvents(connection) {
             message: `文件 "${fileName}" 已就绪，设备可通过MQTT指令下载升级`,
             fileInfo: enhancedFileInfo
           })
+          try {
+            diagLogger.info('ftp-file-ready', 'ok', { fileName })
+          } catch {}
         }, 500)
       }
     }, 100) // 等待100ms确保文件写入完成
@@ -169,6 +191,9 @@ function setupConnectionFileEvents(connection) {
   connection.on('RETR', (error, filePath) => {
     if (error) {
       console.error(`[FTP] 文件下载失败: ${filePath}`, error)
+      try {
+        diagLogger.error('ftp-RETR', 'failed', { filePath, error: error.message })
+      } catch {}
       return
     }
 
@@ -180,12 +205,18 @@ function setupConnectionFileEvents(connection) {
       filePath,
       timestamp: new Date().toISOString()
     })
+    try {
+      diagLogger.info('ftp-RETR', 'success', { fileName, filePath })
+    } catch {}
   })
 
   // 文件重命名事件
   connection.on('RNTO', (error, fileName) => {
     if (error) {
       console.error(`[FTP] 文件重命名失败: ${fileName}`, error)
+      try {
+        diagLogger.error('ftp-RNTO', 'failed', { fileName, error: error.message })
+      } catch {}
       return
     }
 
@@ -194,6 +225,9 @@ function setupConnectionFileEvents(connection) {
       fileName,
       timestamp: new Date().toISOString()
     })
+    try {
+      diagLogger.info('ftp-RNTO', 'success', { fileName })
+    } catch {}
   })
 }
 
@@ -201,11 +235,17 @@ function setupConnectionFileEvents(connection) {
 ipcMain.handle('ftp-start', async (_, { host, port, user, pass }) => {
   try {
     console.log(`[FTP] 尝试启动FTP服务器: ${host}:${port}`)
+    try {
+      diagLogger.info('ftp-start', 'try', { host, port })
+    } catch {}
 
     // 检查端口是否被占用
     const portInUse = await checkPortInUse(port)
     if (portInUse && !ftpServer) {
       console.log(`[FTP] 端口 ${port} 被其他程序占用`)
+      try {
+        diagLogger.warn('ftp-start', 'port-in-use', { port })
+      } catch {}
       return { success: false, message: `端口 ${port} 被占用，请检查是否有其他FTP服务器在运行` }
     }
 
@@ -222,9 +262,15 @@ ipcMain.handle('ftp-start', async (_, { host, port, user, pass }) => {
         console.error(`[FTP] 关闭现有服务器失败:`, closeError.message)
         ftpServer = null // 强制清理状态
       }
+      try {
+        diagLogger.warn('ftp-start', 'restart-existing')
+      } catch {}
     }
 
     console.log(`[FTP] 开始启动FTP服务器: ${host}:${port}`)
+    try {
+      diagLogger.info('ftp-start', 'begin', { host, port })
+    } catch {}
 
     ftpServer = new FtpSrv({
       url: `ftp://0.0.0.0:${port}`,
@@ -238,13 +284,22 @@ ipcMain.handle('ftp-start', async (_, { host, port, user, pass }) => {
     // 用户认证
     ftpServer.on('login', ({ connection, username, password }, resolve, reject) => {
       console.log(`[FTP] 登录尝试: ${username}`)
+      try {
+        diagLogger.info('ftp-login', 'attempt', { username })
+      } catch {}
 
       if (username !== user || password !== pass) {
         console.log(`[FTP] 登录失败: 凭证错误`)
+        try {
+          diagLogger.warn('ftp-login', 'failed', { username })
+        } catch {}
         return reject(new Error('凭证错误'))
       }
 
       console.log(`[FTP] 登录成功: ${username}`)
+      try {
+        diagLogger.info('ftp-login', 'success', { username })
+      } catch {}
 
       //  为每个连接添加文件事件监听
       setupConnectionFileEvents(connection)
@@ -255,16 +310,25 @@ ipcMain.handle('ftp-start', async (_, { host, port, user, pass }) => {
     // 文件下载优化处理
     ftpServer.on('client-error', ({ connection, context, error }) => {
       console.log(`[FTP] 客户端错误:`, error.message)
+      try {
+        diagLogger.error('ftp-client-error', error.message)
+      } catch {}
     })
 
     await ftpServer.listen()
 
     console.log(`[FTP] 服务器启动成功: ${host}:${port}`)
+    try {
+      diagLogger.info('ftp-start', 'success', { host, port })
+    } catch {}
     return { success: true, message: 'FTP服务器启动成功' }
   } catch (error) {
     console.error(`[FTP] 启动失败:`, error.message)
     // 清理状态
     ftpServer = null
+    try {
+      diagLogger.error('ftp-start', 'failed', { error: error.message })
+    } catch {}
     return { success: false, message: `启动失败: ${error.message}` }
   }
 })
@@ -273,6 +337,9 @@ ipcMain.handle('ftp-start', async (_, { host, port, user, pass }) => {
 ipcMain.handle('ftp-stop', async () => {
   try {
     if (!ftpServer) {
+      try {
+        diagLogger.warn('ftp-stop', 'not-running')
+      } catch {}
       return { success: false, message: 'FTP服务器未运行' }
     }
 
@@ -281,11 +348,17 @@ ipcMain.handle('ftp-stop', async () => {
     ftpServer = null
 
     console.log(`[FTP] 服务器停止成功`)
+    try {
+      diagLogger.info('ftp-stop', 'success')
+    } catch {}
     return { success: true, message: 'FTP服务器停止成功' }
   } catch (error) {
     console.error(`[FTP] 停止失败:`, error.message)
     // 确保状态清理
     ftpServer = null
+    try {
+      diagLogger.error('ftp-stop', 'failed', { error: error.message })
+    } catch {}
     return { success: false, message: `停止失败: ${error.message}` }
   }
 })
@@ -293,6 +366,9 @@ ipcMain.handle('ftp-stop', async () => {
 // 查询FTP服务器状态
 ipcMain.handle('ftp-status', async () => {
   const isRunning = ftpServer !== null
+  try {
+    diagLogger.debug('ftp-status', '', { isRunning })
+  } catch {}
   return {
     success: true,
     isRunning,
@@ -313,6 +389,9 @@ ipcMain.handle('choose-default-FTP-dir', async () => {
   if (!result.canceled && result.filePaths.length > 0) {
     FTP_ROOT = result.filePaths[0]
     console.log(`[FTP] 根目录已更改为: ${FTP_ROOT}`)
+    try {
+      diagLogger.info('ftp-root-changed', FTP_ROOT)
+    } catch {}
     return { success: true, path: FTP_ROOT }
   }
 
@@ -333,9 +412,15 @@ ipcMain.handle('ftp-get-files', async () => {
       return getFileInfo(filePath, fileName)
     })
 
+    try {
+      diagLogger.debug('ftp-get-files', '', { count: fileList.length })
+    } catch {}
     return { success: true, files: fileList }
   } catch (error) {
     console.error('[FTP] 获取文件列表失败:', error)
+    try {
+      diagLogger.error('ftp-get-files', 'failed', { error: error.message })
+    } catch {}
     return { success: false, message: error.message, files: [] }
   }
 })
@@ -348,9 +433,15 @@ ipcMain.handle('ftp-delete-file', async (_, fileName) => {
 
     console.log(`[FTP] 文件删除成功: ${fileName}`)
     notifyFileEvent('file-deleted', { fileName })
+    try {
+      diagLogger.info('ftp-delete-file', 'success', { fileName })
+    } catch {}
     return { success: true, message: '文件删除成功' }
   } catch (error) {
     console.error(`[FTP] 文件删除失败: ${fileName}`, error)
+    try {
+      diagLogger.error('ftp-delete-file', 'failed', { fileName, error: error.message })
+    } catch {}
     return { success: false, message: error.message }
   }
 })

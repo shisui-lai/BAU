@@ -63,7 +63,7 @@
                   <div class="subgroups-container">
                     <div v-for="sg in group.subGroups" :key="sg.title" class="subgroup-section">
                       <div class="subgroup-header">
-                        <h6 class="subgroup-title">{{ sg.title }}</h6>
+                        <h6 class="subgroup-title">{{ sg.titleTranslated || sg.title }}</h6>
                       </div>
                       <div class="items-grid">
                         <div 
@@ -277,6 +277,7 @@ const categorizeMaxMinItems = (items = []) => {
     // 第一排：堆单体电压、堆单体温度
     {
       title: '堆单体电压相关',
+      titleTranslated: t('config.blockInfoPage.maxMinSubGroups.cellVoltageRelated'),
       match: new Set([
         '堆单体电压最大值', '堆单体电压最大值簇号', '堆单体电压最大值节号',
         '堆单体电压最小值', '堆单体电压最小值簇号', '堆单体电压最小值节号',
@@ -285,6 +286,7 @@ const categorizeMaxMinItems = (items = []) => {
     },
     {
       title: '堆单体温度相关',
+      titleTranslated: t('config.blockInfoPage.maxMinSubGroups.cellTempRelated'),
       match: new Set([
         '堆单体温度最大值', '堆单体温度最大值簇号', '堆单体温度最大值节号',
         '堆单体温度最小值', '堆单体温度最小值簇号', '堆单体温度最小值节号',
@@ -294,15 +296,18 @@ const categorizeMaxMinItems = (items = []) => {
     // 第二排：簇电压、簇SOC
     {
       title: '簇电压相关',
+      titleTranslated: t('config.blockInfoPage.maxMinSubGroups.clusterVoltageRelated'),
       match: new Set(['簇电压最大值', '簇电压最大值簇号', '簇电压最小值', '簇电压最小值簇号'])
     },
     {
       title: '簇SOC相关',
+      titleTranslated: t('config.blockInfoPage.maxMinSubGroups.clusterSocRelated'),
       match: new Set(['簇SOC最大值', '簇SOC最大值簇号', '簇SOC最小值', '簇SOC最小值簇号'])
     },
     // 第三排：允许与跳闸限制相关参数
     {
       title: '堆允许与跳闸限制相关',
+      titleTranslated: t('config.blockInfoPage.maxMinSubGroups.allowedTripsRelated'),
       match: new Set([
         '堆最大允许充电电流', '堆最大允许放电电流',
         '堆最大允许充电电压', '堆最小允许放电电压',
@@ -315,6 +320,7 @@ const categorizeMaxMinItems = (items = []) => {
   return groups
     .map(g => ({
       title: g.title,
+      titleTranslated: g.titleTranslated,
       items: items.filter(it => g.match.has(labelOf(it)))
         .map(it => ({
           ...it,

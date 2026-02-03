@@ -23,6 +23,12 @@ export function usePageTypeDetection() {
     '/cluster/version': 'clusterread', // 版本信息页面（备用路由）
     '/Cluster/Brokenwire': 'clusterread', // 掉线信息页面
     '/cluster/brokenwire': 'clusterread', // 掉线信息页面（备用路由）
+    '/Cluster/Peripheral/Pcs': 'clusterread',
+    '/cluster/peripheral/pcs': 'clusterread',
+    '/Cluster/Peripheral/Ref': 'clusterread',
+    '/cluster/peripheral/ref': 'clusterread',
+    '/Cluster/Peripheral/Dehumi': 'clusterread',
+    '/cluster/peripheral/dehumi': 'clusterread',
     '/Cluster/Fault': 'clusterread', // 故障页面
     '/cluster/fault': 'clusterread', // 故障页面（备用路由）
     '/FaultOverview': 'standalone', // 故障总览页面（独立页面：不显示顶栏选择器，在页面内提供选择器）
@@ -32,8 +38,11 @@ export function usePageTypeDetection() {
     // BAU地址探测页面（独立页面：无选择器）
     '/Device/BauAddressDetection': 'standalone',
     '/block/device-management': 'standalone',
-    // PCS外设页面（堆级只读页面：只显示堆选择器）
     '/Peripheral/BlockPcs': 'blockread',
+    '/Peripheral/BlockMeter': 'blockread',
+    '/Peripheral/BlockFire': 'blockread',
+    '/Peripheral/BlockRef': 'blockread',
+    '/Peripheral/BlockDeh': 'blockread',
 
     // ================== 簇级遥调、遥控页面 (cluster-type) ==================
     // 需要显示簇选择器和下发多选框的页面（可读写）

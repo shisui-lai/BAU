@@ -9,7 +9,7 @@ import { useRemoteControlCore, serializeParameterData, parseParameterReadRespons
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useRawInputCache, isNumericType, validateNumericInput, validateIPv4 } from '@/composables/utils/useParameterInput'
 import { useBlockStore } from '@/stores/device/blockStore'
-import { BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_SOC_PARAM_R, BLOCK_PORT_CFG_R, BLOCK_COMMON_PARAM_R } from '../../../../main/table.js'
+import { BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_SOC_PARAM_R, BLOCK_REF_PARAM_R, BLOCK_PORT_CFG_R, BLOCK_COMMON_PARAM_R } from '../../../../main/table.js'
 import { useBlockCommonParam } from '@/composables/core/data-processing/parameter-management/useBlockCommonParam'
 import { DEFAULT_BLOCK_CONFIG_PARAMS } from '@/configs/parameterDefaults'
 import Button from 'primevue/button'
@@ -19,6 +19,7 @@ import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 // 下拉配置改为通过 useRemoteControlCore 内置函数处理（方案1）
 import { useSystemConfigStore } from '@/stores/system/systemConfigStore'
+import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 
 const toastService = useToast()
 const blockStore = useBlockStore()
@@ -193,14 +194,29 @@ const socParamClasses = buildParameterClasses(BLOCK_SOC_PARAM_R)
 const socConfig = {
   dataSource: {
     name: 'BLOCK_SOC_PARAM',
-    readTopicTemplate: 'bms/host/s2d/b{block}/block_soc_param_r',
-    writeTopicTemplate: 'bms/host/s2d/b{block}/block_soc_param_w',
+    readTopicTemplate: 'bms/host/s2d/b1/block_soc_param_r',
+    writeTopicTemplate: 'bms/host/s2d/b1/block_soc_param_w',
     parameterFields: BLOCK_SOC_PARAM_R,
     parameterClasses: socParamClasses,
     writeWholeTable: true,
     dropdown: { dataType: 'block_remote_control', topicType: 'block_soc_param' },
     parameterSerializer: (parameterDataFrame, startByteOffset, registerCount) =>
       serializeParameterData(parameterDataFrame, BLOCK_SOC_PARAM_R, startByteOffset, registerCount, '[useBlockSocParam]', t('blockConfigParamPage.sections.socConfig'))
+  }
+}
+
+const refParamClasses = buildParameterClasses(BLOCK_REF_PARAM_R)
+const refConfig = {
+  dataSource: {
+    name: 'BLOCK_REF_PARAM',
+    readTopicTemplate: 'bms/host/s2d/b{block}/block_ref_param_r',
+    writeTopicTemplate: 'bms/host/s2d/b{block}/block_ref_param_w',
+    parameterFields: BLOCK_REF_PARAM_R,
+    parameterClasses: refParamClasses,
+    writeWholeTable: true,
+    dropdown: { dataType: 'block_remote_control', topicType: 'block_ref_param' },
+    parameterSerializer: (parameterDataFrame, startByteOffset, registerCount) =>
+      serializeParameterData(parameterDataFrame, BLOCK_REF_PARAM_R, startByteOffset, registerCount, '[useBlockRefParam]', t('blockConfigParamPage.sections.refConfig'))
   }
 }
 
@@ -221,7 +237,7 @@ const portConfig = {
 }
 
 // ========== BlockConfigParam自动读取topic数组 ==========
-const allReadTopics = ['BLOCK_BATT_PARAM', 'BLOCK_COMM_DEV_CFG', 'BLOCK_OPERATE_CFG', 'BLOCK_SOC_PARAM', 'BLOCK_PORT_CFG']
+const allReadTopics = ['BLOCK_BATT_PARAM', 'BLOCK_COMM_DEV_CFG', 'BLOCK_OPERATE_CFG', 'BLOCK_REF_PARAM', 'BLOCK_SOC_PARAM', 'BLOCK_PORT_CFG', 'BLOCK_COMMON_PARAM']
 
 // 复用通用核心（block模式由usePageTypeDetection控制）
 const {
@@ -358,6 +374,32 @@ const {
 })
 
 const {
+  isCurrentlyReading: isReadingRef,
+  currentSelectedClass: currentRefClass,
+  currentClassParameterList: currentRefParameterList,
+  allAvailableClasses: allRefClasses,
+  switchToParameterClass: switchToRefClass,
+  startParameterReading: startRefReading,
+  stopParameterReading: stopRefReading,
+  sendCurrentClassParameters: sendRefParameters,
+  updateParameterValue: updateRefParameterValue,
+  getParameterInputValue: getRefParameterInputValue,
+  setParameterInputValue: setRefParameterInputValue,
+  getParameterDecimalPlaces: getRefParameterDecimalPlaces,
+  handleReceivedParameterData: handleRefReceivedParameterData,
+  handleParameterWriteResponse: handleRefWriteResponse,
+  handleParameterReadError: handleRefReadError,
+  sendParameterReadRequest: sendRefReadRequest,
+  isParameterDropdown: isRefParameterDropdown,
+  getParameterDropdownOptions: getRefParameterDropdownOptions,
+  updateDropdownParameterValue: updateRefDropdownParameterValue,
+  enhancedParameterList: refEnhancedParameterList
+} = useRemoteControlCore(refConfig, toastService, {
+  selectorMode: 'block',
+  defaultData: DEFAULT_BLOCK_CONFIG_PARAMS
+})
+
+const {
   isCurrentlyReading: isReadingPort,
   currentSelectedClass: currentPortClass,
   currentClassParameterList: currentPortParameterList,
@@ -421,6 +463,7 @@ function getCurrentDataSourceName(){
     : activeType.value === 'comm' ? 'BLOCK_COMM_DEV_CFG'
     : activeType.value === 'port' ? 'BLOCK_PORT_CFG'
     : activeType.value === 'operate' ? 'BLOCK_OPERATE_CFG'
+    : activeType.value === 'ref' ? 'BLOCK_REF_PARAM'
     : 'BLOCK_SOC_PARAM'
 }
 const { setRawInput, getRawInput, getInputDisplay, clearByPrefix } = useRawInputCache(() => getCurrentDataSourceName())
@@ -483,6 +526,7 @@ function sendParametersWithValidation(){
   else if (activeType.value === 'comm') sendCommDevParameters()
   else if (activeType.value === 'port') sendPortParameters() // IPv4已在前面校验
   else if (activeType.value === 'operate') sendOperateParameters()
+  else if (activeType.value === 'ref') sendRefParameters()
   else sendSocParameters()
 }
 
@@ -492,6 +536,10 @@ function stopAllReading() {
   if (isReadingBattery.value) stopBatteryReading()
   if (isReadingCommDev.value) stopCommDevReading()
   if (isReadingOperate.value) stopOperateReading()
+  if (isReadingRef.value) stopRefReading()
+  if (isReadingSoc.value) stopSocReading()
+  if (isReadingPort.value) stopPortReading()
+  if (isReadingCommon.value) stopCommonReading()
 }
 
 // 多Topic一次性自动读取函数
@@ -518,6 +566,9 @@ function autoReadMultiTopicOnce(topics) {
         break
       case 'BLOCK_OPERATE_CFG':
         sendOperateReadRequest()
+        break
+      case 'BLOCK_REF_PARAM':
+        sendRefReadRequest()
         break
       case 'BLOCK_SOC_PARAM':
         sendSocReadRequest()
@@ -548,6 +599,7 @@ function startReadingWithRetry() {
 const topMenuItems = computed(() => [
   { label: t('blockConfigParamPage.sections.commonConfig'), key: 'common' },
   { label: t('blockConfigParamPage.sections.operateConfig'), key: 'operate' },
+  { label: t('blockConfigParamPage.sections.refConfig'), key: 'ref' },
   { label: t('blockConfigParamPage.sections.portConfig'), key: 'port' },
   { label: t('blockConfigParamPage.sections.commDevConfig'), key: 'comm' },
   { label: t('blockConfigParamPage.sections.socConfig'), key: 'soc' },
@@ -567,6 +619,7 @@ const currentIsReading = computed(() =>
   : activeType.value === 'comm' ? (isReadingCommDev?.value ?? isReadingCommDev)
   : activeType.value === 'port' ? (isReadingPort?.value ?? isReadingPort)
   : activeType.value === 'operate' ? (isReadingOperate?.value ?? isReadingOperate)
+  : activeType.value === 'ref' ? (isReadingRef?.value ?? isReadingRef)
   : (isReadingSoc?.value ?? isReadingSoc)
 )
 
@@ -576,8 +629,20 @@ const currentParameterList = computed(() =>
   : activeType.value === 'comm' ? (currentCommDevParameterList?.value ?? [])
   : activeType.value === 'port' ? (currentPortParameterList?.value ?? [])
   : activeType.value === 'operate' ? (currentOperateParameterList?.value ?? [])
+  : activeType.value === 'ref' ? (currentRefParameterList?.value ?? [])
   : (currentSocParameterList?.value ?? [])
 )
+
+const { selectedBlock } = useBlockSelect()
+let blockSwitchDebounceTimer = null
+watch(selectedBlock, (newVal, oldVal) => {
+  if (!newVal || newVal === oldVal) return
+  if (currentIsReading?.value) return
+  clearTimeout(blockSwitchDebounceTimer)
+  blockSwitchDebounceTimer = setTimeout(() => {
+    autoReadMultiTopicOnce(allReadTopics)
+  }, 300)
+})
 
 // 统一过滤：
 // - batt：隐藏 skip/保留 行
@@ -599,6 +664,9 @@ const filteredParameterList = computed(() => {
   if (activeType.value === 'soc') {
     return list.filter(row => row && !(row.label || '').includes('预留') && !/^Reserved/i.test(String(row.key || '')) && !(row.class || '').includes('保留') && !(row.type || '').startsWith('skip'))
   }
+  if (activeType.value === 'ref') {
+    return list.filter(row => row && !(row.label || '').includes('预留') && !/^Reserved/i.test(String(row.key || '')) && !(row.class || '').includes('保留') && !(row.type || '').startsWith('skip'))
+  }
   return list
 })
 
@@ -612,6 +680,8 @@ const renderParameterList = computed(() => {
       ? (portEnhancedParameterList?.value || [])
     : activeType.value === 'operate'
       ? (operateEnhancedParameterList?.value || [])
+      : activeType.value === 'ref'
+        ? (refEnhancedParameterList?.value || [])
       : activeType.value === 'common'
         ? (commonEnhancedParameterList?.value || [])
       : (socEnhancedParameterList?.value || [])
@@ -635,6 +705,9 @@ const renderParameterList = computed(() => {
     if (activeType.value === 'soc') {
       return base.filter(row => row && !(row.label || '').includes('预留') && !/^Reserved/i.test(String(row.key || '')) && !(row.class || '').includes('保留') && !(row.type || '').startsWith('skip'))
     }
+    if (activeType.value === 'ref') {
+      return base.filter(row => row && !(row.label || '').includes('预留') && !/^Reserved/i.test(String(row.key || '')) && !(row.class || '').includes('保留') && !(row.type || '').startsWith('skip'))
+    }
     return base
   })()
 
@@ -654,18 +727,55 @@ const renderParameterList = computed(() => {
   })
 
   if (activeType.value === 'port') {
+    const year = mapped.find(p => p.key === 'productionYear')?.currentValue
+    const month = mapped.find(p => p.key === 'productionMonth')?.currentValue
+    const day = mapped.find(p => p.key === 'productionDay')?.currentValue
+    const index = mapped.find(p => p.key === 'productionIndex')?.currentValue
+
+    let productionCodeValue = '-'
+    if (
+      year !== undefined && year !== null &&
+      month !== undefined && month !== null &&
+      day !== undefined && day !== null &&
+      index !== undefined && index !== null
+    ) {
+      const yNum = Number(year)
+      const mNum = Number(month)
+      const dNum = Number(day)
+      const nNum = Number(index)
+
+      if (yNum && mNum && dNum && nNum !== null && nNum !== undefined) {
+        const y = String(yNum)
+        const m = String(mNum).padStart(2, '0')
+        const d = String(dNum).padStart(2, '0')
+        const n = String(nNum)
+        productionCodeValue = `${y}${m}${d}${n}`
+      }
+    }
+
+    const hiddenKeys = new Set(['productionYear', 'productionMonth', 'productionDay', 'productionIndex'])
+    const displayMapped = mapped.filter(p => p && !hiddenKeys.has(p.key))
+
+    displayMapped.unshift({
+      label: getParameterTranslation('生产编码'),
+      key: 'ProductionCode',
+      __static: true,
+      value: productionCodeValue
+    })
+
     const staticItems = [
       { label: getParameterTranslation('网卡3 ip地址'), key: 'Reserved_NIC3_IP', __static: true, value: '-' },
       { label: getParameterTranslation('网卡3 默认网关'), key: 'Reserved_NIC3_GW', __static: true, value: '-' },
       { label: getParameterTranslation('网卡4 ip地址'), key: 'Reserved_NIC_IP', __static: true, value: '-' },
       { label: getParameterTranslation('网卡4 默认网关'), key: 'Reserved_NIC_GW', __static: true, value: '-' }
     ]
-    const insertIndex = mapped.findIndex(p => p.key === 'MQTT_ServerIP' || p.label === 'MQTT服务器IP' || p.originalLabel === 'MQTT服务器IP')
+    const insertIndex = displayMapped.findIndex(p => p.key === 'MQTT_ServerIP' || p.label === 'MQTT服务器IP' || p.originalLabel === 'MQTT服务器IP')
     if (insertIndex >= 0) {
-      mapped.splice(insertIndex, 0, ...staticItems)
+      displayMapped.splice(insertIndex, 0, ...staticItems)
     } else {
-      mapped.push(...staticItems)
+      displayMapped.push(...staticItems)
     }
+    return displayMapped
   }
 
   return mapped
@@ -677,6 +787,7 @@ function updateDropdownValue(parameterKey, selectedOption){
   if (activeType.value === 'comm') return updateCommDropdownParameterValue(parameterKey, selectedOption)
   if (activeType.value === 'port') return updatePortDropdownParameterValue(parameterKey, selectedOption)
   if (activeType.value === 'operate') return updateOperateDropdownParameterValue(parameterKey, selectedOption)
+  if (activeType.value === 'ref') return updateRefDropdownParameterValue(parameterKey, selectedOption)
   return updateSocDropdownParameterValue(parameterKey, selectedOption)
 }
 
@@ -686,6 +797,7 @@ const currentAllClasses = computed(() => {
   if (activeType.value === 'port') return (allPortClasses?.value ?? allPortClasses ?? [])
   if (activeType.value === 'operate') return (allOperateClasses?.value ?? allOperateClasses ?? [])
   if (activeType.value === 'soc') return (allSocClasses?.value ?? allSocClasses ?? [])
+  if (activeType.value === 'ref') return (allRefClasses?.value ?? allRefClasses ?? [])
   return [] // batt 无分类
 })
 
@@ -695,6 +807,7 @@ const currentSelectedClass = computed(() => {
   if (activeType.value === 'port') return (currentPortClass?.value ?? currentPortClass ?? null)
   if (activeType.value === 'operate') return (currentOperateClass?.value ?? currentOperateClass ?? null)
   if (activeType.value === 'soc') return (currentSocClass?.value ?? currentSocClass ?? null)
+  if (activeType.value === 'ref') return (currentRefClass?.value ?? currentRefClass ?? null)
   return null
 })
 
@@ -704,6 +817,7 @@ function startReading(){
   else if (activeType.value === 'comm') startCommDevReading()
   else if (activeType.value === 'port') startPortReading()
   else if (activeType.value === 'operate') startOperateReading()
+  else if (activeType.value === 'ref') startRefReading()
   else startSocReading()
 }
 
@@ -714,6 +828,7 @@ function stopReading(){
   else if (activeType.value === 'comm') stopCommDevReading()
   else if (activeType.value === 'port') stopPortReading()
   else if (activeType.value === 'operate') stopOperateReading()
+  else if (activeType.value === 'ref') stopRefReading()
   else stopSocReading()
 }
 
@@ -725,6 +840,7 @@ function sendParameters(){
 function switchClass(name){
   if (activeType.value === 'common') switchToCommonClass(name)
   if (activeType.value === 'comm') switchToCommDevClass(name)
+  else if (activeType.value === 'ref') switchToRefClass(name)
   else if (activeType.value === 'port') switchToPortClass(name)
   else if (activeType.value === 'operate') switchToOperateClass(name)
   else if (activeType.value === 'soc') switchToSocClass(name)
@@ -737,6 +853,7 @@ function getInputValue(row, val){
     : activeType.value === 'comm' ? getCommDevParameterInputValue(row, val)
     : activeType.value === 'port' ? getPortParameterInputValue(row, val)
     : activeType.value === 'operate' ? getOperateParameterInputValue(row, val)
+    : activeType.value === 'ref' ? getRefParameterInputValue(row, val)
     : getSocParameterInputValue(row, val)
 }
 
@@ -746,6 +863,7 @@ function setInputValue(row, val){
     : activeType.value === 'comm' ? setCommDevParameterInputValue(row, val)
     : activeType.value === 'port' ? setPortParameterInputValue(row, val)
     : activeType.value === 'operate' ? setOperateParameterInputValue(row, val)
+    : activeType.value === 'ref' ? setRefParameterInputValue(row, val)
     : setSocParameterInputValue(row, val)
 }
 
@@ -755,6 +873,7 @@ function updateValue(key, val, options){
     : activeType.value === 'comm' ? updateCommDevParameterValue(key, val, options)
     : activeType.value === 'port' ? updatePortParameterValue(key, val, options)
     : activeType.value === 'operate' ? updateOperateParameterValue(key, val, options)
+    : activeType.value === 'ref' ? updateRefParameterValue(key, val, options)
     : updateSocParameterValue(key, val, options)
 }
 
@@ -764,6 +883,7 @@ function getDecimalPlaces(row){
     : activeType.value === 'comm' ? getCommDevParameterDecimalPlaces(row)
     : activeType.value === 'port' ? getPortParameterDecimalPlaces(row)
     : activeType.value === 'operate' ? getOperateParameterDecimalPlaces(row)
+    : activeType.value === 'ref' ? getRefParameterDecimalPlaces(row)
     : getSocParameterDecimalPlaces(row)
 }
 
@@ -827,6 +947,23 @@ function handleOperateWriteEvent(event, mqttMessage){
   const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockOperateCfg]', t('blockConfigParamPage.sections.operateConfig'))
   if (!parsed.className) parsed.className = t('blockConfigParamPage.sections.operateConfig')
   handleOperateWriteResponse(parsed)
+}
+
+function handleRefReadEvent(event, mqttMessage){
+  if (mqttMessage.dataType !== 'BLOCK_REF_PARAM_R') return
+  retryLogic.markResponse()
+  const parsed = parseParameterReadResponse(mqttMessage, '[useBlockRefParam]', t('blockConfigParamPage.sections.refConfig'))
+  if (!parsed) return
+  if (parsed.result?.error) return handleRefReadError(parsed)
+  handleRefReceivedParameterData(parsed)
+  clearByPrefix('BLOCK_REF_PARAM')
+}
+
+function handleRefWriteEvent(event, mqttMessage){
+  if (mqttMessage.dataType !== 'BLOCK_REF_PARAM_W') return
+  const parsed = parseParameterWriteResponse(mqttMessage, '[useBlockRefParam]', t('blockConfigParamPage.sections.refConfig'))
+  if (!parsed.className) parsed.className = t('blockConfigParamPage.sections.refConfig')
+  handleRefWriteResponse(parsed)
 }
 
 function handleSocReadEvent(event, mqttMessage){
@@ -923,6 +1060,11 @@ onMounted(() => {
     ipc.on('BLOCK_OPERATE_CFG_R', handleOperateReadEvent)
     ipc.on('BLOCK_OPERATE_CFG_W', handleOperateWriteEvent)
 
+    ipc.removeAllListeners?.('BLOCK_REF_PARAM_R')
+    ipc.removeAllListeners?.('BLOCK_REF_PARAM_W')
+    ipc.on('BLOCK_REF_PARAM_R', handleRefReadEvent)
+    ipc.on('BLOCK_REF_PARAM_W', handleRefWriteEvent)
+
     ipc.removeAllListeners?.('BLOCK_SOC_PARAM_R')
     ipc.removeAllListeners?.('BLOCK_SOC_PARAM_W')
     ipc.on('BLOCK_SOC_PARAM_R', handleSocReadEvent)
@@ -945,8 +1087,6 @@ onMounted(() => {
   // 首次挂载：根据当前Tab决定是否隐藏堆选择器
   if (activeType.value === 'soc' || activeType.value === 'port' || activeType.value === 'common') {
     blockStore.setCurrentPageType('standalone')
-    blockStore.setSelectedBlockForView('block1')
-    blockStore.setSelectedBlocksForWrite(['block1'])
   } else {
     blockStore.setCurrentPageType('block')
   }
@@ -958,6 +1098,9 @@ onMounted(() => {
   }
   if (allOperateClasses?.value?.length && !currentOperateClass?.value){
     switchToOperateClass(allOperateClasses.value[0].name)
+  }
+  if (allRefClasses?.value?.length && !currentRefClass?.value){
+    switchToRefClass(allRefClasses.value[0].name)
   }
   if (allSocClasses?.value?.length && !currentSocClass?.value){
     switchToSocClass(allSocClasses.value[0].name)
@@ -980,8 +1123,6 @@ onActivated(() => {
   sendCommonReadRequest()
   if (activeType.value === 'soc' || activeType.value === 'port' || activeType.value === 'common') {
     blockStore.setCurrentPageType('standalone')
-    blockStore.setSelectedBlockForView('block1')
-    blockStore.setSelectedBlocksForWrite(['block1'])
   } else {
     blockStore.setCurrentPageType('block')
   }
@@ -992,16 +1133,10 @@ onActivated(() => {
 watch(activeType, (val) => {
   if (val === 'soc') {
     blockStore.setCurrentPageType('standalone')
-    blockStore.setSelectedBlockForView('block1')
-    blockStore.setSelectedBlocksForWrite(['block1'])
   } else if (val === 'port') {
     blockStore.setCurrentPageType('standalone')
-    blockStore.setSelectedBlockForView('block1')
-    blockStore.setSelectedBlocksForWrite(['block1'])
   } else if (val === 'common') {
     blockStore.setCurrentPageType('standalone')
-    blockStore.setSelectedBlockForView('block1')
-    blockStore.setSelectedBlocksForWrite(['block1'])
   } else {
     blockStore.setCurrentPageType('block')
   }
@@ -1014,6 +1149,7 @@ onDeactivated(() => {
   stopBatteryReading()
   stopCommDevReading()
   stopOperateReading()
+  stopRefReading()
   stopCommonReading()
   stopPortReading()
   stopSocReading()
@@ -1028,6 +1164,7 @@ onUnmounted(() => {
   stopBatteryReading()
   stopCommDevReading()
   stopOperateReading()
+  stopRefReading()
   stopCommonReading()
   stopPortReading()
   stopSocReading()
@@ -1046,6 +1183,8 @@ onUnmounted(() => {
     // 操作配置参数
     ipc.removeAllListeners('BLOCK_OPERATE_CFG_R', handleOperateReadEvent)
     ipc.removeAllListeners('BLOCK_OPERATE_CFG_W', handleOperateWriteEvent)
+    ipc.removeAllListeners('BLOCK_REF_PARAM_R', handleRefReadEvent)
+    ipc.removeAllListeners('BLOCK_REF_PARAM_W', handleRefWriteEvent)
     ipc.removeAllListeners('BLOCK_PORT_CFG_R', handlePortReadEvent)
     ipc.removeAllListeners('BLOCK_PORT_CFG_W', handlePortWriteEvent)
     ipc.removeListener?.('BLOCK_COMMON_PARAM_R', handleCommonReadEvent)

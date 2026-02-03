@@ -18,11 +18,11 @@
            </div>
         </div>
         
-        <!-- 中控：标题 -->
+       <!-- 中控：标题 -->
         <div class="hud-center">
            <div class="title-box">
               <h1 class="main-title">东方日升电池管理系统</h1>
-              <div class="sub-title">RISEN ENERGY STORAGE SYSTEM-BMS</div>
+              <div class="sub-title">{{ t('dashboardPage.header.subTitle') }}</div>
            </div>
         </div>
         
@@ -35,7 +35,7 @@
                     <i class="pi pi-sd-card"></i>
                  </div>
                  <div class="module-text">
-                    <span class="label">SD卡</span>
+                    <span class="label">{{ t('dashboardPage.modules.sd.label') }}</span>
                     <span class="value">{{ sdCardStatusText }}</span>
                  </div>
               </div>
@@ -46,7 +46,7 @@
                     <i :class="getStatusIcon()"></i>
                  </div>
                  <div class="module-text">
-                    <span class="label">LINK STATUS</span>
+                    <span class="label">{{ t('dashboardPage.modules.linkStatus.label') }}</span>
                     <span class="value">{{ getStatusText() }}</span>
                  </div>
               </div>
@@ -87,7 +87,7 @@
            <canvas ref="panelCanvasLeft" class="panel-canvas"></canvas>
            <!-- 单个栏目标题（避免每个堆的标题绝对定位造成重叠） -->
            <div class="card-header">
-             <h3>实时状态数据</h3>
+            <h3>{{ t('dashboardPage.sections.realtimeStatus') }}</h3>
            </div>
            <!-- 多堆容器：两列并排 -->
            <div class="blocks-container">
@@ -124,7 +124,7 @@
                      </div>
                    </div>
                    <!-- 堆标签（显示：堆1/堆2） -->
-                   <div class="battery-block-label">{{ block.label }}</div>
+                   <div class="battery-block-label">{{ t('cluster.block') }} {{ parseBlockId(block.value) }}</div>
                  </div>
 
                  <!-- 堆电压/电流参数（中间，靠电池模型右侧，稍增距离） -->
@@ -132,7 +132,7 @@
                     <div class="param-card voltage-card">
                       <div class="param-header">
                         <i class="pi pi-bolt"></i>
-                        <span class="param-label">堆电压</span>
+                        <span class="param-label">{{ t('dashboardPage.labels.blockVoltage') }}</span>
                       </div>
                       <div class="param-value-box">
                          <span class="val">{{ getBlockVoltage(block.value) }}</span>
@@ -145,7 +145,7 @@
                    <div class="param-card current-card">
                       <div class="param-header">
                         <i class="pi pi-chart-line"></i>
-                        <span class="param-label">堆电流</span>
+                        <span class="param-label">{{ t('dashboardPage.labels.blockCurrent') }}</span>
                       </div>
                       <div class="param-value-box">
                          <span class="val">{{ getBlockCurrent(block.value) }}</span>
@@ -158,43 +158,43 @@
                 </div>
 
                 <!-- 状态圆环 (SOH & 故障状态)（最右侧） -->
-                <div class="status-rings">
-                   <div class="ring-item">
-                     <div class="tech-ring" :style="{ '--percent': getBlockSoh(block.value) + '%' }">
-                        <svg viewBox="0 0 36 36" class="circular-chart">
-                          <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                          <path class="circle" :stroke-dasharray="`${getBlockSoh(block.value)}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        </svg>
-                        <div class="ring-text">
-                          <span class="val">{{ getBlockSoh(block.value) }}</span>
-                          <span class="unit">%</span>
-                        </div>
+                   <div class="status-rings">
+                     <div class="ring-item">
+                       <div class="tech-ring" :style="{ '--percent': getBlockSoh(block.value) + '%' }">
+                          <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" :stroke-dasharray="`${getBlockSoh(block.value)}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                          </svg>
+                          <div class="ring-text">
+                            <span class="val">{{ getBlockSoh(block.value) }}</span>
+                            <span class="unit">%</span>
+                          </div>
+                       </div>
+                       <div class="ring-label">SOH</div>
                      </div>
-                     <div class="ring-label">SOH</div>
-                   </div>
-                   <div class="ring-item">
-                     <div class="tech-ring" :style="{ '--percent': '100%' }">
-                        <svg viewBox="0 0 36 36" class="circular-chart" :class="getFaultStatusClass(getBlockFaultStatus(block.value))">
-                          <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                          <path class="circle" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                        </svg>
-                        <div class="ring-text">
-                        <span class="val" style="font-size: 0.8rem; white-space: nowrap;">{{ getFaultStatusText(getBlockFaultStatus(block.value)) }}</span>
-                        </div>
+                     <div class="ring-item">
+                       <div class="tech-ring" :style="{ '--percent': '100%' }">
+                          <svg viewBox="0 0 36 36" class="circular-chart" :class="getFaultStatusClass(getBlockFaultStatus(block.value))">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                          </svg>
+                          <div class="ring-text">
+                        <span class="val" style="font-size: 1.0rem; white-space: nowrap;">{{ getFaultStatusText(getBlockFaultStatus(block.value)) }}</span>
+                          </div>
+                       </div>
+                       <div class="ring-label">{{ t('dashboardPage.labels.faultStatus') }}</div>
                      </div>
-                     <div class="ring-label">堆故障状态</div>
-                   </div>
+                  </div>
                 </div>
-              </div>
+             </div>
            </div>
-        </div>
         </div>
 
         <!-- 右列：占位 -->
         <div class="status-col right-col geo-structure-box">
             <canvas ref="panelCanvasRight" class="panel-canvas"></canvas>
             <div class="card-header">
-               <h3>外围设备概览</h3>
+               <h3>{{ t('dashboardPage.sections.peripheralOverview') }}</h3>
             </div>
             <div class="peripheral-icons-wrapper">
             <div class="peripheral-icons">
@@ -215,7 +215,7 @@
                   </div>
                   <div class="ring-decor"></div>
                 </div>
-                <div class="badge-label">堆PCS</div>
+                <div class="badge-label">{{ t('dashboardPage.peripherals.blockPcs') }}</div>
               </div>
               <!-- 液冷机 -->
               <div class="device-item clickable" @click="navigatePeripheral('cooling')">
@@ -247,10 +247,10 @@
                     </div>
                   </div>
                 </div>
-                <div class="badge-label">堆制冷设备</div>
+                <div class="badge-label">{{ t('dashboardPage.peripherals.blockCooling') }}</div>
               </div>
               <!-- 电表 -->
-              <div class="device-item">
+              <div class="device-item clickable" @click="navigatePeripheral('meter')">
                 <div class="device-badge meter">
                   <div class="badge-core">
                     <div class="meter-core">
@@ -263,21 +263,21 @@
                   </div>
                   <div class="ring-decor"></div>
                 </div>
-                <div class="badge-label">电表</div>
+                <div class="badge-label">{{ t('dashboardPage.peripherals.meter') }}</div>
               </div>
               <!-- 其他 -->
-              <div class="device-item">
+              <div class="device-item clickable" @click="navigatePeripheral('deh')">
                 <div class="device-badge other">
                   <div class="badge-core">
                     <i class="pi pi-bell"></i>
-                    <span class="badge-title">其他</span>
+                    <span class="badge-title">{{ t('dashboardPage.peripherals.other') }}</span>
                   </div>
                   <span class="pulse"></span>
                   <span class="pulse pulse-2"></span>
                   <span class="orbit-dot"></span>
                   <div class="ring-decor"></div>
                 </div>
-                <div class="badge-label">外设状态</div>
+                <div class="badge-label">{{ t('dashboardPage.peripherals.status') }}</div>
               </div>
             </div>
             </div>
@@ -289,15 +289,15 @@
       <div class="bottom-section system-overview geo-structure-box">
          <canvas ref="panelCanvasBottom" class="panel-canvas"></canvas>
          <div class="card-header">
-             <h3>电池簇状态监控</h3>
+            <h3>{{ t('dashboardPage.sections.clusterStatusMonitor') }}</h3>
          </div>
          
          <div class="heaps-container">
             <div class="heap-section" v-for="block in availableBlocks" :key="block.value">
                <div class="heap-title">
-                  <span class="heap-name">{{ block.label }}</span>
+                  <span class="heap-name">{{ `${t('cluster.block')}${parseBlockId(block.value)}` }}</span>
                   <span class="heap-info-text">
-                     (配置簇数: {{ getBlockTotalClusters(block.value) }})
+                     {{ t('dashboardPage.labels.configClustersCount', [getBlockTotalClusters(block.value)]) }}
                   </span>
                </div>
                <div class="clusters-grid">
@@ -357,7 +357,7 @@
                                <div class="power-status mini" v-if="cluster.status === 'charging' || cluster.status === 'discharging'">
                                   <i class="pi pi-angle-double-down charging-icon" v-if="cluster.status === 'charging'"></i>
                                   <i class="pi pi-angle-double-up discharging-icon" v-if="cluster.status === 'discharging'"></i>
-                                  <span>{{ cluster.status === 'charging' ? '充电' : '放电' }}</span>
+                                  <span>{{ cluster.status === 'charging' ? t('dashboardPage.states.charging') : t('dashboardPage.states.discharging') }}</span>
                                </div>
                               <div class="data-row"><span class="val">{{ cluster.volt }}</span><span class="unit">V</span></div>
                               <div class="data-row"><span class="val">{{ cluster.curr }}</span><span class="unit">A</span></div>
@@ -378,7 +378,7 @@
                      </div>
                      
                      <!-- 簇标签 -->
-                     <div class="cluster-label-text">簇{{ cluster.id }}</div>
+                     <div class="cluster-label-text">{{ t('dashboardPage.labels.cluster', [cluster.id]) }}</div>
                   </div>
                </div>
             </div>
@@ -401,6 +401,7 @@ import { pickCluster, parseClusterSummary, clusterSummaryTick } from '@/composab
 import { parseClusterSysAbstract, pickClusterSysAbstractValue, clusterSysAbstractTick, SYS_ABSTRACT_CLASSES, SYS_ABSTRACT_LABELS } from '@/composables/core/data-processing/cluster/parseClusterSysAbstract'
 import { parseBlockVersion, pickBlockVersion } from '@/composables/core/data-processing/block/parseBlockVersion'
 import { useSystemConfigStore } from '@/stores/system/systemConfigStore'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const mqttStore = useMqttStore()
@@ -408,6 +409,7 @@ const blockStore = useBlockStore()
 const clusterStore = useClusterStore()
 const systemConfigStore = useSystemConfigStore()
 const { selectedBlock } = useBlockSelect()
+const { t, te, locale } = useI18n()
 
 // 注入 Layout 提供的 MQTT 控制方法
 const handleStatusClick = inject('handleStatusClick')
@@ -447,8 +449,10 @@ let timer = null
 
 const updateTime = () => {
   const now = new Date()
-  currentTime.value = now.toLocaleTimeString('en-US', { hour12: false })
-  currentDate.value = now.toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })
+  const timeLocale = locale.value === 'zh' ? 'zh-CN' : 'en-US'
+  const dateLocale = locale.value === 'zh' ? 'zh-CN' : 'en-US'
+  currentTime.value = now.toLocaleTimeString(timeLocale, { hour12: false })
+  currentDate.value = now.toLocaleDateString(dateLocale, { weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
 onMounted(() => {
@@ -842,6 +846,10 @@ const navigatePeripheral = (type) => {
     router.push({ name: 'BlockPcs' })
   } else if (type === 'cooling') {
     router.push({ name: 'BlockRef' })
+  } else if (type === 'meter') {
+    router.push({ name: 'BlockMeter' })
+  } else if (type === 'deh') {
+    router.push({ name: 'BlockDeh' })
   }
 }
 
@@ -851,7 +859,7 @@ const navigatePeripheral = (type) => {
 const availableBlocks = computed(() => {
   // 如果没有数据，返回默认堆1
   if (!blockStore.availableBlocks || blockStore.availableBlocks.length === 0) {
-    return [{ value: 1, label: '堆1' }]
+    return [{ value: 1, label: `${t('cluster.block')} ${1}`, block: 1 }]
   }
   return blockStore.availableBlocks
 })
@@ -868,7 +876,7 @@ const hasBlock2 = computed(() => {
 const displayBlocksForRealtime = computed(() => {
   const list = [...availableBlocks.value]
   if (!hasBlock2.value) {
-    list.push({ value: 2, label: '堆2' })
+    list.push({ value: 2, label: `${t('cluster.block')} ${2}`, block: 2 })
   }
   return list
 })
@@ -878,7 +886,7 @@ const isPlaceholderRealtime = (block) => {
 }
 const selectedBlockDisplayName = computed(() => {
   const block = availableBlocks.value.find(b => `block${b.value}` === selectedBlock.value || String(b.value) === String(selectedBlock.value))
-  return block ? block.label : (selectedBlock.value || '未选择')
+  return block ? block.label : (selectedBlock.value || t('dashboardPage.labels.notSelected'))
 })
 
 // 获取指定堆的Summary数据
@@ -920,9 +928,15 @@ const getValue = (map, key, defaultValue = 0) => {
 const kpiItems = computed(() => {
   const blocks = (availableBlocks.value && availableBlocks.value.length > 0)
     ? availableBlocks.value
-    : [{ value: 'block1', label: '堆1', block: 1 }]
+    : [{ value: 'block1', label: `${t('cluster.block')}1`, block: 1 }]
   
-  const statusMap = {0: '静置', 1: '充电', 2: '放电', 3: '开路', 4: '自检'}
+  const statusMap = {
+    0: t('dashboardPage.systemMode.idle'),
+    1: t('dashboardPage.systemMode.charging'),
+    2: t('dashboardPage.systemMode.discharging'),
+    3: t('dashboardPage.systemMode.openCircuit'),
+    4: t('dashboardPage.systemMode.selfCheck')
+  }
   
   const formatBlocks = (getter) => {
   const SEP = '  ' // 使用适中的EM空格增加堆间距
@@ -932,44 +946,44 @@ const kpiItems = computed(() => {
     }
     return blocks.map(b => {
       const m = getBlockSummary(b.value)
-      return `${b.label}：${getter(m, b)}`
+      return `${t('cluster.block')}${b.block}: ${getter(m, b)}`
     }).join(SEP) // 使用更宽的分隔符，配合CSS white-space: pre
   }
   
   const statusText = formatBlocks((m) => {
     const s = getValue(m, 'bauWorkingMode', 0)
-    return statusMap[s] || '未知'
+    return statusMap[s] || t('dashboardPage.common.unknown')
   })
   
   const totalCharge = formatBlocks((m) => (getValue(m, 'totalChargeEnergy') / 1).toFixed(0))
   const totalDischarge = formatBlocks((m) => (getValue(m, 'totalDischargeEnergy') / 1).toFixed(0))
-  const faultText = formatBlocks((m) => (getValue(m, 'stackFaultStatus', 0) > 0 ? '故障' : '正常'))
-  const volt = formatBlocks((m) => (getValue(m, 'stackVoltage')).toFixed(1))
-  const curr = formatBlocks((m) => (getValue(m, 'stackCurrent')).toFixed(1))
+  const ratedEnergy = formatBlocks((m) => getValue(m, 'ratedEnergy'))
+  const dailyCharge = formatBlocks((m) => getValue(m, 'dailyChargeEnergy'))
+  const dailyDischarge = formatBlocks((m) => getValue(m, 'dailyDischargeEnergy'))
   const power = formatBlocks((m) => {
     const v = (getValue(m, 'stackVoltage')).toFixed(1)
     const c = (getValue(m, 'stackCurrent')).toFixed(1)
     return ((parseFloat(v) * parseFloat(c)) / 1000).toFixed(2)
   })
-  const socVal = formatBlocks((m) => (getValue(m, 'stackSOC')).toFixed(1))
+  const cycleCount = formatBlocks((m) => getValue(m, 'batterySystemCycleCount'))
   const maxChargeP = formatBlocks((m) => (getValue(m, 'maxAllowableChargePower') / 1).toFixed(1))
   const maxDischargeP = formatBlocks((m) => (getValue(m, 'maxAllowableDischargePower') / 1).toFixed(1))
-  const insResPlus = formatBlocks((m) => String(getValue(m, 'insulationResistanceRPlus', 0)))
-  const insResMinus = formatBlocks((m) => String(getValue(m, 'insulationResistanceRMinus', 0)))
+  const totalClusters = formatBlocks((m) => getValue(m, 'totalClusters'))
+  const onlineClusters = formatBlocks((m) => getValue(m, 'onlineClusters'))
   
   return [
-    { title: '堆运行状态', value: statusText, unit: '', icon: 'pi pi-cog', route: '/block/status' },
-    { title: '累计充电量(kWh)', value: totalCharge, unit: '', icon: 'pi pi-bolt', route: '/block/energy' },
-    { title: '累计放电量(kWh)', value: totalDischarge, unit: '', icon: 'pi pi-bolt', route: '/block/energy' },
-    { title: '堆故障状态', value: faultText, unit: '', icon: 'pi pi-exclamation-triangle', route: '/block/fault' },
-    { title: '堆电压(V)', value: volt, unit: '', icon: 'pi pi-server', route: '/block/monitor' },
-    { title: '堆电流(A)', value: curr, unit: '', icon: 'pi pi-server', route: '/block/monitor' },
-    { title: '堆实时功率(kW)', value: power, unit: '', icon: 'pi pi-chart-line', route: '/block/monitor' },
-    { title: '堆SOC(%)', value: socVal, unit: '', icon: 'pi pi-percentage', route: '/block/monitor' },
-    { title: '允许充电功率(kW)', value: maxChargeP, unit: '', icon: 'pi pi-arrow-down', route: '/block/param' },
-    { title: '允许放电功率(kW)', value: maxDischargeP, unit: '', icon: 'pi pi-arrow-up', route: '/block/param' },
-    { title: '绝缘电阻+(kΩ)', value: insResPlus, unit: '', icon: 'pi pi-shield', route: '/block/monitor' },
-    { title: '绝缘电阻-(kΩ)', value: insResMinus, unit: '', icon: 'pi pi-shield', route: '/block/monitor' }
+    { title: t('dashboardPage.kpi.stackStatus'), value: statusText, unit: '', icon: 'pi pi-cog', route: '/block/status' },
+    { title: t('dashboardPage.kpi.totalCharge'), value: totalCharge, unit: '', icon: 'pi pi-bolt', route: '/block/energy' },
+    { title: t('dashboardPage.kpi.totalDischarge'), value: totalDischarge, unit: '', icon: 'pi pi-bolt', route: '/block/energy' },
+    { title: t('dashboardPage.kpi.ratedEnergy'), value: ratedEnergy, unit: '', icon: 'pi pi-bolt', route: '/block/monitor' },
+    { title: t('dashboardPage.kpi.dailyCharge'), value: dailyCharge, unit: '', icon: 'pi pi-arrow-down', route: '/block/monitor' },
+    { title: t('dashboardPage.kpi.dailyDischarge'), value: dailyDischarge, unit: '', icon: 'pi pi-arrow-up', route: '/block/monitor' },
+    { title: t('dashboardPage.kpi.realtimePower'), value: power, unit: '', icon: 'pi pi-chart-line', route: '/block/monitor' },
+    { title: t('dashboardPage.kpi.cycleCount'), value: cycleCount, unit: '', icon: 'pi pi-sync', route: '/block/monitor' },
+    { title: t('dashboardPage.kpi.maxChargePower'), value: maxChargeP, unit: '', icon: 'pi pi-arrow-down', route: '/block/param' },
+    { title: t('dashboardPage.kpi.maxDischargePower'), value: maxDischargeP, unit: '', icon: 'pi pi-arrow-up', route: '/block/param' },
+    { title: t('dashboardPage.kpi.clustersTotal'), value: totalClusters, unit: '', icon: 'pi pi-th-large', route: '/block/monitor' },
+    { title: t('dashboardPage.kpi.clustersOnline'), value: onlineClusters, unit: '', icon: 'pi pi-check-circle', route: '/block/monitor' }
   ]
 })
 
@@ -1003,10 +1017,10 @@ const getBlockCurrent = (blockId) => {
 }
 
 const getFaultStatusText = (level) => {
-  if (level === 0) return '无故障'
-  if (level === 1) return '轻微故障'
-  if (level === 2) return '一般故障'
-  return '严重故障'
+  if (level === 0) return t('dashboardPage.faultState.none')
+  if (level === 1) return t('dashboardPage.faultState.minor')
+  if (level === 2) return t('dashboardPage.faultState.general')
+  return t('dashboardPage.faultState.critical')
 }
 
 const getFaultStatusClass = (level) => {
@@ -1018,17 +1032,17 @@ const getFaultStatusClass = (level) => {
 
 const getChargeDischargeState = (blockId) => {
   const map = getBlockSummary(blockId)
-  const curr = getValue(map, 'stackCurrent', 0)
-  if (parseFloat(curr) > 1) return 'charging'
-  if (parseFloat(curr) < -1) return 'discharging'
+  const mode = Number(getValue(map, 'bauWorkingMode', 0))
+  if (mode === 1) return 'charging'
+  if (mode === 2) return 'discharging'
   return 'idle'
 }
 
 const getChargeDischargeStateText = (blockId) => {
   const state = getChargeDischargeState(blockId)
-  if (state === 'charging') return '充电中'
-  if (state === 'discharging') return '放电中'
-  return '静置'
+  if (state === 'charging') return t('dashboardPage.states.charging')
+  if (state === 'discharging') return t('dashboardPage.states.discharging')
+  return t('dashboardPage.states.idle')
 }
 
 // ========== SD卡状态（版本信息） ==========
@@ -1056,10 +1070,10 @@ const sdCardRawStatus = computed(() => {
 const sdCardStatusText = computed(() => {
   const status = (sdCardRawStatus.value || '').replace(/\s*(GB|MB|KB)$/, '')
   switch (status) {
-    case '0': return 'SD卡路径不存在'
-    case '1': return '写成功'
-    case '2': return '写失败'
-    default:  return status || '未知'
+    case '0': return t('dashboardPage.sdCard.status.pathNotFound')
+    case '1': return t('dashboardPage.sdCard.status.writeSuccess')
+    case '2': return t('dashboardPage.sdCard.status.writeFailed')
+    default:  return status || t('dashboardPage.common.unknown')
   }
 })
 
@@ -1450,7 +1464,7 @@ const getBlockClusterStates = (blockId) => {
   
   /* 文本可读性增强 */
   .module-text {
-    .label { font-size: 0.75rem; color: #fff; }
+    .label { font-size: 0.85rem; color: #fff; }
     .value { font-size: 1rem; font-weight: 700; color: #fff; }
   }
 }
@@ -1470,8 +1484,12 @@ const getBlockClusterStates = (blockId) => {
   display: flex;
   flex-direction: column;
   line-height: 1.1;
-  .label { font-size: 0.6rem; color: #aaa; }
+  .label { font-size: 0.75rem; color: #aaa; }
   .value { font-size: 0.9rem; font-weight: bold; color: #fff; }
+}
+
+.status-module .module-text .label {
+  font-size: 0.9rem;
 }
 
 .time-module {
@@ -1710,7 +1728,6 @@ const getBlockClusterStates = (blockId) => {
   .kpi-title {
     font-size: 0.85rem;
     color: #fff;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 2px;
     white-space: nowrap;
@@ -1770,7 +1787,7 @@ const getBlockClusterStates = (blockId) => {
   }
   .device-item.clickable { cursor: pointer; }
   .badge-label {
-    font-size: 0.85rem;
+    font-size: 1.1rem;
     color: #a6d8ff;
     text-shadow: 0 0 8px rgba(79,172,254,0.35);
   }
@@ -2167,7 +2184,7 @@ const getBlockClusterStates = (blockId) => {
   
   h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 1.1rem;
     color: #fff;
     font-weight: bold;
     letter-spacing: 1px;
@@ -2644,7 +2661,7 @@ const getBlockClusterStates = (blockId) => {
     align-items: center;
     line-height: 1;
     
-    .val { font-size: 0.9rem; font-weight: bold; color: #fff; }
+    .val { font-size: 1.3rem; font-weight: bold; color: #fff; }
     .unit { font-size: 0.8rem; color: #ddd; }
   }
 }
@@ -2655,6 +2672,7 @@ const getBlockClusterStates = (blockId) => {
   letter-spacing: 1px;
   font-weight: 500;
   margin-top: 4px;
+  white-space: nowrap;
 }
 
 /* 圆环状态颜色 */

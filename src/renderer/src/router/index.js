@@ -53,6 +53,54 @@ const router = createRouter({
           meta: { visibleForGuest: true }
         },
         {
+          path: '/Cluster/Peripheral/Pcs',
+          name: 'ClusterPcs',
+          component: () =>
+            import(
+              /* webpackPrefetch: true */
+              /* webpackChunkName: "clusterPcs" */
+              '@/views/Cluster/Peripheral/Pcs.vue'
+            ),
+          meta: { visibleForGuest: true }
+        },
+        {
+          path: '/Cluster/Pcs',
+          redirect: '/Cluster/Peripheral/Pcs',
+          meta: { visibleForGuest: true }
+        },
+        {
+          path: '/Cluster/Peripheral/Ref',
+          name: 'ClusterRef',
+          component: () =>
+            import(
+              /* webpackPrefetch: true */
+              /* webpackChunkName: "clusterRef" */
+              '@/views/Cluster/Peripheral/Ref.vue'
+            ),
+          meta: { visibleForGuest: true }
+        },
+        {
+          path: '/Cluster/Ref',
+          redirect: '/Cluster/Peripheral/Ref',
+          meta: { visibleForGuest: true }
+        },
+        {
+          path: '/Cluster/Peripheral/Dehumi',
+          name: 'ClusterDehumi',
+          component: () =>
+            import(
+              /* webpackPrefetch: true */
+              /* webpackChunkName: "clusterDehumi" */
+              '@/views/Cluster/Peripheral/Dehumi.vue'
+            ),
+          meta: { visibleForGuest: true }
+        },
+        {
+          path: '/Cluster/Dehumi',
+          redirect: '/Cluster/Peripheral/Dehumi',
+          meta: { visibleForGuest: true }
+        },
+        {
           path: '/Cluster/cellData',
           name: 'cellData',
           component: () =>
@@ -297,6 +345,15 @@ const router = createRouter({
           meta: { visibleForGuest: true } // 所有用户可见
         },
         {
+          path: 'BlockMeter',
+          name: 'BlockMeter',
+          component: () =>
+            import(
+              '@/views/Peripheral/BlockMeter.vue'
+            ),
+          meta: { visibleForGuest: true }
+        },
+        {
           path: 'BlockRef',
           name: 'BlockRef',
           component: () =>
@@ -315,6 +372,15 @@ const router = createRouter({
               /* webpackPrefetch: true */
               /* webpackChunkName: "blockDeh" */
               '@/views/Peripheral/BlockDeh.vue'
+            ),
+          meta: { visibleForGuest: true }
+        },
+        {
+          path: 'BlockFire',
+          name: 'BlockFire',
+          component: () =>
+            import(
+              '@/views/Peripheral/BlockFire.vue'
             ),
           meta: { visibleForGuest: true }
         }
@@ -424,7 +490,7 @@ router.beforeEach((to, from, next) => {
 
   // 3. 如果访客访问管理员页面（visibleForGuest: false），则跳转首页
   if (to.meta.visibleForGuest === false && authStore.isGuest) {
-    return next({ name: 'cellData' })
+    return next({ name: 'BlockInfoHome' })
   }
 
   // 4. 其它情况（已登录用户正常访问）

@@ -349,6 +349,72 @@ export const REMOTE_COMMANDS = {
     ]
   },
 
+  // ========== 新增控制指令 ==========
+  reset_cfg_param_times: {
+    name: '复位可配置默认参数次数',
+    topic: 'reset_cfg_param_times',
+    dataType: 'u16',
+    type: 'input',
+    inputType: 'password', // 标识为密码输入
+    requiredValue: 574, // 特定密码值校验
+    placeholder: '请输入密码',
+    confirmRequired: true,
+    confirmMessage: '确定要复位可配置默认参数次数吗？'
+  },
+
+  erase_cfg_param_area: {
+    name: '擦除可配置默认参数区',
+    topic: 'erase_cfg_param_area',
+    dataType: 'u16',
+    type: 'input',
+    inputType: 'password', // 标识为密码输入
+    requiredValue: 574, // 特定密码值校验
+    placeholder: '请输入密码',
+    confirmRequired: true,
+    confirmMessage: '确定要擦除可配置默认参数区吗？'
+  },
+
+  set_sox_ekf_soc: {
+    name: 'SOX-EKFSOC',
+    topic: 'set_sox_ekf_soc',
+    dataType: 'u16',
+    type: 'input',
+    inputType: 'number',
+    scale: 10, // 缩放因子：输入0-100，实际下发0-1000
+    min: 0,
+    max: 100,
+    unit: '%',
+    placeholder: '0-100',
+    confirmRequired: true,
+    confirmMessage: '确定要设置SOX-EKFSOC吗？'
+  },
+
+  set_sox_ekf_covariance: {
+    name: 'SOX-EKF协方差',
+    topic: 'set_sox_ekf_covariance',
+    dataType: 'u16',
+    type: 'input',
+    inputType: 'number',
+    scale: 1000, // 协方差缩放：输入 1.001 -> 1001
+    min: 0,
+    max: 50, // 假设输入范围，下发范围0-50000，scale 1000 => 输入0-50
+    placeholder: '0-50.000',
+    confirmRequired: true,
+    confirmMessage: '确定要设置SOX-EKF协方差吗？'
+  },
+
+  force_reset_bcu: {
+    name: '强制复位指令',
+    topic: 'force_reset_bcu',
+    dataType: 'u16',
+    type: 'input',
+    inputType: 'password',
+    requiredValue: 574,
+    placeholder: '请输入密码',
+    confirmRequired: true,
+    confirmMessage: '确定要强制复位BCU吗？'
+  },
+
   // ========== 反馈状态查询命令 ==========
   get_contactor_ctrl_result: {
     name: '查询接触器执行策略结果',

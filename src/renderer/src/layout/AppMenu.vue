@@ -57,7 +57,10 @@ const rawMenuItems = ref([
       { labelKey: 'menu.batteryInfo', icon: 'pi pi-home', route: '/Cluster/cellData', roles: ['admin', 'guest'] },
       { labelKey: 'menu.clusterVersion', icon: 'pi pi-info-circle', route: '/Cluster/version', roles: ['admin', 'guest'] },
       { labelKey: 'menu.didoStatus', icon: 'pi pi-table', route: '/Cluster/DiDoStatus', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.gpioData', icon: 'pi pi-bolt', route: '/Cluster/gpio', roles: ['admin', 'guest'] }
+      { labelKey: 'menu.gpioData', icon: 'pi pi-bolt', route: '/Cluster/gpio', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.clusterPcs', icon: 'pi pi-bolt', route: '/Cluster/Peripheral/Pcs', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.clusterRef', icon: 'pi pi-sliders-h', route: '/Cluster/Peripheral/Ref', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.clusterDehumi', icon: 'pi pi-sun', route: '/Cluster/Peripheral/Dehumi', roles: ['admin', 'guest'] },
     ]
   },
   {
@@ -96,7 +99,9 @@ const rawMenuItems = ref([
     items: [
       { labelKey: 'menu.pcsDevice', icon: 'pi pi-bolt', route: '/Peripheral/BlockPcs', roles: ['admin', 'guest'] },
       { labelKey: 'menu.refDevice', icon: 'pi pi-sliders-h', route: '/Peripheral/BlockRef', roles: ['admin', 'guest'] },
-      { labelKey: 'menu.dehDevice', icon: 'pi pi-cloud', route: '/Peripheral/BlockDeh', roles: ['admin', 'guest'] }
+      { labelKey: 'menu.dehDevice', icon: 'pi pi-cloud', route: '/Peripheral/BlockDeh', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.meterDevice', icon: 'pi pi-chart-bar', route: '/Peripheral/BlockMeter', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.fireDevice', icon: 'pi pi-shield', route: '/Peripheral/BlockFire', roles: ['admin', 'guest'] }
     ]
   },
   {
@@ -118,13 +123,13 @@ const rawMenuItems = ref([
     type: 'single',
     roles: ['admin']
   },
-  {
-    labelKey: 'menu.deviceManagement',
-    icon: 'pi pi-wrench',
-    route: '/Block/DeviceManagement',
-    type: 'single',
-    roles: ['admin']
-  }
+  // {
+  //   labelKey: 'menu.deviceManagement',
+  //   icon: 'pi pi-wrench',
+  //   route: '/Block/DeviceManagement',
+  //   type: 'single',
+  //   roles: ['admin']
+  // }
 ])
 
 // 根据角色过滤菜单项并翻译

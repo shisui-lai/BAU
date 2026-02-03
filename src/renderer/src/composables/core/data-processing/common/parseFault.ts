@@ -5,6 +5,7 @@
 import { markRaw, shallowRef, watch } from 'vue'
 import { locateCell } from '../../../../../../protocol/utils'
 import { useClusterStore } from '../../../../stores/device/clusterStore'
+import { useSystemConfigStore } from '../../../../stores/system/systemConfigStore'
 
 /* ---------- 全局电芯序号计算函数 ---------- */
 function calculateGlobalCell(bmu: number, cellInBmu: number, cfg: any = {}) {
@@ -545,6 +546,52 @@ export function parseFault (msg: any) {
   const now   = Date.now()
   const tsStr = new Date(now).toLocaleString()
 
+  const sysCfgStore = useSystemConfigStore()
+  const sysCfg = (sysCfgStore.systemConfig || {}) as Record<string, number>
+// - 从全局的 systemConfigStore 里拿当前设备的系统配置。
+// - systemConfig 里会有：
+//   - BlockCount ：当前堆数量
+//   - ClusterCount1 … ClusterCount6 ：每一堆下面有多少簇
+// - 这里把它强制当成 Record<string, number> ，方便下面用动态 key sysCfg[\ ClusterCount${i}`]` 取值。
+// 作用 ：给后面的 “BCU→堆/簇” 映射提供配置数据。
+
+  const getOrCreateMap = (k: string) => {
+    if (!rawFaultData.has(k)) rawFaultData.set(k, new Map<string, FaultRecord>())
+    return rawFaultData.get(k)!
+  }
+// getOrCreateMap ：按堆/簇创建故障 Map
+// Map<string, Map<string, FaultRecord>>
+// 外层 key: clusterKey，如 "1-0", "1-3", "2-2"
+// 内层 key: label，例如 "3#BCU通讯失联"
+
+// getBcuIdFromLabel ：从 label 解析出 BCU 编号
+  const getBcuIdFromLabel = (srcLabel: string): number | null => {
+    const s = String(srcLabel)
+    const m1 = s.match(/BCU通讯失联#(\d+)/)
+    if (m1) return Number(m1[1])
+    const m2 = s.match(/(\d+)#BCU通讯失联/)
+    if (m2) return Number(m2[1])
+    return null
+  }
+// mapBcuToClusterKey ：BCU编号 → 堆-簇 key
+  const mapBcuToClusterKey = (bcuId: number): string | null => {
+    const blockCount = Number(sysCfg.BlockCount) || 1
+    const counts: number[] = []
+    for (let i = 1; i <= blockCount; i++) {
+      const c = Number(sysCfg[`ClusterCount${i}`]) || 0
+      counts.push(c)
+    }
+    let idx = 1
+    for (let b = 1; b <= blockCount; b++) {
+      const cnt = counts[b - 1] || 0
+      for (let c = 1; c <= cnt; c++) {
+        if (idx === bcuId) return `${b}-${c}`
+        idx++
+      }
+    }
+    return null
+  }
+
   msg.data.forEach((sec: any) => {
     sec.element.forEach(({ label, value }: any) => {
       /* ---------- ① Bool 字段 ---------- */
@@ -625,15 +672,27 @@ export function parseFault (msg: any) {
           
           // FAULT_LEVEL2的动态翻译在Fault.vue的getFaultTranslation中处理
 
-          // 检查故障是否已存在，保持首次发生时间
-          const existingRecord = map.get(label)
-
           // 根据故障名称判断等级（修复：不再硬编码为严重）
           const faultLevel = getFaultLevelFromLabel(label)
 
+          const targetKey = (() => {
+            if (dataType === 'BLOCK_COMM_LOST') {
+              const bcuId = getBcuIdFromLabel(label)
+              if (bcuId && Number.isFinite(bcuId)) {
+                const k2 = mapBcuToClusterKey(bcuId)
+                if (k2) return k2
+              }
+            }
+            return key
+          })()
+
+          const writeMap = targetKey === key ? map : getOrCreateMap(targetKey)
+
+          const existingRecord = writeMap.get(label)
+
           if (existingRecord) {
             // 故障已存在，只更新必要字段，保持原始时间
-            map.set(label, {
+            writeMap.set(label, {
               ...existingRecord,
               // 保持原始时间：time 和 ts 不更新
               levelTxt: faultLevel.txt,  // 根据故障名称判断等级
@@ -642,7 +701,7 @@ export function parseFault (msg: any) {
             })
           } else {
             // 故障首次出现，记录完整信息包括首次发生时间
-            map.set(label, {
+            writeMap.set(label, {
               label,
               desc,
               time : tsStr,  //  只在首次出现时记录时间
@@ -654,16 +713,27 @@ export function parseFault (msg: any) {
               globalTemp,  // 全局温度序号
               dataType     // MQTT频道类型
             })
-            clusterMutationCounter.set(key, (clusterMutationCounter.get(key) ?? 0) + 1)
+            clusterMutationCounter.set(targetKey, (clusterMutationCounter.get(targetKey) ?? 0) + 1)
           }
         } else {
           // 只有当故障确实存在时才删除（故障恢复）
-          if (map.has(label)) {    
-            map.delete(label)          // 故障恢复
-            clusterMutationCounter.set(key, (clusterMutationCounter.get(key) ?? 0) + 1)
-            if (map.size === 0) {
-              rawFaultData.delete(key); // 清理空集群
-              clusterMutationCounter.delete(key)
+          const targetKey = (() => {
+            if (dataType === 'BLOCK_COMM_LOST') {
+              const bcuId = getBcuIdFromLabel(label)
+              if (bcuId && Number.isFinite(bcuId)) {
+                const k2 = mapBcuToClusterKey(bcuId)
+                if (k2) return k2
+              }
+            }
+            return key
+          })()
+          const writeMap = targetKey === key ? map : rawFaultData.get(targetKey)
+          if (writeMap && writeMap.has(label)) {
+            writeMap.delete(label)
+            clusterMutationCounter.set(targetKey, (clusterMutationCounter.get(targetKey) ?? 0) + 1)
+            if (writeMap.size === 0) {
+              rawFaultData.delete(targetKey)
+              clusterMutationCounter.delete(targetKey)
             }
           }
         }
@@ -765,7 +835,20 @@ export function parseFault (msg: any) {
         
 
         //检查故障是否已存在，保持首次发生时间
-        const existingRecord = map.get(label)
+        const targetKey = (() => {
+          if (dataType === 'BLOCK_COMM_LOST') {
+            const bcuId = getBcuIdFromLabel(label)
+            if (bcuId && Number.isFinite(bcuId)) {
+              const k2 = mapBcuToClusterKey(bcuId)
+              if (k2) return k2
+            }
+          }
+          return key
+        })()
+
+        const writeMap = targetKey === key ? map : getOrCreateMap(targetKey)
+
+        const existingRecord = writeMap.get(label)
 
         if (existingRecord) {
           // 故障已存在，检查等级是否变化
@@ -773,7 +856,7 @@ export function parseFault (msg: any) {
           const newLevel = level.tag as FaultLevelTag
           const isLevelChanged = oldLevel !== newLevel
 
-          map.set(label, {
+          writeMap.set(label, {
             ...existingRecord,
             // 2-bit字段：等级变化时更新时间，否则保持原时间
             time: isLevelChanged ? tsStr : existingRecord.time,
@@ -784,7 +867,7 @@ export function parseFault (msg: any) {
           })
         } else {
           // 故障首次出现，记录完整信息包括首次发生时间
-          map.set(label, {
+          writeMap.set(label, {
             label,
             desc,
             time : tsStr,  // 只在首次出现时记录时间
@@ -796,7 +879,7 @@ export function parseFault (msg: any) {
             globalTemp,  // 全局温度序号
             dataType     // MQTT频道类型
           })
-          clusterMutationCounter.set(key, (clusterMutationCounter.get(key) ?? 0) + 1)
+          clusterMutationCounter.set(targetKey, (clusterMutationCounter.get(targetKey) ?? 0) + 1)
         }
       }
     })

@@ -112,6 +112,16 @@ let responseOrderStats = {
   firstResponse: true
 } // 响应顺序统计
 
+export function getEventExportStats() {
+  return {
+    isReadingEvent,
+    eventRecordDataCacheSize: eventRecordDataCache.size,
+    eventRecordResponseWaitersSize: eventRecordResponseWaiters.size,
+    mappingVerificationLength: mappingVerification.length,
+    responseOrderStatsTotal: responseOrderStats.total
+  }
+}
+
 /**
  * 处理事件记录数据响应
  *
@@ -270,6 +280,14 @@ export async function startReadingEvent(blockId, offsetRead, totalRead, exportDi
   if (!client) {
     throw new Error('MQTT客户端未初始化')
   }
+
+  try {
+    console.log(
+      `[ChildLog] event-start {"block":${blockId},"offset":${offsetRead},"total":${totalRead},"dir":${JSON.stringify(
+        exportDir || ''
+      )}}`
+    )
+  } catch {}
 
   isReadingEvent = true
   eventReadingBlockId = blockId
@@ -470,6 +488,12 @@ function stopReadingEvent(blockId, wasCanceled = false, hasError = false) {
   const savedBlockId = eventReadingBlockId
   eventReadingBlockId = null
 
+  try {
+    console.log(
+      `[ChildLog] event-stop {"block":${savedBlockId},"canceled":${wasCanceled},"hasError":${hasError},"cached":${eventRecordDataCache.size},"total":${eventReadingTotal}}`
+    )
+  } catch {}
+
   // 区分：如果是主动取消，就发 cancel；否则发 completed
   if (wasCanceled) {
     process.send({
@@ -609,6 +633,12 @@ function stopReadingEvent(blockId, wasCanceled = false, hasError = false) {
       })
     }
   }
+  eventRecordDataCache.clear()
+  if (global.gc) {
+    try {
+      global.gc()
+    } catch (_) {}
+  }
 }
 
 /**
@@ -648,8 +678,37 @@ function generateEventRecordCSV(blockId, saveDir, recordCount) {
   const outputFile = path.join(eventFolderPath, filename)
   console.log(`[事件记录导出] 写入CSV: ${outputFile}`)
 
+  try {
+    console.log(
+      `[ChildLog] event-csv-start {"block":${blockId},"dir":${JSON.stringify(
+        saveDir || ''
+      )},"file":${JSON.stringify(outputFile)},"count":${recordCount}}`
+    )
+  } catch {}
+
   // 创建写入流
   const csvStream = fs.createWriteStream(outputFile, { encoding: 'utf8', flags: 'w' })
+
+  try {
+    csvStream.on('error', (err) => {
+      try {
+        console.error(
+          `[ChildLog] event-csv-stream-error {"file":${JSON.stringify(
+            outputFile
+          )},"error":${JSON.stringify(err && err.message)}}`
+        )
+      } catch {}
+    })
+    csvStream.on('finish', () => {
+      try {
+        console.log(
+          `[ChildLog] event-csv-finish {"file":${JSON.stringify(
+            outputFile
+          )},"count":${recordCount}}`
+        )
+      } catch {}
+    })
+  } catch {}
 
   // 写入BOM（支持Excel正确识别UTF-8）
   csvStream.write('\uFEFF')

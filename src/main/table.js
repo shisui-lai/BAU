@@ -673,7 +673,12 @@ export const CLUSTER_SUMMARY = [
     unit: 'KB'
   },
 
-  { class: '系统信息', key: 'DefaultParamRemainTimes', label: '默认参数剩余次数', type: 'u16' },
+  {
+    class: '系统及空间信息',
+    key: 'DefaultParamRemainTimes',
+    label: '默认参数剩余次数',
+    type: 'u16'
+  },
   /* 80-95：预留 16 字 → skip16 ---------------------------------------- */
   { key: '_skip4', type: 'skip6' }
 ]
@@ -5301,10 +5306,34 @@ export const OUT_FAULT_MAP = [
     bit: 5
   },
   // 高边驱动故障231-240
+  // {
+  //   class: 'Register15',
+  //   key: 'MainPosHighSideDriveFault',
+  //   label: '主正高边驱动反馈故障',
+  //   type: 'bit',
+  //   bitsOf: 'FaultMap15',
+  //   bit: 6
+  // },
+  // {
+  //   class: 'Register15',
+  //   key: 'MainNegHighSideDriveFault',
+  //   label: '主负高边驱动反馈故障',
+  //   type: 'bit',
+  //   bitsOf: 'FaultMap15',
+  //   bit: 7
+  // },
+  // {
+  //   class: 'Register15',
+  //   key: 'PrechargeHighSideDriveFault',
+  //   label: '预充高边驱动反馈故障',
+  //   type: 'bit',
+  //   bitsOf: 'FaultMap15',
+  //   bit: 8
+  // },
   {
     class: 'Register15',
     key: 'MainPosHighSideDriveFault',
-    label: '主正高边驱动反馈故障',
+    label: '预留',
     type: 'bit',
     bitsOf: 'FaultMap15',
     bit: 6
@@ -5312,7 +5341,7 @@ export const OUT_FAULT_MAP = [
   {
     class: 'Register15',
     key: 'MainNegHighSideDriveFault',
-    label: '主负高边驱动反馈故障',
+    label: '预留',
     type: 'bit',
     bitsOf: 'FaultMap15',
     bit: 7
@@ -5320,7 +5349,7 @@ export const OUT_FAULT_MAP = [
   {
     class: 'Register15',
     key: 'PrechargeHighSideDriveFault',
-    label: '预充高边驱动反馈故障',
+    label: '预留',
     type: 'bit',
     bitsOf: 'FaultMap15',
     bit: 8
@@ -6498,6 +6527,36 @@ export const SYS_BASE_PARAM_R = [
     len: 1,
     map: { 0: '普通模式', 1: '高精度模式' }
   },
+  {
+    class: '类型选择',
+    key: 'WaterCoolerStrategyMode',
+    label: '水冷机策略模式',
+    type: 'bits',
+    bitsOf: 'SpecialFuncEnable',
+    bit: 5,
+    len: 2,
+    map: { 0: '户外柜', 1: '工商业' }
+  },
+  {
+    class: '类型选择',
+    key: 'HighVoltBoxExist',
+    label: '高压箱是否存在',
+    type: 'bits',
+    bitsOf: 'SpecialFuncEnable',
+    bit: 7,
+    len: 1,
+    map: { 0: '不存在', 1: '存在' }
+  },
+  {
+    class: '类型选择',
+    key: 'DehumidifyCtrlMode',
+    label: '除湿机控制模式',
+    type: 'bits',
+    bitsOf: 'SpecialFuncEnable',
+    bit: 8,
+    len: 2,
+    map: { 0: '单独控制', 1: '基数地址控制', 2: '偶数地址控制' }
+  },
   { class: '类型选择', key: 'forbidEnableCluster', label: '禁止使能簇', type: 'u16' },
   /* ⑥ 预留 -------------------------------------------------------- */
   { key: '_skip1', type: 'skip2' },
@@ -6805,7 +6864,74 @@ export const SYS_BASE_PARAM_R = [
   { class: '均衡参数', key: 'openBalanceK', label: '开路均衡阈值电压区间K值', type: 'u16' },
 
   /* ⑱ 预留 10 B ------------------------------------------------------- */
-  { key: '_skip8', type: 'skip10' }
+  { key: '_skip8', type: 'skip10' },
+
+  {
+    class: '户外柜水冷机配置',
+    key: 'runCoolLoopCond1MaxCellTemp',
+    label: '运行状态-制冷模式-自循环条件1-最大单体温度限制值',
+    type: 's16',
+    scale: 10,
+    unit: '℃'
+  },
+  {
+    class: '户外柜水冷机配置',
+    key: 'runCoolLoopCond2AvgCellTemp',
+    label: '运行状态-制冷模式-自循环条件2-平均单体温度限制值',
+    type: 's16',
+    scale: 10,
+    unit: '℃'
+  },
+  {
+    class: '户外柜水冷机配置',
+    key: 'runHeatLoopCond1MinCellTemp',
+    label: '运行状态-制热模式-自循环条件1-最小单体温度限制值',
+    type: 's16',
+    scale: 10,
+    unit: '℃'
+  },
+  {
+    class: '户外柜水冷机配置',
+    key: 'runHeatLoopCond2AvgCellTemp',
+    label: '运行状态-制热模式-自循环条件2-平均单体温度限制值',
+    type: 's16',
+    scale: 10,
+    unit: '℃'
+  },
+  {
+    class: '户外柜水冷机配置',
+    key: 'idleCoolLoopCond1MaxCellTemp',
+    label: '非运行状态-制冷模式-自循环条件1-最大单体温度限制值',
+    type: 's16',
+    scale: 10,
+    unit: '℃'
+  },
+  {
+    class: '户外柜水冷机配置',
+    key: 'idleCoolLoopCond2AvgCellTemp',
+    label: '非运行状态-制冷模式-自循环条件2-平均单体温度限制值',
+    type: 's16',
+    scale: 10,
+    unit: '℃'
+  },
+  {
+    class: '户外柜水冷机配置',
+    key: 'idleHeatLoopCond1MinCellTemp',
+    label: '非运行状态-制热模式-自循环条件1-最小单体温度限制值',
+    type: 's16',
+    scale: 10,
+    unit: '℃'
+  },
+  {
+    class: '户外柜水冷机配置',
+    key: 'idleHeatLoopCond2AvgCellTemp',
+    label: '非运行状态-制热模式-自循环条件2-平均单体温度限制值',
+    type: 's16',
+    scale: 10,
+    unit: '℃'
+  },
+
+  { key: '_skip9', type: 'skip8' }
 ]
 
 export const ERROR_CODES = {
@@ -14666,7 +14792,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU1CommLost',
-    label: 'BCU1通讯失联',
+    label: '1#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 0
@@ -14674,7 +14800,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU2CommLost',
-    label: 'BCU2通讯失联',
+    label: '2#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 1
@@ -14682,7 +14808,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU3CommLost',
-    label: 'BCU3通讯失联',
+    label: '3#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 2
@@ -14690,7 +14816,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU4CommLost',
-    label: 'BCU4通讯失联',
+    label: '4#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 3
@@ -14698,7 +14824,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU5CommLost',
-    label: 'BCU5通讯失联',
+    label: '5#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 4
@@ -14706,7 +14832,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU6CommLost',
-    label: 'BCU6通讯失联',
+    label: '6#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 5
@@ -14714,7 +14840,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU7CommLost',
-    label: 'BCU7通讯失联',
+    label: '7#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 6
@@ -14722,7 +14848,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU8CommLost',
-    label: 'BCU8通讯失联',
+    label: '8#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 7
@@ -14730,7 +14856,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU9CommLost',
-    label: 'BCU9通讯失联',
+    label: '9#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 8
@@ -14738,7 +14864,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU10CommLost',
-    label: 'BCU10通讯失联',
+    label: '10#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 9
@@ -14746,7 +14872,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU11CommLost',
-    label: 'BCU11通讯失联',
+    label: '11#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 10
@@ -14754,7 +14880,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU12CommLost',
-    label: 'BCU12通讯失联',
+    label: '12#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 11
@@ -14762,7 +14888,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU13CommLost',
-    label: 'BCU13通讯失联',
+    label: '13#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 12
@@ -14770,7 +14896,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU14CommLost',
-    label: 'BCU14通讯失联',
+    label: '14#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 13
@@ -14778,7 +14904,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU15CommLost',
-    label: 'BCU15通讯失联',
+    label: '15#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 14
@@ -14786,7 +14912,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU16CommLost',
-    label: 'BCU16通讯失联',
+    label: '16#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus1',
     bit: 15
@@ -14797,7 +14923,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU17CommLost',
-    label: 'BCU17通讯失联',
+    label: '17#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus2',
     bit: 0
@@ -14805,7 +14931,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU18CommLost',
-    label: 'BCU18通讯失联',
+    label: '18#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus2',
     bit: 1
@@ -14813,7 +14939,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU19CommLost',
-    label: 'BCU19通讯失联',
+    label: '19#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus2',
     bit: 2
@@ -14821,7 +14947,7 @@ export const BLOCK_COMM_LOST = [
   {
     class: '簇通讯失联',
     key: 'BCU20CommLost',
-    label: 'BCU20通讯失联',
+    label: '20#BCU通讯失联',
     type: 'bit',
     bitsOf: 'bcuStatus2',
     bit: 3
@@ -14960,8 +15086,9 @@ export const BLOCK_COMMON_PARAM_R = [
     scale: 1,
     unit: 'S'
   },
-  // 9个预留字段 (9×2字节 = 18字节)
-  { class: '系统基本配置', key: 'Reserved1', label: '预留1', type: 'skip18' },
+  { class: '系统基本配置', key: 'DeviceSerialNumber', label: '设备序号', type: 'u16', scale: 1 },
+  // 8个预留字段 (8×2字节 = 16字节)
+  { class: '系统基本配置', key: 'Reserved1', label: '预留1', type: 'skip16' },
 
   // ② 结构配置
   { class: '系统基本配置', key: 'BlockCount', label: '当前堆数', type: 'u16', scale: 1 },
@@ -15538,39 +15665,14 @@ export const SYS_RUN_TIME_R = [
 
 // 堆系统端口配置参数（block_port_cfg）
 export const BLOCK_PORT_CFG_R = [
-  // —— CAN1/2/3 速率（仲裁/数据）——
-  {
-    class: '系统端口配置参数',
-    key: 'CAN1ArbitrationBaud',
-    label: 'CAN1通讯速率/仲裁域速率',
-    type: 'u16'
-  },
-  { class: '系统端口配置参数', key: 'CAN1DataBaud', label: 'CAN1数据域波特率', type: 'u16' },
-  {
-    class: '系统端口配置参数',
-    key: 'CAN2ArbitrationBaud',
-    label: 'CAN2通讯速率/仲裁域速率',
-    type: 'u16'
-  },
-  { class: '系统端口配置参数', key: 'CAN2DataBaud', label: 'CAN2数据域波特率', type: 'u16' },
-  {
-    class: '系统端口配置参数',
-    key: 'CAN3ArbitrationBaud',
-    label: 'CAN3通讯速率/仲裁域速率',
-    type: 'u16'
-  },
-  { class: '系统端口配置参数', key: 'CAN3DataBaud', label: 'CAN3数据域波特率', type: 'u16' },
+  // —— 生产编码（占 4 寄存器）——
+  { class: '系统端口配置参数', key: 'productionYear', label: '年', type: 'u16' },
+  { class: '系统端口配置参数', key: 'productionMonth', label: '月', type: 'u16' },
+  { class: '系统端口配置参数', key: 'productionDay', label: '日', type: 'u16' },
+  { class: '系统端口配置参数', key: 'productionIndex', label: '编号', type: 'u16' },
 
-  // —— RS485(1~6) 速率 ——
-  { class: '系统端口配置参数', key: 'RS485_1_Baud', label: 'RS485-1通讯速率', type: 'u16' },
-  { class: '系统端口配置参数', key: 'RS485_2_Baud', label: 'RS485-2通讯速率', type: 'u16' },
-  { class: '系统端口配置参数', key: 'RS485_3_Baud', label: 'RS485-3通讯速率', type: 'u16' },
-  { class: '系统端口配置参数', key: 'RS485_4_Baud', label: 'RS485-4通讯速率', type: 'u16' },
-  { class: '系统端口配置参数', key: 'RS485_5_Baud', label: 'RS485-5通讯速率', type: 'u16' },
-  { class: '系统端口配置参数', key: 'RS485_6_Baud', label: 'RS485-6通讯速率', type: 'u16' },
-
-  // —— 预留1（占 4 寄存器）——
-  { key: '_rsv1', type: 'skip8' },
+  // —— 预留（占 12 寄存器）——
+  { key: '_rsv1', type: 'skip24' },
 
   // —— 网卡1 ——
   { class: '系统端口配置参数', key: 'Eth1_IP', label: '网卡1 IP地址', type: 'ipv4' },
@@ -15860,7 +15962,7 @@ export const BLOCK_COMM_DEV_CFG_R = [
     label: 'PCS类型',
     type: 'u16',
     scale: 1,
-    remarks: '0-无PCS 1-双一力PCS'
+    remarks: '0：无PCS 1：双一力PCS(RS485) 2：禾望PCS 3：科华PCS 4：迈格瑞能PCS 5：盛宏PCS 6：双一力PCS(CAN)'
   },
   { class: '系统通讯设备配置参数', key: 'PcsCount', label: 'PCS数量', type: 'u16', scale: 1 },
   {
@@ -15869,8 +15971,7 @@ export const BLOCK_COMM_DEV_CFG_R = [
     label: '制冷设备类型',
     type: 'u16',
     scale: 1,
-    remarks:
-      '0-无制冷设备 1-科诺威水冷机 2-英维克 3-埃森特交流空调 4-英维克-EMW30-50-80 5-均能水冷机-1'
+    remarks: '0：无制冷设备 1：三河同飞 2：英维克0513 3：英维克70513 4：柯诺威1 5：柯诺威2 6：均能'
   },
   {
     class: '系统通讯设备配置参数',
@@ -15885,7 +15986,7 @@ export const BLOCK_COMM_DEV_CFG_R = [
     label: '除湿空调类型',
     type: 'u16',
     scale: 1,
-    remarks: '0-无除湿空调 1-除湿机-01 2-02-除湿机-E-J-000113'
+    remarks: '0：无除湿空调 1：三河同飞 2：英维克U3-EC 3：E-J000113'
   },
   {
     class: '系统通讯设备配置参数',
@@ -15924,7 +16025,25 @@ export const BLOCK_COMM_DEV_CFG_R = [
     scale: 1,
     remarks: '0-网卡1 1-网卡2'
   },
-  { class: '保留', key: '_skip', type: 'skip14' }
+  {
+    class: '系统通讯设备配置参数',
+    key: 'MeterType',
+    label: '电表类型',
+    type: 'u16',
+    scale: 1,
+    remarks: '0-无电表 1-安科瑞DTSD1352'
+  },
+  { class: '系统通讯设备配置参数', key: 'MeterCount', label: '电表数量', type: 'u16', scale: 1 },
+  {
+    class: '系统通讯设备配置参数',
+    key: 'FireDeviceType',
+    label: '消防设备类型',
+    type: 'u16',
+    scale: 1,
+    remarks: '0-无消防设备 1-翼捷'
+  },
+  { class: '系统通讯设备配置参数', key: 'FireDeviceCount', label: '消防设备数量', type: 'u16', scale: 1 },
+  { class: '保留', key: '_skip', type: 'skip6' }
 ]
 
 //系统操作配置参数表 (24个参数)
@@ -16181,6 +16300,54 @@ export const BLOCK_SOC_PARAM_R = [
   },
 
   { class: '保留', key: '_skip', type: 'skip40' }
+]
+
+export const BLOCK_REF_PARAM_R = [
+  { class: '系统水冷机配置参数', key: 'TempControlMode', label: '控温模式', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'SegmentClusterStart1', label: '分段控温-簇编号起始1', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'SegmentClusterEnd1', label: '分段控温-簇编号结束1', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'SegmentClusterStart2', label: '分段控温-簇编号起始2', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'SegmentClusterEnd2', label: '分段控温-簇编号结束2', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'SegmentClusterStart3', label: '分段控温-簇编号起始3', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'SegmentClusterEnd3', label: '分段控温-簇编号结束3', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'SegmentClusterStart4', label: '分段控温-簇编号起始4', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'SegmentClusterEnd4', label: '分段控温-簇编号结束4', type: 'u16', scale: 1 },
+
+  { class: '保留', key: '_skip_ref_1', type: 'skip16' },
+
+  { class: '系统水冷机配置参数', key: 'RunStartCoolCond1_MaxCellTemp', label: '运行状态-启动制冷条件1-单体最大温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunStartCoolCond2_AvgCellTemp', label: '运行状态-启动制冷条件2-单体平均温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunCool_SetCoolTemp', label: '运行状态制冷-下设制冷温度值', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunCool_SetHeatTemp', label: '运行状态制冷-下设加热温度值', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunCool_ControlMode', label: '运行状态制冷-下设控制模式', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'RunStopCoolCond3_MaxCellTemp', label: '运行状态-关闭制冷条件3-单体最大温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunStopCoolCond4_AvgCellTemp', label: '运行状态-关闭制冷条件4-单体平均温度', type: 's16', scale: 10, unit: '℃' },
+
+  { class: '系统水冷机配置参数', key: 'IdleStartCoolCond1_MaxCellTemp', label: '非运行状态-启动制冷条件1-单体最大温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleStartCoolCond2_AvgCellTemp', label: '非运行状态-启动制冷条件2-单体平均温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleCool_SetCoolTemp', label: '非运行状态制冷-下设制冷温度值', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleCool_SetHeatTemp', label: '非运行状态制冷-下设加热温度值', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleCool_ControlMode', label: '非运行状态制冷-下设控制模式', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'IdleStopCoolCond3_MaxCellTemp', label: '非运行状态-关闭制冷条件3-单体最大温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleStopCoolCond4_AvgCellTemp', label: '非运行状态-关闭制冷条件4-单体平均温度', type: 's16', scale: 10, unit: '℃' },
+
+  { class: '系统水冷机配置参数', key: 'RunStartHeatCond1_MinCellTemp', label: '运行状态-启动加热条件1-单体最小温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunStartHeatCond2_AvgCellTemp', label: '运行状态-启动加热条件2-单体平均温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunHeat_SetCoolTemp', label: '运行状态加热-下设制冷温度值', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunHeat_SetHeatTemp', label: '运行状态加热-下设加热温度值', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunHeat_ControlMode', label: '运行状态加热-下设控制模式', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'RunStopHeatCond3_MinCellTemp', label: '运行状态-关闭加热条件3-单体最小温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'RunStopHeatCond4_AvgCellTemp', label: '运行状态-关闭加热条件4-单体平均温度', type: 's16', scale: 10, unit: '℃' },
+
+  { class: '系统水冷机配置参数', key: 'IdleStartHeatCond1_MinCellTemp', label: '非运行状态-启动加热条件1-单体最小温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleStartHeatCond2_AvgCellTemp', label: '非运行状态-启动加热条件2-单体平均温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleHeat_SetCoolTemp', label: '非运行状态加热-下设制冷温度值', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleHeat_SetHeatTemp', label: '非运行状态加热-下设加热温度值', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleHeat_ControlMode', label: '非运行状态加热-下设控制模式', type: 'u16', scale: 1 },
+  { class: '系统水冷机配置参数', key: 'IdleStopHeatCond3_MinCellTemp', label: '非运行状态-关闭加热条件3-单体最小温度', type: 's16', scale: 10, unit: '℃' },
+  { class: '系统水冷机配置参数', key: 'IdleStopHeatCond4_AvgCellTemp', label: '非运行状态-关闭加热条件4-单体平均温度', type: 's16', scale: 10, unit: '℃' },
+
+  { class: '保留', key: '_skip_ref_2', type: 'skip16' }
 ]
 
 // 升级参数字段定义表 - 73个寄存器 (146字节)
@@ -19157,121 +19324,6 @@ export const EVENT_RECORD_R = [
   { class: '事件记录数据', key: 'CRC16', label: 'CRC16', type: 'u16', scale: 1, hide: false }
 ]
 
-//双一力PCS字段定义 (包含头部3个字段 + 20个数据寄存器)
-export const PCS_SHUANGYILI_FIELDS = [
-  // 头部字段 (前3个字段固定)
-  { class: 'PCS基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
-  {
-    class: 'PCS基础信息',
-    key: 'pcsAddress',
-    label: 'PCS地址',
-    type: 'u16',
-    scale: 1,
-    map: { 1: '第1堆', 2: '第2堆' }
-  },
-  {
-    class: 'PCS基础信息',
-    key: 'commStatus',
-    label: 'PCS通讯状态',
-    type: 'u16',
-    scale: 1,
-    map: { 0: '正常', 1: '通讯异常' }
-  },
-  // 数据字段 (20个数据寄存器)
-  { class: 'PCS数据', key: 'totalVoltage', label: '总电压(V)', type: 'u16', scale: 10 },
-  {
-    class: 'PCS数据',
-    key: 'totalCurrent',
-    label: '电池组充/放电总电流(A)',
-    type: 's16',
-    scale: 10
-  },
-  { class: 'PCS数据', key: 'soc', label: 'SOC(%)', type: 'u16', scale: 1 },
-  { class: 'PCS数据', key: 'soh', label: 'SOH(%)', type: 'u16', scale: 1 },
-  { class: 'PCS数据', key: 'soe', label: 'SOE(%)', type: 'u16', scale: 1 },
-  { class: 'PCS数据', key: 'ratedVoltage', label: '额定电压(V)', type: 'u16', scale: 10 },
-  { class: 'PCS数据', key: 'ratedCurrent', label: '额定电流(A)', type: 'u16', scale: 10 },
-  { class: 'PCS数据', key: 'ratedCapacity', label: '额定容量(Ah)', type: 'u16', scale: 1 },
-  {
-    class: 'PCS数据',
-    key: 'dischargeEndVoltage',
-    label: '放电截止电压(V)',
-    type: 'u16',
-    scale: 10
-  },
-  { class: 'PCS数据', key: 'chargeEndVoltage', label: '充电截止电压(V)', type: 'u16', scale: 10 },
-  {
-    class: 'PCS数据',
-    key: 'maxDischargeCurrent',
-    label: '最大放电电流(A)',
-    type: 'u16',
-    scale: 10
-  },
-  { class: 'PCS数据', key: 'maxChargeCurrent', label: '最大充电电流(A)', type: 'u16', scale: 10 },
-  {
-    class: 'PCS数据',
-    key: 'maxDischargepower',
-    label: '最大允许放电功率(kW)',
-    type: 'u16',
-    scale: 10
-  },
-  {
-    class: 'PCS数据',
-    key: 'maxChargePower',
-    label: '最大允许充电功率(kW)',
-    type: 'u16',
-    scale: 10
-  },
-  {
-    class: 'PCS状态',
-    key: 'totalAlarm',
-    label: '总告警',
-    type: 'u16',
-    scale: 1,
-    map: { 0: '无告警', 1: '有一级或二级报警' }
-  },
-  {
-    class: 'PCS状态',
-    key: 'totalFault',
-    label: '总故障',
-    type: 'u16',
-    scale: 1,
-    map: { 0: '正常', 1: '有三级报警' }
-  },
-  {
-    class: 'PCS状态',
-    key: 'hvDisconnectStatus',
-    label: '高压断开状态',
-    type: 'u16',
-    scale: 1,
-    map: { 0: '闭合', 1: '断开' }
-  },
-  {
-    class: 'PCS状态',
-    key: 'chargeStatus',
-    label: '充电状态',
-    type: 'u16',
-    scale: 1,
-    map: { 0: '允许充电', 1: '禁止充电' }
-  },
-  {
-    class: 'PCS状态',
-    key: 'dischargeStatus',
-    label: '放电状态',
-    type: 'u16',
-    scale: 1,
-    map: { 0: '允许放电', 1: '禁止放电' }
-  },
-  {
-    class: 'PCS状态',
-    key: 'bmsStateMachine',
-    label: 'BMS状态机',
-    type: 'u16',
-    scale: 1,
-    map: { 0: '初始化', 1: '停机', 2: '待机', 3: '充电', 4: '放电', 5: '故障' }
-  },
-  { class: 'PCS状态', key: 'bmsHeartbeat', label: 'BMS心跳', type: 'u16', scale: 1 }
-]
 
 export const EN_CLUSTER_HARDWARE_SUM = [
   { class: '接触器故障', key: 'ContactorFault1', type: 'u16', scale: 1, hide: false },
@@ -19543,7 +19595,7 @@ export const EN_CLUSTER_HARDWARE_SUM = [
   {
     class: '高边故障',
     key: 'MainPosHighSideFeedbackFault2',
-    label: '主正高边驱动反馈故障',
+    label: '主正高边驱动反馈故障2',
     type: 'bit',
     bitsOf: 'HighSideFault1',
     bit: 0
@@ -20232,6 +20284,1318 @@ export const EN_CLUSTER_HARDWARE_SUM = [
 // 后续可以添加其他PCS型号的字段定义
 // export const PCS_XINXING_FIELDS = [...]
 // export const PCS_KEHUA_FIELDS = [...]
+//双一力PCS字段定义 (包含头部3个字段 + 20个数据寄存器)
+export const PCS_SHUANGYILI_FIELDS = [
+  // 头部字段 (前3个字段固定)
+  { class: 'PCS基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  {
+    class: 'PCS基础信息',
+    key: 'pcsAddress',
+    label: 'PCS地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: 'PCS基础信息',
+    key: 'commStatus',
+    label: 'PCS通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  // 数据字段 (20个数据寄存器)
+  { class: 'PCS数据', key: 'totalVoltage', label: '总电压(V)', type: 'u16', scale: 10 },
+  {
+    class: 'PCS数据',
+    key: 'totalCurrent',
+    label: '电池组充/放电总电流(A)',
+    type: 's16',
+    scale: 10
+  },
+  { class: 'PCS数据', key: 'soc', label: 'SOC(%)', type: 'u16', scale: 1 },
+  { class: 'PCS数据', key: 'soh', label: 'SOH(%)', type: 'u16', scale: 1 },
+  { class: 'PCS数据', key: 'soe', label: 'SOE(%)', type: 'u16', scale: 1 },
+  { class: 'PCS数据', key: 'ratedVoltage', label: '额定电压(V)', type: 'u16', scale: 10 },
+  { class: 'PCS数据', key: 'ratedCurrent', label: '额定电流(A)', type: 'u16', scale: 10 },
+  { class: 'PCS数据', key: 'ratedCapacity', label: '额定容量(Ah)', type: 'u16', scale: 1 },
+  {
+    class: 'PCS数据',
+    key: 'dischargeEndVoltage',
+    label: '放电截止电压(V)',
+    type: 'u16',
+    scale: 10
+  },
+  { class: 'PCS数据', key: 'chargeEndVoltage', label: '充电截止电压(V)', type: 'u16', scale: 10 },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargeCurrent',
+    label: '最大放电电流(A)',
+    type: 'u16',
+    scale: 10
+  },
+  { class: 'PCS数据', key: 'maxChargeCurrent', label: '最大充电电流(A)', type: 'u16', scale: 10 },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargepower',
+    label: '最大允许放电功率(kW)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargePower',
+    label: '最大允许充电功率(kW)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS状态',
+    key: 'totalAlarm',
+    label: '总告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无告警', 1: '有一级或二级报警' }
+  },
+  {
+    class: 'PCS状态',
+    key: 'totalFault',
+    label: '总故障',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '有三级报警' }
+  },
+  {
+    class: 'PCS状态',
+    key: 'hvDisconnectStatus',
+    label: '高压断开状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '闭合', 1: '断开' }
+  },
+  {
+    class: 'PCS状态',
+    key: 'chargeStatus',
+    label: '充电状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '允许充电', 1: '禁止充电' }
+  },
+  {
+    class: 'PCS状态',
+    key: 'dischargeStatus',
+    label: '放电状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '允许放电', 1: '禁止放电' }
+  },
+  {
+    class: 'PCS状态',
+    key: 'bmsStateMachine',
+    label: 'BMS状态机',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '初始化', 1: '停机', 2: '待机', 3: '充电', 4: '放电', 5: '故障' }
+  },
+  { class: 'PCS状态', key: 'bmsHeartbeat', label: 'BMS心跳', type: 'u16', scale: 1 }
+]
+
+export const PCS_HEWANG_FIELDS = [
+  { class: 'PCS基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  {
+    class: 'PCS基础信息',
+    key: 'pcsAddress',
+    label: 'PCS地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: 'PCS基础信息',
+    key: 'commStatus',
+    label: 'PCS通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'workStatus',
+    label: '工作状态信息',
+    type: 'u16',
+    scale: 1,
+    map: {
+      0x1111: '充满',
+      0x2222: '放空',
+      0x5555: '待机',
+      0xaaaa: '跳机',
+      0xbbbb: '正常'
+    }
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargeCurrent',
+    label: '系统可接受的最大充电电流(A)',
+    type: 'u16',
+    scale: 10,
+    map: { 6553.5: '限流功能不使能' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargeCurrent',
+    label: '系统可接受的最大放电电流(A)',
+    type: 'u16',
+    scale: 10,
+    map: { 6553.5: '限流功能不使能' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'batterySoc',
+    label: '电池组SOC(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargePower',
+    label: '系统可接受的最大充电功率(kW)',
+    type: 'u16',
+    scale: 10,
+    map: { 6553.5: '限流功能不使能' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargePower',
+    label: '系统可接受的最大放电功率(kW)',
+    type: 'u16',
+    scale: 10,
+    map: { 6553.5: '限流功能不使能' }
+  }
+]
+
+export const PCS_KEHUA_BLOCK_FIELDS = [
+  { class: 'PCS基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  {
+    class: 'PCS基础信息',
+    key: 'pcsAddress',
+    label: 'PCS地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: 'PCS基础信息',
+    key: 'commStatus',
+    label: 'PCS通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'batteryVoltageWrite',
+    label: '电池电压(V)(PCS写)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'pcsStatusWord',
+    label: 'PCS状态字',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: 'PCS数据',
+    key: 'pcsRunState',
+    label: 'PCS运行状态',
+    type: 'bits',
+    bitsOf: 'pcsStatusWord',
+    bit: 0,
+    len: 4,
+    map: {
+      0: '停止',
+      1: '备用',
+      2: '故障',
+      3: '充电',
+      4: '放电',
+      5: '充电降额',
+      6: '放电降额'
+    }
+  },
+  {
+    class: 'PCS数据',
+    key: 'pcsAcStatus',
+    label: '交流电状态',
+    type: 'bits',
+    bitsOf: 'pcsStatusWord',
+    bit: 4,
+    len: 1,
+    map: {
+      0: '无交流电',
+      1: '有交流电'
+    }
+  },
+  {
+    class: 'PCS数据',
+    key: 'bmsStatusWord',
+    label: 'BMS状态',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: 'PCS数据',
+    key: 'bmsSystemState',
+    label: 'BMS系统状态',
+    type: 'bits',
+    bitsOf: 'bmsStatusWord',
+    bit: 4,
+    len: 3,
+    map: {
+      0: 'Initial',
+      1: 'Normal',
+      2: 'Charge disabled',
+      3: 'Discharge disabled',
+      4: 'Alarm',
+      5: 'Fault',
+      6: 'Standby',
+      7: 'Reserved'
+    }
+  },
+  {
+    class: 'PCS数据',
+    key: 'bmsHeartbeat',
+    label: 'BMS心跳',
+    type: 'bits',
+    bitsOf: 'bmsStatusWord',
+    bit: 12,
+    len: 4
+  },
+  {
+    class: 'PCS数据',
+    key: 'reserved',
+    label: '保留',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: 'PCS数据',
+    key: 'batteryVoltage',
+    label: '电池电压(V)(PCS读)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'batteryCurrent',
+    label: '电池电流(A)',
+    type: 'u16',
+    scale: 10,
+    offset: -2000
+  },
+  {
+    class: 'PCS数据',
+    key: 'soc',
+    label: 'SOC(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'soh',
+    label: 'SOH(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargeCurrent',
+    label: '最大允许充电电流(A)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargeCurrent',
+    label: '最大允许放电电流(A)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargeVoltage',
+    label: '最大允许充电电压(V)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargeVoltage',
+    label: '最大允许放电电压(V)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'availableChargeEnergy',
+    label: '可用充电电量(kWh)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'availableDischargeEnergy',
+    label: '可用放电电量(kWh)',
+    type: 'u16',
+    scale: 10
+  }
+]
+
+export const PCS_MAIGERUINENG_FIELDS = [
+  { class: 'PCS基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  {
+    class: 'PCS基础信息',
+    key: 'pcsAddress',
+    label: 'PCS地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: 'PCS基础信息',
+    key: 'commStatus',
+    label: 'PCS通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'workStatus',
+    label: '工作状态信息',
+    type: 'u16',
+    scale: 1,
+    map: {
+      0x1111: '禁充',
+      0x2222: '禁放',
+      0x5555: '待机',
+      0xaaaa: '跳机',
+      0xbbbb: '正常',
+      0xcccc: '预警'
+    }
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargeCurrent',
+    label: '当前系统最大允许充电电流(A)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargeCurrent',
+    label: '当前系统最大允许放电电流(A)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'stackSoc',
+    label: '电池堆SOC(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'chargeableEnergy',
+    label: '电池堆可充电量(kWh)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'dischargeableEnergy',
+    label: '电池堆可放电量(kWh)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'stackVoltage',
+    label: '电池堆总电压(V)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'stackCurrent',
+    label: '电池堆总电流(A)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMaxSoc',
+    label: '电池堆单体最高SOC(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMinSoc',
+    label: '电池堆单体最低SOC(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMaxVoltage',
+    label: '电池堆单体最高电压(V)',
+    type: 'u16',
+    scale: 1000
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMinVoltage',
+    label: '电池堆单体最低电压(V)',
+    type: 'u16',
+    scale: 1000
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMaxTemp',
+    label: '电池堆单体最高温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMinTemp',
+    label: '电池堆单体最低温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargePower',
+    label: '当前系统最大允许充电功率(kW)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargePower',
+    label: '当前系统最大允许放电功率(kW)',
+    type: 'u16',
+    scale: 10
+  }
+]
+
+export const PCS_SHENGHONG_FIELDS = [
+  { class: 'PCS基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  {
+    class: 'PCS基础信息',
+    key: 'pcsAddress',
+    label: 'PCS地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: 'PCS基础信息',
+    key: 'commStatus',
+    label: 'PCS通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargeCurrent',
+    label: '最大允许充电电流(A)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxDischargeCurrent',
+    label: '最大允许放电电流(A)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'totalVoltage',
+    label: '总电压(V)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'totalCurrent',
+    label: '总电流(A)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'totalSoc',
+    label: '总SOC(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'totalSoh',
+    label: '总SOH(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'maxChargeVoltage',
+    label: '最大允许充电电压(V)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlag',
+    label: '电池状态字',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit15',
+    label: '备用状态15',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 15
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit14',
+    label: '备用状态14',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 14
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit13',
+    label: '备用状态13',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 13
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit12',
+    label: '备用状态12',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 12
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit11',
+    label: '备用状态11',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 11
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit10',
+    label: '备用状态10',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit9',
+    label: '备用状态9',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 9
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit8',
+    label: '备用状态8',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 8
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit7',
+    label: '充电接触器闭合状态',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 7
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit6',
+    label: '放电接触器闭合状态',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 6
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit5',
+    label: '充满状态',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 5
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit4',
+    label: '放空状态',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 4
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit3',
+    label: '强制充电状态',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 3
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit2',
+    label: '备用状态2',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 2
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit1',
+    label: '备用状态1',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 1
+  },
+  {
+    class: 'PCS数据',
+    key: 'statusFlagBit0',
+    label: '备用状态0',
+    type: 'bit',
+    bitsOf: 'statusFlag',
+    bit: 0
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLight',
+    label: '轻度告警',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMedium',
+    label: '中度告警',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevere',
+    label: '严重告警',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit15',
+    label: '轻度-单体欠压',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 15,
+    // Alarm flag 轻度告警：0-无故障 1-有故障
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit14',
+    label: '轻度-单体过压',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 14,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit13',
+    label: '轻度-总压低',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 13,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit12',
+    label: '轻度-总压高',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 12,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit11',
+    label: '轻度-单体欠温',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 11,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit10',
+    label: '轻度-单体过温',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 10,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit9',
+    label: '轻度-单体SOC过低',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 9,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit8',
+    label: '轻度-单体SOC过高',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 8,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit7',
+    label: '轻度-放电过流',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 7,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit6',
+    label: '轻度-充电过流',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 6,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit5',
+    label: '轻度-绝缘故障',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 5,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit4',
+    label: '轻度-电压差异过大',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 4,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit3',
+    label: '轻度-温度差异过大',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 3,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit2',
+    label: '轻度-备用告警2',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 2,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit1',
+    label: '轻度-备用告警1',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 1,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmLightBit0',
+    label: '轻度-备用告警0',
+    type: 'bit',
+    bitsOf: 'alarmLight',
+    bit: 0,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit15',
+    label: '中度-单体欠压',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 15,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit14',
+    label: '中度-单体过压',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 14,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit13',
+    label: '中度-总压低',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 13,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit12',
+    label: '中度-总压高',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 12,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit11',
+    label: '中度-单体欠温',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 11,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit10',
+    label: '中度-单体过温',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 10,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit9',
+    label: '中度-单体SOC过低',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 9,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit8',
+    label: '中度-单体SOC过高',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 8,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit7',
+    label: '中度-放电过流',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 7,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit6',
+    label: '中度-充电过流',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 6,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit5',
+    label: '中度-绝缘故障',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 5,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit4',
+    label: '中度-电压差异过大',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 4,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit3',
+    label: '中度-温度差异过大',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 3,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit2',
+    label: '中度-备用告警2',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 2,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit1',
+    label: '中度-备用告警1',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 1,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmMediumBit0',
+    label: '中度-备用告警0',
+    type: 'bit',
+    bitsOf: 'alarmMedium',
+    bit: 0,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit15',
+    label: '严重-单体欠压',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 15,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit14',
+    label: '严重-单体过压',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 14,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit13',
+    label: '严重-总压低',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 13,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit12',
+    label: '严重-总压高',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 12,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit11',
+    label: '严重-单体欠温',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 11,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit10',
+    label: '严重-单体过温',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 10,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit9',
+    label: '严重-单体SOC过低',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 9,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit8',
+    label: '严重-单体SOC过高',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 8,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit7',
+    label: '严重-放电过流',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 7,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit6',
+    label: '严重-充电过流',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 6,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit5',
+    label: '严重-绝缘故障',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 5,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit4',
+    label: '严重-电压差异过大',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 4,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit3',
+    label: '严重-温度差异过大',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 3,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit2',
+    label: '严重-备用告警2',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 2,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit1',
+    label: '严重-备用告警1',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 1,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'alarmSevereBit0',
+    label: '严重-备用告警0',
+    type: 'bit',
+    bitsOf: 'alarmSevere',
+    bit: 0,
+    map: { 0: '无故障', 1: '有故障' }
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMinVoltage',
+    label: '单体最低电池电压(V)',
+    type: 'u16',
+    scale: 1000
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMinVoltageIndex',
+    label: '单体最低电池电压编号',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMaxVoltage',
+    label: '单体最高电池电压(V)',
+    type: 'u16',
+    scale: 1000
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMaxVoltageIndex',
+    label: '单体最高电池电压编号',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMinTemp',
+    label: '单体最低电池温度(℃)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMinTempIndex',
+    label: '单体最低电池温度编号',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMaxTemp',
+    label: '单体最高电池温度(℃)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: 'PCS数据',
+    key: 'cellMaxTempIndex',
+    label: '单体最高电池温度编号',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: 'PCS数据',
+    key: 'heartbeat',
+    label: '生命帧心跳值',
+    type: 'u16',
+    scale: 1
+  }
+]
+
+export const METER_DTSD1352_FIELDS = [
+  { class: '电表基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  { class: '有功电能', key: 'combinedActiveEnergy', label: '当前组合有功总电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'forwardTotalActiveEnergy', label: '当前正向总有功电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'forwardSharpActiveEnergy', label: '当前正向有功尖电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'forwardPeakActiveEnergy', label: '当前正向有功峰电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'forwardFlatActiveEnergy', label: '当前正向有功平电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'forwardValleyActiveEnergy', label: '当前正向有功谷电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'reverseTotalActiveEnergy', label: '当前反向总有功电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'reverseSharpActiveEnergy', label: '当前反向有功尖电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'reversePeakActiveEnergy', label: '当前反向有功峰电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'reverseFlatActiveEnergy', label: '当前反向有功平电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '有功电能', key: 'reverseValleyActiveEnergy', label: '当前反向有功谷电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'combinedReactiveEnergy', label: '当前组合无功总电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'forwardTotalReactiveEnergy', label: '当前正向总无功电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'forwardSharpReactiveEnergy', label: '当前正向无功尖电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'forwardPeakReactiveEnergy', label: '当前正向无功峰电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'forwardFlatReactiveEnergy', label: '当前正向无功平电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'forwardValleyReactiveEnergy', label: '当前正向无功谷电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'reverseTotalReactiveEnergy', label: '当前反向总无功电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'reverseSharpReactiveEnergy', label: '当前反向无功尖电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'reversePeakReactiveEnergy', label: '当前反向无功峰电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'reverseFlatReactiveEnergy', label: '当前反向无功平电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '无功电能', key: 'reverseValleyReactiveEnergy', label: '当前反向无功谷电能(kWh)', type: 'u16', scale: 100, wordLength: 2 },
+  { class: '时间', key: 'timeSecondMinute', label: '时间：秒、分', type: 'u16', scale: 1 },
+  { class: '时间', key: 'timeHourDay', label: '时间：时、日', type: 'u16', scale: 1 },
+  { class: '时间', key: 'timeMonthYear', label: '时间：月、年', type: 'u16', scale: 1 },
+  { class: '电压电流', key: 'voltagePhaseA', label: 'A相电压(V)', type: 'u16', scale: 10 },
+  { class: '电压电流', key: 'voltagePhaseB', label: 'B相电压(V)', type: 'u16', scale: 10 },
+  { class: '电压电流', key: 'voltagePhaseC', label: 'C相电压(V)', type: 'u16', scale: 10 },
+  { class: '电压电流', key: 'currentPhaseA', label: 'A相电流(A)', type: 'u16', scale: 100 },
+  { class: '电压电流', key: 'currentPhaseB', label: 'B相电流(A)', type: 'u16', scale: 100 },
+  { class: '电压电流', key: 'currentPhaseC', label: 'C相电流(A)', type: 'u16', scale: 100 },
+  { class: '电压电流', key: 'frequency', label: '频率(Hz)', type: 'u16', scale: 1 },
+  { class: '电压电流', key: 'voltageAB', label: 'AB相电压(V)', type: 'u16', scale: 10 },
+  { class: '电压电流', key: 'voltageCB', label: 'CB相电压(V)', type: 'u16', scale: 10 },
+  { class: '电压电流', key: 'voltageAC', label: 'AC相电压(V)', type: 'u16', scale: 10 },
+  { class: '需量', key: 'maxDemandForwardActive', label: '正向有功最大需量', type: 'u16', scale: 1 },
+  { class: '需量', key: 'maxDemandForwardTimeMinuteHour', label: '发生时间：分、时', type: 'u16', scale: 1 },
+  { class: '需量', key: 'maxDemandForwardTimeDayMonth', label: '发生时间：日、月', type: 'u16', scale: 1 },
+  { class: '需量', key: 'maxDemandReverseActive', label: '反向有功最大需量', type: 'u16', scale: 1 },
+  { class: '需量', key: 'maxDemandReverseTimeMinuteHour', label: '发生时间：分、时', type: 'u16', scale: 1 },
+  { class: '需量', key: 'maxDemandReverseTimeDayMonth', label: '发生时间：日、月', type: 'u16', scale: 1 },
+  { class: '变比与状态', key: 'voltageRatioPT', label: '电压变比PT', type: 'u16', scale: 1 },
+  { class: '变比与状态', key: 'currentRatioCT', label: '电流变比CT', type: 'u16', scale: 1 },
+  { class: '变比与状态', key: 'lossOfVoltageStatus', label: '失压状态', type: 'u16', scale: 1 },
+  { class: '变比与状态', key: 'runStatus', label: '运行状态', type: 'u16', scale: 1 },
+  { class: '电压电流', key: 'zeroSequenceCurrent', label: '零序电流', type: 'u16', scale: 1 },
+  { class: '电压电流', key: 'voltageUnbalance', label: '电压不平衡度', type: 'u16', scale: 1 },
+  { class: '电压电流', key: 'currentUnbalance', label: '电流不平衡度', type: 'u16', scale: 1 },
+  { class: '有功功率', key: 'activePowerPhaseA', label: 'A相有功功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '有功功率', key: 'activePowerPhaseB', label: 'B相有功功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '有功功率', key: 'activePowerPhaseC', label: 'C相有功功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '有功功率', key: 'activePowerTotal', label: '总有功功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '无功功率', key: 'reactivePowerPhaseA', label: 'A相无功功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '无功功率', key: 'reactivePowerPhaseB', label: 'B相无功功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '无功功率', key: 'reactivePowerPhaseC', label: 'C相无功功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '无功功率', key: 'reactivePowerTotal', label: '总无功功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '视在功率', key: 'apparentPowerPhaseA', label: 'A相视在功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '视在功率', key: 'apparentPowerPhaseB', label: 'B相视在功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '视在功率', key: 'apparentPowerPhaseC', label: 'C相视在功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '视在功率', key: 'apparentPowerTotal', label: '总视在功率(kW)', type: 'u16', scale: 1000, wordLength: 2 },
+  { class: '功率因数', key: 'powerFactorPhaseA', label: 'A相功率因数', type: 'u16', scale: 1 },
+  { class: '功率因数', key: 'powerFactorPhaseB', label: 'B相功率因数', type: 'u16', scale: 1 },
+  { class: '功率因数', key: 'powerFactorPhaseC', label: 'C相功率因数', type: 'u16', scale: 1 },
+  { class: '功率因数', key: 'powerFactorTotal', label: '总功率因数', type: 'u16', scale: 1 },
+  { class: '谐波', key: 'thdUa', label: 'THDUa(%)', type: 'u16', scale: 1 },
+  { class: '谐波', key: 'thdUb', label: 'THDUb(%)', type: 'u16', scale: 1 },
+  { class: '谐波', key: 'thdUc', label: 'THDUc(%)', type: 'u16', scale: 1 },
+  { class: '谐波', key: 'thdIa', label: 'THDIa(%)', type: 'u16', scale: 1 },
+  { class: '谐波', key: 'thdIb', label: 'THDIb(%)', type: 'u16', scale: 1 },
+  { class: '谐波', key: 'thdIc', label: 'THDIc(%)', type: 'u16', scale: 1 },
+  { class: '当前需量', key: 'currentDemandForwardActive', label: '当前正向有功需量', type: 'u16', scale: 1 },
+  { class: '当前需量', key: 'currentDemandReverseActive', label: '当前反向有功需量', type: 'u16', scale: 1 },
+  { class: '当前需量', key: 'currentDemandForwardReactive', label: '当前正向无功需量', type: 'u16', scale: 1 },
+  { class: '当前需量', key: 'currentDemandReverseReactive', label: '当前反向无功需量', type: 'u16', scale: 1 }
+]
 
 //三河同飞水冷机字段定义 (包含头部3个字段 + 42个数据字段)
 export const REF_SANHETONGFEI_FIELDS = [
@@ -20274,21 +21638,20 @@ export const REF_SANHETONGFEI_FIELDS = [
     class: '运行状态',
     key: 'relayOutputStatus',
     label: '继电器输出状态',
-    type: 'bit',
+    type: 'u16',
     scale: 1,
-    bitMap: {
-      0: '供水泵',
-      1: '供水泵2',
-      2: '风机1',
-      3: '风机2',
-      4: '加热带1',
-      5: '加热管',
-      6: '报警输出',
-      7: '补液电磁阀',
-      8: '补液泵',
-      9: '加热带2'
-    }
+    hide: true
   },
+  { class: '运行状态', key: 'relayOutputStatus_b0', label: '供水泵', type: 'bit', bitsOf: 'relayOutputStatus', bit: 0, map: { 0: '停机', 1: '运行' } },
+  { class: '运行状态', key: 'relayOutputStatus_b1', label: '供水泵2', type: 'bit', bitsOf: 'relayOutputStatus', bit: 1, map: { 0: '停机', 1: '运行' } },
+  { class: '运行状态', key: 'relayOutputStatus_b2', label: '风机1', type: 'bit', bitsOf: 'relayOutputStatus', bit: 2, map: { 0: '停机', 1: '运行' } },
+  { class: '运行状态', key: 'relayOutputStatus_b3', label: '风机2', type: 'bit', bitsOf: 'relayOutputStatus', bit: 3, map: { 0: '停机', 1: '运行' } },
+  { class: '运行状态', key: 'relayOutputStatus_b4', label: '加热带1', type: 'bit', bitsOf: 'relayOutputStatus', bit: 4, map: { 0: '停机', 1: '运行' } },
+  { class: '运行状态', key: 'relayOutputStatus_b5', label: '加热管', type: 'bit', bitsOf: 'relayOutputStatus', bit: 5, map: { 0: '停机', 1: '运行' } },
+  { class: '运行状态', key: 'relayOutputStatus_b6', label: '报警输出', type: 'bit', bitsOf: 'relayOutputStatus', bit: 6, map: { 0: '故障', 1: '正常' } },
+  { class: '运行状态', key: 'relayOutputStatus_b7', label: '补液电磁阀', type: 'bit', bitsOf: 'relayOutputStatus', bit: 7, map: { 0: '停机', 1: '运行' } },
+  { class: '运行状态', key: 'relayOutputStatus_b8', label: '补液泵', type: 'bit', bitsOf: 'relayOutputStatus', bit: 8, map: { 0: '停机', 1: '运行' } },
+  { class: '运行状态', key: 'relayOutputStatus_b9', label: '加热带2', type: 'bit', bitsOf: 'relayOutputStatus', bit: 9, map: { 0: '停机', 1: '运行' } },
   { class: '温度监测', key: 'supplyLiquidTemp', label: '供液温度(℃)', type: 'u16', scale: 100 },
   { class: '温度监测', key: 'returnLiquidTemp', label: '回液温度(℃)', type: 'u16', scale: 10 },
   {
@@ -20346,110 +21709,105 @@ export const REF_SANHETONGFEI_FIELDS = [
     class: '故障状态',
     key: 'faultStatus1',
     label: '故障状态1',
-    type: 'bit',
+    type: 'u16',
     scale: 1,
-    bitMap: {
-      2: '系统1低压',
-      3: '系统2低压',
-      4: '压机过载',
-      5: '液位故障',
-      6: '供水泵过载',
-      7: '供水泵2过载',
-      9: '加热管故障',
-      10: '风机1过载',
-      11: '风机2过载',
-      12: '相序错误',
-      13: '备用故障',
-      14: '流量故障',
-      15: '气体压差故障'
-    }
+    hide: true
   },
+  { class: '故障状态', key: 'faultStatus1_b2', label: '系统1低压', type: 'bit', bitsOf: 'faultStatus1', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b3', label: '系统2低压', type: 'bit', bitsOf: 'faultStatus1', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b4', label: '压机过载', type: 'bit', bitsOf: 'faultStatus1', bit: 4, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b5', label: '液位故障', type: 'bit', bitsOf: 'faultStatus1', bit: 5, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b6', label: '供水泵过载', type: 'bit', bitsOf: 'faultStatus1', bit: 6, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b7', label: '供水泵2过载', type: 'bit', bitsOf: 'faultStatus1', bit: 7, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b9', label: '加热管故障', type: 'bit', bitsOf: 'faultStatus1', bit: 9, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b10', label: '风机1过载', type: 'bit', bitsOf: 'faultStatus1', bit: 10, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b11', label: '风机2过载', type: 'bit', bitsOf: 'faultStatus1', bit: 11, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b12', label: '相序错误', type: 'bit', bitsOf: 'faultStatus1', bit: 12, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b13', label: '备用故障', type: 'bit', bitsOf: 'faultStatus1', bit: 13, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b14', label: '流量故障', type: 'bit', bitsOf: 'faultStatus1', bit: 14, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b15', label: '气体压差故障', type: 'bit', bitsOf: 'faultStatus1', bit: 15, map: { 0: '无故障', 1: '故障' } },
   {
     class: '故障状态',
     key: 'faultStatus2',
     label: '故障状态2',
-    type: 'bit',
+    type: 'u16',
     scale: 1,
-    bitMap: {
-      0: '液温探头故障',
-      1: '回液探头故障',
-      2: '蒸进1探头故障',
-      3: '蒸进2探头故障',
-      4: '蒸出1探头故障',
-      5: '蒸出2探头故障',
-      6: '冷凝1探头故障',
-      7: '冷凝2探头故障',
-      8: '液温过高',
-      10: '高压故障',
-      11: '高压2故障',
-      12: '高压报警锁定',
-      13: '高压报警锁定',
-      14: '2#冷凝温度未建立'
-    }
+    hide: true
   },
+  { class: '故障状态', key: 'faultStatus2_b0', label: '液温探头故障', type: 'bit', bitsOf: 'faultStatus2', bit: 0, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b1', label: '回液探头故障', type: 'bit', bitsOf: 'faultStatus2', bit: 1, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b2', label: '蒸进1探头故障', type: 'bit', bitsOf: 'faultStatus2', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b3', label: '蒸进2探头故障', type: 'bit', bitsOf: 'faultStatus2', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b4', label: '蒸出1探头故障', type: 'bit', bitsOf: 'faultStatus2', bit: 4, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b5', label: '蒸出2探头故障', type: 'bit', bitsOf: 'faultStatus2', bit: 5, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b6', label: '冷凝1探头故障', type: 'bit', bitsOf: 'faultStatus2', bit: 6, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b7', label: '冷凝2探头故障', type: 'bit', bitsOf: 'faultStatus2', bit: 7, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b8', label: '液温过高', type: 'bit', bitsOf: 'faultStatus2', bit: 8, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b10', label: '高压故障', type: 'bit', bitsOf: 'faultStatus2', bit: 10, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b11', label: '高压2故障', type: 'bit', bitsOf: 'faultStatus2', bit: 11, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b12', label: '高压报警锁定', type: 'bit', bitsOf: 'faultStatus2', bit: 12, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b13', label: '高压报警锁定', type: 'bit', bitsOf: 'faultStatus2', bit: 13, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b14', label: '2#冷凝温度未建立', type: 'bit', bitsOf: 'faultStatus2', bit: 14, map: { 0: '无故障', 1: '故障' } },
   {
     class: '故障状态',
     key: 'faultStatus3',
     label: '故障状态3',
-    type: 'bit',
+    type: 'u16',
     scale: 1,
-    bitMap: {
-      0: '供水压力传感器故障',
-      1: '补水压力传感器故障',
-      2: '电导率传感器故障',
-      3: '电导率过高',
-      4: '主板IIC出错',
-      6: '变频器1通讯故障',
-      7: '变频器1其它故障',
-      8: '变频器2通讯故障',
-      9: '变频器2其它故障',
-      12: '回水压力过低故障',
-      13: '供水压力过高故障',
-      14: '液温过低',
-      15: '第三方通讯故障'
-    }
+    hide: true
   },
+  { class: '故障状态', key: 'faultStatus3_b0', label: '供水压力传感器故障', type: 'bit', bitsOf: 'faultStatus3', bit: 0, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b1', label: '补水压力传感器故障', type: 'bit', bitsOf: 'faultStatus3', bit: 1, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b2', label: '电导率传感器故障', type: 'bit', bitsOf: 'faultStatus3', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b3', label: '电导率过高', type: 'bit', bitsOf: 'faultStatus3', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b4', label: '主板IIC出错', type: 'bit', bitsOf: 'faultStatus3', bit: 4, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b6', label: '变频器1通讯故障', type: 'bit', bitsOf: 'faultStatus3', bit: 6, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b7', label: '变频器1其它故障', type: 'bit', bitsOf: 'faultStatus3', bit: 7, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b8', label: '变频器2通讯故障', type: 'bit', bitsOf: 'faultStatus3', bit: 8, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b9', label: '变频器2其它故障', type: 'bit', bitsOf: 'faultStatus3', bit: 9, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b12', label: '回水压力过低故障', type: 'bit', bitsOf: 'faultStatus3', bit: 12, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b13', label: '供水压力过高故障', type: 'bit', bitsOf: 'faultStatus3', bit: 13, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b14', label: '液温过低', type: 'bit', bitsOf: 'faultStatus3', bit: 14, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b15', label: '第三方通讯故障', type: 'bit', bitsOf: 'faultStatus3', bit: 15, map: { 0: '无故障', 1: '故障' } },
   {
     class: '故障状态',
     key: 'faultStatus4',
     label: '故障状态4',
-    type: 'bit',
+    type: 'u16',
     scale: 1,
-    bitMap: {
-      0: '环温探头故障',
-      1: '水泵变频器通讯故障',
-      2: '水泵变频器其它故障',
-      3: '低压1传感器故障',
-      4: '低压2传感器故障',
-      5: '高压1传感器故障',
-      6: '高压2传感器故障',
-      12: '三相电模块通讯故障',
-      13: '三相电模块其它故障'
-    }
+    hide: true
   },
+  { class: '故障状态', key: 'faultStatus4_b0', label: '环温探头故障', type: 'bit', bitsOf: 'faultStatus4', bit: 0, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b1', label: '水泵变频器通讯故障', type: 'bit', bitsOf: 'faultStatus4', bit: 1, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b2', label: '水泵变频器其它故障', type: 'bit', bitsOf: 'faultStatus4', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b3', label: '低压1传感器故障', type: 'bit', bitsOf: 'faultStatus4', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b4', label: '低压2传感器故障', type: 'bit', bitsOf: 'faultStatus4', bit: 4, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b5', label: '高压1传感器故障', type: 'bit', bitsOf: 'faultStatus4', bit: 5, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b6', label: '高压2传感器故障', type: 'bit', bitsOf: 'faultStatus4', bit: 6, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b12', label: '三相电模块通讯故障', type: 'bit', bitsOf: 'faultStatus4', bit: 12, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b13', label: '三相电模块其它故障', type: 'bit', bitsOf: 'faultStatus4', bit: 13, map: { 0: '无故障', 1: '故障' } },
   {
     class: '故障状态',
     key: 'faultStatus5',
     label: '故障状态5',
-    type: 'bit',
+    type: 'u16',
     scale: 1,
-    bitMap: {
-      0: '风机1故障',
-      1: '风机2故障',
-      2: '风机3故障',
-      3: '风机4故障',
-      4: '风机5故障',
-      5: '风机6故障',
-      6: '风机模块通讯故障',
-      9: '泵1流量低',
-      10: '泵2流量低',
-      11: '流量低',
-      12: '漏液报警',
-      13: '排气温度探头故障',
-      14: '排气温度过高',
-      15: '排气温度过高锁定'
-    }
+    hide: true
   },
+  { class: '故障状态', key: 'faultStatus5_b0', label: '风机1故障', type: 'bit', bitsOf: 'faultStatus5', bit: 0, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b1', label: '风机2故障', type: 'bit', bitsOf: 'faultStatus5', bit: 1, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b2', label: '风机3故障', type: 'bit', bitsOf: 'faultStatus5', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b3', label: '风机4故障', type: 'bit', bitsOf: 'faultStatus5', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b4', label: '风机5故障', type: 'bit', bitsOf: 'faultStatus5', bit: 4, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b5', label: '风机6故障', type: 'bit', bitsOf: 'faultStatus5', bit: 5, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b6', label: '风机模块通讯故障', type: 'bit', bitsOf: 'faultStatus5', bit: 6, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b9', label: '泵1流量低', type: 'bit', bitsOf: 'faultStatus5', bit: 9, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b10', label: '泵2流量低', type: 'bit', bitsOf: 'faultStatus5', bit: 10, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b11', label: '流量低', type: 'bit', bitsOf: 'faultStatus5', bit: 11, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b12', label: '漏液报警', type: 'bit', bitsOf: 'faultStatus5', bit: 12, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b13', label: '排气温度探头故障', type: 'bit', bitsOf: 'faultStatus5', bit: 13, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b14', label: '排气温度过高', type: 'bit', bitsOf: 'faultStatus5', bit: 14, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus5_b15', label: '排气温度过高锁定', type: 'bit', bitsOf: 'faultStatus5', bit: 15, map: { 0: '无故障', 1: '故障' } },
   {
     class: '工作模式',
     key: 'operatingMode',
@@ -20554,6 +21912,890 @@ export const REF_SANHETONGFEI_FIELDS = [
     label: '电导率复位回差',
     type: 'u16',
     scale: 10
+  }
+]
+
+export const REF_YINGWEIKE_0513_FIELDS = [
+  {
+    class: '制冷设备基础信息',
+    key: 'dataLength',
+    label: '数据长度',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '制冷设备基础信息',
+    key: 'refAddress',
+    label: '制冷设备地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: '制冷设备基础信息',
+    key: 'commStatus',
+    label: '制冷设备通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  {
+    class: '运行状态',
+    key: 'pumpStatus',
+    label: '水泵运行状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'compressor1Status',
+    label: '1#压缩机运行状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'compressor2Status',
+    label: '2#压缩机运行状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '温度监测',
+    key: 'outWaterTemp',
+    label: '出水温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '温度监测',
+    key: 'returnWaterTemp',
+    label: '回水温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '压力监测',
+    key: 'outletPressure',
+    label: '出水压力(bar)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '压力监测',
+    key: 'returnWaterPressure',
+    label: '回水压力(bar)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '运行状态',
+    key: 'electricHeatingStatus',
+    label: '电加热运行状态',
+    type: 's16',
+    scale: 1,
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '故障状态',
+    key: 'systemFault1',
+    label: '1#系统故障',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无故障', 2: '有故障' }
+  },
+  {
+    class: '故障状态',
+    key: 'totalAlarm1',
+    label: '1#总告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无告警', 1: '有告警' }
+  },
+  {
+    class: '故障状态',
+    key: 'systemWaterShortageAlarm',
+    label: '系统缺水告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无此告警', 1: '告警' }
+  },
+  {
+    class: '故障状态',
+    key: 'highCondensationPressureAlarm1',
+    label: '1#冷凝压力过高告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无此告警', 1: '告警' }
+  },
+  {
+    class: '故障状态',
+    key: 'highCondensationPressureAlarm2',
+    label: '2#冷凝压力过高告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无此告警', 1: '告警' }
+  },
+  {
+    class: '故障状态',
+    key: 'outletPressureHighAlarm',
+    label: '出水压力过高告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无此告警', 1: '告警' }
+  },
+  {
+    class: '故障状态',
+    key: 'inletPressureLowAlarm',
+    label: '进水压力过低告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无此告警', 1: '告警' }
+  },
+  {
+    class: '故障状态',
+    key: 'powerFailureAlarm',
+    label: '电源故障告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无此告警', 1: '告警' }
+  },
+  {
+    class: '故障状态',
+    key: 'systemFault2',
+    label: '2#系统故障',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无故障', 2: '有故障' }
+  },
+  {
+    class: '故障状态',
+    key: 'totalAlarm2',
+    label: '2#总告警',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无告警', 1: '有告警' }
+  },
+  {
+    class: '预留',
+    key: 'reservedYw0513_1',
+    label: '保留',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '设置参数',
+    key: 'coolingPoint',
+    label: '制冷点(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'monitorPowerSwitch',
+    label: '监控开关机',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '监控关机', 1: '监控开机' }
+  },
+  {
+    class: '设置参数',
+    key: 'pumpManualEnable',
+    label: '水泵手动需求使能',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '机组自动控制水泵', 2: '上位机控制(使能)' }
+  },
+  {
+    class: '设置参数',
+    key: 'runtimeControlMode',
+    label: '运行时控制模式',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '回水', 1: '出水', 2: '监控温度' }
+  },
+  {
+    class: '设置参数',
+    key: 'enableElectricHeating',
+    label: '启用电加热',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '不启用', 1: '启用' }
+  },
+  {
+    class: '设置参数',
+    key: 'heatingPoint',
+    label: '加热点(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'outletPressureHighSetPoint',
+    label: '出水压力过高设定点(bar)',
+    type: 'u16',
+    scale: 100
+  },
+  {
+    class: '设置参数',
+    key: 'inletPressureLowSetPoint',
+    label: '进水压力过低设定点(bar)',
+    type: 'u16',
+    scale: 100
+  },
+  {
+    class: '设置参数',
+    key: 'pumpSpeedDemand',
+    label: '水泵转速需求(%)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'bmsModeControl',
+    label: 'BMS模式控制',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '全自动', 1: '手动制冷', 2: '手动制热', 3: '自循环', 4: '停止' }
+  },
+  {
+    class: '设置参数',
+    key: 'monitorMaxTemp',
+    label: '监控下发最大温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'monitorMinTemp',
+    label: '监控下发最小温度(℃)',
+    type: 's16',
+    scale: 10
+  }
+]
+
+export const REF_YINGWEIKE_70513_FIELDS = [
+  {
+    class: '制冷设备基础信息',
+    key: 'dataLength',
+    label: '数据长度',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '制冷设备基础信息',
+    key: 'refAddress',
+    label: '制冷设备地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: '制冷设备基础信息',
+    key: 'commStatus',
+    label: '制冷设备通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  {
+    class: '运行状态',
+    key: 'pumpSpeed',
+    label: '水泵转速(%)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '运行状态',
+    key: 'compressor1Status70513',
+    label: '1#压缩机运行状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'compressor2Status70513',
+    label: '2#压缩机运行状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'electricHeatingStatus70513',
+    label: '电加热运行状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'condensingFanStatus',
+    label: '冷凝风机运行状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '温度监测',
+    key: 'unitOutletTemp',
+    label: '机组出水温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '温度监测',
+    key: 'unitInletTemp',
+    label: '机组回水温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '压力监测',
+    key: 'unitOutletPressure',
+    label: '机组出水压力(bar)',
+    type: 'u16',
+    scale: 100
+  },
+  {
+    class: '压力监测',
+    key: 'unitInletPressure',
+    label: '机组回水压力(bar)',
+    type: 'u16',
+    scale: 100
+  },
+  {
+    class: '温度监测',
+    key: 'ambientTemp70513',
+    label: '机组外环境温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '运行状态',
+    key: 'rehydrationState',
+    label: '补液状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '补液停止', 1: '补液运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'onOffCondition',
+    label: '开关机状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '机组关机', 1: '机组开机' }
+  },
+  {
+    class: '运行状态',
+    key: 'localRemoteStatus',
+    label: '本地远程状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '本地', 1: '远程' }
+  },
+  {
+    class: '故障状态',
+    key: 'alarmStatus31_70513',
+    label: '告警状态31',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  { class: '告警状态', key: 'alarmStatus31_70513_b0', label: '系统缺水告警', type: 'bit', bitsOf: 'alarmStatus31_70513', bit: 0, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus31_70513_b1', label: '1#冷凝压力过高告警', type: 'bit', bitsOf: 'alarmStatus31_70513', bit: 1, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus31_70513_b2', label: '2#冷凝压力过高告警', type: 'bit', bitsOf: 'alarmStatus31_70513', bit: 2, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus31_70513_b3', label: '出水压力过高告警', type: 'bit', bitsOf: 'alarmStatus31_70513', bit: 3, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus31_70513_b4', label: '回水压力过低告警', type: 'bit', bitsOf: 'alarmStatus31_70513', bit: 4, map: { 0: '正常', 1: '告警' } },
+  { class: '故障状态', key: 'alarmStatus32_70513', label: '告警状态32', type: 'u16', scale: 1, hide: true },
+  { class: '故障状态', key: 'alarmStatus33_70513', label: '告警状态33', type: 'u16', scale: 1, hide: true },
+  { class: '告警状态', key: 'alarmStatus33_70513_b0', label: '1#排气温感失效', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 0, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b1', label: '1#冷凝温感失效', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 1, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b2', label: '2#排气温感失效', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 2, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b3', label: '2#冷凝温感失效', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 3, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b4', label: '回水温感故障', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 4, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b5', label: '出水温感故障', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 5, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b6', label: '环境温感失效', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 6, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b7', label: '异常掉电告警', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 7, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b8', label: '1#高压压力传感器失效', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 8, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b9', label: '2#高压压力传感器失效', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 9, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b10', label: '补水箱低水位', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 10, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b13', label: '回水压力传感器故障', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 13, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus33_70513_b14', label: '出水压力传感器故障', type: 'bit', bitsOf: 'alarmStatus33_70513', bit: 14, map: { 0: '正常', 1: '告警' } },
+  { class: '故障状态', key: 'alarmStatus34_70513', label: '告警状态34', type: 'u16', scale: 1, hide: true },
+  { class: '故障状态', key: 'alarmStatus35_70513', label: '告警状态35', type: 'u16', scale: 1, hide: true },
+  { class: '告警状态', key: 'alarmStatus35_70513_b0', label: '1#高压力锁定', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 0, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b1', label: '1#排气过温锁定', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 1, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b2', label: '1#系统低压力告警锁定', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 2, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b3', label: '1#低压压力传感器失效', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 3, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b4', label: '1#蒸发出口温感失效', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 4, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b5', label: '1#压缩机变频器故障', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 5, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b6', label: '1#压机变频器通信故障', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 6, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b7', label: '1#外风机变频器故障', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 7, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b8', label: '1#外风机变频器通信故障', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 8, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b9', label: '2#高压力锁定', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 9, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b10', label: '2#排气过温锁定', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 10, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b11', label: '2#系统低压力告警锁定', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 11, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b12', label: '2#低压压力传感器失效', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 12, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b13', label: '2#蒸发出口温感失效', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 13, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b14', label: '2#压缩机变频器故障', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 14, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus35_70513_b15', label: '2#压机变频器通信故障', type: 'bit', bitsOf: 'alarmStatus35_70513', bit: 15, map: { 0: '正常', 1: '告警' } },
+  { class: '故障状态', key: 'alarmStatus36_70513', label: '告警状态36', type: 'u16', scale: 1, hide: true },
+  { class: '告警状态', key: 'alarmStatus36_70513_b0', label: '扩展模块通信故障', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 0, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b1', label: '2#外风机变频器故障', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 1, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b2', label: '2#外风机变频器通信故障', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 2, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b3', label: '水泵压差低', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 3, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b4', label: '回水温感故障&出水温感故障', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 4, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b5', label: '电源故障', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 5, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b6', label: '回水压力传感器故障&出水压力传感器故障', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 6, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b8', label: '1#循环水泵变频器故障', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 8, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b9', label: '1#循环水泵变频器通信故障', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 9, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b10', label: '1#电加热故障锁定', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 10, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b11', label: '出水高温', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 11, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b12', label: '出水低温', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 12, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b13', label: '1#循环水泵过热保护告警锁定', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 13, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b14', label: '2#循环水泵过热保护告警锁定', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 14, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus36_70513_b15', label: '1#循环水泵过载保护锁定', type: 'bit', bitsOf: 'alarmStatus36_70513', bit: 15, map: { 0: '正常', 1: '告警' } },
+  { class: '故障状态', key: 'alarmStatus37_70513', label: '告警状态37', type: 'u16', scale: 1, hide: true },
+  { class: '告警状态', key: 'alarmStatus37_70513_b0', label: '2#循环水泵过载保护锁定', type: 'bit', bitsOf: 'alarmStatus37_70513', bit: 0, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus37_70513_b1', label: '2#循环水泵变频器故障', type: 'bit', bitsOf: 'alarmStatus37_70513', bit: 1, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus37_70513_b2', label: '2#循环水泵变频器通信故障', type: 'bit', bitsOf: 'alarmStatus37_70513', bit: 2, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus37_70513_b3', label: '2#电加热故障锁定', type: 'bit', bitsOf: 'alarmStatus37_70513', bit: 3, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus37_70513_b4', label: 'APF 故障', type: 'bit', bitsOf: 'alarmStatus37_70513', bit: 4, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus37_70513_b5', label: 'DC_DC1 模块故障', type: 'bit', bitsOf: 'alarmStatus37_70513', bit: 5, map: { 0: '正常', 1: '告警' } },
+  { class: '告警状态', key: 'alarmStatus37_70513_b6', label: 'DC_DC2 模块故障', type: 'bit', bitsOf: 'alarmStatus37_70513', bit: 6, map: { 0: '正常', 1: '告警' } },
+  { class: '故障状态', key: 'alarmStatus38_70513', label: '告警状态38', type: 'u16', scale: 1, hide: true },
+  {
+    class: '故障状态',
+    key: 'alarmLevel',
+    label: '告警等级',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无', 1: '一级告警', 2: '二级告警', 3: '三级告警' }
+  },
+  {
+    class: '版本信息',
+    key: 'softwareVersion',
+    label: '软件版本号',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '版本信息',
+    key: 'hardwareVersion',
+    label: '硬件版本',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'unitModeControl',
+    label: '液冷机组控制模式',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '机组自动控制模式', 1: '制冷模式', 2: '制热模式', 3: '泵循环', 4: '停止模式' }
+  },
+  {
+    class: '设置参数',
+    key: 'unitSwitchEnable',
+    label: '机组开关机使能',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '监控关机', 1: '监控开机' }
+  },
+  {
+    class: '设置参数',
+    key: 'pumpSpeedSetting',
+    label: '水泵转速设定',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'fanSnowRemovalEnable',
+    label: '冷凝风机除雪使能',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '关闭', 1: '开启' }
+  },
+  {
+    class: '设置参数',
+    key: 'waterTempTargetControlMode',
+    label: '水温目标控制模式',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '出水温度', 1: '回水温度', 2: '监控温度(最大/最小)', 3: '监控温度(平均)' }
+  },
+  {
+    class: '设置参数',
+    key: 'unitCoolingPoint',
+    label: '机组制冷点(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'unitHeatingPoint',
+    label: '机组加热点(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'outletPressureHighAlarmSetPoint',
+    label: '出水压力过高告警设定点(bar)',
+    type: 'u16',
+    scale: 100
+  },
+  {
+    class: '设置参数',
+    key: 'inletPressureLowAlarmSetPoint',
+    label: '回水压力过低告警设定点(bar)',
+    type: 'u16',
+    scale: 100
+  },
+  {
+    class: '设置参数',
+    key: 'coolingSensitivity',
+    label: '制冷灵敏度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'heatingSensitivity',
+    label: '制热灵敏度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'outletWaterHighTempAlarmSetPoint',
+    label: '出水高温告警设定点(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'outletWaterLowTempAlarmSetPoint',
+    label: '出水低温告警设定点(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'monitorMaxTemp70513',
+    label: '监控下发最大温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'monitorMinTemp70513',
+    label: '监控下发最小温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'monitorAverageTemp',
+    label: '监控下发平均温度(℃)',
+    type: 's16',
+    scale: 10
+  }
+]
+
+export const REF_KENUOWEI1_FIELDS = [
+  { class: '制冷设备基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  { class: '制冷设备基础信息', key: 'refAddress', label: '制冷设备地址', type: 'u16', scale: 1, map: { 1: '第1堆', 2: '第2堆' } },
+  { class: '制冷设备基础信息', key: 'commStatus', label: '制冷设备通讯状态', type: 'u16', scale: 1, map: { 0: '正常', 1: '通讯异常' } },
+  { class: '运行状态', key: 'mode', label: '模式', type: 'u16', scale: 1, map: { 0: '待机', 1: '制冷', 2: '加热', 3: '自循环' } },
+  { class: '设置参数', key: 'setTemp', label: '设定温度(℃)', type: 'u16', scale: 1, offset: -40 },
+  { class: '温度监测', key: 'inletTemp', label: '进水温度(℃)', type: 'u16', scale: 1, offset: -40 },
+  { class: '温度监测', key: 'outletTemp', label: '出水温度(℃)', type: 'u16', scale: 1, offset: -40 },
+  { class: '温度监测', key: 'ambientTemp', label: '环境温度(℃)', type: 'u16', scale: 1, offset: -40 },
+  { class: '温度监测', key: 'exhaust1Temp', label: '1#排气温度(℃)', type: 'u16', scale: 1, offset: -40 },
+  { class: '压力监测', key: 'inletPressure', label: '进水压力(bar)', type: 'u16', scale: 10 },
+  { class: '压力监测', key: 'outletPressure', label: '出水压力(bar)', type: 'u16', scale: 10 },
+  { class: '压力监测', key: 'suction1Pressure', label: '1#吸气压力(bar)', type: 'u16', scale: 10 },
+  { class: '压力监测', key: 'exhaust1Pressure', label: '1#排气压力(bar)', type: 'u16', scale: 10 },
+  { class: '运行状态', key: 'pumpSpeed', label: '水泵转速(%)', type: 'u16', scale: 1 },
+  { class: '运行状态', key: 'fanSpeed', label: '风机转速(%)', type: 'u16', scale: 1 },
+  { class: '运行状态', key: 'compressor1Speed', label: '1#压缩机转速(RPM)', type: 'u16', scale: 1 },
+  { class: '运行状态', key: 'heartbeat', label: '心跳', type: 'u16', scale: 1 },
+  { class: '版本信息', key: 'softwareVersion', label: '软件版本', type: 'u16', scale: 1 },
+  {
+    class: '故障状态',
+    key: 'faultLevel',
+    label: '故障等级',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无故障', 1: '1级故障', 2: '2级故障', 3: '3级故障' }
+  },
+  { class: '温度监测', key: 'suction1Temp', label: '1#吸气温度(℃)', type: 'u16', scale: 1, offset: -40 },
+  { class: '温度监测', key: 'suction2Temp', label: '2#吸气温度(℃)', type: 'u16', scale: 1, offset: -40 },
+  { class: '温度监测', key: 'exhaust2Temp', label: '2#排气温度(℃)', type: 'u16', scale: 1, offset: -40 },
+  { class: '压力监测', key: 'suction2Pressure', label: '2#吸气压力(bar)', type: 'u16', scale: 10 },
+  { class: '压力监测', key: 'exhaust2Pressure', label: '2#排气压力(bar)', type: 'u16', scale: 10 },
+  { class: '运行状态', key: 'compressor2Speed', label: '2#压缩机转速(RPM)', type: 'u16', scale: 1 }
+]
+
+export const REF_KENUOWEI2_FIELDS = [
+  { class: '制冷设备基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  { class: '制冷设备基础信息', key: 'refAddress', label: '制冷设备地址', type: 'u16', scale: 1, map: { 1: '第1堆', 2: '第2堆' } },
+  { class: '制冷设备基础信息', key: 'commStatus', label: '制冷设备通讯状态', type: 'u16', scale: 1, map: { 0: '正常', 1: '通讯异常' } },
+  { class: '运行状态', key: 'mode', label: '模式', type: 'u16', scale: 1, map: { 0: '待机', 1: '制冷', 2: '加热', 3: '自循环' } },
+  { class: '设置参数', key: 'setTemp', label: '设定温度(℃)', type: 's16', scale: 1 },
+  { class: '温度监测', key: 'inletTemp', label: '进水温度(℃)', type: 's16', scale: 1 },
+  { class: '温度监测', key: 'outletTemp', label: '出水温度(℃)', type: 's16', scale: 1 },
+  { class: '温度监测', key: 'ambientTemp', label: '环境温度(℃)', type: 's16', scale: 1 },
+  { class: '温度监测', key: 'exhaustTemp', label: '排气温度(℃)', type: 's16', scale: 1 },
+  { class: '压力监测', key: 'inletPressure', label: '进水压力(bar)', type: 'u16', scale: 10 },
+  { class: '压力监测', key: 'outletPressure', label: '出水压力(bar)', type: 'u16', scale: 10 },
+  { class: '压力监测', key: 'suctionPressure', label: '吸气压力(bar)', type: 'u16', scale: 10 },
+  { class: '压力监测', key: 'exhaustPressure', label: '排气压力(bar)', type: 'u16', scale: 10 },
+  { class: '运行状态', key: 'pumpSpeed', label: '水泵转速(%)', type: 'u16', scale: 1 },
+  { class: '运行状态', key: 'fanSpeed', label: '风机转速(%)', type: 'u16', scale: 1 },
+  { class: '运行状态', key: 'compressorSpeed', label: '压缩机转速(RPM)', type: 'u16', scale: 1 },
+  { class: '运行状态', key: 'heartbeat', label: '心跳', type: 'u16', scale: 1 },
+  { class: '版本信息', key: 'softwareVersion', label: '软件版本', type: 'u16', scale: 1 },
+  {
+    class: '故障状态',
+    key: 'faultLevel',
+    label: '故障等级',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '无故障', 1: '1级故障', 2: '2级故障', 3: '3级故障' }
+  },
+  { class: '故障状态', key: 'faultStatus1', label: '故障状态1', type: 'u16', scale: 1, hide: true },
+  { class: '故障状态', key: 'faultStatus1_b0', label: '高压压力过高', type: 'bit', bitsOf: 'faultStatus1', bit: 0, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b1', label: '低压压力过低', type: 'bit', bitsOf: 'faultStatus1', bit: 1, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b2', label: '水泵1故障', type: 'bit', bitsOf: 'faultStatus1', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b3', label: 'PTC过温故障', type: 'bit', bitsOf: 'faultStatus1', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b4', label: '风扇1故障', type: 'bit', bitsOf: 'faultStatus1', bit: 4, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b5', label: '出水温度传感器故障', type: 'bit', bitsOf: 'faultStatus1', bit: 5, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b6', label: '进水温度传感器故障', type: 'bit', bitsOf: 'faultStatus1', bit: 6, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b7', label: 'DCDC PFC故障', type: 'bit', bitsOf: 'faultStatus1', bit: 7, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b8', label: '高压压力开关故障', type: 'bit', bitsOf: 'faultStatus1', bit: 8, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b9', label: '进水压力传感器故障', type: 'bit', bitsOf: 'faultStatus1', bit: 9, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b10', label: '出水压力传感器故障', type: 'bit', bitsOf: 'faultStatus1', bit: 10, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b11', label: '高压压力传感器故障', type: 'bit', bitsOf: 'faultStatus1', bit: 11, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b12', label: '低压压力传感器故障', type: 'bit', bitsOf: 'faultStatus1', bit: 12, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b13', label: '压缩机通信故障', type: 'bit', bitsOf: 'faultStatus1', bit: 13, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b14', label: '压缩机控制器故障', type: 'bit', bitsOf: 'faultStatus1', bit: 14, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus1_b15', label: 'BMS通信丢失故障', type: 'bit', bitsOf: 'faultStatus1', bit: 15, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2', label: '故障状态2', type: 'u16', scale: 1, hide: true },
+  { class: '故障状态', key: 'faultStatus2_b0', label: '进水压力过低', type: 'bit', bitsOf: 'faultStatus2', bit: 0, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b1', label: '出水压力过高', type: 'bit', bitsOf: 'faultStatus2', bit: 1, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b2', label: '高压继电器1故障', type: 'bit', bitsOf: 'faultStatus2', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b3', label: '高压继电器2故障', type: 'bit', bitsOf: 'faultStatus2', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b4', label: 'ACDC1过压故障', type: 'bit', bitsOf: 'faultStatus2', bit: 4, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b5', label: 'ACDC1欠压故障', type: 'bit', bitsOf: 'faultStatus2', bit: 5, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b6', label: 'ACDC2欠压故障', type: 'bit', bitsOf: 'faultStatus2', bit: 6, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b7', label: 'ACDC2过压故障', type: 'bit', bitsOf: 'faultStatus2', bit: 7, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b8', label: '进出水压力过低故障', type: 'bit', bitsOf: 'faultStatus2', bit: 8, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b9', label: '排气温度传感器故障', type: 'bit', bitsOf: 'faultStatus2', bit: 9, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b10', label: '预留', type: 'bit', bitsOf: 'faultStatus2', bit: 10, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b11', label: '进出水压力过高故障', type: 'bit', bitsOf: 'faultStatus2', bit: 11, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b12', label: '吸气温度传感器故障', type: 'bit', bitsOf: 'faultStatus2', bit: 12, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b13', label: 'Exv通信丢失故障', type: 'bit', bitsOf: 'faultStatus2', bit: 13, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b14', label: 'Exv控制器故障', type: 'bit', bitsOf: 'faultStatus2', bit: 14, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus2_b15', label: 'EXV位置故障', type: 'bit', bitsOf: 'faultStatus2', bit: 15, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3', label: '故障状态3', type: 'u16', scale: 1, hide: true },
+  { class: '故障状态', key: 'faultStatus3_b0', label: '水泵1通讯丢失故障', type: 'bit', bitsOf: 'faultStatus3', bit: 0, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b1', label: '水泵2通讯丢失故障', type: 'bit', bitsOf: 'faultStatus3', bit: 1, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b2', label: '水泵2故障', type: 'bit', bitsOf: 'faultStatus3', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b3', label: 'DCDC1通讯丢失故障', type: 'bit', bitsOf: 'faultStatus3', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b4', label: 'DCDC1故障', type: 'bit', bitsOf: 'faultStatus3', bit: 4, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b5', label: 'DCDC2通讯丢失故障', type: 'bit', bitsOf: 'faultStatus3', bit: 5, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b6', label: 'DCDC2故障', type: 'bit', bitsOf: 'faultStatus3', bit: 6, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b7', label: '风扇2故障', type: 'bit', bitsOf: 'faultStatus3', bit: 7, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b8', label: '风扇3故障', type: 'bit', bitsOf: 'faultStatus3', bit: 8, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b9', label: '风扇4故障', type: 'bit', bitsOf: 'faultStatus3', bit: 9, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b10', label: '风扇5故障', type: 'bit', bitsOf: 'faultStatus3', bit: 10, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b11', label: '风扇6故障', type: 'bit', bitsOf: 'faultStatus3', bit: 11, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b12', label: '风扇7故障', type: 'bit', bitsOf: 'faultStatus3', bit: 12, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b13', label: '风扇8故障', type: 'bit', bitsOf: 'faultStatus3', bit: 13, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b14', label: '风扇9故障', type: 'bit', bitsOf: 'faultStatus3', bit: 14, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus3_b15', label: '温度传感器故障', type: 'bit', bitsOf: 'faultStatus3', bit: 15, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4', label: '故障状态4', type: 'u16', scale: 1, hide: true },
+  { class: '故障状态', key: 'faultStatus4_b0', label: '湿度传感器故障', type: 'bit', bitsOf: 'faultStatus4', bit: 0, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b1', label: 'ACDC3过压故障', type: 'bit', bitsOf: 'faultStatus4', bit: 1, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b2', label: 'ACDC3欠压故障', type: 'bit', bitsOf: 'faultStatus4', bit: 2, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultStatus4_b3', label: '水泵PFC故障', type: 'bit', bitsOf: 'faultStatus4', bit: 3, map: { 0: '无故障', 1: '故障' } },
+  { class: '故障状态', key: 'faultCode', label: '故障码', type: 'u16', scale: 1 },
+  { class: '预留', key: 'reserved', label: '预留', type: 'u16', scale: 1, hide: true },
+  { class: '运行状态', key: 'humidity', label: '湿度(%)', type: 'u16', scale: 1 }
+]
+
+export const REF_JUNNENG_FIELDS = [
+  { class: '制冷设备基础信息', key: 'dataLength', label: '数据长度', type: 'u16', scale: 1, hide: true },
+  { class: '制冷设备基础信息', key: 'refAddress', label: '制冷设备地址', type: 'u16', scale: 1, map: { 1: '第1堆', 2: '第2堆' } },
+  { class: '制冷设备基础信息', key: 'commStatus', label: '制冷设备通讯状态', type: 'u16', scale: 1, map: { 0: '正常', 1: '通讯异常' } },
+  { class: '控制参数', key: 'powerControl', label: '开关机控制', type: 'u16', scale: 1, map: { 0: '关机', 1: '开机' } },
+  { class: '控制参数', key: 'modeSetting', label: '模式设定', type: 'u16', scale: 1, map: { 0: '自动', 1: '制冷', 2: '制热', 3: '自循环' } },
+  { class: '控制参数', key: 'tempControlMode', label: '温度控制方式', type: 'u16', scale: 1, map: { 0: '出水', 1: '进水' } },
+  { class: '设置参数', key: 'inletCoolingSetTemp', label: '进水制冷设定温度(℃)', type: 'u16', scale: 10 },
+  { class: '设置参数', key: 'outletCoolingSetTemp', label: '出水制冷设定温度(℃)', type: 'u16', scale: 10 },
+  { class: '设置参数', key: 'inletHeatingSetTemp', label: '进水制热设定温度(℃)', type: 'u16', scale: 10 },
+  { class: '设置参数', key: 'outletHeatingSetTemp', label: '出水制热设定温度(℃)', type: 'u16', scale: 10 },
+  {
+    class: '运行状态',
+    key: 'onOffStatus',
+    label: '开关机状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '远程关机', 1: '远程开机', 2: '通讯关机', 3: '通讯开机', 4: '关机', 5: '开机', 6: '手动调机' }
+  },
+  { class: '运行状态', key: 'runMode', label: '机组运行模式', type: 'u16', scale: 1, map: { 1: '制冷', 2: '制热', 3: '待机', 4: '自循环' } },
+  { class: '温度监测', key: 'cabinTemp', label: '舱体温度(℃)', type: 'u16', scale: 10 },
+  { class: '运行状态', key: 'cabinHumidity', label: '舱体湿度(%)', type: 'u16', scale: 1 },
+  { class: '温度监测', key: 'ambientTemp', label: '环境温度(℃)', type: 'u16', scale: 10 },
+  { class: '温度监测', key: 'inletTemp', label: '进水温度(℃)', type: 'u16', scale: 10 },
+  { class: '温度监测', key: 'outletTemp', label: '出水温度(℃)', type: 'u16', scale: 10 },
+  { class: '压力监测', key: 'inletPressure', label: '进水压力(bar)', type: 'u16', scale: 100 },
+  { class: '压力监测', key: 'outletPressure', label: '出水压力(bar)', type: 'u16', scale: 100 },
+  { class: '温度监测', key: 'cellTemp', label: '电芯温度(℃)', type: 'u16', scale: 10 },
+  { class: '运行状态', key: 'actualTempControlMode', label: '实际温度控制方式', type: 'u16', scale: 1, map: { 0: '进水', 1: '出水', 2: '电芯' } },
+  { class: '压力监测', key: 'deltaPressure', label: '进出水压差(bar)', type: 'u16', scale: 100 },
+  { class: '温度监测', key: 'deltaTemp', label: '进出水温差(℃)', type: 'u16', scale: 10 },
+  {
+    class: '故障状态',
+    key: 'currentFaultCode',
+    label: '当前故障码',
+    type: 'u16',
+    scale: 1,
+    map: {
+      0: 'E000 无故障',
+      57344: 'E000 无故障',
+      57345: 'E001 电源故障',
+      57346: 'E002 机型拨码错误',
+      57347: 'E003 消防告警',
+      57348: 'E004 室外环境温度传感器故障',
+      57349: 'E005 温湿度传感器故障',
+      57350: 'E006 进水温度传感器故障',
+      57351: 'E007 出水温度传感器故障',
+      57352: 'E008 进水压力传感器故障',
+      57353: 'E009 出水压力传感器故障',
+      57360: 'E010 电加热故障锁定',
+      57361: 'E011 湿度过高报警',
+      57362: 'E012 进出水温差过大保护',
+      57363: 'E013 风机故障',
+      57364: 'E014 风机故障锁定',
+      57365: 'E015 缺水告警',
+      57366: 'E016 压缩机选择异常',
+      57367: 'E017 制冷超环温保护',
+      57368: 'E018 温湿度通讯故障',
+      57369: 'E019 变频水泵1驱动故障锁定',
+      57376: 'E020 变频水泵2驱动故障锁定',
+      57377: 'E021 水泵1驱动通讯故障',
+      57378: 'E022 水泵2驱动通讯故障',
+      57379: 'E023 补液水箱缺液告警',
+      57380: 'E024 储水箱水位保护',
+      57381: 'E025 预留',
+      57384: 'E028 预留',
+      57392: 'E030 冬季防冻运行保护',
+      57393: 'E031 预留',
+      57397: 'E035 变频水泵2驱动故障',
+      57398: 'E036 电加热故障',
+      57399: 'E037 预留',
+      57417: 'E049 风机2故障',
+      57424: 'E050 风机3故障',
+      57425: 'E051 风机4故障',
+      57426: 'E052 风机5故障',
+      57427: 'E053 风机6故障',
+      57428: 'E054 风机7故障',
+      57429: 'E055 风机8故障',
+      57430: 'E056 风机9故障',
+      57431: 'E057 风机10故障',
+      57432: 'E058 风机11故障',
+      57433: 'E059 风机12故障',
+      57440: 'E060 风机13故障',
+      57441: 'E061 风机14故障',
+      57442: 'E062 风机15故障',
+      57443: 'E063 风机16故障',
+      57444: 'E064 风机1故障（锁定）',
+      57445: 'E065 风机2故障（锁定）',
+      57446: 'E066 风机3故障（锁定）',
+      57447: 'E067 风机4故障（锁定）',
+      57448: 'E068 风机5故障(锁定)',
+      57449: 'E069 风机6故障(锁定)',
+      57456: 'E070 风机7故障(锁定)',
+      57457: 'E071 风机8故障(锁定)',
+      57458: 'E072 风机9故障(锁定)',
+      57459: 'E073 风机10故障(锁定)',
+      57460: 'E074 风机11故障(锁定)',
+      57461: 'E075 风机12故障(锁定)',
+      57462: 'E076 风机13故障(锁定)',
+      57463: 'E077 风机14故障(锁定)',
+      57464: 'E078 风机15故障(锁定)',
+      57465: 'E079 风机16故障(锁定)',
+      57472: 'E080 风机驱动1故障',
+      57473: 'E081 风机驱动2故障',
+      57474: 'E082 风机驱动3故障',
+      57475: 'E083 预留',
+      57481: 'E089 风机驱动2故障(锁定)',
+      57488: 'E090 风机驱动3故障(锁定)',
+      57489: 'E091 预留',
+      57495: 'E097 风机驱动2通讯故障',
+      57496: 'E098 风机驱动3通讯故障',
+      57497: 'E099 预留',
+      57857: 'E201 预留',
+      57859: 'E203 预留',
+      57862: 'E206 系统1低压过低保护锁定',
+      57863: 'E207 系统1制冷剂泄露保护',
+      57864: 'E208 系统1排气温度过高锁定',
+      57865: 'E209 系统1吸气温度过高锁定',
+      57872: 'E210 系统1吸气过热度过低锁定',
+      57873: 'E211 系统1排气温度异常',
+      57874: 'E212 系统1低压过高保护锁定',
+      57875: 'E213 预留',
+      57889: 'E221 压缩机1驱动故障',
+      57890: 'E222 压缩机1驱动故障锁定',
+      57891: 'E223 预留',
+      57894: 'E226 系统1排气温度传感器故障',
+      57895: 'E227 系统1低压压力传感器故障',
+      57896: 'E228 系统1高压压力传感器故障',
+      57897: 'E229 系统1压缩机过流保护',
+      57904: 'E230 系统1高压保护',
+      57905: 'E231 系统1低压过低保护',
+      57906: 'E232 系统1低压过高保护',
+      57907: 'E233 系统1排气温度过高',
+      57908: 'E234 系统1吸气温度过高',
+      57909: 'E235 系统1吸气过热度过低',
+      57910: 'E236 预留',
+      58113: 'E301 预留',
+      58115: 'E303 预留',
+      58118: 'E306 系统2低压过低保护锁定',
+      58119: 'E307 系统2制冷剂泄露保护',
+      58120: 'E308 系统2排气温度过高锁定',
+      58121: 'E309 系统2吸气温度过高锁定',
+      58128: 'E310 系统2吸气过热度过低锁定',
+      58129: 'E311 系统2排气温度异常',
+      58130: 'E312 系统2低压过高保护锁定',
+      58131: 'E313 预留',
+      58145: 'E321 压缩机2驱动故障',
+      58146: 'E322 压缩机2驱动故障锁定',
+      58147: 'E323 预留',
+      58150: 'E326 系统2排气温度传感器故障',
+      58151: 'E327 系统2低压压力传感器故障',
+      58152: 'E328 系统2高压压力传感器故障',
+      58153: 'E329 系统2压缩机过流保护',
+      58160: 'E330 系统2高压保护',
+      58161: 'E331 系统2低压过低保护',
+      58162: 'E332 系统2低压过高保护',
+      58163: 'E333 系统2排气温度过高',
+      58164: 'E334 系统2吸气温度过高',
+      58165: 'E335 系统2吸气过热度过低'
+    }
   }
 ]
 
@@ -20800,6 +23042,740 @@ export const DEH_SANHETONGFEI_FIELDS = [
     label: '强制模式',
     type: 'u16',
     map: { 0: '自动', 1: '强制制冷', 2: '强制制热', 3: '强制送风', 4: '强制待机' }
+  }
+]
+
+export const DEH_YINGWEIKE_U3EC_FIELDS = [
+  {
+    class: '除湿空调基础信息',
+    key: 'dataLength',
+    label: '数据长度',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '除湿空调基础信息',
+    key: 'dehAddress',
+    label: '除湿空调地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: '除湿空调基础信息',
+    key: 'commStatus',
+    label: '除湿空调通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  {
+    class: '版本信息',
+    key: 'softwareVersion',
+    label: '软件版本',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '运行状态',
+    key: 'machineStatus',
+    label: '整机状态',
+    type: 'u16',
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'internalFan',
+    label: '内风机',
+    type: 'u16',
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'externalFan',
+    label: '外风机',
+    type: 'u16',
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'compressor',
+    label: '压缩机',
+    type: 'u16',
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'electricHeater',
+    label: '电加热',
+    type: 'u16',
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '运行状态',
+    key: 'emergencyFan',
+    label: '应急风机',
+    type: 'u16',
+    map: { 0: '停止', 1: '运行' }
+  },
+  {
+    class: '温度监测',
+    key: 'coilTemp',
+    label: '盘管温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '温度监测',
+    key: 'outdoorTemp',
+    label: '室外温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '温度监测',
+    key: 'condensationTemp',
+    label: '冷凝温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '温度监测',
+    key: 'indoorTemp',
+    label: '室内温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '湿度监测',
+    key: 'humidity',
+    label: '湿度(%)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '温度监测',
+    key: 'exhaustTemp',
+    label: '排气温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '电气参数',
+    key: 'current',
+    label: '电流(A)',
+    type: 'u16',
+    scale: 1000
+  },
+  {
+    class: '电气参数',
+    key: 'acVoltage',
+    label: '交流电压(V)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '电气参数',
+    key: 'dcVoltage',
+    label: '直流电压(V)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '故障状态',
+    key: 'highTempAlarm',
+    label: '高温告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'lowTempAlarm',
+    label: '低温告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'highHumidityAlarm',
+    label: '高湿告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'lowHumidityAlarm',
+    label: '低湿告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'coilAntiFreeze',
+    label: '盘管防冻',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'exhaustHighTemp',
+    label: '排气高温',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'coilTempSensorFailure',
+    label: '盘管温感失效',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'outdoorTempSensorFailure',
+    label: '室外温感失效',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'condensationTempSensorFailure',
+    label: '冷凝温感失效',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'indoorTempSensorFailure',
+    label: '内温感失效',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'exhaustTempSensorFailure',
+    label: '排气温感失效',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'humiditySensorFailure',
+    label: '湿感失效',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'internalFanFault',
+    label: '内风机故障',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'externalFanFault',
+    label: '外风机故障',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'compressorFault',
+    label: '压缩机故障',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'electricHeaterFault',
+    label: '电加热故障',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'emergencyFanFault',
+    label: '应急风机故障',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'highPressureAlarm',
+    label: '高压告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'lowPressureAlarm',
+    label: '低压告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'waterLeakageAlarm',
+    label: '水浸告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'smokeAlarm',
+    label: '烟感告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'accessControlAlarm',
+    label: '门禁告警',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'highPressureLock',
+    label: '高压锁定',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'lowPressureLock',
+    label: '低压锁定',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'exhaustLock',
+    label: '排气锁定',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'acOvervoltage',
+    label: '交流过压',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'acUndervoltage',
+    label: '交流欠压',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'acPowerFailure',
+    label: '交流掉电',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'phaseLoss',
+    label: '缺相',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'frequencyAnomaly',
+    label: '频率异常',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'reversePhase',
+    label: '逆相',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'dcOvervoltage',
+    label: '直流过压',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'dcUndervoltage',
+    label: '直流欠压',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '故障状态',
+    key: 'powerFault',
+    label: '电源故障',
+    type: 'u16',
+    map: { 0: '正常', 1: '报警' }
+  },
+  {
+    class: '设置参数',
+    key: 'refrigerationPoint',
+    label: '制冷点(℃)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'refrigerationHysteresis',
+    label: '制冷回差(℃)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'heatingPoint',
+    label: '加热点(℃)',
+    type: 's16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'heatingHysteresis',
+    label: '加热回差(℃)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'dehumidificationPoint',
+    label: '除湿点(%)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'dehumidificationHysteresis',
+    label: '除湿回差(%)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'temperatureOverheatPoint',
+    label: '高温点(℃)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'temperatureUnderheatPoint',
+    label: '低温点(℃)',
+    type: 's16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'humidityOverheatPoint',
+    label: '高湿点(%)',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '设置参数',
+    key: 'internalFanStopPoint',
+    label: '内风机停止点(℃)',
+    type: 's16',
+    scale: 1
+  },
+  {
+    class: '运行状态',
+    key: 'currentRunMode',
+    label: '当前运行模式',
+    type: 'u16',
+    map: { 0: '待机', 1: '送风', 2: '保留', 3: '除湿', 4: '制冷', 5: '加热' }
+  }
+]
+
+export const DEH_EJ000113_FIELDS = [
+  {
+    class: '除湿机基础信息',
+    key: 'dataLength',
+    label: '数据长度',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '除湿机基础信息',
+    key: 'dehAddress',
+    label: '除湿空调地址',
+    type: 'u16',
+    scale: 1,
+    map: { 1: '第1堆', 2: '第2堆' }
+  },
+  {
+    class: '除湿机基础信息',
+    key: 'commStatus',
+    label: '除湿空调通讯状态',
+    type: 'u16',
+    scale: 1,
+    map: { 0: '正常', 1: '通讯异常' }
+  },
+  {
+    class: '运行状态',
+    key: 'statusWord',
+    label: '状态字',
+    type: 'u16',
+    hide: true
+  },
+  {
+    class: '运行状态',
+    key: 'humidityCircuitStatus',
+    label: '控湿回路状态',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 0,
+    map: { 0: '停止', 1: '开启' }
+  },
+  {
+    class: '运行状态',
+    key: 'tempCircuitStatus',
+    label: '控温回路状态',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 1,
+    map: { 0: '停止', 1: '开启' }
+  },
+  {
+    class: '运行状态',
+    key: 'tempControlMode',
+    label: '控温方式',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 2,
+    map: { 0: '降温', 1: '升温' }
+  },
+  {
+    class: '运行状态',
+    key: 'fanModuleFault',
+    label: '风机模块回路状态',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 3,
+    map: { 0: '正常', 1: '故障' }
+  },
+  {
+    class: '运行状态',
+    key: 'dehumidifyModuleFault',
+    label: '除湿模块回路状态',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 4,
+    map: { 0: '正常', 1: '故障' }
+  },
+  {
+    class: '运行状态',
+    key: 'humiditySensorStatus',
+    label: '湿度传感器状态',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 5,
+    map: { 0: '正常', 1: '故障' }
+  },
+  {
+    class: '运行状态',
+    key: 'externalTempSensorStatus',
+    label: '外部温度传感器状态',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 6,
+    map: { 0: '正常', 1: '故障' }
+  },
+  {
+    class: '运行状态',
+    key: 'reservedStatusBit7',
+    label: '备用',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 7
+  },
+  {
+    class: '运行状态',
+    key: 'defrostStatus',
+    label: '化霜状态',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 8,
+    map: { 0: '正常', 1: '正在化霜' }
+  },
+  {
+    class: '运行状态',
+    key: 'humidityManualSwitch',
+    label: '控湿手工开关',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 9,
+    map: { 0: '自动', 1: '手动开' }
+  },
+  {
+    class: '运行状态',
+    key: 'tempManualSwitch',
+    label: '控温手动开关',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 10,
+    map: { 0: '自动', 1: '手动开' }
+  },
+  {
+    class: '运行状态',
+    key: 'highTempAlarm',
+    label: '高温告警',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 11,
+    map: { 0: '正常', 1: '告警' }
+  },
+  {
+    class: '运行状态',
+    key: 'dewPointLoopStatus',
+    label: '露点温度回路工作状态',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 12,
+    map: { 0: '关闭', 1: '开启' }
+  },
+  {
+    class: '运行状态',
+    key: 'reservedStatusBit13',
+    label: '预留',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 13
+  },
+  {
+    class: '运行状态',
+    key: 'reservedStatusBit14',
+    label: '预留',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 14
+  },
+  {
+    class: '运行状态',
+    key: 'reservedStatusBit15',
+    label: '预留',
+    type: 'bit',
+    bitsOf: 'statusWord',
+    bit: 15
+  },
+  {
+    class: '环境监测',
+    key: 'ambientTemp',
+    label: '环境温度值(℃)',
+    type: 's16',
+    scale: 10
+  },
+  {
+    class: '环境监测',
+    key: 'ambientHumidity',
+    label: '环境湿度值(%RH)',
+    type: 'u16',
+    scale: 10
+  },
+  { class: '预留', key: 'reserved2', label: '备用2', type: 'u16', hide: true },
+  {
+    class: '环境监测',
+    key: 'dewPointLoopTemp',
+    label: '露点温度回路温度(℃)',
+    type: 's16',
+    scale: 10
+  },
+  { class: '预留', key: 'reserved3', label: '备用3', type: 'u16', hide: true },
+  { class: '预留', key: 'reserved4', label: '备用4', type: 'u16', hide: true },
+  { class: '预留', key: 'reserved5', label: '备用5', type: 'u16', hide: true },
+  {
+    class: '设置参数',
+    key: 'tempStart',
+    label: '控温开启值(℃)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'tempStop',
+    label: '控温停止值(℃)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'humidityStart',
+    label: '控湿开启值(%RH)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'humidityStop',
+    label: '控湿关闭值(%RH)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'tempAlarmHigh',
+    label: '高温报警上限值(℃)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'tempAlarmLow',
+    label: '高温报警下限值(℃)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'dewPointStart',
+    label: '露点温度启动值(℃)',
+    type: 'u16',
+    scale: 10
+  },
+  {
+    class: '设置参数',
+    key: 'dewPointDiff',
+    label: '露点温度回差值(℃)',
+    type: 'u16',
+    scale: 10
+  }
+]
+
+export const FIRE_YIJIE_FIELDS = [
+  {
+    class: '消防设备基础信息',
+    key: 'dataLength',
+    label: '数据长度',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '消防监测',
+    key: 'hydrogen',
+    label: '氢气',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '消防监测',
+    key: 'carbonMonoxide',
+    label: '一氧化碳',
+    type: 'u16',
+    scale: 1
   }
 ]
 

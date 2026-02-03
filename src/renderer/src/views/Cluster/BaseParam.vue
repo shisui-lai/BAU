@@ -126,6 +126,12 @@ const systemBaseParamConfig = {
         nameKey: 'clusterConfigParam.parameterClasses.balanceParams',
         byteOffset: 296,    // 起始字节偏移：跳过8字节预留 = 寄存器148开始
         byteLength: 22      // 字节长度：11个均衡参数，包含s16和u16 = 22字节
+      },
+      {
+        name: '户外柜水冷机配置',
+        nameKey: 'clusterConfigParam.parameterClasses.outdoorWaterCoolingConfig',
+        byteOffset: 328,
+        byteLength: 16
       }
     ]
   }

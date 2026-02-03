@@ -94,6 +94,14 @@
     "directories": {
       "buildResources": "resources"
     },
+    "files": [
+      "!EventExports/**",
+      "!dataExports/**",
+      "!**/*.log",
+      "!**/logs/**",
+      "!**/tmp/**",
+      "!**/temp/**"
+    ],
     "win": {
       "icon": "icon.ico",
       "target": [

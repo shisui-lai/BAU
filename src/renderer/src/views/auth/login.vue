@@ -178,7 +178,7 @@ const onGuestEnter = async () => {
   authStore.loginAsGuest()
   
   // 等待导航完成
-  await router.replace({ name: 'BlockInfoHome' })
+  await router.replace({ name: 'Dashboard' })
 
   
   // 导航完成后重置loading状态

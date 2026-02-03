@@ -52,6 +52,12 @@
  */
 
 const { fork } = require('child_process')
+import { diagLogger } from '../diagnosticLogger.js'
+import {
+  createChildLogFile,
+  appendChildLogLine,
+  appendChildStreamChunk
+} from '../childLogManager.js'
 
 class MQTTProcessManager {
   constructor() {
@@ -77,6 +83,12 @@ class MQTTProcessManager {
     this.isInitialized = false
     this.isStarting = false
     this.startTime = 0
+    this.childLogFile = ''
+    this.isShuttingDown = false
+    this.shouldReplayOnStart = false
+    this.lastConnectConfig = null
+    this.desiredConnected = false
+    this.lastExportEnable = null
 
     console.log('[ProcessManager] 进程管理器已创建')
   }
@@ -99,11 +111,17 @@ class MQTTProcessManager {
   startMQTTProcess() {
     if (!this.isInitialized) {
       console.error('[ProcessManager] 进程管理器未初始化')
+      try {
+        diagLogger.warn('pm-start', 'not-initialized')
+      } catch {}
       return false
     }
 
     if (this.isStarting) {
       console.warn('[ProcessManager] 子进程正在启动中，跳过重复启动')
+      try {
+        diagLogger.warn('pm-start', 'already-starting')
+      } catch {}
       return false
     }
 
@@ -112,18 +130,52 @@ class MQTTProcessManager {
 
     try {
       console.log('[ProcessManager] 正在启动MQTT子进程...')
+      try {
+        diagLogger.info('pm-start', 'begin')
+      } catch {}
 
       // 清理旧进程
       if (this.mqttTask && !this.mqttTask.killed) {
         this.mqttTask.kill('SIGTERM')
+        try {
+          diagLogger.warn('pm-start', 'kill-old')
+        } catch {}
       }
 
+      this.childLogFile = createChildLogFile()
+      appendChildLogLine(this.childLogFile, 'INFO', 'child-fork-start')
+
       // 启动新进程
-      this.mqttTask = fork(this.forkPath)
+      this.mqttTask = fork(this.forkPath, [], { stdio: ['pipe', 'pipe', 'pipe', 'ipc'] })
       console.log('[ProcessManager] MQTT子进程已启动，PID:', this.mqttTask.pid)
+      try {
+        diagLogger.info('pm-start', 'started', {
+          pid: this.mqttTask.pid,
+          childLog: this.childLogFile
+        })
+      } catch {}
+      appendChildLogLine(this.childLogFile, 'INFO', `child-started {"pid":${this.mqttTask.pid}}`)
+
+      if (this.mqttTask.stdout) {
+        this.mqttTask.stdout.on('data', (buf) => {
+          appendChildStreamChunk(this.childLogFile, 'STDOUT', buf)
+        })
+      }
+      if (this.mqttTask.stderr) {
+        this.mqttTask.stderr.on('data', (buf) => {
+          appendChildStreamChunk(this.childLogFile, 'STDERR', buf)
+        })
+      }
 
       // 设置进程监控
       this.setupProcessMonitoring()
+
+      if (this.shouldReplayOnStart) {
+        this.shouldReplayOnStart = false
+        setTimeout(() => {
+          this.replayDesiredState()
+        }, 200)
+      }
 
       // 不再由processManager主动发送健康检查请求
       // 改为监听mqtt.js子进程主动发送的心跳消息
@@ -131,12 +183,18 @@ class MQTTProcessManager {
       // this.startHealthCheck()
 
       this.isStarting = false
+      try {
+        diagLogger.info('pm-start', 'ready')
+      } catch {}
       return true
     } catch (error) {
       console.error('[ProcessManager] 启动MQTT子进程失败:', error)
       this.logError('startup_failed', error)
       this.isStarting = false
       this.scheduleRestart('startup_failed')
+      try {
+        diagLogger.error('pm-start', 'failed', { error: error.message })
+      } catch {}
       return false
     }
   }
@@ -151,23 +209,50 @@ class MQTTProcessManager {
     this.mqttTask.on('error', (error) => {
       console.error('[ProcessManager] MQTT子进程错误:', error)
       // this.handleProcessError(error)
+      try {
+        diagLogger.error('pm-task-error', error.message)
+      } catch {}
+      appendChildLogLine(this.childLogFile, 'ERROR', `task-error ${error && error.message}`)
     })
 
     // 监听进程退出
     this.mqttTask.on('exit', (code, signal) => {
       console.log('[ProcessManager] MQTT子进程退出，代码:', code, '信号:', signal)
-      // 已禁用自动重启功能 - 由mqtt.js的reconnectPeriod机制处理重连
-      // if (code !== 0 && code !== null) {
-      //   this.handleProcessCrash(code, signal)
-      // }
+      const isSigterm = signal === 'SIGTERM'
+      const isNormalExit = code === 0
+      const isAbnormalExit = !isNormalExit && !isSigterm
+      this.mqttTask = null
+      this.isStarting = false
+      try {
+        diagLogger.error('pm-task-exit', 'exit', { code, signal })
+      } catch {}
+      appendChildLogLine(
+        this.childLogFile,
+        'ERROR',
+        `task-exit {"code":${code},"signal":${JSON.stringify(signal)}}`
+      )
+
+      if (!this.isShuttingDown && isAbnormalExit) {
+        this.handleProcessCrash(code, signal)
+        this.scheduleRestart('process_exit')
+      }
     })
 
     // 监听消息
     this.mqttTask.on('message', (msg) => {
       this.handleMessage(msg)
+      try {
+        if (msg && typeof msg === 'object') {
+          const tag = String(msg.type || msg.API || 'message')
+          diagLogger.debug('pm-task-message', tag)
+        }
+      } catch {}
     })
 
     console.log('[ProcessManager] 进程监控已设置')
+    try {
+      diagLogger.info('pm-monitor', 'ready')
+    } catch {}
   }
 
   /**
@@ -196,19 +281,6 @@ class MQTTProcessManager {
     // console.log('[ProcessManager] 收到心跳，连接质量:', data.connectionQuality)
   }
 
-  /**
-   * 启动健康检查（已废弃 - 改为被动接收心跳）
-   *
-   * 新架构说明：
-   * - processManager不再主动发送健康检查请求
-   * - mqtt.js子进程在连接成功后会主动发送心跳
-   * - processManager只需被动接收心跳并更新lastHeartbeat
-   *
-   * 优势：
-   * - 子进程自主管理，逻辑更清晰
-   * - 只在真正需要时（连接成功）才发送心跳
-   * - 减少不必要的进程间通信
-   */
   startHealthCheck() {
     console.log('[ProcessManager] 健康检查机制：等待子进程主动发送心跳')
     // 不再启动定时器主动发送HEALTH_CHECK
@@ -233,6 +305,9 @@ class MQTTProcessManager {
     this.logError('process_error', error)
     // 已禁用自动重启功能 - 由mqtt.js的reconnectPeriod机制处理重连
     // this.scheduleRestart('process_error')
+    try {
+      diagLogger.error('pm-handleError', error && error.message)
+    } catch {}
   }
 
   /**
@@ -242,8 +317,9 @@ class MQTTProcessManager {
    */
   handleProcessCrash(code, signal) {
     this.logError('process_crash', { code, signal })
-    // 已禁用自动重启功能 - 由mqtt.js的reconnectPeriod机制处理重连
-    // this.scheduleRestart('process_crash')
+    try {
+      diagLogger.error('pm-handleCrash', '', { code, signal })
+    } catch {}
   }
 
   /**
@@ -294,11 +370,15 @@ class MQTTProcessManager {
     // 更新重启统计
     this.restartCount++
     this.lastRestartTime = Date.now()
+    this.shouldReplayOnStart = true
 
     // 延迟重启，给系统恢复时间
     setTimeout(() => {
       this.startMQTTProcess()
     }, 2000)
+    try {
+      diagLogger.warn('pm-restart', reason, { restartCount: this.restartCount })
+    } catch {}
   }
 
   /**
@@ -339,6 +419,9 @@ class MQTTProcessManager {
     }
 
     console.error('[ProcessManager] MQTT子进程重启失败，需要手动处理')
+    try {
+      diagLogger.error('pm-restart-failed', '', failureInfo)
+    } catch {}
   }
 
   /**
@@ -355,6 +438,33 @@ class MQTTProcessManager {
    */
   getMQTTTask() {
     return this.mqttTask
+  }
+
+  setLastConnectConfig(config) {
+    this.lastConnectConfig = config || null
+    this.desiredConnected = !!config
+  }
+
+  setDesiredDisconnected() {
+    this.desiredConnected = false
+  }
+
+  setLastExportEnable(semantic, raw) {
+    this.lastExportEnable = { semantic: !!semantic, raw: !!raw }
+  }
+
+  replayDesiredState() {
+    if (!this.mqttTask || this.mqttTask.killed) return
+    try {
+      if (this.lastExportEnable) {
+        this.mqttTask.send({ cmd: 'SET_EXPORT_ENABLE', ...this.lastExportEnable })
+      }
+    } catch {}
+    try {
+      if (this.desiredConnected && this.lastConnectConfig) {
+        this.mqttTask.send({ cmd: 'MQTT_CONNECT', config: this.lastConnectConfig })
+      }
+    } catch {}
   }
 
   /**
@@ -412,6 +522,9 @@ class MQTTProcessManager {
     if (this.mqttTask && !this.mqttTask.killed) {
       this.mqttTask.kill('SIGTERM')
     }
+    try {
+      diagLogger.info('pm-cleanup', 'done')
+    } catch {}
   }
 
   /**
@@ -420,6 +533,7 @@ class MQTTProcessManager {
    */
   async cleanupAsync() {
     return new Promise((resolve) => {
+      this.isShuttingDown = true
       if (!this.isRunning()) {
         resolve()
         return

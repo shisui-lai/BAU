@@ -48,6 +48,8 @@
                       :min="command.inputConfig?.min"
                       :max="command.inputConfig?.max"
                       :step="command.inputConfig?.step"
+                      :minFractionDigits="getFractionDigitsByScale(command.inputConfig?.scale)"
+                      :maxFractionDigits="getFractionDigitsByScale(command.inputConfig?.scale)"
                       :suffix="command.inputConfig?.unit"
                       class="w-full"
                       :disabled="executingCommands.has(command.id)"
@@ -222,6 +224,14 @@ function getModeLabel(mode) {
  */
 function getModeSeverity(mode) {
   return 'info' // 统一使用蓝色标签
+}
+
+function getFractionDigitsByScale(scale) {
+  if (!scale || scale === 1) return 0
+  if (scale >= 1000) return 3
+  if (scale >= 100) return 2
+  if (scale >= 10) return 1
+  return 0
 }
 
 /**

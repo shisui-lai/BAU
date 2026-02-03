@@ -234,6 +234,33 @@ export function useFaultOverview() {
       主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
       主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
       预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
       红灯高边驱动反馈故障: 'RedLampHighSideFeedbackFault',
       黄灯高边驱动反馈故障: 'YellowLampHighSideFeedbackFault',
       绿灯高边驱动反馈故障: 'GreenLampHighSideFeedbackFault',
@@ -272,6 +299,8 @@ export function useFaultOverview() {
       单体温度探头掉线: 'SingleTempProbeDropped2',
       'BMU 1号 动力接插件温度断线': 'BMU1PowerConnectorTempDisconnected2',
       'BMU 2号 动力接插件温度断线': 'BMU2PowerConnectorTempDisconnected2',
+      '主正高边驱动反馈故障2': 'MainPosHighSideFeedbackFault2',
+      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault',
       AFE通讯失联: 'AFECommLost2',
       BCU通讯故障: 'BCUCommFault_Stack',
       BCU通信故障: 'BCUCommFault_Stack'
@@ -281,7 +310,16 @@ export function useFaultOverview() {
       if (section.element && Array.isArray(section.element)) {
         section.element.forEach((item) => {
           if (skipLabel(item.label)) return
-          const key = labelToKeyMap[item.label] || item.label
+          let key = labelToKeyMap[item.label] || item.label
+          if (section.class === '高边故障') {
+            if (item.label === '主正高边驱动反馈故障2') {
+              key = 'MainPosHighSideFeedbackFault2'
+            } else if (item.label === '主负高边驱动反馈故障') {
+              key = 'MainNegHighSideFeedbackFault2'
+            } else if (item.label === '预充高边驱动反馈故障') {
+              key = 'PrechargeHighSideFeedbackFault2'
+            }
+          }
           if (HIDE_KEYS.has(key)) return
           const level = item.value ? 1 : 0
           faults.push({ name: key, level, color: getFaultLevelColor(level) })

@@ -259,6 +259,9 @@ onMounted(() => {
   // 新架构：速率在子进程计算，渲染进程只负责显示
   window.electron.ipcRenderer.on('data-rate-update', handleDataRateUpdate)
   console.log('[AppLayout] 数据速率监听已启动')
+  window.electron.ipcRenderer.on('crash-summary', (_event, line) => {
+    if (line) console.error(line)
+  })
 
   // 监听页面可见性变化，优化后台性能
   document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -273,6 +276,7 @@ onUnmounted(() => {
   // 清理数据接收监控
   window.electron.ipcRenderer.removeAllListeners('mqtt-data-heartbeat')
   window.electron.ipcRenderer.removeAllListeners('data-rate-update')
+  window.electron.ipcRenderer.removeAllListeners('crash-summary')
   dataReceptionStore.stopMonitoring()
 
   // 清理页面可见性监听
@@ -301,6 +305,7 @@ onUnmounted(() => {
 
   // 【数据速率】清理速率监听器
   window.electron.ipcRenderer.removeAllListeners('data-rate-update')
+  window.electron.ipcRenderer.removeAllListeners('crash-summary')
   console.log('[AppLayout] 数据速率监听已停止')
 
   document.removeEventListener('visibilitychange', handleVisibilityChange)

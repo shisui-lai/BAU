@@ -1,13 +1,14 @@
 <!-- 堆报警阈值页面 - 参考簇告警阈值实现，使用堆下拉与单一topic(block_fault_dns) -->
 <script setup>
 import { useToast } from 'primevue/usetoast'
-import { onMounted, onUnmounted, onDeactivated, ref, computed } from 'vue'
+import { onMounted, onUnmounted, onDeactivated, ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRawInputCache, isNumericType, validateNumericInput } from '@/composables/utils/useParameterInput'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useBlockStore } from '@/stores/device/blockStore'
+import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import { BLOCK_DNS_PARAM_R } from '../../../../main/table.js'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
@@ -101,6 +102,17 @@ const {
   handleParameterReadError,
   sendParameterReadRequest
 } = useRemoteControlCore(blockAlarmCfg, toastService, { selectorMode: 'block' })
+
+const { selectedBlock } = useBlockSelect()
+let blockSwitchDebounceTimer = null
+watch(selectedBlock, (newVal, oldVal) => {
+  if (!newVal || newVal === oldVal) return
+  if (isCurrentlyReading?.value) return
+  clearTimeout(blockSwitchDebounceTimer)
+  blockSwitchDebounceTimer = setTimeout(() => {
+    sendParameterReadRequest()
+  }, 300)
+})
 
 // 翻译后的参数列表 - 使用 computed 确保响应式翻译
 const translatedParameterList = computed(() => {

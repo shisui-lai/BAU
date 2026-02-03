@@ -8,6 +8,8 @@ import {
 } from './packSchemaFactory'
 const fs = require('fs')
 const path = require('path')
+const os = require('os')
+const v8 = require('v8')
 import { OUT_FAULT_MAP, SAVED_FAULT_MAP, BLOCK_PCS } from './table.js'
 import {
   processPackSummaryRAW,
@@ -50,6 +52,7 @@ import {
   parseBlockCommDevCfgRAW,
   parseBlockOperateCfgRAW,
   parseBlockSocParamRAW,
+  parseBlockRefParamRAW,
   processBcuAdaptiveQueryResult,
   processBmuAdaptiveQueryResult,
   processCellVoltageRAW,
@@ -66,7 +69,8 @@ import {
   startReadingEvent,
   cancelReadingEvent,
   processEventRecordResponse,
-  getEventReadingState
+  getEventReadingState,
+  getEventExportStats
 } from './eventRecordExport'
 // 【限流优化】已注释掉限流机制，改为直接发送
 // 原因：1) 速率计算已移到子进程，渲染进程负担已减轻
@@ -75,7 +79,11 @@ import {
 //       4) 简化架构，降低维护成本
 // import { sendToParent, flushThrottlers, cancelThrottlers, setBackgroundMode } from '../protocol/ipcThrottler.js'
 import mqtt from 'mqtt'
-import { startSaveTimerSemantic, stopSaveTimerSemantic } from './mqttExport/bauDataExport'
+import {
+  startSaveTimerSemantic,
+  stopSaveTimerSemantic,
+  getSemanticExportStats
+} from './mqttExport/bauDataExport'
 // 原始报文两秒节拍写入
 
 import {
@@ -89,7 +97,14 @@ import {
   processAlarmSemantic,
   processSysAbstract
 } from './mqttExport/ingest'
-import { logAnyMessage } from './mqttExport/mqttRawLogger'
+import { logAnyMessage, getRawWriteStats } from './mqttExport/mqttRawLogger'
+import {
+  isWaitingForUserDecision,
+  updateExportEnabled,
+  formatCrashSummary,
+  updateMqttStatus,
+  updateResource
+} from './mqttExport/utils'
 
 import {
   BLOCK_COMMON_PARAM_R, //BAU通用参数配置
@@ -147,7 +162,191 @@ let parseErrorCount = 0
 let dataRateAccumulator = 0 // 当前秒累计的原始MQTT数据量（字节）
 let currentDataRate = 0 // 当前显示的数据速率 KB/s
 let dataRateTimer = null // 速率计算定时器
+let memSampleTimer = null
+let lastCpuUsage = null
+let lastCpuTime = null
+let heapSnapshotLevel = 0
+const ENABLE_HEAP_SNAPSHOT = true
+let eventLoopLagTimer = null
+let lastEventLoopTick = 0
+let lastLagDetailTs = 0
 
+// ====== BEGIN DIAG: 阻塞/堆积根因收敛（便于删减管理） ======
+// 目的：RSS 开始上涨或 UI 卡顿时，不等崩溃即可用 child 日志收敛到：
+// - socket 缓冲堆积 / 写盘队列堆积 / 语义导出缓存堆积
+// - 某类消息处理耗时过长（slow-message）
+// - IPC 通道反压/堆积（ipc-backpressure）
+const DIAG_COOLDOWN_MS = 10_000
+const SLOW_MESSAGE_THRESHOLD_MS = 200
+let lastSlowMessageTs = 0
+let lastIpcBackpressureTs = 0
+let ipcSendReturnFalseCount = 0
+let lastIpcSendReturnFalseTs = 0
+let lastIpcDrainTs = 0
+let ipcDiagHooked = false
+let ipcSendAttemptCountWin = 0
+let ipcSendFalseCountWin = 0
+let ipcSendPayloadBytesWin = 0
+let lastIpcSendStatsTs = 0
+let lastIpcDrainLogTs = 0
+const IPC_SEND_STATS_INTERVAL_MS = 5000
+
+function maybeLogIpcSendStats(now) {
+  if (!lastIpcSendStatsTs) lastIpcSendStatsTs = now
+  const elapsedMs = now - lastIpcSendStatsTs
+  if (elapsedMs < IPC_SEND_STATS_INTERVAL_MS) return
+  const attempts = ipcSendAttemptCountWin
+  const falseCount = ipcSendFalseCountWin
+  const bytes = ipcSendPayloadBytesWin
+  ipcSendAttemptCountWin = 0
+  ipcSendFalseCountWin = 0
+  ipcSendPayloadBytesWin = 0
+  lastIpcSendStatsTs = now
+  try {
+    const mu = process.memoryUsage()
+    const toMB = (n) => Number((Number(n || 0) / (1024 * 1024)).toFixed(1))
+    const ipcBufferSize =
+      process && process.channel && typeof process.channel.bufferSize === 'number'
+        ? process.channel.bufferSize
+        : null
+    const falsePct = attempts ? Number(((falseCount / attempts) * 100).toFixed(2)) : 0
+    const kbps = elapsedMs ? Number(((bytes / 1024) * (1000 / elapsedMs)).toFixed(2)) : 0
+    console.log(
+      `[ChildLog] ipc-send-stats ${JSON.stringify({
+        intervalMs: elapsedMs,
+        attempts,
+        falseCount,
+        falsePct,
+        payloadKBps: kbps,
+        ipcBufferSize,
+        rssMB: toMB(mu.rss),
+        heapUsedMB: toMB(mu.heapUsed),
+        externalMB: toMB(mu.external),
+        backlog: getBacklogLite()
+      })}`
+    )
+  } catch {}
+}
+
+function ensureIpcDiagHooks() {
+  if (ipcDiagHooked) return
+  ipcDiagHooked = true
+  try {
+    const ch = process && process.channel
+    if (ch && typeof ch.on === 'function') {
+      ch.on('drain', () => {
+        const now = Date.now()
+        lastIpcDrainTs = now
+        if (!lastIpcDrainLogTs || now - lastIpcDrainLogTs > IPC_SEND_STATS_INTERVAL_MS) {
+          lastIpcDrainLogTs = now
+        }
+      })
+    }
+  } catch {}
+}
+
+function getLagDetailSnapshot() {
+  let semantic = null
+  let eventStats = null
+  let rawWrite = null
+  let handles = null
+  try {
+    semantic = getSemanticExportStats()
+  } catch {}
+  try {
+    eventStats = getEventExportStats()
+  } catch {}
+  try {
+    rawWrite = getRawWriteStats()
+  } catch {}
+  try {
+    const activeHandles = process._getActiveHandles ? process._getActiveHandles() : null
+    const activeRequests = process._getActiveRequests ? process._getActiveRequests() : null
+    handles = {
+      activeHandles: activeHandles && Array.isArray(activeHandles) ? activeHandles.length : null,
+      activeRequests: activeRequests && Array.isArray(activeRequests) ? activeRequests.length : null
+    }
+  } catch {}
+  let stream = null
+  try {
+    stream = client && client.stream ? client.stream : null
+  } catch {}
+  const now = Date.now()
+  return {
+    mqtt: { isConnected, reconnecting: !!client?.reconnecting },
+    ipc: {
+      connected: typeof process?.connected === 'boolean' ? process.connected : null,
+      bufferSize:
+        process && process.channel && typeof process.channel.bufferSize === 'number'
+          ? process.channel.bufferSize
+          : null,
+      sendReturnFalseCount: ipcSendReturnFalseCount,
+      lastSendFalseMs: lastIpcSendReturnFalseTs ? now - lastIpcSendReturnFalseTs : null,
+      lastDrainMs: lastIpcDrainTs ? now - lastIpcDrainTs : null
+    },
+    stream: {
+      readableLength:
+        stream && typeof stream.readableLength === 'number' ? stream.readableLength : null,
+      writableLength:
+        stream && typeof stream.writableLength === 'number' ? stream.writableLength : null
+    },
+    rawWrite,
+    semantic,
+    eventExport: eventStats,
+    handles
+  }
+}
+// ====== END DIAG: 阻塞/堆积根因收敛（便于删减管理） ======
+
+function getBacklogLite() {
+  const now = Date.now()
+  try {
+    ensureIpcDiagHooks()
+  } catch {}
+  let raw = null
+  try {
+    raw = getRawWriteStats()
+  } catch {}
+  let semantic = null
+  try {
+    semantic = getSemanticExportStats()
+  } catch {}
+  let socketReadable = null
+  let socketWritable = null
+  try {
+    const stream = client && client.stream
+    socketReadable =
+      stream && typeof stream.readableLength === 'number' ? stream.readableLength : null
+    socketWritable =
+      stream && typeof stream.writableLength === 'number' ? stream.writableLength : null
+  } catch {}
+  return {
+    sinceLastMsgMs: lastMessageReceived ? now - lastMessageReceived : null,
+    handlerRegisteredCount: messageHandlerRegisteredCount,
+    parseErrorCount,
+    rateAccBytes: dataRateAccumulator,
+    ipcConnected: typeof process?.connected === 'boolean' ? process.connected : null,
+    ipcBufferSize:
+      process && process.channel && typeof process.channel.bufferSize === 'number'
+        ? process.channel.bufferSize
+        : null,
+    ipcSendReturnFalseCount,
+    ipcLastSendFalseMs: lastIpcSendReturnFalseTs ? now - lastIpcSendReturnFalseTs : null,
+    ipcLastDrainMs: lastIpcDrainTs ? now - lastIpcDrainTs : null,
+    rawPendingJobs: raw && typeof raw.pendingJobs === 'number' ? raw.pendingJobs : null,
+    rawPendingBytesApprox:
+      raw && typeof raw.pendingBytesApprox === 'number' ? raw.pendingBytesApprox : null,
+    rawLastJobMs: raw && typeof raw.lastJobMs === 'number' ? raw.lastJobMs : null,
+    rawLastQueueDelayMs:
+      raw && typeof raw.lastQueueDelayMs === 'number' ? raw.lastQueueDelayMs : null,
+    csvBufferBytesApprox:
+      semantic && typeof semantic.csvBufferBytesApprox === 'number'
+        ? semantic.csvBufferBytesApprox
+        : null,
+    socketReadable,
+    socketWritable
+  }
+}
 // ========== 事件记录导出状态管理 ==========
 let isReadingEvent = false // 是否正在读取事件记录
 // 进度更新批次大小（用于事件记录进度更新）
@@ -166,6 +365,155 @@ function resetHealthCheckData() {
   connectionQuality = 'good'
   parseErrorCount = 0
   console.log('[MQTT Child] 健康检查数据已重置')
+}
+
+function startEventLoopLagMonitor() {
+  if (eventLoopLagTimer) return
+  lastEventLoopTick = Date.now()
+  eventLoopLagTimer = setInterval(() => {
+    const now = Date.now()
+    const delay = now - lastEventLoopTick - 1000
+    lastEventLoopTick = now
+    if (delay > 200) {
+      try {
+        const mu = process.memoryUsage()
+        const toMB = (n) => Number((Number(n || 0) / (1024 * 1024)).toFixed(1))
+        const backlog = getBacklogLite()
+        console.log(
+          `[ChildLog] event-loop-lag ${JSON.stringify({
+            delayMs: delay,
+            rssMB: toMB(mu.rss),
+            heapUsedMB: toMB(mu.heapUsed),
+            externalMB: toMB(mu.external),
+            ...backlog
+          })}`
+        )
+        if (delay > 1000) {
+          const cooldownMs = 10_000
+          if (!lastLagDetailTs || now - lastLagDetailTs > cooldownMs) {
+            lastLagDetailTs = now
+            console.log(
+              `[ChildLog] lag-detail ${JSON.stringify({
+                delayMs: delay,
+                rssMB: toMB(mu.rss),
+                heapUsedMB: toMB(mu.heapUsed),
+                externalMB: toMB(mu.external),
+                backlog,
+                detail: getLagDetailSnapshot()
+              })}`
+            )
+          }
+        }
+      } catch {}
+    }
+  }, 1000)
+}
+
+function startMemorySampling() {
+  if (memSampleTimer) return
+  memSampleTimer = setInterval(() => {
+    try {
+      const mu = process.memoryUsage()
+      const toMB = (n) => Number((Number(n || 0) / (1024 * 1024)).toFixed(1))
+      let semantic = null
+      let eventStats = null
+      let system = null
+      try {
+        semantic = getSemanticExportStats()
+      } catch {}
+      try {
+        eventStats = getEventExportStats()
+      } catch {}
+      let rawWrite = null
+      try {
+        rawWrite = getRawWriteStats()
+      } catch {}
+      let handles = null
+      try {
+        // 诊断：活跃句柄/请求数量（用于排查句柄泄漏/定时器堆积/未关闭流等）
+        // 注意：这里只取 length，不打印对象，避免日志爆炸
+        const activeHandles = process._getActiveHandles ? process._getActiveHandles() : null
+        const activeRequests = process._getActiveRequests ? process._getActiveRequests() : null
+        handles = {
+          activeHandles:
+            activeHandles && Array.isArray(activeHandles) ? activeHandles.length : null,
+          activeRequests:
+            activeRequests && Array.isArray(activeRequests) ? activeRequests.length : null
+        }
+      } catch {}
+      const usedMB = toMB(mu.heapUsed)
+      if (ENABLE_HEAP_SNAPSHOT) {
+        let snapshotTag = null
+        if (heapSnapshotLevel === 0 && usedMB > 512) {
+          snapshotTag = 'heap-gt-512'
+          heapSnapshotLevel = 1
+        } else if (heapSnapshotLevel === 1 && usedMB > 768) {
+          snapshotTag = 'heap-gt-768'
+          heapSnapshotLevel = 2
+        } else if (heapSnapshotLevel === 2 && usedMB > 1024) {
+          snapshotTag = 'heap-gt-1024'
+          heapSnapshotLevel = 3
+        }
+        if (snapshotTag) {
+          try {
+            const dir = path.join(process.cwd(), 'child-heaps')
+            try {
+              fs.mkdirSync(dir, { recursive: true })
+            } catch {}
+            const filePath = path.join(dir, `${snapshotTag}-${Date.now()}.heapsnapshot`)
+            v8.writeHeapSnapshot(filePath)
+            console.log(
+              `[ChildLog] heap-snapshot {"tag":${JSON.stringify(
+                snapshotTag
+              )},"path":${JSON.stringify(filePath)},"heapUsedMB":${usedMB}}`
+            )
+          } catch (e) {
+            try {
+              console.warn('[MQTT Child] heap-snapshot failed:', e && e.message)
+            } catch {}
+          }
+        }
+      }
+      try {
+        const total = os.totalmem()
+        const free = os.freemem()
+        const used = total - free
+        const memTotalMB = Math.round(total / (1024 * 1024))
+        const memFreeMB = Math.round(free / (1024 * 1024))
+        const memUsedMB = Math.round(used / (1024 * 1024))
+        const memUsagePercent = Number(((used / total) * 100).toFixed(2))
+        let cpuPercent = null
+        try {
+          const now = Date.now()
+          const cpu = process.cpuUsage()
+          if (lastCpuUsage && lastCpuTime) {
+            const userDiff = cpu.user - lastCpuUsage.user
+            const sysDiff = cpu.system - lastCpuUsage.system
+            const elapsedMs = now - lastCpuTime
+            const totalDiffUs = userDiff + sysDiff
+            const cores = (os.cpus() && os.cpus().length) || 1
+            const percent = (totalDiffUs / (elapsedMs * 1000 * cores)) * 100
+            cpuPercent = Number(percent.toFixed(2))
+          }
+          lastCpuUsage = cpu
+          lastCpuTime = now
+        } catch {}
+        system = { memTotalMB, memFreeMB, memUsedMB, memUsagePercent, cpuPercent }
+      } catch {}
+      const payload = {
+        rssMB: toMB(mu.rss),
+        heapUsedMB: toMB(mu.heapUsed),
+        heapTotalMB: toMB(mu.heapTotal),
+        externalMB: toMB(mu.external),
+        system,
+        semantic,
+        eventExport: eventStats,
+        rawWrite,
+        handles
+      }
+      console.log(`[ChildLog] mem-sample ${JSON.stringify(payload)}`)
+    } catch {}
+  }, 30000)
 }
 
 // 【诊断】速率计算统计
@@ -188,10 +536,11 @@ function calculateAndSendDataRate() {
   const actualInterval = lastRateCalculateTime ? now - lastRateCalculateTime : 1000
   lastRateCalculateTime = now
 
-  // 计算上一秒的速率 (字节/秒 → KB/s)
+  const intervalMs = actualInterval > 0 ? actualInterval : 1000
+  // 计算真实每秒速率 (字节/实际间隔 → KB/s)
   // 【修复精度丢失】使用toFixed(2)保留2位小数，避免小流量被四舍五入为0
   // 例如：0.05 KB/s 会显示为 "0.05" 而不是 "0.0"
-  const rateKBps = parseFloat((dataRateAccumulator / 1024).toFixed(2))
+  const rateKBps = parseFloat(((dataRateAccumulator / 1024) * (1000 / intervalMs)).toFixed(2))
   currentDataRate = rateKBps
 
   // 【诊断】检测异常情况并记录详细日志
@@ -208,14 +557,34 @@ function calculateAndSendDataRate() {
     )
     console.warn(`  - 累积字节: ${dataRateAccumulator} bytes`)
     console.warn(`  - 调用次数: ${rateCalculateCallCount}`)
-    console.warn(`  - 监听器数: ${messageHandlerRegisteredCount}`)
-
-    // 【关键诊断】如果监听器注册次数>1，说明有重复注册
-    if (messageHandlerRegisteredCount > 1) {
-      console.error(
-        `[MQTT Child] 🚨 发现重复注册！监听器数=${messageHandlerRegisteredCount}，这会导致速率翻倍！`
+    try {
+      const mu = process.memoryUsage()
+      const toMB = (n) => Number((Number(n || 0) / (1024 * 1024)).toFixed(1))
+      console.log(
+        `[ChildLog] rate-abnormal-detail ${JSON.stringify({
+          rateKBps,
+          actualInterval,
+          rssMB: toMB(mu.rss),
+          heapUsedMB: toMB(mu.heapUsed),
+          externalMB: toMB(mu.external),
+          backlog: getBacklogLite()
+        })}`
       )
-    }
+    } catch {}
+    try {
+      if (client && typeof client.listeners === 'function') {
+        const handlers = client.listeners('message') || []
+        console.warn(`[MQTT Child] 📥 message监听器快照: count=${handlers.length}`)
+        handlers.forEach((fn, idx) => {
+          const info = {
+            index: idx,
+            name: fn && fn.name ? fn.name : '',
+            tag: fn && fn.__handlerTag ? fn.__handlerTag : undefined
+          }
+          console.warn(`[MQTT Child]   listener #${idx}: ${JSON.stringify(info)}`)
+        })
+      }
+    } catch {}
   }
 
   // 发送速率数据到主进程
@@ -333,6 +702,7 @@ const processPackSummaryData = (hex) => processPackSummaryRAW(hex, PACK_SUMMARY,
 const processIoStatusData = (hex) => processIoStatusRAW(hex, IO_STATUS_SCHEMA, 'IO概要')
 //协议修改删除 - 硬件故障不再使用，改为接触器详细故障等新结构
 // const processHardwareFaultData = hex => processHardwareFaultRAW (hex, HARDWARE_FAULT_SCHEMA,  '硬件故障');
+
 const processTotalFaultData = (hex) => parseConfigSection(hex, TOTAL_FAULT, '总/保留故障')
 const processFaultLevel1Data = (hex) => parseConfigSection(hex, FAULT_LEVEL1, '常规一级故障')
 //协议修改新增 - DI/DO/温度状态处理函数
@@ -354,6 +724,7 @@ const processBlockCommLostData = (hex) => parseConfigSection(hex, BLOCK_COMM_LOS
 const processFaultLevel2Data = (hex) =>
   processSecondFaultRAW(hex, FAULT_LEVEL2_SCHEMA, '常规二级故障')
 const processBrokenWireData = (hex) => processBrokenwireRAW(hex, BROKENWIRE_SCHEMA, '掉线信息')
+
 const processBalanceStatusData = (hex) => processBalanceRAW(hex, BALANCE_STATUS_SCHEMA, '均衡状态')
 const processSysBaseParamData = withResponseCheck((buf) => parseSysBaseParamRAW(buf))
 const processSysRunTimeData = withResponseCheck((hex) => parseSysRunTimeRAW(hex))
@@ -401,7 +772,29 @@ const processBlockPcsData = (hex) => {
   }
 }
 
-// 制冷设备数据处理函数 - 只解析原始数据，不使用字段表
+const processBlockMeterData = (hex) => {
+  const buf = toBuf(hex)
+  const view = dv(buf)
+
+  if (buf.length < 406) {
+    console.warn('[processBlockMeterData] 数据长度不足:', buf.length)
+    return { baseConfig: {}, data: [] }
+  }
+
+  const rawData = []
+  const regs = 203
+  for (let i = 0; i < regs; i++) {
+    rawData.push(view.getUint16(i * 2, true))
+  }
+
+  return {
+    baseConfig: {
+      dataLength: rawData[0]
+    },
+    data: rawData
+  }
+}
+
 const processBlockRefData = (hex) => {
   const buf = toBuf(hex)
   const view = dv(buf)
@@ -428,6 +821,25 @@ const processBlockRefData = (hex) => {
   }
 }
 
+const processBlockFireData = (hex) => {
+  const buf = toBuf(hex)
+  const view = dv(buf)
+  if (buf.length < 206) {
+    console.warn('[processBlockFireData] 数据长度不足:', buf.length)
+    return { baseConfig: {}, data: [] }
+  }
+  const rawData = []
+  for (let i = 0; i < 103; i++) {
+    rawData.push(view.getUint16(i * 2, true))
+  }
+  return {
+    baseConfig: {
+      dataLength: rawData[0]
+    },
+    data: rawData
+  }
+}
+
 // 除湿空调数据处理函数 - 只解析原始数据，不使用字段表
 const processBlockDehData = (hex) => {
   const buf = toBuf(hex)
@@ -446,6 +858,90 @@ const processBlockDehData = (hex) => {
       dehAddress: rawData[1],
       commStatus: rawData[2]
     },
+    data: rawData
+  }
+}
+
+const processClusterPcsData = (hex) => {
+  const buf = toBuf(hex)
+  if (buf.length < 2) {
+    console.warn('[processClusterPcsData] 数据长度不足:', buf.length)
+    return { baseConfig: {}, data: [] }
+  }
+
+  const view = dv(buf)
+  const dataLength = view.getUint16(0, true)
+
+  const rawData = []
+  const maxRegs = 128
+  const availableRegs = Math.floor((buf.length - 2) / 2)
+  const count = Math.min(maxRegs, Math.max(0, availableRegs))
+  for (let i = 0; i < count; i++) {
+    rawData.push(view.getUint16(2 + i * 2, true))
+  }
+
+  if (count < maxRegs) {
+    console.warn('[processClusterPcsData] 寄存器数量不足:', { bufLen: buf.length, count })
+  }
+
+  return {
+    baseConfig: { dataLength },
+    data: rawData
+  }
+}
+
+const processClusterRefData = (hex) => {
+  const buf = toBuf(hex)
+  if (buf.length < 2) {
+    console.warn('[processClusterRefData] 数据长度不足:', buf.length)
+    return { baseConfig: {}, data: [] }
+  }
+
+  const view = dv(buf)
+  const dataLength = view.getUint16(0, true)
+
+  const rawData = []
+  const maxRegs = 128
+  const availableRegs = Math.floor((buf.length - 2) / 2)
+  const count = Math.min(maxRegs, Math.max(0, availableRegs))
+  for (let i = 0; i < count; i++) {
+    rawData.push(view.getUint16(2 + i * 2, true))
+  }
+
+  if (count < maxRegs) {
+    console.warn('[processClusterRefData] 寄存器数量不足:', { bufLen: buf.length, count })
+  }
+
+  return {
+    baseConfig: { dataLength },
+    data: rawData
+  }
+}
+
+const processClusterDehumiData = (hex) => {
+  const buf = toBuf(hex)
+  if (buf.length < 2) {
+    console.warn('[processClusterDehumiData] 数据长度不足:', buf.length)
+    return { baseConfig: {}, data: [] }
+  }
+
+  const view = dv(buf)
+  const dataLength = view.getUint16(0, true)
+
+  const rawData = []
+  const maxRegs = 128
+  const availableRegs = Math.floor((buf.length - 2) / 2)
+  const count = Math.min(maxRegs, Math.max(0, availableRegs))
+  for (let i = 0; i < count; i++) {
+    rawData.push(view.getUint16(2 + i * 2, true))
+  }
+
+  if (count < maxRegs) {
+    console.warn('[processClusterDehumiData] 寄存器数量不足:', { bufLen: buf.length, count })
+  }
+
+  return {
+    baseConfig: { dataLength },
     data: rawData
   }
 }
@@ -477,6 +973,7 @@ function logCompact(tag, obj, maxArr = 300) {
 //通过topic找对应的解析函数
 const TOPIC_TABLE_MAP = {
   // //遥测 - 使用utils.js中的标准化解析函数
+  // 测试屏蔽
   cell_volt: processCellVoltageRAW,
   cell_temp: processCellTemperatureRAW,
   cell_soc: processCellSocRAW,
@@ -489,6 +986,8 @@ const TOPIC_TABLE_MAP = {
   io_status: processIoStatusRAW,
   //协议修改删除 - hardware_fault不再使用
   // hardware_fault:  processHardwareFaultRAW  ,
+
+  // 测试屏蔽
   total_fault: processTotalFaultData,
   //协议修改新增 - DI/DO/温度状态
   di_do_temp_status: processDIDoTempStatusData,
@@ -503,7 +1002,7 @@ const TOPIC_TABLE_MAP = {
   block_hardware_fault: processBlockHardwareFaultData,
   block_total_fault: processBlockTotalFaultData,
 
-  // /* --- 8 个三级故障 topic ---------------------------------- */
+  // // /* --- 8 个三级故障 topic ---------------------------------- */
   cell_ov_fault_level3: parseCellOv_L3,
   cell_uv_fault_level3: parseCellUv_L3,
   chg_ot_fault_level3: parseChgOt_L3,
@@ -514,7 +1013,7 @@ const TOPIC_TABLE_MAP = {
   soc_under_fault_level3: parseSocUnder_L3,
 
   brokenwire: processBrokenwireRAW,
-  balance_status: processBalanceRAW,
+  // balance_status: processBalanceRAW,
 
   //遥调
   sys_base_param_r: processSysBaseParamData,
@@ -547,14 +1046,21 @@ const TOPIC_TABLE_MAP = {
   block_soc_param_r: withResponseCheck((hex) => parseBlockSocParamRAW(hex)),
   block_soc_param_w: parseWriteResponse,
 
+  // 系统水冷机配置参数
+  block_ref_param_r: withResponseCheck((hex) => parseBlockRefParamRAW(hex)),
+  block_ref_param_w: parseWriteResponse,
+
   // 堆PCS数据
   block_pcs: processBlockPcsData,
-
-  // 堆制冷设备数据
+  block_meter: processBlockMeterData,
+    // 堆制冷设备数据
   block_ref: processBlockRefData,
-
-  // 堆除湿空调数据
   block_deh: processBlockDehData,
+  block_fire_dev: processBlockFireData,
+
+  pcs: processClusterPcsData,
+  ref: processClusterRefData,
+  dehumi: processClusterDehumiData,
 
   // SOX参数处理器
   real_time_save_r: processRealTimeSaveData,
@@ -599,6 +1105,13 @@ const TOPIC_TABLE_MAP = {
 
   // 参数复位控制 - BAU应答
   restore_ctrl_param: createRemoteCommandParser('restore_ctrl_param'),
+
+  // 新增簇级输入命令应答 - BAU应答
+  set_sox_ekf_soc: createRemoteCommandParser('set_sox_ekf_soc'),
+  set_sox_ekf_covariance: createRemoteCommandParser('set_sox_ekf_covariance'),
+  reset_cfg_param_times: createRemoteCommandParser('reset_cfg_param_times'),
+  erase_cfg_param_area: createRemoteCommandParser('erase_cfg_param_area'),
+  force_reset_bcu: createRemoteCommandParser('force_reset_bcu'),
 
   // 反馈查询应答处理器 - BAU应答
   get_contactor_ctrl_result: createQueryCommandParser('get_contactor_ctrl_result'),
@@ -737,6 +1250,8 @@ function connectMqtt(config) {
       // 停止旧的健康检查并重置所有健康数据
       stopHealthCheck()
       resetHealthCheckData()
+      startMemorySampling()
+      startEventLoopLagMonitor()
 
       currentConfig = config
       const mqttUrl = `mqtt://${config.host}:${config.port}`
@@ -760,6 +1275,9 @@ function connectMqtt(config) {
       client.on('error', (error) => {
         console.log('[MQTT Child] MQTT错误（将自动重连）:', error.message)
         isConnected = false
+        try {
+          updateMqttStatus(isConnected, !!client?.reconnecting, lastMessageReceived, error.message)
+        } catch {}
         // 不reject Promise，让mqtt.js的reconnectPeriod机制自动处理重连
         // 通知主进程连接错误
         process.send({
@@ -773,6 +1291,9 @@ function connectMqtt(config) {
         isConnected = true
         isConnecting = false // 【关键】连接成功，清除连接中标志
         console.log(`[MQTT Child]  连接成功，客户端ID: ${config.clientId}`)
+        try {
+          updateMqttStatus(isConnected, !!client?.reconnecting, lastMessageReceived, '')
+        } catch {}
 
         // 订阅主题
         if (config.subscribeTopics && config.subscribeTopics.length > 0) {
@@ -814,6 +1335,9 @@ function connectMqtt(config) {
         if (isConnected) {
           isConnected = false
           console.log('[MQTT Child]  连接已关闭')
+          try {
+            updateMqttStatus(isConnected, !!client?.reconnecting, lastMessageReceived, 'close')
+          } catch {}
           // 停止健康检查 - 连接断开后不再发送心跳
           stopHealthCheck()
           // 【数据速率】停止速率计算
@@ -827,6 +1351,9 @@ function connectMqtt(config) {
       client.on('offline', () => {
         console.log('[MQTT Child]  离线')
         isConnected = false
+        try {
+          updateMqttStatus(isConnected, !!client?.reconnecting, lastMessageReceived, 'offline')
+        } catch {}
         // 离线时停止健康检查，等待重连成功后再启动
         stopHealthCheck()
         // 【数据速率】停止速率计算
@@ -840,6 +1367,9 @@ function connectMqtt(config) {
         console.log('[MQTT Child]  正在自动重连...')
         // 重连时重置健康检查数据，准备新的连接
         resetHealthCheckData()
+        try {
+          updateMqttStatus(isConnected, true, lastMessageReceived, 'reconnect')
+        } catch {}
         process.send({ type: 'mqtt-reconnecting', data: {} })
       })
     } catch (error) {
@@ -999,14 +1529,28 @@ let messageHandlerRegisteredCount = 0 // 【诊断】监听器注册次数计数
 function setupMessageHandler() {
   if (!client) return
 
-  // 【修复+诊断】移除旧的消息处理器，防止重复注册导致速率翻倍
-  if (messageHandlerRef) {
-    try {
-      client.removeListener('message', messageHandlerRef)
-      console.log('[MQTT Child] 🔧 已移除旧的消息处理器，防止重复注册')
-    } catch (e) {
-      console.warn('[MQTT Child] ⚠️ 移除旧处理器失败:', e.message)
+  // 【修复】重连后清理当前 client 上所有 message 监听器，确保只保留一个处理器
+  try {
+    if (typeof client.removeAllListeners === 'function') {
+      const prevCount =
+        typeof client.listenerCount === 'function' ? client.listenerCount('message') : undefined
+      client.removeAllListeners('message')
+      if (prevCount && prevCount > 0) {
+        console.log(`[MQTT Child] 🔧 已清理旧 message 监听器: ${prevCount}`)
+      }
+    } else if (typeof client.listeners === 'function') {
+      const prev = client.listeners('message') || []
+      prev.forEach((fn) => {
+        try {
+          client.removeListener('message', fn)
+        } catch {}
+      })
+      if (prev.length > 0) {
+        console.log(`[MQTT Child] 🔧 已清理旧 message 监听器(兼容路径): ${prev.length}`)
+      }
     }
+  } catch (e) {
+    console.warn('[MQTT Child] ⚠️ 清理旧 message 监听器失败:', e.message)
   }
 
   // 【诊断】记录监听器注册次数
@@ -1019,13 +1563,11 @@ function setupMessageHandler() {
     if (!isConnected || !client) {
       return
     }
-
     const parts = topic.split('/')
-    const suffix = parts.at(-1) // cell_volt / sys_abstract / …
-    const blockId = Number(parts[3].slice(1)) // b1 -> 1
+    const suffix = parts.at(-1)
+    const blockId = Number(parts[3].slice(1))
 
-    // 堆级数据没有簇号，簇级数据有簇号
-    let clusterId = 0 // 默认值
+    let clusterId = 0
     if (parts.length > 4 && parts[4].startsWith('c')) {
       clusterId = Number(parts[4].slice(1)) // c1 -> 1
     }
@@ -1037,12 +1579,16 @@ function setupMessageHandler() {
     const hex = buf.toString('hex')
     const direction = parts[2] || ''
     const cid = `${blockId}-${clusterId || 0}`
+    let rawLogMs = null
     try {
+      // if (rawExportEnabled && false) {
       if (rawExportEnabled) {
+        // 存储
+        const tRaw0 = performance.now()
         logAnyMessage({ topic, payloadHex: hex, clientId: cid, ts: Date.now(), direction })
+        rawLogMs = Number((performance.now() - tRaw0).toFixed(2))
       }
     } catch {}
-
     // 【数据速率】累加原始MQTT payload大小（所有接收到的数据，不管是否被限流）
     dataRateAccumulator += len
 
@@ -1053,6 +1599,7 @@ function setupMessageHandler() {
     }
 
     let result
+    const tParse0 = performance.now()
     try {
       result = parseFun(hex) // 只需传 hex
     } catch (err) {
@@ -1067,6 +1614,7 @@ function setupMessageHandler() {
     }
 
     const tParsed = performance.now()
+    const parseMs = Number((tParsed - tParse0).toFixed(2))
     const { baseConfig, data } = result
 
     const msg = {
@@ -1158,23 +1706,63 @@ function setupMessageHandler() {
       }
     }
 
-    // 【限流优化】直接发送，不再使用限流器
-    // 优势：1) 架构简化，避免限流器内存管理复杂度
-    //       2) 数据实时性更好，无300ms延迟
-    //       3) 渲染进程负担已减轻（速率计算在子进程）
-    process.send({ type: msg.dataType, data: msg })
+    let sendOk = null
+    let sendMs = null
+    try {
+      const tSend0 = performance.now()
+      sendOk = process.send({ type: msg.dataType, data: msg })
+      sendMs = Number((performance.now() - tSend0).toFixed(2))
+    } catch (e) {
+      sendOk = null
+      sendMs = null
+    }
 
-    // 更新最后消息接收时间
+    try {
+      const now = Date.now()
+      ipcSendAttemptCountWin += 1
+      ipcSendPayloadBytesWin += len
+      if (sendOk === false) {
+        ipcSendFalseCountWin += 1
+      }
+      maybeLogIpcSendStats(now)
+    } catch {}
+
     lastMessageReceived = Date.now()
-    // logCompact('[发送给主进程]', msg)   // 单进程调试输出
     if (result.error && suffix !== 'event_record_r') {
       logCompact('[遥信 失败响应]', msg)
     }
+
+    // ====== BEGIN DIAG: slow-message & ipc-backpressure（便于删减管理） ======
+    try {
+      const now = Date.now()
+      if (sendOk === false) {
+        ipcSendReturnFalseCount++
+        lastIpcSendReturnFalseTs = now
+        if (!lastIpcBackpressureTs || now - lastIpcBackpressureTs > DIAG_COOLDOWN_MS) {
+          lastIpcBackpressureTs = now
+        }
+      }
+
+      const totalMs = Number((performance.now() - tRecv).toFixed(2))
+      if (totalMs > SLOW_MESSAGE_THRESHOLD_MS) {
+        if (!lastSlowMessageTs || now - lastSlowMessageTs > DIAG_COOLDOWN_MS) {
+          lastSlowMessageTs = now
+        }
+      }
+    } catch {}
+    // ====== END DIAG: slow-message & ipc-backpressure（便于删减管理） ======
   }
+  try {
+    messageHandlerRef.__handlerTag = `handler#${currentCount}`
+  } catch {}
 
   // 【修复】注册新的消息处理器
   client.on('message', messageHandlerRef)
   console.log(`[MQTT Child] ✅ 已注册消息处理器 #${currentCount}`)
+  try {
+    lastMessageReceived = Date.now()
+    updateMqttStatus(isConnected, !!client?.reconnecting, lastMessageReceived, '')
+  } catch {}
 }
 
 /* --- 接收主进程指令 --- */
@@ -1335,7 +1923,9 @@ process.on('message', (message) => {
         const clusterId =
           parts.length > 4 && parts[4]?.startsWith('c') ? Number(parts[4].slice(1)) : 0
         const cid = `${blockId}-${clusterId || 0}`
+        // if (rawExportEnabled && false) {
         if (rawExportEnabled) {
+          // 存储
           logAnyMessage({
             topic,
             payloadHex: payloadHex,
@@ -1473,5 +2063,42 @@ function stopHealthCheck() {
 const MB = 1024 * 1024
 const memTimer = setInterval(() => {
   const { rss, heapUsed, heapTotal } = process.memoryUsage()
-  // console.log(`[MEM] rss ${(rss/MB).toFixed(1)} MB  heap ${(heapUsed/MB).toFixed(1)}/${(heapTotal/MB).toFixed(1)} MB`);
+  try {
+    updateResource(rss, heapUsed, heapTotal)
+  } catch {}
 }, 10_000)
+process.on('uncaughtException', (err) => {
+  const line = formatCrashSummary('uncaughtException', err && err.message)
+  try {
+    console.error(line)
+  } catch {}
+  try {
+    if (process.send) {
+      process.send({ type: 'crash-summary', data: line })
+    }
+  } catch {}
+})
+process.on('unhandledRejection', (reason) => {
+  const info =
+    typeof reason === 'object' && reason && 'message' in reason ? reason.message : String(reason)
+  const line = formatCrashSummary('unhandledRejection', info)
+  try {
+    console.error(line)
+  } catch {}
+  try {
+    if (process.send) {
+      process.send({ type: 'crash-summary', data: line })
+    }
+  } catch {}
+})
+process.on('exit', (code) => {
+  const line = formatCrashSummary('exit', String(code))
+  try {
+    console.error(line)
+  } catch {}
+  try {
+    if (process.send) {
+      process.send({ type: 'crash-summary', data: line })
+    }
+  } catch {}
+})

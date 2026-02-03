@@ -30,6 +30,8 @@ type FaultKey = keyof typeof FAULT_LEVEL3_types
 
 // 定义表头 header 类型
 interface Header {
+  totalCell: number
+  totalTemp: number
   bmuTotal: number
   afePerBmu: number
   afeCellCounts: number[]
@@ -1060,7 +1062,9 @@ const l3SchemaCache = new Map<string, PackField[]>();
 const MAX_SCHEMA_CACHE = 32;  
 /* 帮助函数：先查缓存，没有才生成 */
 export function getCachedL3Schema(kind: FaultKey, hdr: Header): PackField[] {
-  const key = `${kind}-${hdr.bmuTotal}-${hdr.afePerBmu}`;
+  const cellKey = (hdr.afeCellCounts || []).slice(0, hdr.afePerBmu || 0).join('.')
+  const tempKey = (hdr.afeTempCounts || []).slice(0, hdr.afePerBmu || 0).join('.')
+  const key = `${kind}-${hdr.bmuTotal}-${hdr.afePerBmu}-${hdr.totalCell}-${hdr.totalTemp}-${cellKey}-${tempKey}`;
   let schema = l3SchemaCache.get(key);
   if (!schema) {
     if (l3SchemaCache.size >= MAX_SCHEMA_CACHE) l3SchemaCache.clear();
@@ -1138,33 +1142,19 @@ export function FAULT_LEVEL3_SCHEMA (
 
   const { prefix, label: faultLabel } = FAULT_LEVEL3_types[kind]
 
-  /* ---------- 基本参数 ---------- */
-  // const bmuTotal    = Math.max(1, Math.min(hdr.bmuTotal, 32))   // 1-32
-  // const cellsPerBmu = hdr.afeCellCounts
-  //                       .slice(0, hdr.afePerBmu)
-  //                       .reduce((a, b) => a + b, 0)             // 实际电芯 / BMU
+  const bmuTotal = Math.max(1, Math.min(hdr.bmuTotal, 32))
 
-   /* ---------- 基本参数 ---------- */
- const bmuTotal = Math.max(1, Math.min(hdr.bmuTotal, 32))      // 1-32
+  const perAfeCounts = TEMP_KINDS.has(kind) ? hdr.afeTempCounts : hdr.afeCellCounts
+  const perBmuCount = (perAfeCounts || []).slice(0, hdr.afePerBmu).reduce((a, b) => a + b, 0)
 
- // ❶ 选用"计数数组"——电芯 or 温度
- const perAfeCounts = TEMP_KINDS.has(kind)
-   ? hdr.afeTempCounts            // ← 温度类：用温度探头数
-   : hdr.afeCellCounts            // ← 其它：用电芯数
-
- // ❷ 计算"每 ­BMU 总通道数"
- const unitsPerBmu = perAfeCounts
-   .slice(0, hdr.afePerBmu)
-   .reduce((a, b) => a + b, 0)
-
-  const UNITS_PER_REG = 8                                       // 1 寄存器 = 8 节
-  const REGS_PER_BMU  = Math.ceil(unitsPerBmu / UNITS_PER_REG)  // ★ 动态计算
-  const MAX_REGS      = bmuTotal * REGS_PER_BMU                 // ★ 总寄存器
+  const totalCount = TEMP_KINDS.has(kind) ? (hdr.totalTemp || 0) : (hdr.totalCell || 0)
+  const UNITS_PER_REG = 8
+  const totalRegs = Math.ceil(totalCount / UNITS_PER_REG)
 
   const schema: PackField[] = []
 
   /* ---------- ① 生成寄存器字段 ---------- */
-  for (let regIdx = 0; regIdx < MAX_REGS; regIdx++) {
+  for (let regIdx = 0; regIdx < totalRegs; regIdx++) {
     schema.push({
       class : faultLabel,
       key   : `Reg${regIdx + 1}_${prefix}`,
@@ -1175,29 +1165,32 @@ export function FAULT_LEVEL3_SCHEMA (
   }
 
   /* ---------- ② 生成位字段 (2 bit / Cell) ---------- */
-  for (let bmu = 1; bmu <= bmuTotal; bmu++) {
-    const baseReg = (bmu - 1) * REGS_PER_BMU           // ★ 起始寄存器
+  for (let u = 1; u <= totalCount; u++) {
+    const idx = u - 1
+    const regIdx = Math.floor(idx / UNITS_PER_REG)
+    const bitPair = idx % UNITS_PER_REG
 
-    for (let u = 1; u <= unitsPerBmu; u++) {         // u = 单元序号
-      const idxInBmu = u - 1
-      const regInBmu = Math.floor(idxInBmu / UNITS_PER_REG)
-      const bitPair  =  idxInBmu % UNITS_PER_REG
-      const regIdx   = baseReg + regInBmu               // 全局寄存器序号
-
-      schema.push({
-        class  : faultLabel,
-        key    : `BMU${bmu}_Cell${u}_${prefix}`,
-        label  : `BMU${bmu} 第${u}节 ${faultLabel}`,
-        type   : 'bits',
-        bitsOf : `Reg${regIdx + 1}_${prefix}`,
-        bit    : bitPair * 2,
-        len    : 2,
-        map    : ALARM_MAP,
-        valid  : true,
-        hide   : false,
-        meta   : { bmu, cellInBmu: u }
-      })
+    let bmu = 1
+    let inBmu = u
+    if (perBmuCount > 0) {
+      bmu = Math.floor(idx / perBmuCount) + 1
+      inBmu = (idx % perBmuCount) + 1
+      if (bmu > bmuTotal) bmu = bmuTotal
     }
+
+    schema.push({
+      class: faultLabel,
+      key: `BMU${bmu}_Cell${inBmu}_${prefix}`,
+      label: `BMU${bmu} 第${inBmu}节 ${faultLabel}`,
+      type: 'bits',
+      bitsOf: `Reg${regIdx + 1}_${prefix}`,
+      bit: bitPair * 2,
+      len: 2,
+      map: ALARM_MAP,
+      valid: true,
+      hide: false,
+      meta: { bmu, cellInBmu: inBmu }
+    })
   }
 
   return schema

@@ -9,6 +9,9 @@ import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 
+import InputNumber from 'primevue/inputnumber'
+import InputText from 'primevue/inputtext'
+
 import Dialog from 'primevue/dialog'
 import { useToast } from 'primevue/usetoast'
 import { useClusterSelect } from '@/composables/core/device-selection/useClusterSelect'
@@ -56,6 +59,13 @@ const translateBitFieldName = (name) => {
       : name
 }
 
+const translateInputPlaceholder = (ph) => {
+  return locale.value === 'zh'
+    ? (ph || '')
+    : te(`commandIssue.commandOptions.${ph}`)
+      ? t(`commandIssue.commandOptions.${ph}`)
+      : (ph || '')
+}
 // 使用遥控命令服务
 const {
   // 响应式状态
@@ -270,7 +280,13 @@ function handleRemoteCommandResponseWithToast(commandType, data, blockId, cluste
     'weight_calib': t('commandIssue.commands.权重校准'),
     'force_soh_calib': t('commandIssue.commands.强制SOH校准'),
     'soh_nvm_flag_reset': t('commandIssue.commands.上电SOH存储标志位复位'),
-    'restore_ctrl_param': t('commandIssue.commands.参数复位')
+    'restore_ctrl_param': t('commandIssue.commands.参数复位'),
+    // 新增输入命令名称映射
+    'set_sox_ekf_soc': t('commandIssue.commands.SOX-EKFSOC'),
+    'set_sox_ekf_covariance': t('commandIssue.commands.SOX-EKF协方差'),
+    'reset_cfg_param_times': t('commandIssue.commands.复位可配置默认参数次数'),
+    'erase_cfg_param_area': t('commandIssue.commands.擦除可配置默认参数区'),
+    'force_reset_bcu': t('commandIssue.commands.强制复位指令')
   }
 
   const commandName = commandNameMap[commandType] || commandType
@@ -390,6 +406,14 @@ const tableRows = computed(() => {
 })
 
 // ========== 包装函数处理Toast ==========
+
+/**
+ * 处理带缩放/密码的输入框命令
+ */
+async function handleInputCommandWithToast(commandId, value) {
+  // 先走统一的确认流程；确认后在组合式API中再进行密码校验与缩放
+  await handleCommandExecutionWithToast(commandId, value)
+}
 
 /**
  * 处理复选框组命令（带Toast）
@@ -598,6 +622,12 @@ onMounted(() => {
     'FORCE_SOH_CALIB',
     'SOH_NVM_FLAG_RESET',
     'RESTORE_CTRL_PARAM',
+    // 新增输入命令应答事件
+    'SET_SOX_EKF_SOC',
+    'SET_SOX_EKF_COVARIANCE',
+    'RESET_CFG_PARAM_TIMES',
+    'ERASE_CFG_PARAM_AREA',
+    'FORCE_RESET_BCU',
     // 反馈查询应答事件
     'GET_CONTACTOR_CTRL_RESULT',
     'GET_INSULATION_DETECT_RESULT',
@@ -659,6 +689,12 @@ onUnmounted(() => {
     'FORCE_SOH_CALIB',
     'SOH_NVM_FLAG_RESET',
     'RESTORE_CTRL_PARAM',
+    // 新增输入命令应答事件
+    'SET_SOX_EKF_SOC',
+    'SET_SOX_EKF_COVARIANCE',
+    'RESET_CFG_PARAM_TIMES',
+    'ERASE_CFG_PARAM_AREA',
+    'FORCE_RESET_BCU',
     // 添加缺失的反馈查询应答事件
     'GET_CONTACTOR_CTRL_RESULT',
     'GET_INSULATION_DETECT_RESULT',
@@ -726,6 +762,28 @@ onUnmounted(() => {
                         :selected-items-label="getSelectedItemsLabel(selectedValues[data.id]?.length || 0)"
                         :max-selected-labels="0"
                       />
+                      <InputText
+                        v-else-if="data.type === 'input' && data.inputType === 'password'"
+                        v-model="selectedValues[data.id]"
+                        :placeholder="translateInputPlaceholder(data.placeholder)"
+                        type="password"
+                        class="command-dropdown-inline"
+                        :disabled="executingCommands.has(data.id)"
+                      />
+                      <InputNumber
+                        v-else-if="data.type === 'input' && data.inputType === 'number'"
+                        v-model="selectedValues[data.id]"
+                        :min="data.min"
+                        :max="data.max"
+                        :suffix="data.unit"
+                        :minFractionDigits="data.scale >= 1000 ? 3 : (data.scale >= 100 ? 2 : (data.scale >= 10 ? 1 : 0))"
+                        :maxFractionDigits="data.scale >= 1000 ? 3 : (data.scale >= 100 ? 2 : (data.scale >= 10 ? 1 : 0))"
+                        :placeholder="translateInputPlaceholder(data.placeholder)"
+                        :format="true"
+                        :useGrouping="false"
+                        class="command-multiselect-inline"
+                        :disabled="executingCommands.has(data.id)"
+                      />
                     </div>
                   </template>
                 </Column>
@@ -762,6 +820,16 @@ onUnmounted(() => {
                       @click="handleCheckboxGroupCommandWithToast(data.id, selectedValues[data.id])"
                       size="small"
                     />
+                    <!-- 输入框类型命令 -->
+                    <Button
+                      v-else-if="data.type === 'input'"
+                      :label="t('commandIssue.buttons.send')"
+                      class="command-send-btn"
+                      :disabled="executingCommands.has(data.id)"
+                      :loading="executingCommands.has(data.id)"
+                      @click="handleInputCommandWithToast(data.id, selectedValues[data.id])"
+                      size="small"
+                    />
                     <!-- 按钮类型命令 -->
                     <Button
                       v-else-if="data.type === 'button'"
@@ -785,7 +853,7 @@ onUnmounted(() => {
 
               <DataTable :value="testModeAllData" dataKey="id" showGridlines scrollable class="test-mode-table">
                 <!-- 命令名称列 -->
-                <Column :header="t('commandIssue.table.commandName')" style="min-width:300px">
+                <Column :header="t('commandIssue.table.commandName')" style="min-width:200px">
                   <template #body="{ data }">
                     <div class="command-row">
                       <div class="command-name-wrapper">
@@ -831,7 +899,11 @@ onUnmounted(() => {
                         )
                       "
                       :loading="executingCommands.has(data.id)"
-                      @click="handleCheckboxGroupCommandWithToast(data.id, selectedValues[data.id])"
+                      @click="
+                         data.type === 'button' 
+                           ? handleCommandExecutionWithToast(data.id, data.value)
+                           : handleCheckboxGroupCommandWithToast(data.id, selectedValues[data.id])
+                      "
                       size="small"
                     />
                   </template>
@@ -839,7 +911,7 @@ onUnmounted(() => {
               </DataTable>
 
               <!-- 反馈区域 -->
-              <div class="feedback-section">
+              <div class="feedback-section" style="border-bottom: 1px solid var(--surface-border);">
                 <div class="section-header">
                   <span class="section-title">{{ t('commandIssue.feedback.controlQuantity') }}</span>
                   <span class="section-title">{{ t('commandIssue.feedback.feedbackValue') }}</span>
@@ -861,12 +933,8 @@ onUnmounted(() => {
                   <span class="feedback-value">{{ feedbackStatus.sys_run_mode === '-' ? '-' : t(`commandIssue.feedback.values.${feedbackStatus.sys_run_mode}`) }}</span>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <!-- 右侧：下设接触器独立执行表格 -->
-          <div class="contactor-control-area">
-            <div class="table-container">
+              <!-- 下设接触器独立执行表格 -->
               <h2 class="table-title">{{ t('commandIssue.sections.independentContactor') }}</h2>
               <DataTable :value="contactorIndependentRowData" dataKey="rowId" showGridlines scrollable class="contactor-independent-table">
                 <!-- 接触器列 -->
@@ -904,7 +972,7 @@ onUnmounted(() => {
               </DataTable>
 
               <!-- 下发按钮 - 放在表格右下方 -->
-              <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; padding: 0 0.75rem;">
+              <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem; padding: 0 0.75rem 0.75rem;">
                 <Button
                   :label="t('commandIssue.buttons.send')"
                   class="command-send-btn"
@@ -915,10 +983,8 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 下行：DI/DO反馈表格 -->
-        <div class="bottom-row">
+          <!-- 右侧：DI/DO反馈表格 -->
           <div class="dido-table-area">
             <div class="table-container">
               <h2 class="table-title">{{ t('commandIssue.sections.didoFeedback') }}</h2>
@@ -935,6 +1001,7 @@ onUnmounted(() => {
                 <Column :header="t('commandIssue.table.diStatus')" style="width:80px">
                   <template #body="{ data }">
                     <Tag
+                      v-if="data.diParam"
                       :value="data.diValue ? '1' : '0'"
                       :severity="data.diValue ? 'success' : 'danger'"
                     />
@@ -952,6 +1019,7 @@ onUnmounted(() => {
                 <Column :header="t('commandIssue.table.doStatus')" style="width:80px">
                   <template #body="{ data }">
                     <Tag
+                      v-if="data.doParam"
                       :value="data.doValue ? '1' : '0'"
                       :severity="data.doValue ? 'success' : 'danger'"
                     />
@@ -961,6 +1029,8 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+
+
       </div>
 
       <!-- bit位控制弹窗 -->

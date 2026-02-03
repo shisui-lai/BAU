@@ -54,7 +54,7 @@ const createPacket = (functionCode, data = null) => {
   let offset = 0
 
   // 第1-2字节：功能码 (uint16_t, 小端序)
-  // 小端序：低字节在前，高字节在后，适配x86架构
+  // 小端序：低字节在前，高字节在后
   buffer.writeUInt16LE(functionCode, offset)
   offset += 2
 

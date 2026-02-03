@@ -15,11 +15,11 @@ let autoStopTimer = null
 
 const onExcelDialogRetry = () => {
   showExcelDialog.value = false
-  if (window.electronAPI) window.electronAPI.ipcRenderer.send('save-excel-decision', 'retry')
+  if (window.electron?.ipcRenderer) window.electron.ipcRenderer.send('save-excel-decision', 'retry')
 }
 const onExcelDialogCancel = () => {
   showExcelDialog.value = false
-  if (window.electronAPI) window.electronAPI.ipcRenderer.send('save-excel-decision', 'cancel')
+  if (window.electron?.ipcRenderer) window.electron.ipcRenderer.send('save-excel-decision', 'cancel')
 }
 
 // 监听主进程发送的语言切换事件

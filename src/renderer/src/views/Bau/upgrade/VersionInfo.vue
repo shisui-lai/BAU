@@ -62,7 +62,7 @@ const selectedClusterForVersion = ref('')
 // 可用簇选项 - 显示所有堆簇选项，包含"全部簇"选项
 const availableClusterOptions = computed(() => {
   const clusters = clusterStore.availableClusters.map(cluster => ({
-    label: cluster.label,
+    label: t('cluster.blockCluster', [cluster.block, cluster.cluster]),
     value: cluster.value
   }))
 
@@ -128,7 +128,7 @@ function getSingleClusterVersions(clusterKey, cluster) {
 
   return {
     type: 'single',
-    clusterLabel: cluster.label,
+    clusterLabel: t('cluster.blockCluster', [cluster.block, cluster.cluster]),
     bcuVersion,
     bmuVersions
   }
@@ -173,7 +173,7 @@ function getAllClustersVersions() {
     }
 
     allVersions.push({
-      clusterLabel: cluster.label,
+      clusterLabel: t('cluster.blockCluster', [cluster.block, cluster.cluster]),
       clusterValue: cluster.value,
       bcuVersion,
       bmuVersions
@@ -260,7 +260,7 @@ onUnmounted(() => {
         <div v-if="selectedClusterVersions && selectedClusterVersions.type === 'single'" class="cluster-version-content">
           <!-- BCU版本 -->
           <div class="version-item-inline">
-            <label>{{ selectedClusterVersions.clusterLabel }} BCU版本：</label>
+            <label>{{ selectedClusterVersions.clusterLabel }} {{ t('deviceUpgrade.version.bcuVersion', 'BCU版本') }}：</label>
             <span>{{ selectedClusterVersions.bcuVersion || '–' }}</span>
           </div>
 
@@ -296,7 +296,7 @@ onUnmounted(() => {
               <div class="cluster-versions">
                 <!-- BCU版本 -->
                 <div class="version-item-compact">
-                  <label>BCU：</label>
+                  <label>{{ t('deviceUpgrade.version.bcuVersion', 'BCU版本') }}：</label>
                   <span>{{ cluster.bcuVersion || '–' }}</span>
                 </div>
                 <!-- BMU版本 -->

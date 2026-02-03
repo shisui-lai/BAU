@@ -28,7 +28,8 @@ import {
   formatFileSuffix,
   formatDateTime,
   appendFileWithRetry,
-  getCachedFreeDiskSpace
+  getCachedFreeDiskSpace,
+  isWaitingForUserDecision
 } from './utils'
 import { ALARM_MAP, BLOCK_SUMMARY, SYS_ABSTRACT } from '../table.js'
 import { RUN_EXPORT_DIR, getDeviceDirSuffix, clearDeviceDirSuffixCache } from './paths'
@@ -39,6 +40,17 @@ const csvMutex = new Mutex()
 const csvBuffers = new Map() // { filePath: { key, header, buffer: [] } }
 const CSV_BUFFER_INTERVAL = 5000 // 5 seconds
 let flushTimer = null
+// 诊断：最近一次 flushCsvBuffers 的耗时（ms）
+let lastFlushMs = 0
+// 诊断：最近一次 flushCsvBuffers 刷新的文件数量
+let lastFlushFiles = 0
+// 诊断：最近一次 flushCsvBuffers 刷新的近似字节数（字符串长度累计）
+let lastFlushBytes = 0
+// 诊断：最近 10 分钟窗口内 flush 的最大耗时
+let maxFlushMsRecent = 0
+let maxFlushMsTs = 0
+// 诊断：语义导出缓冲区累计字节数（增量维护，避免每次采样遍历所有行）
+let csvBufferBytesApprox = 0
 
 const latest = {
   cellVoltage: {},
@@ -149,6 +161,9 @@ export function startSaveTimerSemantic() {
   if (saveTimer) return
   startFlushTimer()
   saveTimer = setInterval(async () => {
+    if (isWaitingForUserDecision()) {
+      return
+    }
     ensureDir(RUN_EXPORT_DIR)
     const free = await getCachedFreeDiskSpace(RUN_EXPORT_DIR)
     if (free < MIN_FREE_SPACE && !bypassLowDiskCheck) {
@@ -260,6 +275,60 @@ export function stopSaveTimerSemantic() {
 
   console.log('[DataExport] Storage stopped and cache cleared.')
 }
+
+export function getSemanticExportStats() {
+  const latestCounts = {}
+  const lastWrittenCounts = {}
+  Object.keys(latest).forEach((label) => {
+    const v = latest[label]
+    latestCounts[label] = v && typeof v === 'object' ? Object.keys(v).length : 0
+  })
+  Object.keys(lastWritten).forEach((label) => {
+    const v = lastWritten[label]
+    lastWrittenCounts[label] = v && typeof v === 'object' ? Object.keys(v).length : 0
+  })
+  const clusterCountEstimate =
+    latest.cellVoltage && typeof latest.cellVoltage === 'object'
+      ? Object.keys(latest.cellVoltage).length
+      : 0
+  const storedByType = {}
+  try {
+    for (const v of storedAlarms.values()) {
+      if (!v) continue
+      const t = String(v.dataType || '')
+      storedByType[t] = (storedByType[t] || 0) + 1
+    }
+  } catch {}
+  let csvBufferRowCount = 0
+  try {
+    csvBuffers.forEach((info) => {
+      if (info && Array.isArray(info.buffer)) {
+        csvBufferRowCount += info.buffer.length
+      }
+    })
+  } catch {}
+  return {
+    latestTotalLabels: Object.keys(latest).length,
+    lastWrittenTotalLabels: Object.keys(lastWritten).length,
+    storedAlarmsSize: storedAlarms.size,
+    alarmStatusCacheSize: alarmStatusCache.size,
+    csvBuffersSize: csvBuffers.size,
+    // 诊断：语义导出缓冲是否积压（rows/bytes）
+    csvBufferRowCount,
+    csvBufferBytesApprox,
+    clusterCount: clusterCountEstimate,
+    storedAlarmsByType: storedByType,
+    latestCounts,
+    lastWrittenCounts,
+    // 诊断：语义导出 flush 性能（耗时/写入量）
+    flush: {
+      lastMs: lastFlushMs,
+      lastFiles: lastFlushFiles,
+      lastBytes: lastFlushBytes,
+      maxMsRecent: maxFlushMsRecent
+    }
+  }
+}
 const idCounters = new Map()
 function nextId(key) {
   /**
@@ -348,13 +417,9 @@ export async function saveCellSemantic(dataList, deviceId, ts, meta) {
       p.cells.map((c) => `电池${c.index}（BMU${p.packID} ${c.bmuIndex}#）`)
     )
   ].join(',')
-  const stats = await fs.promises.stat(filePath).catch(() => null)
-  if (!stats) {
-    await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
-  }
   isConfigChanged(key, meta)
-  if (stats && pendingNewHeader.has(key)) {
-    await appendFileWithRetry(filePath, header + '\r\n')
+  if (pendingNewHeader.has(key)) {
+    bufferCsvData(filePath, key, header, header + '\r\n')
     idCounters.set(key, 0)
     pendingNewHeader.delete(key)
   }
@@ -362,8 +427,7 @@ export async function saveCellSemantic(dataList, deviceId, ts, meta) {
   const values = dataList.flatMap((p) => p.cells.map((c) => c.value))
   const idVal = nextId(key)
   const row = [idVal, nowStr, ...values].join(',') + '\r\n'
-  await appendFileWithRetry(filePath, row)
-  await rotateIfNeeded(filePath, deviceId, basename, key, header)
+  bufferCsvData(filePath, key, header, row)
 }
 
 export async function saveCellTemperatureSemantic(dataList, deviceId, ts, meta) {
@@ -387,13 +451,9 @@ export async function saveCellTemperatureSemantic(dataList, deviceId, ts, meta) 
       p.cells.map((c) => `温度${c.index}（BMU${p.packID} ${c.bmuIndex}#）`)
     )
   ].join(',')
-  const stats = await fs.promises.stat(filePath).catch(() => null)
-  if (!stats) {
-    await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
-  }
   isConfigChanged(key, meta)
-  if (stats && pendingNewHeader.has(key)) {
-    await appendFileWithRetry(filePath, header + '\r\n')
+  if (pendingNewHeader.has(key)) {
+    bufferCsvData(filePath, key, header, header + '\r\n')
     idCounters.set(key, 0)
     pendingNewHeader.delete(key)
   }
@@ -401,8 +461,7 @@ export async function saveCellTemperatureSemantic(dataList, deviceId, ts, meta) 
   const values = dataList.flatMap((p) => p.cells.map((c) => c.value))
   const idVal = nextId(key)
   const row = [idVal, nowStr, ...values].join(',') + '\r\n'
-  await appendFileWithRetry(filePath, row)
-  await rotateIfNeeded(filePath, deviceId, basename, key, header)
+  bufferCsvData(filePath, key, header, row)
 }
 
 export async function saveCellSocSemantic(dataList, deviceId, ts, meta) {
@@ -424,13 +483,9 @@ export async function saveCellSocSemantic(dataList, deviceId, ts, meta) {
     '导出时间',
     ...dataList.flatMap((p) => p.cells.map((c) => `SOC${c.index}（BMU${p.packID} ${c.bmuIndex}#）`))
   ].join(',')
-  const stats = await fs.promises.stat(filePath).catch(() => null)
-  if (!stats) {
-    await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
-  }
   isConfigChanged(key, meta)
-  if (stats && pendingNewHeader.has(key)) {
-    await appendFileWithRetry(filePath, header + '\r\n')
+  if (pendingNewHeader.has(key)) {
+    bufferCsvData(filePath, key, header, header + '\r\n')
     idCounters.set(key, 0)
     pendingNewHeader.delete(key)
   }
@@ -438,8 +493,7 @@ export async function saveCellSocSemantic(dataList, deviceId, ts, meta) {
   const values = dataList.flatMap((p) => p.cells.map((c) => c.value))
   const idVal = nextId(key)
   const row = [idVal, nowStr, ...values].join(',') + '\r\n'
-  await appendFileWithRetry(filePath, row)
-  await rotateIfNeeded(filePath, deviceId, basename, key, header)
+  bufferCsvData(filePath, key, header, row)
 }
 
 export async function saveCellSohSemantic(dataList, deviceId, ts, meta) {
@@ -461,13 +515,9 @@ export async function saveCellSohSemantic(dataList, deviceId, ts, meta) {
     '导出时间',
     ...dataList.flatMap((p) => p.cells.map((c) => `SOH${c.index}（BMU${p.packID} ${c.bmuIndex}#）`))
   ].join(',')
-  const stats = await fs.promises.stat(filePath).catch(() => null)
-  if (!stats) {
-    await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
-  }
   isConfigChanged(key, meta)
-  if (stats && pendingNewHeader.has(key)) {
-    await appendFileWithRetry(filePath, header + '\r\n')
+  if (pendingNewHeader.has(key)) {
+    bufferCsvData(filePath, key, header, header + '\r\n')
     idCounters.set(key, 0)
     pendingNewHeader.delete(key)
   }
@@ -475,8 +525,7 @@ export async function saveCellSohSemantic(dataList, deviceId, ts, meta) {
   const values = dataList.flatMap((p) => p.cells.map((c) => c.value))
   const idVal = nextId(key)
   const row = [idVal, nowStr, ...values].join(',') + '\r\n'
-  await appendFileWithRetry(filePath, row)
-  await rotateIfNeeded(filePath, deviceId, basename, key, header)
+  bufferCsvData(filePath, key, header, row)
 }
 
 function sanitizeBasename(name) {
@@ -539,43 +588,43 @@ export async function saveClusterSummarySemantic(dataList, deviceId, ts, meta) {
   const s1 = Number(bcEffective?.EnableClusterStatus1)
   const s2 = Number(bcEffective?.EnableClusterStatus2)
   // 调试打印：对比以设备ID与以堆ID-0为键的堆概要，定位位域来源是否为空
-  console.log('[ClusterData][EnableDebug]', {
-    deviceId,
-    blockIdKey,
-    hasBcDevice: !!bc,
-    hasBcBlock: !!bcByBlock,
-    blockCount,
-    clusterCounts,
-    globalClusterIndex,
-    s1_device: bc?.EnableClusterStatus1,
-    s2_device: bc?.EnableClusterStatus2,
-    s1_block: bcByBlock?.EnableClusterStatus1,
-    s2_block: bcByBlock?.EnableClusterStatus2
-  })
+  // console.log('[ClusterData][EnableDebug]', {
+  //   deviceId,
+  //   blockIdKey,
+  //   hasBcDevice: !!bc,
+  //   hasBcBlock: !!bcByBlock,
+  //   blockCount,
+  //   clusterCounts,
+  //   globalClusterIndex,
+  //   s1_device: bc?.EnableClusterStatus1,
+  //   s2_device: bc?.EnableClusterStatus2,
+  //   s1_block: bcByBlock?.EnableClusterStatus1,
+  //   s2_block: bcByBlock?.EnableClusterStatus2
+  // })
   let enableText = '/'
   if (Number.isFinite(globalClusterIndex) && globalClusterIndex > 0) {
     if (globalClusterIndex <= 10 && Number.isFinite(s1)) {
       const bit = (s1 >> (globalClusterIndex - 1)) & 1
       enableText = bit === 1 ? '使能' : '非使能'
-      console.log('[ClusterData][EnableBit]', {
-        deviceId,
-        blockIdKey,
-        globalClusterIndex,
-        source: 's1',
-        bit,
-        enableText
-      })
+      // console.log('[ClusterData][EnableBit]', {
+      //   deviceId,
+      //   blockIdKey,
+      //   globalClusterIndex,
+      //   source: 's1',
+      //   bit,
+      //   enableText
+      // })
     } else if (globalClusterIndex <= 20 && Number.isFinite(s2)) {
       const bit = (s2 >> (globalClusterIndex - 11)) & 1
       enableText = bit === 1 ? '使能' : '非使能'
-      console.log('[ClusterData][EnableBit]', {
-        deviceId,
-        blockIdKey,
-        globalClusterIndex,
-        source: 's2',
-        bit,
-        enableText
-      })
+      // console.log('[ClusterData][EnableBit]', {
+      //   deviceId,
+      //   blockIdKey,
+      //   globalClusterIndex,
+      //   source: 's2',
+      //   bit,
+      //   enableText
+      // })
     }
   }
 
@@ -726,17 +775,6 @@ export async function saveClusterSummarySemantic(dataList, deviceId, ts, meta) {
     ...bmuHeader,
     ...extremeColumns
   ].join(',')
-  const stats = await fs.promises.stat(filePath).catch(() => null)
-  if (!stats) {
-    await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
-  }
-  // 禁用中途表头重写（不基于表头签名触发），保持同一文件首行表头唯一
-  isConfigChanged(key, null)
-  if (stats && pendingNewHeader.has(key)) {
-    await appendFileWithRetry(filePath, header + '\r\n')
-    idCounters.set(key, 0)
-    pendingNewHeader.delete(key)
-  }
   const nowStr = formatDateTime(new Date(ts))
   // 合成列：系统总状态位
   const getBool = (val) => {
@@ -889,8 +927,7 @@ export async function saveClusterSummarySemantic(dataList, deviceId, ts, meta) {
   }
   const idVal = nextId(key)
   const row = [idVal, nowStr, ...values].join(',') + '\r\n'
-  await appendFileWithRetry(filePath, row)
-  await rotateIfNeeded(filePath, deviceId, basename, key, header)
+  bufferCsvData(filePath, key, header, row)
 }
 
 export async function savePackSummarySemantic(dataList, deviceId, ts, meta) {
@@ -933,20 +970,15 @@ export async function savePackSummarySemantic(dataList, deviceId, ts, meta) {
       }
     }
     const header = ['ID', '导出时间', ...labels].join(',')
-    const stats = await fs.promises.stat(filePath).catch(() => null)
-    if (!stats) {
-      await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
-    }
     isConfigChanged(key, meta)
-    if (stats && pendingNewHeader.has(key)) {
-      await appendFileWithRetry(filePath, header + '\r\n')
+    if (pendingNewHeader.has(key)) {
+      bufferCsvData(filePath, key, header, header + '\r\n')
       idCounters.set(key, 0)
       pendingNewHeader.delete(key)
     }
     const idVal = nextId(key)
     const row = [idVal, nowStr, ...values].join(',') + '\r\n'
-    await appendFileWithRetry(filePath, row)
-    await rotateIfNeeded(filePath, deviceId, basename, key, header)
+    bufferCsvData(filePath, key, header, row)
   }
 }
 
@@ -976,16 +1008,7 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
     '导出时间',
     ...fields.map((f) => (f.unit ? `${f.label}(${f.unit})` : f.label))
   ].join(',')
-  const stats = await fs.promises.stat(filePath).catch(() => null)
-  if (!stats) {
-    await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
-  }
   isConfigChanged(key, meta)
-  if (stats && pendingNewHeader.has(key)) {
-    await appendFileWithRetry(filePath, header + '\r\n')
-    idCounters.set(key, 0)
-    pendingNewHeader.delete(key)
-  }
   const nowStr = formatDateTime(new Date(ts))
   const fmt = (f, v) => {
     const n = Number(v)
@@ -1049,8 +1072,7 @@ export async function saveBlockSummarySemantic(baseConfigOrList, deviceId, ts, m
   const values = fields.map((f) => fmt(f, baseConfig ? baseConfig[f.key] : undefined))
   const idVal = nextId(key)
   const row = [idVal, nowStr, ...values].join(',') + '\r\n'
-  await appendFileWithRetry(filePath, row)
-  await rotateIfNeeded(filePath, deviceId, basename, key, header)
+  bufferCsvData(filePath, key, header, row)
 }
 function generateAlarmKey(
   deviceId,
@@ -1776,6 +1798,9 @@ function bufferCsvData(filePath, key, header, row) {
    * @param {string} row - CSV数据行（含\r\n）
    * @returns {void}
    */
+  if (isWaitingForUserDecision()) {
+    return
+  }
   // Use non-blocking promise chain to acquire lock
   csvMutex
     .acquire()
@@ -1786,6 +1811,7 @@ function bufferCsvData(filePath, key, header, row) {
         }
         const entry = csvBuffers.get(filePath)
         entry.buffer.push(row)
+        csvBufferBytesApprox += String(row || '').length
       } catch (error) {
         console.error(`[Error] bufferCsvData failed: ${error.message}`)
       } finally {
@@ -1802,6 +1828,25 @@ async function flushCsvBuffers() {
    * 定期刷新缓冲到磁盘（批量写入与表头初始化）
    * @returns {Promise<void>}
    */
+  if (isWaitingForUserDecision()) {
+    let release
+    try {
+      release = await csvMutex.acquire()
+      for (const [, entry] of csvBuffers.entries()) {
+        if (entry.buffer && entry.buffer.length > 0) {
+          const removed = entry.buffer.splice(0, entry.buffer.length)
+          for (const row of removed) {
+            csvBufferBytesApprox -= String(row || '').length
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`[Error] flushCsvBuffers acquire lock failed: ${error.message}`)
+    } finally {
+      if (release) release()
+    }
+    return
+  }
   const clients = {} // Placeholder if needed, but we mostly rely on buffers
 
   // 1. Snapshot and clear buffers while holding lock
@@ -1812,6 +1857,9 @@ async function flushCsvBuffers() {
     for (const [filePath, entry] of csvBuffers.entries()) {
       if (!entry.buffer || entry.buffer.length === 0) continue
       const lines = entry.buffer.splice(0, entry.buffer.length)
+      for (const row of lines) {
+        csvBufferBytesApprox -= String(row || '').length
+      }
       toWrite.push({ filePath, key: entry.key, header: entry.header, lines })
     }
   } catch (error) {
@@ -1820,8 +1868,11 @@ async function flushCsvBuffers() {
   } finally {
     if (release) release()
   }
+  if (csvBufferBytesApprox < 0) csvBufferBytesApprox = 0
 
   // 2. Write to disk without holding lock
+  const startedAt = Date.now()
+  let bytesWrittenApprox = 0
   for (const item of toWrite) {
     const { filePath, key, header, lines } = item
     try {
@@ -1829,13 +1880,36 @@ async function flushCsvBuffers() {
       if (!stats) {
         await appendFileWithRetry(filePath, '\uFEFF' + header + '\r\n')
       }
-      await appendFileWithRetry(filePath, lines.join('')) // lines already contain \r\n
-      // Check for rotation (file size limit)
-      // Note: We use a simplified rotation check here compared to the sync version
-      // The original sync version updates currentFileMap which might need care
+      const joined = lines.join('')
+      bytesWrittenApprox += joined.length
+      await appendFileWithRetry(filePath, joined) // lines already contain \r\n
+      const st = await fs.promises.stat(filePath).catch(() => null)
+      if (st && st.size > FILE_SIZE_LIMIT) {
+        const parts = String(key || '').split(':')
+        const deviceId = parts[0] || ''
+        const basename = parts[1] || ''
+        if (deviceId && basename && basename !== 'ErrorData') {
+          const newPath = getCsvFilePath(deviceId, basename)
+          currentFileMap.set(key, newPath)
+          idCounters.set(key, 0)
+          await appendFileWithRetry(newPath, '\uFEFF' + header + '\r\n')
+        }
+      }
     } catch (writeError) {
       console.error(`[Error] Write file failed: ${filePath}, error: ${writeError.message}`)
     }
+  }
+  const endedAt = Date.now()
+  const durationMs = endedAt - startedAt
+  lastFlushMs = durationMs
+  lastFlushFiles = toWrite.length
+  lastFlushBytes = bytesWrittenApprox
+  if (!maxFlushMsTs || endedAt - maxFlushMsTs > 10 * 60 * 1000) {
+    maxFlushMsRecent = durationMs
+    maxFlushMsTs = endedAt
+  } else if (durationMs > maxFlushMsRecent) {
+    maxFlushMsRecent = durationMs
+    maxFlushMsTs = endedAt
   }
 }
 

@@ -14,81 +14,48 @@
     </div>
     
     
-    <div class="container">
-      <div class="table-container">
-        <h6>基本信息</h6>
-        <div class="two-columns">
-          <DataTable :value="leftBasicData" showGridlines class="fixed-table headerless">
-            <Column :header="t('peripheral.ref.fieldName')" :headerStyle="{ width: '50%' }">
-              <template #body="{ data: el }">
-                {{ el.label }}
-              </template>
-            </Column>
-            <Column :header="t('peripheral.ref.fieldValue')" :style="{ width: '50%' }" bodyClass="value-col">
-              <template #body="{ data: el }">
-                {{ formatValue(el.value) }}
-              </template>
-            </Column>
-          </DataTable>
-          <DataTable :value="rightBasicData" showGridlines class="fixed-table headerless">
-            <Column :header="t('peripheral.ref.fieldName')" :headerStyle="{ width: '50%' }">
-              <template #body="{ data: el }">
-                {{ el.label }}
-              </template>
-            </Column>
-            <Column :header="t('peripheral.ref.fieldValue')" :style="{ width: '50%' }" bodyClass="value-col">
-              <template #body="{ data: el }">
-                {{ formatValue(el.value) }}
-              </template>
-            </Column>
-          </DataTable>
-        </div>
-      </div>
-      <div class="table-container">
-        <h6>故障</h6>
-        <div class="two-columns">
-          <DataTable :value="leftFaultData" showGridlines class="fixed-table">
-            <Column :header="t('peripheral.ref.fieldName')" :headerStyle="{ width: '50%' }">
-              <template #body="{ data: el }">
-                {{ el.label }}
-              </template>
-            </Column>
-            <Column :header="t('peripheral.ref.fieldValue')" :style="{ width: '50%' }" bodyClass="value-col">
-              <template #body="{ data: el }">
-                <span :class="{ 'fault-active': el.value === '故障' }">
-                  {{ el.value }}
-                </span>
-              </template>
-            </Column>
-          </DataTable>
-          <DataTable :value="rightFaultData" showGridlines class="fixed-table">
-            <Column :header="t('peripheral.ref.fieldName')" :headerStyle="{ width: '50%' }">
-              <template #body="{ data: el }">
-                {{ el.label }}
-              </template>
-            </Column>
-            <Column :header="t('peripheral.ref.fieldValue')" :style="{ width: '50%' }" bodyClass="value-col">
-              <template #body="{ data: el }">
-                <span :class="{ 'fault-active': el.value === '故障' }">
-                  {{ el.value }}
-                </span>
-              </template>
-            </Column>
-          </DataTable>
-        </div>
-      </div>
+    <div
+      v-for="(deviceDisplay, index) in deviceDisplayList"
+      :key="index"
+      class="container"
+    >
+      <DataTable :value="pairedRows(deviceDisplay)" showGridlines class="fixed-table">
+        <Column :header="t('peripheral.ref.fieldName')" :headerStyle="{ width: '25%' }">
+          <template #body="{ data: row }">{{ row.left ? translateLabel(row.left) : '' }}</template>
+        </Column>
+        <Column :header="t('peripheral.ref.fieldValue')" :style="{ width: '25%' }" bodyClass="value-col">
+          <template #body="{ data: row }">
+            <span v-if="row.left" :class="{ 'fault-active': isFault(row.left) }">
+              {{ formatValue(row.left) }}
+            </span>
+          </template>
+        </Column>
+        <Column :header="t('peripheral.ref.fieldName')" :headerStyle="{ width: '25%' }">
+          <template #body="{ data: row }">{{ row.right ? translateLabel(row.right) : '' }}</template>
+        </Column>
+        <Column :header="t('peripheral.ref.fieldValue')" :style="{ width: '25%' }" bodyClass="value-col">
+          <template #body="{ data: row }">
+            <span v-if="row.right" :class="{ 'fault-active': isFault(row.right) }">
+              {{ formatValue(row.right) }}
+            </span>
+          </template>
+        </Column>
+      </DataTable>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useBlockStore } from '@/stores/device/blockStore.js'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection.js'
-import { REF_SANHETONGFEI_FIELDS } from '../../../../main/table.js'
+// 参考簇外设：进入页面自动读取堆“系统外围设备配置参数”并选择制冷设备类型
+import { parseParameterReadResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
+import { buildTemplateData, countWordsForFields, parseFieldTableData } from '@/composables/core/data-processing/common/useFieldTableParser'
+import { REF_SANHETONGFEI_FIELDS, REF_YINGWEIKE_0513_FIELDS, REF_YINGWEIKE_70513_FIELDS, REF_KENUOWEI1_FIELDS, REF_KENUOWEI2_FIELDS, REF_JUNNENG_FIELDS } from '../../../../main/table.js'
 
-const { t } = useI18n()
+const { t, te } = useI18n()
 
 // 使用堆store
 const blockStore = useBlockStore()
@@ -104,31 +71,60 @@ const selectedBlockId = computed(() => {
   return Number(selected.replace('block', ''))
 })
 
-// 制冷设备数据状态
-const refData = ref([]) // 存储解析后的制冷设备数据
-const selectedRefType = ref(1) // 用户选择的制冷设备型号
+const refDevices = ref([])
+const refData = ref([])
+const selectedRefType = ref(0)
+const coolingDeviceCount = ref(1)
+const configRefType = ref(null)
+const hasUserSelection = ref(false)
+const isSyncingFromConfig = ref(false)
 let ipcListenerRegistered = false
-let visibilityCleanup = null
 
-// 制冷设备型号选项
-const refTypeOptions = ref([
-  { label: '三河同飞水冷机', value: 1 }
-])
-
-// 获取字段单位
-const getFieldUnit = (field) => {
-  if (field.label.includes('(') && field.label.includes(')')) {
-    const match = field.label.match(/\(([^)]+)\)/)
-    return match ? match[1] : ''
-  }
-  return ''
+const REF_TYPE_KEY_MAP = {
+  0: 'none',
+  1: 'sanhetongfei',
+  2: 'yingweike0513',
+  3: 'yingweike70513',
+  4: 'kenuowei1',
+  5: 'kenuowei2',
+  6: 'junneng'
 }
+
+const currentRefTypeKey = computed(() => {
+  return REF_TYPE_KEY_MAP[selectedRefType.value] || 'none'
+})
+
+const displayRefTypeKey = computed(() => {
+  if (selectedRefType.value === 0) return 'sanhetongfei'
+  return currentRefTypeKey.value
+})
+
+const refTypeOptions = computed(() => [
+  { label: t('peripheral.ref.types.none'), value: 0 },
+  { label: t('peripheral.ref.types.sanhetongfei'), value: 1 },
+  { label: t('peripheral.ref.types.yingweike0513'), value: 2 },
+  { label: t('peripheral.ref.types.yingweike70513'), value: 3 },
+  { label: t('peripheral.ref.types.kenuowei1'), value: 4 },
+  { label: t('peripheral.ref.types.kenuowei2'), value: 5 },
+  { label: t('peripheral.ref.types.junneng'), value: 6 }
+])
 
 // 获取当前制冷设备型号的字段定义
 const getCurrentRefFields = () => {
   switch (selectedRefType.value) {
+    case 0:
     case 1:
       return REF_SANHETONGFEI_FIELDS
+    case 2:
+      return REF_YINGWEIKE_0513_FIELDS
+    case 3:
+      return REF_YINGWEIKE_70513_FIELDS
+    case 4:
+      return REF_KENUOWEI1_FIELDS
+    case 5:
+      return REF_KENUOWEI2_FIELDS
+    case 6:
+      return REF_JUNNENG_FIELDS
     default:
       return REF_SANHETONGFEI_FIELDS
   }
@@ -136,227 +132,67 @@ const getCurrentRefFields = () => {
 
 // 生成模板数据
 const getTemplateData = () => {
-  const fields = getCurrentRefFields()
-  return fields.map(field => ({
-    class: field.class,
-    label: field.label,
-    value: '---',
-    key: field.key,
-    unit: getFieldUnit(field),
-    hide: field.hide === true
-  }))
+  return buildTemplateData(getCurrentRefFields())
 }
 
-// 解析bit字段（根据父字段语义进行区分）
-const parseBitField = (value, bitMap, parentKey) => {
-  const result = []
-  for (const [bitIndex, label] of Object.entries(bitMap)) {
-    const bit = parseInt(bitIndex)
-    const isSet = (value & (1 << bit)) !== 0
-    let display
-    if (parentKey === 'relayOutputStatus') {
-      // 继电器输出：大多数位 1=运行,0=停机；报警输出位 1=正常,0=故障
-      display = (label === '报警输出') ? (isSet ? '正常' : '故障') : (isSet ? '运行' : '停机')
-    } else if (parentKey && parentKey.startsWith('faultStatus')) {
-      // 故障状态：1=有故障，0=无故障（显示为“故障/无故障”）
-      display = isSet ? '故障' : '无故障'
-    } else {
-      // 其它位字段的通用兜底
-      display = isSet
-        ? (label.includes('故障') || label.includes('报警') ? '故障' : '运行')
-        : (label.includes('故障') || label.includes('报警') ? '正常' : '停机')
-    }
-    result.push({
-      label,
-      value: display,
-      bitIndex: bit,
-      rawValue: isSet ? 1 : 0
-    })
-  }
-  return result
-}
-
-const getDecimalsByScale = (scale) => {
-  if (!scale || scale === 1) return 0
-  const s = String(scale)
-  return s.length - 1
+const getWordsPerDevice = () => {
+  return countWordsForFields(getCurrentRefFields())
 }
 
 // 解析原始数据
 const parseRawData = (rawData) => {
-  if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
-    return getTemplateData()
-  }
-
-  const fields = getCurrentRefFields()
-  return fields.map((field, index) => {
-    if (index >= rawData.length) {
-      return {
-        class: field.class,
-        label: field.label,
-        value: '---',
-        key: field.key,
-        unit: getFieldUnit(field)
-      }
-    }
-
-    let value = rawData[index]
-    
-    // 处理有符号16位整数
-    if (field.type === 's16' && value > 32767) {
-      value = value - 65536
-    }
-    
-    // 应用缩放因子
-    if (field.scale && field.scale !== 1) {
-      value = value / field.scale
-    }
-    
-    // 处理bit字段
-    if (field.type === 'bit' && field.bitMap) {
-      return {
-        class: field.class,
-        label: field.label,
-        value: rawData[index], // 保存原始值用于bit解析
-        rawValue: rawData[index],
-        key: field.key,
-        type: 'bit',
-        bitMap: field.bitMap,
-        bitData: parseBitField(rawData[index], field.bitMap, field.key)
-      }
-    }
-    
-    // 应用映射
-    let displayValue = value
-    if (field.map && field.map[value] !== undefined) {
-      displayValue = field.map[value]
-    }
-    if (!field.map && typeof value === 'number') {
-      const decimals = getDecimalsByScale(field.scale)
-      displayValue = decimals > 0 ? value.toFixed(decimals) : Math.round(value).toString()
-    }
-    
-    return {
-      class: field.class,
-      label: field.label,
-      value: displayValue,
-      rawValue: value,
-      key: field.key,
-      unit: getFieldUnit(field),
-      hide: field.hide === true
-    }
-  })
+  return parseFieldTableData(rawData, getCurrentRefFields())
 }
 
-// 显示数据
-const displayData = computed(() => {
-  return refData.value.length > 0 ? refData.value : getTemplateData()
-})
-
-// 基本信息数据（排除bit字段和故障状态）
-const basicData = computed(() => {
-  return displayData.value.filter(item =>
-    item.type !== 'bit' &&
-    !item.key.includes('faultStatus') &&
-    item.key !== 'relayOutputStatus' &&
-    item.hide !== true
-  )
-})
-
-// 继电器输出状态数据
-const relayOutputData = computed(() => {
-  const relayItem = displayData.value.find(item => item.key === 'relayOutputStatus')
-  if (relayItem && relayItem.bitData) return relayItem.bitData
-  // 无实时数据时，按字段定义生成占位项
-  const field = getCurrentRefFields().find(f => f.key === 'relayOutputStatus')
-  if (field?.bitMap) {
-    return Object.values(field.bitMap).map(label => ({ label, value: '---' }))
+const deviceDisplayList = computed(() => {
+  if (refDevices.value.length > 0) return refDevices.value
+  const count = coolingDeviceCount.value && coolingDeviceCount.value > 0 ? coolingDeviceCount.value : 1
+  const list = []
+  for (let i = 0; i < count; i++) {
+    list.push(getTemplateData())
   }
-  return []
+  return list
 })
 
-// 故障状态分组数据
-const faultStatusGroups = computed(() => {
-  const groups = []
-  const faultItems = displayData.value.filter(item => item.key.includes('faultStatus'))
-
-  faultItems.forEach(item => {
-    if (item.bitData) {
-      groups.push({
-        title: item.label,
-        data: item.bitData
-      })
-    }
-  })
-
-  return groups
-})
-
-const basicMerged = computed(() => {
-  const base = basicData.value.map(el => ({ label: el.label, value: el.value }))
-  const relay = relayOutputData.value.map(el => ({ label: el.label, value: el.value }))
-  return [...base, ...relay]
-})
-
-const leftBasicData = computed(() => {
-  const arr = basicMerged.value || []
+const pairedRows = (deviceDisplay) => {
+  const arr = (deviceDisplay || []).filter(el => el?.hide !== true)
   const half = Math.ceil(arr.length / 2)
-  return arr.slice(0, half)
-})
-
-const rightBasicData = computed(() => {
-  const arr = basicMerged.value || []
-  const half = Math.ceil(arr.length / 2)
-  return arr.slice(half)
-})
-
-const flatFaults = computed(() => {
-  const res = []
-  if (faultStatusGroups.value.length) {
-    faultStatusGroups.value.forEach(g => {
-      g.data.forEach(el => res.push({ label: el.label, value: el.value }))
-    })
-    return res
+  const left = arr.slice(0, half)
+  const right = arr.slice(half)
+  const maxLen = Math.max(left.length, right.length)
+  const rows = []
+  for (let i = 0; i < maxLen; i++) {
+    rows.push({ left: left[i], right: right[i] })
   }
-  // 无实时数据时，按字段定义生成占位故障项
-  const defs = getCurrentRefFields().filter(f => f.type === 'bit' && f.key.includes('faultStatus'))
-  defs.forEach(f => {
-    if (f.bitMap) {
-      Object.values(f.bitMap).forEach(label => {
-        res.push({ label, value: '---' })
-      })
-    }
-  })
-  return res
-})
+  return rows
+}
 
-const leftFaultData = computed(() => {
-  const arr = flatFaults.value || []
-  const half = Math.ceil(arr.length / 2)
-  return arr.slice(0, half)
-})
-
-const rightFaultData = computed(() => {
-  const arr = flatFaults.value || []
-  const half = Math.ceil(arr.length / 2)
-  return arr.slice(half)
-})
-
-// 处理制冷设备数据消息
-let lastRefUpdate = 0
-const THROTTLE_MS = 200
 const handleRefData = (event, msg) => {
-  const now = Date.now()
-  if (now - lastRefUpdate < THROTTLE_MS) {
+  if (!msg || msg.dataType !== 'BLOCK_REF' || msg.blockId !== selectedBlockId.value) return
+  // 逻辑注释：当配置为“无制冷设备”时，仅展示模板结构，不更新实时数据
+  if (selectedRefType.value === 0) return
+  const raw = Array.isArray(msg.data) ? msg.data : []
+  const wordsPerDevice = getWordsPerDevice()
+  if (!wordsPerDevice) {
+    refDevices.value = []
     return
   }
-  lastRefUpdate = now
-  if (!msg || msg.dataType !== 'BLOCK_REF' || msg.blockId !== selectedBlockId.value) {
-    return
+  const configuredCount = coolingDeviceCount.value && coolingDeviceCount.value > 0 ? coolingDeviceCount.value : 1
+  const maxByLength = wordsPerDevice > 0 ? Math.floor(raw.length / wordsPerDevice) : 0
+  const deviceCount = maxByLength > 0 ? Math.min(configuredCount, maxByLength) : 1
+  const devices = []
+  if (deviceCount === 1) {
+    devices.push(parseRawData(raw))
+  } else {
+    for (let i = 0; i < deviceCount; i++) {
+      const start = i * wordsPerDevice
+      const end = start + wordsPerDevice
+      const segment = raw.slice(start, end)
+      devices.push(parseRawData(segment))
+    }
   }
-
-  // 解析并存储数据
-  refData.value = parseRawData(msg.data)
+  refDevices.value = devices
+  refData.value = devices[0] || []
 }
 
 // 注册IPC监听器
@@ -380,55 +216,145 @@ const unregisterListener = () => {
   ipcListenerRegistered = false
 }
 
-// 型号切换未做特殊处理（当前未使用）
+// 逻辑注释：从堆“系统外围设备配置参数”中同步制冷设备类型（CoolingDeviceType）
+const requestBlockCommDevCfg = () => {
+  const blockId = selectedBlockId.value
+  if (!blockId) return
+  const topic = `bms/host/s2d/b${blockId}/block_comm_dev_cfg_r`
+  window.electronAPI?.mqttPublish?.(topic, 'ff').catch(() => {})
+}
+
+const handleBlockCommDevCfg = (event, msg) => {
+  if (!msg || msg.dataType !== 'BLOCK_COMM_DEV_CFG_R' || msg.blockId !== selectedBlockId.value) return
+  const parsed = parseParameterReadResponse(msg, '[BlockPeripheral][CommDevCfg]', '系统外围设备配置参数')
+  const data = parsed?.data || {}
+  const coolingType = typeof data.CoolingDeviceType === 'number' ? data.CoolingDeviceType : null
+  if (coolingType === null || Number.isNaN(coolingType)) return
+  const normalized = coolingType >= 1 && coolingType <= 6 ? coolingType : 0
+  configRefType.value = normalized
+  const countRaw = typeof data.CoolingDeviceCount === 'number' ? data.CoolingDeviceCount : null
+  if (countRaw === null || Number.isNaN(countRaw)) {
+    coolingDeviceCount.value = 1
+  } else {
+    const num = Number(countRaw)
+    coolingDeviceCount.value = num > 0 ? num : 1
+  }
+}
+
+const registerCommDevListener = () => {
+  const ipc = window.electron?.ipcRenderer
+  if (!ipc) return
+  ipc.on('BLOCK_COMM_DEV_CFG_R', handleBlockCommDevCfg)
+}
+
+const unregisterCommDevListener = () => {
+  const ipc = window.electron?.ipcRenderer
+  if (!ipc) return
+  ipc.removeListener('BLOCK_COMM_DEV_CFG_R', handleBlockCommDevCfg)
+}
+
+const translateLabel = (el) => {
+  if (!el) return ''
+  if (el.parentKey !== undefined && el.bitIndex !== undefined) {
+    if (el.parentKey === 'relayOutputStatus') {
+      const commonKey = `peripheral.ref.common.bits.relayOutputStatus.${el.bitIndex}`
+      if (te(commonKey)) return t(commonKey)
+    }
+    const typeKey = displayRefTypeKey.value
+    const bitKeyTyped = `peripheral.ref.${typeKey}.bits.${el.parentKey}.${el.bitIndex}`
+    if (te(bitKeyTyped)) return t(bitKeyTyped)
+    if (el.key) {
+      const fieldKeyTyped = `peripheral.ref.${typeKey}.fields.${el.key}`
+      if (te(fieldKeyTyped)) return t(fieldKeyTyped)
+    }
+    return el.label || ''
+  }
+  if (el.key) {
+    const typeKey = displayRefTypeKey.value
+    const fieldKeyTyped = `peripheral.ref.${typeKey}.fields.${el.key}`
+    return te(fieldKeyTyped) ? t(fieldKeyTyped) : (el.label || '')
+  }
+  return ''
+}
 
 // 格式化显示值
-const formatValue = (value) => {
-  if (value === null || value === undefined || value === '---') {
-    return '---'
+const formatValue = (el) => {
+  if (!el) return '---'
+  const value = el.value
+  if (value === null || value === undefined || value === '---') return '---'
+
+  if (el.key && el.map !== undefined && el.rawValue !== undefined) {
+    const typeKey = displayRefTypeKey.value
+    const mapKeyTyped = `peripheral.ref.${typeKey}.valueMap.${el.key}.${el.rawValue}`
+    return te(mapKeyTyped) ? t(mapKeyTyped) : String(value)
   }
 
   return String(value)
 }
 
+const isFault = (el) => {
+  if (!el) return false
+  if (el.parentKey && el.parentKey.startsWith('faultStatus')) return el.rawValue === 1
+  return false
+}
+
 // 生命周期钩子
 onMounted(() => {
   registerListener()
-  const onVisibilityChange = () => {
-    if (document.hidden) {
-      unregisterListener()
-    } else {
-      registerListener()
-    }
-  }
-  document.addEventListener('visibilitychange', onVisibilityChange)
-  visibilityCleanup = () => document.removeEventListener('visibilitychange', onVisibilityChange)
+  registerCommDevListener()
+  // 页面加载时主动拉取一次堆侧系统外围设备配置
+  requestBlockCommDevCfg()
 })
 
 onUnmounted(() => {
   unregisterListener()
-  if (visibilityCleanup) visibilityCleanup()
+  unregisterCommDevListener()
 })
+
+watch(
+  () => selectedBlockId.value,
+  (id) => {
+    refDevices.value = []
+    refData.value = []
+    configRefType.value = null
+    hasUserSelection.value = false
+    selectedRefType.value = 0
+    coolingDeviceCount.value = 1
+    if (id) {
+      requestBlockCommDevCfg()
+    }
+  }
+)
+
+watch(
+  () => configRefType.value,
+  (type) => {
+    if (type === null || type === undefined) return
+    if (hasUserSelection.value) return
+    isSyncingFromConfig.value = true
+    selectedRefType.value = type
+    isSyncingFromConfig.value = false
+  }
+)
+
+watch(
+  () => selectedRefType.value,
+  (type, oldType) => {
+    if (type !== oldType && !isSyncingFromConfig.value) {
+      hasUserSelection.value = true
+    }
+    if (type !== oldType && oldType !== null && oldType !== undefined) {
+      refData.value = []
+      refDevices.value = []
+    }
+  }
+)
 </script>
 
 <style scoped>
 .container {
-  display: flex;
-  gap: 1rem;
   width: 100%;
-  flex-wrap: wrap; /* 允许表格换行 */
-}
-
-.table-container {
-  flex-grow: 1; /* 让表格自动扩展，占满剩余空间 */
-  min-width: 30%; /* 保证每个表格至少占用30%的宽度 */
-  margin-bottom: 1rem;
-}
-
-.table-container h6 {
-  margin-bottom: 0.5rem;
-  color: #ffffff;
-  font-weight: 600;
+  display: block;
 }
 
 .status-active {
@@ -448,12 +374,8 @@ onUnmounted(() => {
 .fixed-table .p-datatable-table {
   table-layout: fixed;
 }
-.headerless :deep(.p-datatable-thead) {
-  display: none;
-}
-/* 补齐隐藏表头后的首行上边框，避免首行网格线被遮挡 */
-.headerless :deep(.p-datatable-tbody > tr:first-child td) {
-  border-top: 1px solid var(--surface-border, #4b5563);
+.fixed-table {
+  width: 100%;
 }
 .value-col {
   max-width: 12rem;
@@ -462,10 +384,3 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 </style>
-.two-columns {
-  display: flex;
-  gap: 16px;
-}
-.two-columns > :deep(.p-datatable) {
-  flex: 1;
-}

@@ -594,7 +594,20 @@ function getFaultTranslation(data: any): string {
         </Column>
       <Column :header="t('alarmInfoPage.table.headers.blockClusterNumber')" headerClass="text-center" bodyClass="text-center" style="width:110px">
         <template #body="{ data }">
-          {{ data.cluster.endsWith('-0') ? data.cluster.split('-')[0] : data.cluster }}
+          {{
+            (() => {
+              const clusterStr = data.cluster.endsWith('-0')
+                ? data.cluster.split('-')[0]
+                : data.cluster
+              if (data.dataType === 'BLOCK_COMM_LOST') {
+                const parts = String(data.cluster || '').split('-')
+                const b = parts[0] || '-'
+                const c = parts[1] || '0'
+                return c === '0' ? b : `${b}/${c}`
+              }
+              return clusterStr
+            })()
+          }}
         </template>
       </Column>
         <Column field="bmu" :header="t('alarmInfoPage.table.headers.bmuNumber')" headerClass="text-center" bodyClass="text-center" style="width:120px" >
@@ -604,7 +617,11 @@ function getFaultTranslation(data: any): string {
         </Column>
       <Column :header="t('alarmInfoPage.table.headers.cell')" headerClass="text-center" bodyClass="text-center" style="width:100px">
         <template #body="{ data }">
-          {{ data.cell === null || data.cell === 0 ? '-' : data.cell }}
+          {{
+            data.cell !== null && data.cell !== 0
+              ? data.cell
+              : (data.dataType === 'BROKENWIRE' && data.desc === 'AFE失联' && data.afe !== null && data.afe !== 0 ? data.afe : '-')
+          }}
         </template>
       </Column>
       <Column :header="t('alarmInfoPage.table.headers.globalSequence')" headerClass="text-center" bodyClass="text-center" style="width:120px">

@@ -38,6 +38,7 @@ import {
   BLOCK_COMM_DEV_CFG_R,
   BLOCK_OPERATE_CFG_R,
   BLOCK_SOC_PARAM_R,
+  BLOCK_REF_PARAM_R,
   BLOCK_COMM_LOST,
   FACTORY_CALIB_PARAM_R,
   BCU_BMU_UPGRADE_RESULT_FIELDS,
@@ -730,6 +731,8 @@ export function processThirdFaultRAW(hex, kind) {
   const afeCellCounts = Array.from({ length: 16 }, (_, i) => head[`afeCell${i + 1}`])
   const afeTempCounts = Array.from({ length: 16 }, (_, i) => head[`afeTemp${i + 1}`])
   const schema = getCachedL3Schema(kind, {
+    totalCell: head.totalCell,
+    totalTemp: head.totalTemp,
     bmuTotal: head.bmuTotal,
     afePerBmu: head.afePerBmu,
     afeCellCounts,
@@ -2545,6 +2548,38 @@ export function parseBlockSocParamRAW(payload) {
 
   const view = new DataView(paramsBuf.buffer, paramsBuf.byteOffset, paramsBuf.byteLength)
   const { baseConfig } = parseByTable(view, BLOCK_SOC_PARAM_R)
+
+  return { error: false, data: baseConfig }
+}
+
+export function parseBlockRefParamRAW(payload) {
+  const buf = Buffer.isBuffer(payload)
+    ? payload
+    : Buffer.from(String(payload).replace(/\s+/g, ''), 'hex')
+
+  if (buf.length === 0) return null
+  if (buf.length === 1) {
+    const errorCode = buf.readUInt8(0)
+    return {
+      error: true,
+      baseConfig: {},
+      data: {
+        code: errorCode,
+        message: ERROR_CODES[errorCode] || '未知错误'
+      }
+    }
+  }
+
+  const dataLen = buf.readUInt16LE(0)
+  const paramsBuf = buf.slice(2)
+  if (paramsBuf.length !== dataLen) {
+    console.warn(
+      `[parseBlockRefParamRAW] length mismatch: expected ${dataLen}, got ${paramsBuf.length}`
+    )
+  }
+
+  const view = new DataView(paramsBuf.buffer, paramsBuf.byteOffset, paramsBuf.byteLength)
+  const { baseConfig } = parseByTable(view, BLOCK_REF_PARAM_R)
 
   return { error: false, data: baseConfig }
 }

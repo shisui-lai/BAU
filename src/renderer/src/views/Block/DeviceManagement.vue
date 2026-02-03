@@ -362,6 +362,33 @@ function getPortModel(param){
   return portModelCache.get(key)
 }
 
+const productionCodeText = computed(() => {
+  const year = getPortModel({ key: 'productionYear', type: 'u16' }).value
+  const month = getPortModel({ key: 'productionMonth', type: 'u16' }).value
+  const day = getPortModel({ key: 'productionDay', type: 'u16' }).value
+  const index = getPortModel({ key: 'productionIndex', type: 'u16' }).value
+
+  const yNum = Number(year)
+  const mNum = Number(month)
+  const dNum = Number(day)
+  const nNum = Number(index)
+
+  if (!yNum || !mNum || !dNum || nNum === null || nNum === undefined) return '-'
+
+  const y = String(yNum)
+  const m = String(mNum).padStart(2, '0')
+  const d = String(dNum).padStart(2, '0')
+  const n = String(nNum)
+  return `${y}${m}${d}${n}`
+})
+
+const portDisplayParameterList = computed(() => {
+  const list = portEnhancedParameterList?.value || []
+  const hiddenKeys = new Set(['productionYear', 'productionMonth', 'productionDay', 'productionIndex'])
+  const filtered = list.filter(p => p && !hiddenKeys.has(p.key))
+  return [{ key: 'ProductionCode', label: '生产编码', type: 'text' }, ...filtered]
+})
+
 // ====== 右侧卡片高度与左列对齐 ======
 const leftColumnRef = ref(null)
 const rightCardRef = ref(null)
@@ -973,14 +1000,22 @@ function getPortLabelTranslation(label) {
             <div class="port-content">
               <div class="port-grid">
               <div
-                v-for="p in portEnhancedParameterList"
+                v-for="p in portDisplayParameterList"
                 :key="p.key"
                 class="port-row two-col-item"
               >
                 <div class="port-col">
                   <label class="port-field-label">{{ getPortLabelTranslation(p.label || p.key) }}</label>
+                  <template v-if="p.key === 'ProductionCode'">
+                    <InputText
+                      class="port-field-input"
+                      :model-value="productionCodeText"
+                      disabled
+                      readonly
+                    />
+                  </template>
                   <!-- IPv4地址字段：使用普通输入框+验证 -->
-                  <template v-if="p.type === 'ipv4'">
+                  <template v-else-if="p.type === 'ipv4'">
                     <InputText
                       :class="getIPv4InputClass(getPortModel(p).value)"
                       v-model="getPortModel(p).value"

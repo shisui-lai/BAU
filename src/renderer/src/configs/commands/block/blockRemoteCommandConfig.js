@@ -67,7 +67,9 @@ export const blockRemoteCommandConfig = {
       { label: '复位系统堆告警安装参数', bit: 5, value: 32 },
       { label: '复位系统SOC配置参数', bit: 6, value: 64 },
       { label: '复位事件记录标志', bit: 7, value: 128 },
-      { label: '复位系统系统运行时间', bit: 8, value: 256 }
+      { label: '复位系统运行时间', bit: 8, value: 256 },
+      { label: '复位系统水冷机配置参数', bit: 9, value: 512 },
+      { label: '复位系统配置化映射参数', bit: 10, value: 1024 }
     ]
   },
 

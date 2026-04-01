@@ -5,7 +5,11 @@
         <template #body="{ data: row }">{{ row.label }}</template>
       </Column>
       <Column :header="t('peripheral.fire.fieldValue')" :style="{ width: '50%' }" bodyClass="value-col">
-        <template #body="{ data: row }">{{ row.value }}</template>
+        <template #body="{ data: row }">
+          <span :class="{ 'fault-active': isFaultText(row.value) }">
+            {{ row.value }}
+          </span>
+        </template>
       </Column>
     </DataTable>
   </div>
@@ -22,6 +26,8 @@ import { FIRE_YIJIE_FIELDS } from '../../../../main/table.js'
 const { t, te } = useI18n()
 const blockStore = useBlockStore()
 usePageTypeDetection()
+
+const faultOnText = computed(() => t('faultOverview.hardwareLegend.faultOn'))
 
 const selectedBlockId = computed(() => {
   const selected = blockStore.selectedBlockForView
@@ -44,6 +50,18 @@ const parseRawData = (rawData) => {
 
 const displayData = computed(() => (fireData.value.length > 0 ? fireData.value : getTemplateData()))
 
+// 文字为“故障”或者“有故障”时显示红色
+const isFaultTextMatched = (v) => {
+  return v === faultOnText.value || v === '故障'
+}
+
+const isFaultText = (value) => {
+  if (value === null || value === undefined) return false
+  const v = String(value)
+  if (!v || v === '---') return false
+  return isFaultTextMatched(v)
+}
+
 const translateLabel = (field) => {
   if (!field) return ''
   const i18nKey = `peripheral.fire.${FIRE_TYPE_KEY}.fields.${field.key}`
@@ -54,6 +72,10 @@ const formatValue = (field) => {
   if (!field) return '---'
   const value = field.value
   if (value === null || value === undefined || value === '---') return '---'
+  if (field.map !== undefined && field.rawValue !== undefined) {
+    const mapKey = `peripheral.fire.${FIRE_TYPE_KEY}.valueMap.${field.key}.${field.rawValue}`
+    return te(mapKey) ? t(mapKey) : String(value)
+  }
   return String(value)
 }
 
@@ -100,5 +122,9 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.fault-active {
+  color: #dc3545;
+  font-weight: 600;
 }
 </style>

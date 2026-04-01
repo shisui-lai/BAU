@@ -21,7 +21,9 @@
       </Column>
       <Column :header="t('peripheral.pcs.fieldValue')" :style="{ width: '25%' }" bodyClass="value-col">
         <template #body="{ data: row }">
-          {{ row.left ? formatValue(row.left) : '' }}
+          <span v-if="row.left" :class="{ 'fault-active': isFaultValue(row.left) }">
+            {{ formatValue(row.left) }}
+          </span>
         </template>
       </Column>
       <Column :header="t('peripheral.pcs.fieldName')" :headerStyle="{ width: '25%' }">
@@ -31,7 +33,9 @@
       </Column>
       <Column :header="t('peripheral.pcs.fieldValue')" :style="{ width: '25%' }" bodyClass="value-col">
         <template #body="{ data: row }">
-          {{ row.right ? formatValue(row.right) : '' }}
+          <span v-if="row.right" :class="{ 'fault-active': isFaultValue(row.right) }">
+            {{ formatValue(row.right) }}
+          </span>
         </template>
       </Column>
     </DataTable>
@@ -49,6 +53,8 @@ import { buildTemplateData, parseFieldTableData } from '@/composables/core/data-
 import { PCS_SHUANGYILI_FIELDS, PCS_HEWANG_FIELDS, PCS_KEHUA_BLOCK_FIELDS, PCS_MAIGERUINENG_FIELDS, PCS_SHENGHONG_FIELDS } from '../../../../main/table.js'
 
 const { t, te } = useI18n()
+
+const faultOnText = computed(() => t('faultOverview.hardwareLegend.faultOn'))
 
 // 使用堆store
 const blockStore = useBlockStore()
@@ -153,6 +159,17 @@ const parseRawData = (rawData) => {
 }
 
 const displayData = computed(() => pcsData.value.length > 0 ? pcsData.value : getTemplateData())
+
+// 文字为“故障”或者“有故障”时显示红色
+const isFaultTextMatched = (v) => {
+  return v === faultOnText.value || v === '故障'
+}
+
+const isFaultValue = (field) => {
+  const v = formatValue(field)
+  if (!v || v === '---') return false
+  return isFaultTextMatched(v)
+}
 
 const handlePcsData = (event, msg) => {
   if (!msg || msg.dataType !== 'BLOCK_PCS' || msg.blockId !== selectedBlockId.value) return
@@ -291,5 +308,9 @@ watch(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.fault-active {
+  color: #dc3545;
+  font-weight: 600;
 }
 </style>

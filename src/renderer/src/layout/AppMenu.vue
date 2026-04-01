@@ -61,6 +61,7 @@ const rawMenuItems = ref([
       { labelKey: 'menu.clusterPcs', icon: 'pi pi-bolt', route: '/Cluster/Peripheral/Pcs', roles: ['admin', 'guest'] },
       { labelKey: 'menu.clusterRef', icon: 'pi pi-sliders-h', route: '/Cluster/Peripheral/Ref', roles: ['admin', 'guest'] },
       { labelKey: 'menu.clusterDehumi', icon: 'pi pi-sun', route: '/Cluster/Peripheral/Dehumi', roles: ['admin', 'guest'] },
+      { labelKey: 'menu.clusterFire', icon: 'pi pi-shield', route: '/Cluster/Peripheral/Fire', roles: ['admin', 'guest'] },
     ]
   },
   {
@@ -122,14 +123,7 @@ const rawMenuItems = ref([
     route: '/Device/BauAddressDetection',
     type: 'single',
     roles: ['admin']
-  },
-  // {
-  //   labelKey: 'menu.deviceManagement',
-  //   icon: 'pi pi-wrench',
-  //   route: '/Block/DeviceManagement',
-  //   type: 'single',
-  //   roles: ['admin']
-  // }
+  }
 ])
 
 // 根据角色过滤菜单项并翻译

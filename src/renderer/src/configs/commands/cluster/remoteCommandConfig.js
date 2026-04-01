@@ -203,6 +203,26 @@ export const REMOTE_COMMANDS = {
           { label: '闭合', value: 2 }, // 10
           { label: '断开', value: 1 } // 01
         ]
+      },
+      {
+        name: '封波控制',
+        bitStart: 12,
+        bitEnd: 13,
+        options: [
+          { label: '无效', value: 0 }, // 00
+          { label: '闭合', value: 2 }, // 10
+          { label: '断开', value: 1 } // 01
+        ]
+      },
+      {
+        name: '清功率控制',
+        bitStart: 14,
+        bitEnd: 15,
+        options: [
+          { label: '无效', value: 0 }, // 00
+          { label: '闭合', value: 2 }, // 10
+          { label: '断开', value: 1 } // 01
+        ]
       }
     ]
   },

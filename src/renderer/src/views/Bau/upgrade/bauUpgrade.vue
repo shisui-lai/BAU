@@ -89,8 +89,8 @@ function startUpgradeResultPollingByType() {
 
   const upgradeType = selectedUpgrade.value
 
-  // BAU升级 (0xA000) - 使用堆级轮询
-  if (upgradeType === '0xA000') {
+  // BAU升级 / BAU配置参数升级 (0xA000 / 0xA004) - 使用堆级轮询，不需要选择簇
+  if (upgradeType === '0xA000' || upgradeType === '0xA004') {
     if (selectedBlock.value) {
       // 从 selectedBlock (如 'block1') 提取堆号
       const blockId = Number(String(selectedBlock.value).replace('block', ''))
@@ -102,8 +102,8 @@ function startUpgradeResultPollingByType() {
       console.warn('[升级结果轮询] BAU升级需要选择堆，但当前未选择')
     }
   }
-  // BCU/BMU升级 (0xA001/0xA002) - 同时启动BAU轮询和BCU/BMU多簇轮询
-  else if (upgradeType === '0xA001' || upgradeType === '0xA002') {
+  // BCU/BMU/BCU配置参数升级 (0xA001/0xA002/0xA003) - 需要选择簇，同时启动BAU轮询和BCU/BMU多簇轮询
+  else if (upgradeType === '0xA001' || upgradeType === '0xA002' || upgradeType === '0xA003') {
     // 同时启动BAU结果轮询（堆级）
     if (selectedBlock.value) {
       const blockId = Number(String(selectedBlock.value).replace('block', ''))
@@ -301,19 +301,45 @@ function mapBlockClusterToGlobalCluster(clusterKey, availableClusters) {
 /**
  * 获取簇的显示名称（用于升级结果显示）
  * @param {string} clusterKey - block-cluster 格式的簇键
- * @returns {string} 显示名称，如 '簇1', '簇2'
+ * @returns {string} 显示名称，如 '堆1-簇2'
  */
 function getClusterDisplayName(clusterKey) {
-  const globalClusterId = mapBlockClusterToGlobalCluster(clusterKey, clusterStore.availableClusters)
+  if (!clusterKey) {
+    return ''
+  }
 
+  // 正常情况：clusterKey 形如 "1-2"（堆1/簇2）
+  const parts = String(clusterKey).split('-')
+  const block = Number(parts[0])
+  const cluster = Number(parts[1])
+
+  if (!Number.isNaN(block) && !Number.isNaN(cluster)) {
+    // 使用“堆X-簇Y”形式，便于和页面上的堆/簇选择对应
+    return `堆${block}-簇${cluster}`
+  }
+
+  // 回退到原始显示方式，并尝试输出全局簇号用于调试
+  const globalClusterId = mapBlockClusterToGlobalCluster(clusterKey, clusterStore.availableClusters)
   if (globalClusterId !== null) {
-    console.log(`[升级结果显示] ${clusterKey} -> 簇${globalClusterId}`)
+    console.warn(`[升级结果显示] 无法解析 ${clusterKey}，退回到全局簇号显示: 簇${globalClusterId}`)
     return `簇${globalClusterId}`
   }
 
-  // 回退到原始显示方式
-  console.warn(`[升级结果显示] 无法映射 ${clusterKey}，使用原始显示`)
-  return `堆${clusterKey}`
+  console.warn(`[升级结果显示] 无法解析 ${clusterKey}，使用原始显示`)
+  return String(clusterKey)
+}
+
+/**
+ * 升级结果字段的通用显示格式化：
+ * - 将协议侧返回的中文“无故障”在英文模式下映射为英文
+ * - 其它内容保持原样（或者由上层自己处理）
+ */
+function formatUpgradeResultText(text) {
+  if (!text) return '--'
+  if (text === '无故障') {
+    return t('deviceUpgrade.result.noFault')
+  }
+  return text
 }
 
 const bmuUpdateStyle = computed({
@@ -350,10 +376,13 @@ const bmuDeviceCount = computed({
 // 升级状态 (直接使用store中的状态)
 
 // 选项配置
+// 升级类型选项：BAU/BCU/BMU 及配置参数升级（0xA003/0xA004 与对应升级逻辑一致，仅命令码与名称不同）
 const upgradeOptions = [
   { label: 'BAU升级', value: '0xA000' },
   { label: 'BCU升级', value: '0xA001' },
-  { label: 'BMU升级', value: '0xA002' }
+  { label: 'BMU升级', value: '0xA002' },
+  { label: 'BCU配置参数升级', value: '0xA003' },
+  { label: 'BAU配置参数升级', value: '0xA004' }
 ]
 
 const bmuUpgradeOptions = [
@@ -581,65 +610,67 @@ const isClusterAvailable = (clusterNum) => {
 
 
 
-// 全选1-10簇的状态（计算属性）
-const isAllSelected1 = computed(() => {
-  let hasAvailable = false
-  for (let i = 1; i <= 10; i++) {
-    if (isClusterAvailable(i)) {
-      hasAvailable = true
-      if (!bcuSelection1.value.includes(i)) {
-        return false
-      }
-    }
+/**
+ * 判断指定全局簇号是否已选中（底层仍用 bcuSelection1=1-10、bcuSelection2=11-20）
+ */
+const isClusterSelected = (clusterNum) => {
+  if (clusterNum <= 10) {
+    return bcuSelection1.value.includes(clusterNum)
   }
-  return hasAvailable
-})
+  return bcuSelection2.value.includes(clusterNum)
+}
 
-// 全选11-20簇的状态（计算属性）
-const isAllSelected2 = computed(() => {
-  let hasAvailable = false
-  for (let i = 11; i <= 20; i++) {
-    if (isClusterAvailable(i)) {
-      hasAvailable = true
-      if (!bcuSelection2.value.includes(i)) {
-        return false
-      }
-    }
-  }
-  return hasAvailable
-})
-
-// 切换全选1-10簇
-const toggleSelectAll1 = () => {
-  if (isAllSelected1.value) {
-    // 如果已经全选，则清空
-    bcuSelection1.value = []
+/**
+ * 切换指定全局簇号的勾选状态，仍写入 bcuSelection1/bcuSelection2，下发逻辑不变
+ */
+const toggleCluster = (clusterNum) => {
+  if (clusterNum <= 10) {
+    toggleBcuSelection1(clusterNum)
   } else {
-    // 否则全选1-10簇中可用的簇（根据系统配置限制）
-    const availableClusters = []
-    for (let i = 1; i <= 10; i++) {
-      if (isClusterAvailable(i)) {
-        availableClusters.push(i)
-      }
-    }
-    bcuSelection1.value = availableClusters
+    toggleBcuSelection2(clusterNum)
   }
 }
 
-// 切换全选11-20簇
-const toggleSelectAll2 = () => {
-  if (isAllSelected2.value) {
-    // 如果已经全选，则清空
-    bcuSelection2.value = []
+/**
+ * 判断“全局全选”状态：当前配置下的所有簇（堆1+堆2）是否都已勾选
+ */
+const isAllClustersSelected = computed(() => {
+  const limits = clusterLimits.value
+  const total = limits.totalClusters
+  if (!total || total <= 0) return false
+
+  for (let n = 1; n <= total; n++) {
+    if (!isClusterSelected(n)) return false
+  }
+  return true
+})
+
+/**
+ * 全局全选 / 全局取消：
+ * - 全选：根据当前配置，将 1~totalClusters 的全局簇号写入 bcuSelection1/2
+ * - 取消：清空两个数组
+ * 底层下发仍使用原有 bcuSelection1/2，不做任何协议修改
+ */
+const toggleSelectAllClusters = () => {
+  const limits = clusterLimits.value
+  const total = limits.totalClusters
+  if (!total || total <= 0) return
+
+  if (isAllClustersSelected.value) {
+    // 全部已选 → 一键清空
+    upgradeStore.updateUpgradeParams({ bcuSelection1: [], bcuSelection2: [] })
   } else {
-    // 否则全选11-20簇中可用的簇（根据系统配置限制）
-    const availableClusters = []
-    for (let i = 11; i <= 20; i++) {
-      if (isClusterAvailable(i)) {
-        availableClusters.push(i)
+    // 一键全选：按全局簇号填充1~total
+    const all1 = []
+    const all2 = []
+    for (let n = 1; n <= total; n++) {
+      if (n <= 10) {
+        all1.push(n)
+      } else {
+        all2.push(n)
       }
     }
-    bcuSelection2.value = availableClusters
+    upgradeStore.updateUpgradeParams({ bcuSelection1: all1, bcuSelection2: all2 })
   }
 }
 
@@ -1022,6 +1053,18 @@ onUnmounted(() => {
               <!-- 簇选择 - 始终显示，但根据升级类型控制是否可选 -->
               <div class="cluster-selection-section">
                 <h4>{{ t('deviceUpgrade.sections.clusterSelection') }}</h4>
+                <!-- 全局全选按钮：放在标题下方，一键选中/清空所有堆的所有簇 -->
+                <div class="cluster-select-all-row">
+                  <div class="cluster-checkbox-compact">
+                    <Checkbox
+                      :modelValue="isAllClustersSelected"
+                      @update:modelValue="toggleSelectAllClusters"
+                      :binary="true"
+                      :disabled="selectedUpgrade === '0xA000' || clusterLimits.totalClusters === 0 || selectedUpgrade === '0xA004'"
+                    />
+                    <label>{{ t('deviceUpgrade.buttons.selectAll') }}</label>
+                  </div>
+                </div>
 
                 <!-- 配置状态提示 -->
                 <div class="cluster-config-info mb-3" v-if="clusterLimits.totalClusters > 0">
@@ -1041,62 +1084,48 @@ onUnmounted(() => {
                   </span>
                 </div>
 
+                <!-- 按堆动态显示簇勾选：每行代表一个堆，勾选框数量与当前配置一致 -->
                 <div class="cluster-selection-compact">
-                  <!-- 第1-10簇 -->
-                  <div class="cluster-row">
+                  <!-- 第1堆 -->
+                  <div v-if="clusterLimits.heap1Clusters > 0" class="cluster-row">
                     <div class="cluster-label-column">
-                      <span class="cluster-row-label">{{ t('deviceUpgrade.cluster.cluster1to10') }}</span>
-                      <!-- 全选按钮 -->
-                      <div class="cluster-checkbox-compact">
-                        <Checkbox
-                          :modelValue="isAllSelected1"
-                          @update:modelValue="toggleSelectAll1"
-                          :binary="true"
-                          :disabled="selectedUpgrade === '0xA000' || clusterLimits.totalClusters < 1"
-                        />
-                        <label>{{ t('deviceUpgrade.buttons.selectAll') }}</label>
-                      </div>
+                      <span class="cluster-row-label">{{ t('deviceUpgrade.cluster.heap1') }}</span>
                     </div>
                     <div class="cluster-checkboxes-compact">
-                      <div v-for="i in 10" :key="i" class="cluster-checkbox-compact">
+                      <div
+                        v-for="clusterNum in clusterLimits.heap1Clusters"
+                        :key="clusterNum"
+                        class="cluster-checkbox-compact"
+                      >
                         <Checkbox
-                          :modelValue="bcuSelection1.includes(i)"
-                          @update:modelValue="toggleBcuSelection1(i)"
+                          :modelValue="isClusterSelected(clusterNum)"
+                          @update:modelValue="toggleCluster(clusterNum)"
                           :binary="true"
-                          :disabled="selectedUpgrade === '0xA000' || !isClusterAvailable(i)"
+                          :disabled="selectedUpgrade === '0xA000' || selectedUpgrade === '0xA004'"
                         />
-                        <label :class="{ 'text-gray-400': !isClusterAvailable(i) }">
-                          {{ i }}
-                        </label>
+                        <label>{{ t('deviceUpgrade.cluster.clusterLabel', [clusterNum]) }}</label>
                       </div>
                     </div>
                   </div>
-                  <!-- 第11-20簇 -->
-                  <div class="cluster-row">
+                  <!-- 第2堆 -->
+                  <div v-if="clusterLimits.heap2Clusters > 0" class="cluster-row">
                     <div class="cluster-label-column">
-                      <span class="cluster-row-label">{{ t('deviceUpgrade.cluster.cluster11to20') }}</span>
-                      <!-- 全选按钮 -->
-                      <div class="cluster-checkbox-compact">
-                        <Checkbox
-                          :modelValue="isAllSelected2"
-                          @update:modelValue="toggleSelectAll2"
-                          :binary="true"
-                          :disabled="selectedUpgrade === '0xA000' || clusterLimits.totalClusters < 11"
-                        />
-                        <label>{{ t('deviceUpgrade.buttons.selectAll') }}</label>
-                      </div>
+                      <span class="cluster-row-label">{{ t('deviceUpgrade.cluster.heap2') }}</span>
                     </div>
                     <div class="cluster-checkboxes-compact">
-                      <div v-for="i in 10" :key="i+10" class="cluster-checkbox-compact">
+                      <div
+                        v-for="idx in clusterLimits.heap2Clusters"
+                        :key="clusterLimits.heap1Clusters + idx"
+                        class="cluster-checkbox-compact"
+                      >
                         <Checkbox
-                          :modelValue="bcuSelection2.includes(i+10)"
-                          @update:modelValue="toggleBcuSelection2(i+10)"
+                          :modelValue="isClusterSelected(clusterLimits.heap1Clusters + idx)"
+                          @update:modelValue="toggleCluster(clusterLimits.heap1Clusters + idx)"
                           :binary="true"
-                          :disabled="selectedUpgrade === '0xA000' || !isClusterAvailable(i+10)"
+                          :disabled="selectedUpgrade === '0xA000' || selectedUpgrade === '0xA004'"
                         />
-                        <label :class="{ 'text-gray-400': !isClusterAvailable(i+10) }">
-                          {{ i+10 }}
-                        </label>
+                        <!-- 第二堆显示“簇1/簇2/...”，但内部仍按全局簇号进行选择与下发 -->
+                        <label>{{ t('deviceUpgrade.cluster.clusterLabel', [idx]) }}</label>
                       </div>
                     </div>
                   </div>
@@ -1167,22 +1196,22 @@ onUnmounted(() => {
           <div class="upgrade-result-section">
             <h4>{{ t('deviceUpgrade.sections.bauUpgradeResult', 'BAU升级执行结果') }}</h4>
             <div v-if="hasBauUpgradeResult" class="result-grid">
-              <!-- BAU升级时显示：OTA错误码和BAU故障码 -->
-              <template v-if="selectedUpgrade === '0xA000'">
+              <!-- BAU升级 / BAU配置参数升级时显示：OTA错误码和BAU故障码 -->
+              <template v-if="selectedUpgrade === '0xA000' || selectedUpgrade === '0xA004'">
                 <div class="result-item">
                   <label>{{ t('deviceUpgrade.result.otaErrorCode', 'OTA下载错误码') }}：</label>
-                  <span>{{ bauUpgradeResult.otaErrorCode }}</span>
+                  <span>{{ formatUpgradeResultText(bauUpgradeResult.otaErrorCode) }}</span>
                 </div>
                 <div class="result-item">
                   <label>{{ t('deviceUpgrade.result.bauFaultCode', 'BAU升级故障码') }}：</label>
-                  <span>{{ bauUpgradeResult.bauFaultCode }}</span>
+                  <span>{{ formatUpgradeResultText(bauUpgradeResult.bauFaultCode) }}</span>
                 </div>
               </template>
-              <!-- BCU/BMU升级时只显示：OTA错误码 -->
-              <template v-else-if="selectedUpgrade === '0xA001' || selectedUpgrade === '0xA002'">
+              <!-- BCU/BMU/BCU配置参数升级时只显示：OTA错误码 -->
+              <template v-else-if="selectedUpgrade === '0xA001' || selectedUpgrade === '0xA002' || selectedUpgrade === '0xA003'">
                 <div class="result-item">
                   <label>{{ t('deviceUpgrade.result.otaErrorCode', 'OTA下载错误码') }}：</label>
-                  <span>{{ bauUpgradeResult.otaErrorCode }}</span>
+                  <span>{{ formatUpgradeResultText(bauUpgradeResult.otaErrorCode) }}</span>
                 </div>
               </template>
             </div>
@@ -1209,8 +1238,8 @@ onUnmounted(() => {
               </h5>
               
               <div class="result-grid">
-                <!-- BCU升级时显示：升级文件下载完成标志 -->
-                <div v-if="selectedUpgrade === '0xA001'" class="result-item">
+                <!-- BCU升级 / BCU配置参数升级时显示：升级文件下载完成标志 -->
+                <div v-if="selectedUpgrade === '0xA001' || selectedUpgrade === '0xA003'" class="result-item">
                   <label>{{ t('deviceUpgrade.result.downloadCompleteFlag', '下载完成标志') }}：</label>
                   <span>{{ result.downloadCompleteFlag }}</span>
                 </div>
@@ -1221,28 +1250,28 @@ onUnmounted(() => {
                   <span>{{ result.downloadCompleteFlag }}</span>
                 </div>
                 
-                <!-- BCU升级时显示：OTA文件下载错误码 -->
-                <div v-if="selectedUpgrade === '0xA001'" class="result-item">
+                <!-- BCU升级 / BCU配置参数升级时显示：OTA文件下载错误码 -->
+                <div v-if="selectedUpgrade === '0xA001' || selectedUpgrade === '0xA003'" class="result-item">
                   <label>{{ t('deviceUpgrade.result.otaErrorCode', 'OTA下载错误码') }}：</label>
-                  <span>{{ result.otaErrorCode }}</span>
+                  <span>{{ formatUpgradeResultText(result.otaErrorCode) }}</span>
                 </div>
                 
                 <!-- BMU升级时显示：OTA文件下载错误码 -->
                 <div v-if="selectedUpgrade === '0xA002'" class="result-item">
                   <label>{{ t('deviceUpgrade.result.otaErrorCode', 'OTA下载错误码') }}：</label>
-                  <span>{{ result.otaErrorCode }}</span>
+                  <span>{{ formatUpgradeResultText(result.otaErrorCode) }}</span>
                 </div>
                 
-                <!-- BCU升级时显示：BCU升级故障码 -->
-                <div v-if="selectedUpgrade === '0xA001'" class="result-item">
+                <!-- BCU升级 / BCU配置参数升级时显示：BCU升级故障码 -->
+                <div v-if="selectedUpgrade === '0xA001' || selectedUpgrade === '0xA003'" class="result-item">
                   <label>{{ t('deviceUpgrade.result.bcuFaultCode', 'BCU升级故障码') }}：</label>
-                  <span>{{ result.bcuFaultCode }}</span>
+                  <span>{{ formatUpgradeResultText(result.bcuFaultCode) }}</span>
                 </div>
                 
                 <!-- BMU升级时显示：BMU升级故障码 -->
                 <div v-if="selectedUpgrade === '0xA002'" class="result-item">
                   <label>{{ t('deviceUpgrade.result.bmuFaultCode', 'BMU升级故障码') }}：</label>
-                  <span>{{ result.bmuFaultCode }}</span>
+                  <span>{{ formatUpgradeResultText(result.bmuFaultCode) }}</span>
                 </div>
                 
                 <!-- BMU升级时显示：BMU升级失败设备标识 -->
@@ -1359,6 +1388,11 @@ onUnmounted(() => {
   border-left: 4px solid var(--primary-color);
 }
 
+.cluster-select-all-row {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
 .version-info-fill {
   display: block;
 }
@@ -1381,15 +1415,15 @@ onUnmounted(() => {
 .cluster-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px;
 }
 
 /* 标签列 - 包含文字和全选按钮 */
 .cluster-label-column {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 80px;
+  gap: 4px;
+  min-width: 60px;
   flex-shrink: 0;
 }
 

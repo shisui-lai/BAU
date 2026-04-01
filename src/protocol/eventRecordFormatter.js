@@ -24,7 +24,10 @@ const EVENT_TYPE_MAP = {
   113: 'PCS通讯状态变化',
   114: '水冷机通讯状态变化',
   115: 'I/O模块通讯状态变化',
-  // 116–149 预留
+  116: '电表通讯状态变化',
+  117: '消防设备通讯状态变化',
+  118: '堆总故障状态变化',
+  // 119–149 预留
   // 二、下设控制触发记录类型（200–270）
   200: '下设接触器执行策略',
   201: '下设接触器独立执行',
@@ -73,6 +76,9 @@ const EVENT_TYPE_MAP = {
   272: '重新开始SD卡记录',
   273: '下设簇单体最大显示SOC',
   274: '下设簇单体最小显示SOC',
+  275: '复位可配置默认参数次数',
+  276: '擦除可配置默认参数区',
+  
   // 三、参数下设事件记录类型（300–305）
   300: '系统基本参数下设',
   301: '报警参数下设',
@@ -216,7 +222,7 @@ const FAULT_BIT_MAPS = {
     'BCU RT3过温告警',
     'BCU RT4过温告警',
     'BCU RT5过温告警',
-    '预留'
+    '铜排过温告警'
   ],
   ClusterAnalogAlarm_Severe2: [
     '电池包电压上限告警',
@@ -233,8 +239,8 @@ const FAULT_BIT_MAPS = {
     '放电单体温度下限告警',
     '单体SOC上限告警',
     '单体SOC下限告警',
-    '簇间压差上限告警',
-    '簇间电流差上限告警'
+    'BMU动力接插件温差过大告警',
+    '簇端动力接插件温差过大告警'
   ],
   ClusterAnalogAlarm_Moderate1: [
     '单体压差上限告警',
@@ -252,7 +258,7 @@ const FAULT_BIT_MAPS = {
     'BCU RT3过温告警',
     'BCU RT4过温告警',
     'BCU RT5过温告警',
-    '预留'
+    '铜排过温告警'
   ],
   ClusterAnalogAlarm_Moderate2: [
     '电池包电压上限告警',
@@ -269,8 +275,8 @@ const FAULT_BIT_MAPS = {
     '放电单体温度下限告警',
     '单体SOC上限告警',
     '单体SOC下限告警',
-    '预留',
-    '预留'
+    'BMU动力接插件温差过大告警',
+    '簇端动力接插件温差过大告警'
   ],
   ClusterAnalogAlarm_Mild1: [
     '单体压差上限告警',
@@ -288,7 +294,7 @@ const FAULT_BIT_MAPS = {
     'BCU RT3过温告警',
     'BCU RT4过温告警',
     'BCU RT5过温告警',
-    '预留'
+    '铜排过温告警'
   ],
   ClusterAnalogAlarm_Mild2: [
     '电池包电压上限告警',
@@ -305,13 +311,13 @@ const FAULT_BIT_MAPS = {
     '放电单体温度下限告警',
     '单体SOC上限告警',
     '单体SOC下限告警',
-    '预留',
-    '预留'
+    'BMU动力接插件温差过大告警',
+    '簇端动力接插件温差过大告警'
   ],
 
   // 簇汇总硬件故障
   ClusterHardwareFault_Word1: [
-    '主正高边驱动反馈故障',
+    '主正接触器反馈故障',
     '主正高边驱动反馈故障',
     '主正氧化',
     '主正黏连',
@@ -344,7 +350,7 @@ const FAULT_BIT_MAPS = {
     '氢气探测器反馈故障',
     'MSD反馈故障',
     '急停反馈故障',
-    '预留'
+    '柜体风机反馈故障'
   ],
   ClusterHardwareFault_Word3: [
     '预留', // Bit0 原主正高边驱动反馈故障
@@ -359,8 +365,8 @@ const FAULT_BIT_MAPS = {
     'pcs封波高边驱动反馈故障', // Bit9
     '辅助断路器控制高边驱动反馈故障', // Bit10
     '排风系统控制高边驱动反馈故障', // Bit11
-    '预留', // Bit12
-    '预留', // Bit13
+    '柜体风机高边反馈故障', // Bit12
+    '熔断器反馈故障', // Bit13
     '预留', // Bit14
     '预留' // Bit15
   ],
@@ -451,13 +457,13 @@ const FAULT_BIT_MAPS = {
     'EMS通讯故障',
     '电表设备通讯故障',
     '消防设备通讯故障',
+    '簇间压差严重故障',
+    '簇间电流差严重故障',
     '预留',
     '预留',
     '预留',
     '预留',
-    '预留',
-    '预留',
-    '预留'
+    '堆保留故障'
   ]
 }
 
@@ -558,7 +564,7 @@ function parseContactorAction(raw) {
 }
 
 /**
- * 辅助函数：解析强制消除故障类型
+ * 辅助函数：解析强制消除故障类型（用于事件205/251）
  */
 function parseFaultClearAction(raw) {
   if (raw === 0xffff) return '无效'
@@ -571,6 +577,25 @@ function parseFaultClearAction(raw) {
     5: '清除PCS通讯故障'
   }
   return actionMap[raw] !== undefined ? actionMap[raw] : `未知(${raw})`
+}
+
+/**
+ * 辅助函数：解析保留故障类型（按位域解析，用于事件266 清除堆保留故障）
+ * 位域定义：
+ *   Bit0: 接触器/隔离开关故障
+ *   Bit1-15: 预留
+ */
+function parseReservedFaultClearAction(raw) {
+  if (raw === 0xffff) return '无效'
+  const names = ['接触器/隔离开关故障']
+  const parts = []
+  for (let i = 0; i < names.length; i++) {
+    const bit = (raw >> i) & 0x1
+    if (bit === 1) {
+      parts.push(`清除${names[i]}`)
+    }
+  }
+  return parts.length > 0 ? parts.join(';') : '不执行'
 }
 
 /**
@@ -615,6 +640,31 @@ function parseInsulationDetect(raw) {
 function parseResetAction(raw) {
   if (raw === 0x5bb5) return '执行'
   return '不执行'
+}
+
+/**
+ * 辅助函数：解析可配置默认参数复位动作（十进制574执行）
+ */
+function parseConfigDefaultParamResetAction(raw) {
+  return raw === 574 ? '复位' : '不执行'
+}
+
+/**
+ * 辅助函数：解析BAU固件升级类型
+ */
+function parseBAUFirmwareUpgradeType(raw) {
+  if (raw === 1) return 'BAU APP'
+  if (raw === 2) return 'BAU CFG'
+  return `${raw}(未定义)`
+}
+
+/**
+ * 辅助函数：解析BCU固件升级类型
+ */
+function parseBCUFirmwareUpgradeType(raw) {
+  if (raw === 1) return 'BCU APP'
+  if (raw === 2) return 'BCU CFG'
+  return `${raw}(未定义)`
 }
 
 /**
@@ -741,7 +791,7 @@ function parseDisconnectReason(raw) {
     6: 'EMS断开',
     7: '初始上电断开',
     8: 'EMS与BAU通讯异常',
-    9: '各簇状态不一致',
+    9: '运行中各簇状态不一致',
     10: '退出接触器自检',
     11: '启动接触器自检',
     12: '停止接触器自检',
@@ -855,7 +905,9 @@ function parseStackResetParams(raw) {
     '堆告警安装',
     '系统堆SOC配置参数',
     '事件记录标志',
-    '系统运行时间'
+    '系统运行时间',
+    '复位系统水冷机配置参数',
+    '复位系统配置化映射参数'
   ]
   const parts = []
   for (let i = 0; i < names.length; i++) {
@@ -933,7 +985,7 @@ function parseIPAddress(high16, low16) {
  * 辅助函数：解析PCS设备类型
  */
 function parsePCSType(raw) {
-  const typeMap = { 0: '无PCS', 1: '星星pcs', 2: '双一力PCS-01', 3: '科华PCS' }
+  const typeMap = { 0: '无PCS', 1: '双一力pcs(RS485)', 2: '禾望PCS', 3: '科华PCS' ,4: '迈格瑞能PCS', 5: '盛宏PCS', 6: '双一力PCS(CAN)'}
   return typeMap[raw] !== undefined ? typeMap[raw] : `${raw}(未定义)`
 }
 
@@ -941,7 +993,7 @@ function parsePCSType(raw) {
  * 辅助函数：解析制冷设备类型
  */
 function parseCoolType(raw) {
-  const typeMap = { 0: '无制冷设备', 1: '科诺威水冷机', 2: '英维克', 3: '埃森特交流空调' }
+  const typeMap = { 0: '无制冷设备', 1: '三河同飞', 2: '英维克0513', 3: '英维克70513', 4: '柯诺威1', 5: '柯诺威2', 6: '均能' }
   return typeMap[raw] !== undefined ? typeMap[raw] : `${raw}(未定义)`
 }
 
@@ -949,7 +1001,16 @@ function parseCoolType(raw) {
  * 辅助函数：解析除湿空调设备类型
  */
 function parseDehumidType(raw) {
-  const typeMap = { 0: '无除湿机设备', 1: '除湿机-01', 2: '02-除湿机-E-J-000113' }
+  const typeMap = { 0: '无除湿空调', 1: '三河同飞', 2: '英维克U3-EC', 3: 'E-J000113' }
+  return typeMap[raw] !== undefined ? typeMap[raw] : `${raw}(未定义)`
+}
+
+/**
+ * 辅助函数：解析I/O控制板设备类型
+ * 0: 无I/O控制板, 1: 艾莫讯
+ */
+function parseIOControlBoardType(raw) {
+  const typeMap = { 0: '无I/O控制板', 1: '艾莫讯' }
   return typeMap[raw] !== undefined ? typeMap[raw] : `${raw}(未定义)`
 }
 
@@ -1087,6 +1148,39 @@ const EVENT_PARAM_MAPPING = {
     param1: { label: '堆序号', parse: parseBlockId },
     param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
     param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  116: {
+    // 电表通讯状态变化 - 同112
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
+    param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  117: {
+    // 消防设备通讯状态变化 - 同112
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: { label: '上一次通讯状态', parse: (raw) => `上一次:${parseCommStatus(raw)}` },
+    param3: { label: '当前通讯状态', parse: (raw) => `当前:${parseCommStatus(raw)}` },
+    param4: { label: '/', parse: parseNull }
+  },
+  118: {
+    // 堆总故障状态变化
+    param1: { label: '堆序号', parse: parseBlockId },
+    param2: {
+      label: '上一次堆总故障',
+      parse: (raw) => {
+        const map = { 0: '无故障', 1: '轻微故障', 2: '一般故障', 3: '严重故障' }
+        return `上一次:${map[raw] !== undefined ? map[raw] : `${raw}(未定义)`}`
+      }
+    },
+    param3: {
+      label: '当前堆总故障',
+      parse: (raw) => {
+        const map = { 0: '无故障', 1: '轻微故障', 2: '一般故障', 3: '严重故障' }
+        return `当前:${map[raw] !== undefined ? map[raw] : `${raw}(未定义)`}`
+      }
+    },
     param4: { label: '/', parse: parseNull }
   },
 
@@ -1325,7 +1419,7 @@ const EVENT_PARAM_MAPPING = {
   },
   259: {
     // BAU固件升级
-    param1: { label: '/', parse: parseNull },
+    param1: { label: 'BAU升级类型', parse: parseBAUFirmwareUpgradeType },
     param2: { label: '/', parse: parseNull },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
@@ -1356,7 +1450,7 @@ const EVENT_PARAM_MAPPING = {
         return numValue.toString(2).padStart(10, '0').split('').reverse().join('')
       }
     },
-    param3: { label: '/', parse: parseNull },
+    param3: { label: 'BCU升级类型', parse: parseBCUFirmwareUpgradeType },
     param4: { label: '/', parse: parseNull }
   },
   261: {
@@ -1439,7 +1533,7 @@ const EVENT_PARAM_MAPPING = {
   266: {
     // 清除堆保留故障
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '保留故障类型', parse: parseFaultClearAction },
+    param2: { label: '保留故障类型', parse: parseReservedFaultClearAction },
     param3: { label: '/', parse: parseNull },
     param4: { label: '/', parse: parseNull }
   },
@@ -1495,6 +1589,18 @@ const EVENT_PARAM_MAPPING = {
     param2: { label: '簇序号', parse: parseClusterId },
     param3: { label: '上一次SOC', parse: (raw) => `上一次SOC值:${raw}` },
     param4: { label: '设置SOC', parse: (raw) => `设置SOC值:${raw}` }
+  },
+  275: {
+    param1: { label: '动作', parse: parseConfigDefaultParamResetAction },
+    param2: { label: '/', parse: parseNull },
+    param3: { label: '/', parse: parseNull },
+    param4: { label: '/', parse: parseNull }
+  },
+  276: {
+    param1: { label: '动作', parse: parseConfigDefaultParamResetAction },
+    param2: { label: '/', parse: parseNull },
+    param3: { label: '/', parse: parseNull },
+    param4: { label: '/', parse: parseNull }
   },
 
   // 三、参数下设事件记录类型（300–305）
@@ -1758,8 +1864,8 @@ const EVENT_PARAM_MAPPING = {
   375: {
     // I/O控制板设备类型
     param1: { label: '堆序号', parse: parseBlockId },
-    param2: { label: '上一次类型', parse: (raw) => `上一次:${raw}` },
-    param3: { label: '当前类型', parse: (raw) => `当前:${raw}` },
+    param2: { label: '上一次类型', parse: (raw) => `上一次:${parseIOControlBoardType(raw)}` },
+    param3: { label: '当前类型', parse: (raw) => `当前:${parseIOControlBoardType(raw)}` },
     param4: { label: '/', parse: parseNull }
   },
   376: {
@@ -2413,7 +2519,8 @@ function formatStatusField(fieldKey, value) {
       const machineStatuses = []
       for (let i = 0; i < 4; i++) {
         const raw = (numValue >> (i * 2)) & 0x03
-        const txt = coolingMachineCommMap[raw] !== undefined ? coolingMachineCommMap[raw] : `${raw}(未定义)`
+        const txt =
+          coolingMachineCommMap[raw] !== undefined ? coolingMachineCommMap[raw] : `${raw}(未定义)`
         machineStatuses.push(`水冷机${i + 1}:${txt}`)
       }
       return machineStatuses.join('，')

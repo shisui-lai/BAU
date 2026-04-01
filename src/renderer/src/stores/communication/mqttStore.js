@@ -1,5 +1,6 @@
 // MQTT连接状态管理Store
 import { defineStore } from 'pinia'
+import { useUpgradeStore } from '@/stores/upgradeStore'
 
 // 生成SYL_开头的8位随机ClientID
 function generateClientId() {
@@ -217,6 +218,20 @@ export const useMqttStore = defineStore('mqtt', {
       try {
         await window.electron.ipcRenderer.invoke('mqtt-disconnect')
         console.log('[MQTT Store] 手动断开完成')
+
+        // 同步关闭FTP服务器，避免网络切换后FTP仍使用旧会话参数导致升级失败
+        // 设计为“手动断开MQTT -> 强制停止FTP”，后续由用户手动重新启动FTP
+        try {
+          const ftpStopResult = await window.electron.ipcRenderer.invoke('ftp-stop')
+          console.log('[MQTT Store] 断开MQTT后自动停止FTP结果:', ftpStopResult)
+        } catch (ftpError) {
+          // FTP可能本来就未启动，这里只记录日志，不影响MQTT断开流程
+          console.warn('[MQTT Store] 自动停止FTP失败（可忽略）:', ftpError?.message || ftpError)
+        } finally {
+          // 无论ftp-stop返回成功/失败，都主动同步升级页按钮状态，避免界面残留“运行中”
+          const upgradeStore = useUpgradeStore()
+          upgradeStore.setFtpServerRunning(false)
+        }
       } catch (error) {
         console.error('断开连接时出错:', error)
       }

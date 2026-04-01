@@ -20,7 +20,9 @@
       </Column>
       <Column :header="t('peripheral.meter.fieldValue')" :style="{ width: '25%' }" bodyClass="value-col">
         <template #body="{ data: row }">
-          {{ row.left ? formatValue(row.left) : '' }}
+          <span v-if="row.left" :class="{ 'fault-active': isFaultValue(row.left) }">
+            {{ formatValue(row.left) }}
+          </span>
         </template>
       </Column>
       <Column :header="t('peripheral.meter.fieldName')" :headerStyle="{ width: '25%' }">
@@ -30,7 +32,9 @@
       </Column>
       <Column :header="t('peripheral.meter.fieldValue')" :style="{ width: '25%' }" bodyClass="value-col">
         <template #body="{ data: row }">
-          {{ row.right ? formatValue(row.right) : '' }}
+          <span v-if="row.right" :class="{ 'fault-active': isFaultValue(row.right) }">
+            {{ formatValue(row.right) }}
+          </span>
         </template>
       </Column>
     </DataTable>
@@ -49,6 +53,8 @@ import { buildTemplateData, countWordsForFields, parseFieldTableData } from '@/c
 const { t, te } = useI18n()
 const blockStore = useBlockStore()
 usePageTypeDetection()
+
+const faultOnText = computed(() => t('faultOverview.hardwareLegend.faultOn'))
 
 const selectedBlockId = computed(() => {
   const selected = blockStore.selectedBlockForView
@@ -103,6 +109,17 @@ const parseRawData = (rawData) => {
 }
 
 const displayData = computed(() => (meterData.value.length > 0 ? meterData.value : getTemplateData()))
+
+// 文字为“故障”或者“有故障”时显示红色
+const isFaultTextMatched = (v) => {
+  return v === faultOnText.value || v === '故障'
+}
+
+const isFaultValue = (field) => {
+  const v = formatValue(field)
+  if (!v || v === '---') return false
+  return isFaultTextMatched(v)
+}
 
 const leftData = computed(() => {
   const arr = (displayData.value || []).filter(el => el?.hide !== true)
@@ -229,4 +246,8 @@ watch(
 <style scoped>
 .fixed-table .p-datatable-table { table-layout: fixed; }
 .value-col { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fault-active {
+  color: #dc3545;
+  font-weight: 600;
+}
 </style>

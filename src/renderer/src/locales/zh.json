@@ -11,7 +11,7 @@
     "language": "语言",
     "rememberMe": "记住密码",
     "company": "东方日升储能技术有限公司",
-    "version": "版本 v0.6.8"
+    "version": "版本 v0.8.8"
   },
   "toast": {
     "common": {
@@ -185,6 +185,112 @@
     "blockCluster": "堆{0}/簇{1}"
   },
   "cluster_peripheral": {
+    "fire": {
+      "selectLabel": "选择消防控制器型号",
+      "baseInfo": "基本信息",
+      "detectorDetails": "探测器详情",
+      "noFire": "无消防控制器",
+      "fireType": {
+        "三沃力源（sanvalor）": "Sanvalor",
+        "无消防控制器": "No Fire Controller"
+      },
+      "title": {
+        "title1": "探测器编号",
+        "title2": "状态",
+        "title3": "报警等级",
+        "title4": "一氧化碳浓度(ppm)",
+        "title5": "温度数据(℃)",
+        "title6": "烟雾数据(db/m)",
+        "title7": "VOC"
+      },
+      "labels": {
+        "fireLabel1": "最高报警等级",
+        "fireLabel2": "探测器状态",
+        "fireLabel3": "灭火器故障状态",
+        "fireLabel4": "灭火器启动状态",
+        "fireLabel5": "按键状态",
+        "fireLabel6": "显示器状态",
+        "fireLabel7": "探测器灭火器启动命令",
+        "fireLabel8": "禁止报警功能及启动",
+        "fireLabel9": "禁止灭火自动启动功能",
+        "fireLabel10": "复位系统预警、报警信息",
+        "探测器编号": "探测器编号",
+        "状态": "状态",
+        "报警等级": "报警等级",
+        "一氧化碳浓度(ppm)": "一氧化碳浓度(ppm)",
+        "温度数据(℃)": "温度数据(℃)",
+        "烟雾数据(db/m)": "烟雾数据(db/m)",
+        "VOC": "VOC",
+        "紧急启动开关状态": "紧急启动开关状态",
+        "紧急停止开关状态": "紧急停止开关状态",
+        "1号探测器状态": "1号探测器状态",
+        "2号探测器状态": "2号探测器状态",
+        "3号探测器状态": "3号探测器状态",
+        "4号探测器状态": "4号探测器状态",
+        "5号探测器状态": "5号探测器状态",
+        "6号探测器状态": "6号探测器状态",
+        "7号探测器状态": "7号探测器状态",
+        "8号探测器状态": "8号探测器状态",
+        "9号探测器状态": "9号探测器状态",
+        "10号探测器状态": "10号探测器状态",
+        "11号探测器状态": "11号探测器状态",
+        "12号探测器状态": "12号探测器状态",
+        "13号探测器状态": "13号探测器状态",
+        "14号探测器状态": "14号探测器状态",
+        "15号探测器状态": "15号探测器状态",
+        "16号探测器状态": "16号探测器状态",
+        "1号灭火器状态": "1号灭火器状态",
+        "2号灭火器状态": "2号灭火器状态",
+        "3号灭火器状态": "3号灭火器状态",
+        "4号灭火器状态": "4号灭火器状态",
+        "5号灭火器状态": "5号灭火器状态",
+        "6号灭火器状态": "6号灭火器状态",
+        "7号灭火器状态": "7号灭火器状态",
+        "8号灭火器状态": "8号灭火器状态",
+        "9号灭火器状态": "9号灭火器状态",
+        "10号灭火器状态": "10号灭火器状态",
+        "11号灭火器状态": "11号灭火器状态",
+        "12号灭火器状态": "12号灭火器状态",
+        "13号灭火器状态": "13号灭火器状态",
+        "14号灭火器状态": "14号灭火器状态",
+        "15号灭火器状态": "15号灭火器状态",
+        "16号灭火器状态": "16号灭火器状态",
+        "1号探测器": "1号探测器",
+        "2号探测器": "2号探测器",
+        "3号探测器": "3号探测器",
+        "4号探测器": "4号探测器",
+        "5号探测器": "5号探测器",
+        "6号探测器": "6号探测器",
+        "7号探测器": "7号探测器",
+        "8号探测器": "8号探测器",
+        "9号探测器": "9号探测器",
+        "10号探测器": "10号探测器",
+        "11号探测器": "11号探测器",
+        "12号探测器": "12号探测器",
+        "13号探测器": "13号探测器",
+        "14号探测器": "14号探测器",
+        "15号探测器": "15号探测器",
+        "16号探测器": "16号探测器"
+      },
+      "values": {
+        "正常": "正常",
+        "探测器掉线": "探测器掉线",
+        "传感器故障": "传感器故障",
+        "一级预警": "一级预警",
+        "二级预警": "二级预警",
+        "一级报警": "一级报警",
+        "二级报警": "二级报警",
+        "故障": "故障",
+        "已启动": "已启动",
+        "按下": "按下",
+        "不禁止": "不禁止",
+        "禁止": "禁止",
+        "复位系统预警、报警状态": "复位系统预警、报警状态",
+        "voc报警": "voc报警",
+        "取消启动": "取消启动",
+        "启动": "启动"
+      }
+    },
     "pcs": {
       "types": {
         "none": "无PCS",
@@ -836,6 +942,7 @@
     "clusterPcs": "PCS",
     "clusterRef": "制冷设备",
     "clusterDehumi": "除湿空调",
+    "clusterFire": "消防设备",
     "gpioData": "GPIO数据",
     "clusterVersion": "簇版本信息",
     "disconnection": "掉线信息",
@@ -997,7 +1104,9 @@
       "upgradeTypes": {
         "BAU升级": "BAU升级",
         "BCU升级": "BCU升级",
-        "BMU升级": "BMU升级"
+        "BMU升级": "BMU升级",
+        "BCU配置参数升级": "BCU配置参数升级",
+        "BAU配置参数升级": "BAU配置参数升级"
       },
       "bmuUpgradeTypes": {
         "单机常规升级": "单机常规升级",
@@ -1052,7 +1161,10 @@
     },
     "cluster": {
       "cluster1to10": "第1-10簇:",
-      "cluster11to20": "第11-20簇:"
+      "cluster11to20": "第11-20簇:",
+      "heap1": "堆1:",
+      "heap2": "堆2:",
+      "clusterLabel": "簇{0}"
     },
     "result": {
       "deviceType": "升级设备类型",
@@ -1063,7 +1175,8 @@
       "bauFaultCode": "BAU升级故障码",
       "bmuFailedDevices": "BMU升级失败设备",
       "progress": "下载进度",
-      "clusterResult": "簇 {clusterKey} 升级结果"
+      "clusterResult": "簇 {clusterKey} 升级结果",
+      "noFault": "无故障"
     },
     "version": {
       "bauVersion": "BAU版本",
@@ -1163,6 +1276,7 @@
       "bmuVolt": "BMU 电压(V)",
       "bmuTemp": "BMU 温度(℃)",
       "bmuPluginTemp": "动力接插件温度(℃)",
+      "afeBusbarTemp": "铜排温度(℃)",
       "bmuSOC": "BMU SOC(%)",
       "bmuProductCode": "BMU产品编码"
     },
@@ -1183,10 +1297,12 @@
       "temperature4": "温度4",
       "temperature5": "温度5",
       "clusterSOC": "簇SOC",
-    "clusterSOH": "簇SOH",
-    "clusterSOE": "簇SOE",
-    "clusterRealSOC": "真实SOC",
-    "ocvExecCount": "OCV执行次数",
+      "clusterSOH": "簇SOH",
+      "clusterSOE": "簇SOE",
+      "clusterRealSOC": "真实SOC",
+      "ocvExecCount": "OCV执行次数",
+      "clusterPluginTempDiff": "簇端动力接插件电池侧温差值",
+      "clusterPluginTempDiffPcs": "簇端动力接插件PCS测温差值",
       "maxChargePower": "最大允充功率",
       "maxDischargePower": "最大允放功率",
       "singleChargeEnergy": "单次充电电量",
@@ -1307,6 +1423,16 @@
         "minTemp1": "极柱最小温度1",
         "minTemp2": "极柱最小温度2",
         "minTemp3": "极柱最小温度3",
+        "tempDiff": "温度极差"
+      },
+      "afeBusbarTemp": {
+        "maxTemp1": "铜排最大温度1",
+        "maxTemp2": "铜排最大温度2",
+        "maxTemp3": "铜排最大温度3",
+        "avgTemp": "平均温度",
+        "minTemp1": "铜排最小温度1",
+        "minTemp2": "铜排最小温度2",
+        "minTemp3": "铜排最小温度3",
         "tempDiff": "温度极差"
       }
     }
@@ -1546,6 +1672,9 @@
       "cellDischargeUndertempFaultGrade": "单体电池放电欠温故障",
       "cellSocTooHighFaultGrade": "单体SOC过高故障",
       "cellSocTooLowFaultGrade": "单体SOC过低故障",
+      "busbarOvertempFaultGrade": "铜排过温告警",
+      "bmuPluginTempDiffUpperLimitFaultGrade": "BMU动力接插件温差上限告警",
+      "clusterPluginTempDiffUpperLimitFaultGrade": "簇端动力接插件温差上限告警",
       "MainPosContactorFeedbackFault": "主正接触器反馈故障",
       "MainPosHighSideFeedbackFault": "主正高边驱动反馈故障",
       "MainPosOxidation": "主正氧化",
@@ -1577,6 +1706,8 @@
       "HydrogenDetectorFeedbackFault": "氢气探测器反馈故障",
       "MSDFeedbackFault": "MSD反馈故障",
       "EmergencyStopFeedbackFault": "急停反馈故障",
+      "CabinetFanFeedbackFault": "柜体风机反馈故障",
+      "FuseFeedbackFault": "熔断器反馈故障",
       "MainPosHighSideFeedbackFault2": "主正高边驱动反馈故障",
       "MainNegHighSideFeedbackFault2": "主负高边驱动反馈故障",
       "PrechargeHighSideFeedbackFault2": "预充高边驱动反馈故障",
@@ -1589,6 +1720,7 @@
       "PCSSealedWaveHighSideFeedbackFault": "pcs封波高边驱动反馈故障",
       "AuxCircuitBreakerControlHighSideFeedbackFault": "辅助断路器控制高边驱动反馈故障",
       "ExhaustSystemControlHighSideFeedbackFault": "排风系统控制高边驱动反馈故障",
+      "CabinetFanHighSideFault": "柜体风机高边反馈故障",
       "CoolingDeviceCommFault2": "制冷设备通信故障",
       "PCSCommFault2": "PCS设备通信故障",
       "DehumidifierCommFault2": "除湿机通信故障",
@@ -1619,7 +1751,16 @@
       "BMU1PowerConnectorTempDisconnected2": "BMU 1号 动力接插件温度断线",
       "BMU2PowerConnectorTempDisconnected2": "BMU 2号 动力接插件温度断线",
       "AFECommLost2": "AFE通讯失联",
-      "BCUCommFault_Stack": "BCU通讯故障"
+      "BCUCommFault_Stack": "BCU通讯故障",
+      "AFEBusbarTempOverSevereFault": "铜排温度过高严重故障",
+      "AFEBusbarTempOverGeneralFault": "铜排温度过高一般故障",
+      "AFEBusbarTempOverMildFault": "铜排温度过高轻微故障",
+      "BMUPowerConnectorTempDiffSevereFault": "BMU动力接插件温差严重故障",
+      "BMUPowerConnectorTempDiffGeneralFault": "BMU动力接插件温差一般故障",
+      "BMUPowerConnectorTempDiffMildFault": "BMU动力接插件温差轻微故障",
+      "ClusterEndPowerConnectorTempDiffSevereFault": "簇端动力接插件温差严重故障",
+      "ClusterEndPowerConnectorTempDiffGeneralFault": "簇端动力接插件温差一般故障",
+      "ClusterEndPowerConnectorTempDiffMildFault": "簇端动力接插件温差轻微故障"
     }
   },
   "didoStatus": {
@@ -1661,6 +1802,7 @@
       "MSD反馈": "MSD反馈",
       "急停反馈": "急停反馈",
       "柜体风机反馈": "柜体风机反馈",
+      "熔断器反馈": "熔断器反馈",
       "主正接触器高边驱动反馈": "主正接触器高边驱动反馈",
       "主负接触器高边驱动反馈": "主负接触器高边驱动反馈",
       "预充接触器高边驱动反馈": "预充接触器高边驱动反馈",
@@ -1773,6 +1915,21 @@
       "簇压模式": {
         "高压采集模式": "高压采集模式",
         "单体电压累加模式": "单体电压累加模式"
+      },
+      "柜内风扇控制模式": {
+        "BCU最高温度": "BCU最高温度",
+        "非环境温度的平均温度": "非环境温度的平均温度",
+        "BCU环境温度": "BCU环境温度"
+      },
+      "铜排温度": {
+        "不存在": "不存在",
+        "存在": "存在"
+      },
+      "簇端动力接插件温差模式": {
+        "不处理": "不处理",
+        "只处理电池端接插件": "只处理电池端接插件",
+        "处理所有接插件": "处理所有接插件",
+        "只处理PCS端接插件": "只处理PCS端接插件"
       },
       "动力接插件温度": {
         "不存在": "不存在",
@@ -1924,7 +2081,9 @@
         "宁德280Ah(CB2W0)": "宁德280Ah(CB2W0)",
         "海辰280Ah(ST280P100A)": "海辰280Ah(ST280P100A)",
         "亿纬314Ah(MB31)": "亿纬314Ah(MB31)",
-        "海辰314Ah(ST314P050A)": "海辰314Ah(ST314P050A)"
+        "海辰314Ah(ST314P050A)": "海辰314Ah(ST314P050A)",
+        "鹏辉314Ah(GSP71173204F)": "鹏辉314Ah(GSP71173204F)",
+        "融捷314Ah(RBA4F1)": "融捷314Ah(RBA4F1)"
       }
     }
   },
@@ -2059,7 +2218,8 @@
         "powerConnectorTempSummary": "动力接插件温度概要",
         "clusterSocSummary": "簇SOC概要",
         "clusterVoltageSummary": "簇电压概要",
-        "clusterCurrentSummary": "簇电流概要"
+        "clusterCurrentSummary": "簇电流概要",
+        "afeBusbarTempSummary": "铜排温度概要"
       },
       "maxMinSubGroups": {
         "cellVoltageRelated": "堆单体电压相关",
@@ -2207,6 +2367,14 @@
         "动力接插件温度最小值包编号": "动力接插件温度最小值包编号",
         "动力接插件温度平均值": "动力接插件温度平均值",
         "动力接插件温度极差值": "动力接插件温度极差值",
+        "铜排温度最大值": "铜排温度最大值",
+        "铜排温度最大值簇编号": "铜排温度最大值簇编号",
+        "铜排温度最大值温度编号": "铜排温度最大值温度编号",
+        "铜排温度最小值": "铜排温度最小值",
+        "铜排温度最小值簇编号": "铜排温度最小值簇编号",
+        "铜排温度最小值温度编号": "铜排温度最小值温度编号",
+        "铜排温度平均值": "铜排温度平均值",
+        "铜排温度极差值": "铜排温度极差值",
         "簇SOC平均值": "簇SOC平均值",
         "簇SOC极差值": "簇SOC极差值",
         "簇电压平均值": "簇电压平均值",
@@ -2774,6 +2942,8 @@
       "主断分励脱扣": "主断分励脱扣",
       "风扇控制": "风扇控制",
       "直流供电KM控制": "直流供电KM控制",
+      "封波控制": "封波控制",
+      "清功率控制": "清功率控制",
       "高边1": "高边1",
       "高边2": "高边2",
       "高边3": "高边3",
@@ -2933,6 +3103,7 @@
       "remainingCapacity": "剩余容量",
       "status": "状态",
       "writeFailReason": "写失败原因",
+      "configurableDefaultParamRemainingCount": "可配置默认参数剩余次数",
       "productCode": "产品编码",
       "hardwareVersion": "硬件版本",
       "softwareVersion": "软件版本",
@@ -2941,12 +3112,14 @@
       "bcuProtocol": "BCU协议",
       "eventRecordVersion": "事件记录版本",
       "soxAlgorithmVersion": "SOX算法版本",
-      "mergeSplitAlgorithmVersion": "退并簇算法版本"
+      "mergeSplitAlgorithmVersion": "退并簇算法版本",
+      "configurableDefaultParamVersion": "可配置默认参数版本号"
     },
     "fields": {
       "sdCardTotalCapacity": "SD卡总容量",
       "sdCardRemainingCapacity": "SD卡剩余容量",
       "sdCardStatus": "SD卡状态",
+      "configurableDefaultParamRemainingCount": "可配置默认参数剩余次数",
       "bauProductCode": "BAU产品编码",
       "bauHardwareVersion": "BAU硬件版本号",
       "bauSoftwareVersion": "BAU软件版本号",
@@ -2955,7 +3128,8 @@
       "bauBcuProtocolVersion": "BAU-BCU协议版本号",
       "bauEventRecordVersion": "BAU事件记录版本号",
       "bauSoxAlgorithmVersion": "BAU-SOX算法版本号",
-      "bauMergeSplitAlgorithmVersion": "BAU-退并簇算法版本号"
+      "bauMergeSplitAlgorithmVersion": "BAU-退并簇算法版本号",
+      "bauConfigurableDefaultParamVersion": "BAU-可配置默认参数版本号"
     },
     "status": {
       "sdCardPathNotExists": "SD卡路径不存在",
@@ -2986,8 +3160,8 @@
       "startReading": "开始读取",
       "stopReading": "停止读取",
       "sendParameters": "下发参数",
-      "stackVoltageDifference": "堆端电压差值",
-      "stackCurrentDifference": "堆端电流差值"
+      "blockVoltageDifference": "堆端电压差值",
+      "blockCurrentDifference": "堆端电流差值"
     },
     "parameterClasses": {
       "clusterAlarm": "簇端报警参数",
@@ -3168,7 +3342,40 @@
     },
     "messages": {
       "noData": "暂无数据",
-      "selectBlock": "请选择堆"
+      "selectBlock": "请选择堆",
+      "flexMapPending": "等待 BAU 上报 DI/DO 映射（block_di_do_flexcfg_remap）…",
+      "flexMapUnassigned": "{ch}：映射表中未指定信号名称",
+      "flexMapLine": "{signal} · {channel}"
+    },
+    "flexSignals": {
+      "di": {
+        "1": "消防报警反馈",
+        "2": "消防故障反馈",
+        "3": "急停反馈",
+        "4": "消防释放反馈",
+        "5": "直流SPD反馈",
+        "6": "门禁反馈",
+        "7": "交流SPD反馈",
+        "8": "熔断器反馈",
+        "9": "水浸反馈",
+        "10": "微粒子监测1反馈",
+        "11": "微粒子监测2反馈",
+        "12": "电池仓温湿度反馈",
+        "13": "UPS反馈",
+        "14": "1#隔离开关反馈",
+        "15": "2#隔离开关反馈"
+      },
+      "do": {
+        "1": "1#BCP合闸控制",
+        "2": "1#BCP分闸控制",
+        "3": "2#BCP合闸控制",
+        "4": "2#BCP分闸控制",
+        "5": "运行指示灯",
+        "6": "故障指示灯",
+        "7": "辅助电源分励",
+        "8": "1#BMS故障",
+        "9": "2#BMS故障"
+      }
     },
     "parameters": {
       "系统DI输入状态": "系统DI输入状态",
@@ -3474,7 +3681,14 @@
       "select": "请选择"
     },
     "dialogs": {
-      "operationConfirmation": "操作确认"
+      "operationConfirmation": "操作确认",
+      "passwordVerification": "密码验证",
+      "passwordMessage": "复位系统端口参数为敏感操作，请输入加密密码以继续：",
+      "passwordLabel": "密码",
+      "passwordError": "密码错误，请重新输入"
+    },
+    "labels": {
+      "needPassword": "(下设需密码)"
     },
     "messages": {
       "invalidInput": "输入值无效",
@@ -3518,7 +3732,9 @@
       "下设手动控制SD卡记录": "下设手动控制SD卡记录",
       "下设堆SOC": "下设堆SOC",
       "查询接触器执行策略结果": "查询接触器执行策略结果",
-      "复位事件记录存储器": "复位事件记录存储器"
+      "复位事件记录存储器": "复位事件记录存储器",
+      "复位可配置默认参数次数": "复位可配置默认参数次数",
+      "擦除可配置默认参数区": "擦除可配置默认参数区"
     },
     "options": {
       "复位": "复位",
@@ -3644,6 +3860,9 @@
       "动力接插件2温度过高严重总故障": "动力接插件2温度过高严重总故障",
       "动力接插件2温度过高一般总故障": "动力接插件2温度过高一般总故障",
       "动力接插件2温度过高轻微总故障": "动力接插件2温度过高轻微总故障",
+      "铜排温度过高严重故障": "铜排温度过高严重故障",
+      "铜排温度过高一般故障": "铜排温度过高一般故障",
+      "铜排温度过高轻微故障": "铜排温度过高轻微故障",
       "单体压差过大严重故障": "单体压差过大严重故障",
       "单体压差过大一般故障": "单体压差过大一般故障",
       "单体压差过大轻微故障": "单体压差过大轻微故障",
@@ -3658,9 +3877,15 @@
       "BMU压差过大严重故障": "BMU压差过大严重故障",
       "BMU压差过大一般故障": "BMU压差过大一般故障",
       "BMU压差过大轻微故障": "BMU压差过大轻微故障",
+      "BMU动力接插件温差严重故障": "BMU动力接插件温差严重故障",
+      "BMU动力接插件温差一般故障": "BMU动力接插件温差一般故障",
+      "BMU动力接插件温差轻微故障": "BMU动力接插件温差轻微故障",
       "簇端过压严重故障": "簇端过压严重故障",
       "簇端过压一般故障": "簇端过压一般故障",
       "簇端过压轻微故障": "簇端过压轻微故障",
+      "簇端动力接插件温差严重故障": "簇端动力接插件温差严重故障",
+      "簇端动力接插件温差一般故障": "簇端动力接插件温差一般故障",
+      "簇端动力接插件温差轻微故障": "簇端动力接插件温差轻微故障",
       "簇端欠压轻微故障": "簇端欠压轻微故障",
       "绝缘电阻正对地轻微故障": "绝缘电阻正对地轻微故障",
       "绝缘电阻负对地轻微故障": "绝缘电阻负对地轻微故障",
@@ -3690,6 +3915,8 @@
       "消防反馈故障": "消防反馈故障",
       "MSD信号反馈故障": "MSD信号反馈故障",
       "急停反馈故障": "急停反馈故障",
+      "柜体风机反馈故障": "柜体风机反馈故障",
+      "熔断器反馈故障": "熔断器反馈故障",
       "主正高边驱动反馈故障": "主正高边驱动反馈故障",
       "主负高边驱动反馈故障": "主负高边驱动反馈故障",
       "预充高边驱动反馈故障": "预充高边驱动反馈故障",
@@ -3721,6 +3948,7 @@
       "BMU板载温度无效": "BMU板载温度无效",
       "动力接插件1温度无效": "动力接插件1温度无效",
       "动力接插件2温度无效": "动力接插件2温度无效",
+      "铜排温度无效": "铜排温度无效",
       "簇温度1无效": "簇温度1无效",
       "簇温度2无效": "簇温度2无效",
       "簇温度3无效": "簇温度3无效",
@@ -3739,7 +3967,10 @@
       "pack温度过温": "pack温度过温",
       "pack温度欠温": "pack温度欠温",
       "1号动力接插件过温": "1号动力接插件过温",
-      "2号动力接插件过温": "2号动力接插件过温"
+      "2号动力接插件过温": "2号动力接插件过温",
+      "铜排过温": "铜排过温",
+      "BMU动力接插件温差故障等级": "BMU动力接插件温差故障等级",
+      "簇端动力接插件温差故障等级": "簇端动力接插件温差故障等级"
     },
     "savedFaultMap": {
       "单体过压严重总故障（保留）": "单体过压严重总故障（保留）",
@@ -3952,6 +4183,12 @@
         "门禁故障信号": "门禁故障信号",
         "交流浪涌告警": "交流浪涌告警",
         "熔断器故障": "熔断器故障",
+        "熔断器反馈故障": "熔断器反馈故障",
+        "水浸故障": "水浸故障",
+        "微粒子监测1故障": "微粒子监测1故障",
+        "微粒子监测2故障": "微粒子监测2故障",
+        "电池仓温湿度故障": "电池仓温湿度故障",
+        "UPS反馈故障": "UPS反馈故障",
         "铁电存储器故障": "铁电存储器故障",
         "制冷设备通讯故障": "制冷设备通讯故障",
         "PCS通讯故障": "PCS通讯故障",
@@ -3959,6 +4196,8 @@
         "I/O控制板通讯故障": "I/O控制板通讯故障",
         "BCU通讯故障": "BCU通讯故障",
         "EMS通讯故障": "EMS通讯故障",
+        "电表设备通讯故障": "电表设备通讯故障",
+        "消防设备通讯故障": "消防设备通讯故障",
         "预留字段": "预留字段"
       },
       "blockTotalFault": {
@@ -4002,7 +4241,10 @@
         "单体SOC过高故障等级": "单体SOC过高故障等级",
         "单体SOC过低故障等级": "单体SOC过低故障等级",
         "簇间压差过大故障": "簇间压差过大故障",
-        "簇间电流差过大故障": "簇间电流差过大故障"
+        "簇间电流差过大故障": "簇间电流差过大故障",
+        "铜排过温告警等级": "铜排过温告警等级",
+        "BMU动力接插件温差上限告警等级": "BMU动力接插件温差上限告警等级",
+        "簇端动力接插件温差上限告警等级": "簇端动力接插件温差上限告警等级"
       },
       "blockCommLost": {
         "BCU1通讯失联": "BCU1通讯失联",
@@ -4323,11 +4565,11 @@
           "workStatus": "工作状态信息",
           "maxChargeCurrent": "当前系统最大允许充电电流(A)",
           "maxDischargeCurrent": "当前系统最大允许放电电流(A)",
-          "stackSoc": "电池堆SOC(%)",
+          "blockSoc": "电池堆SOC(%)",
           "chargeableEnergy": "电池堆可充电量(kWh)",
           "dischargeableEnergy": "电池堆可放电量(kWh)",
-          "stackVoltage": "电池堆总电压(V)",
-          "stackCurrent": "电池堆总电流(A)",
+          "blockVoltage": "电池堆总电压(V)",
+          "blockCurrent": "电池堆总电流(A)",
           "cellMaxSoc": "电池堆单体最高SOC(%)",
           "cellMinSoc": "电池堆单体最低SOC(%)",
           "cellMaxVoltage": "电池堆单体最高电压(V)",
@@ -4892,7 +5134,30 @@
       "subtitle": "堆消防设备数据监控",
       "blockSelect": "堆选择",
       "fieldName": "字段名称",
-      "fieldValue": "字段值"
+      "fieldValue": "字段值",
+      "types": {
+        "none": "无消防设备",
+        "yijie": "翼捷消防设备"
+      },
+      "yijie": {
+        "fields": {
+          "dataLength": "数据长度",
+          "fireAddress": "消防设备地址",
+          "commStatus": "消防设备通讯状态",
+          "hydrogen": "氢气",
+          "carbonMonoxide": "一氧化碳"
+        },
+        "valueMap": {
+          "fireAddress": {
+            "1": "第1堆",
+            "2": "第2堆"
+          },
+          "commStatus": {
+            "0": "正常",
+            "1": "通讯异常"
+          }
+        }
+      }
     }
     ,
     "deh": {
@@ -5071,6 +5336,23 @@
       "types": {
         "none": "无电表",
         "dtsd1352": "安科瑞DTSD1352"
+      },
+      "dtsd1352": {
+        "fields": {
+          "dataLength": "数据长度",
+          "meterAddress": "电表地址",
+          "commStatus": "电表通讯状态"
+        },
+        "valueMap": {
+          "meterAddress": {
+            "1": "第1堆",
+            "2": "第2堆"
+          },
+          "commStatus": {
+            "0": "正常",
+            "1": "通讯异常"
+          }
+        }
       }
     }
   },
@@ -5130,7 +5412,7 @@
       "status": "外设状态"
     },
     "kpi": {
-      "stackStatus": "堆运行状态",
+      "blockStatus": "堆运行状态",
       "totalCharge": "累计充电量(kWh)",
       "totalDischarge": "累计放电量(kWh)",
       "ratedEnergy": "堆额定电量(kWh)",

@@ -192,14 +192,14 @@
           severity="secondary"
           outlined
           :loading="testingConnection"
-          :disabled="!formData.host || mqttStore.isConnecting"
+          :disabled="!formData.host || mqttStore.isConnecting || mqttStore.isReconnecting"
           @click="testConnection"
         />
         <Button 
           :label="t('mqtt.actions.saveAndConnect')" 
           severity="success"
           :loading="mqttStore.isConnecting || mqttStore.isReconnecting"
-          :disabled="!formData.host"
+          :disabled="!formData.host || mqttStore.isConnecting || mqttStore.isReconnecting"
           @click="saveAndConnect"
         />
         <Button 

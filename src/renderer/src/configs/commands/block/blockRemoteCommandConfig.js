@@ -180,6 +180,38 @@ export const blockRemoteCommandConfig = {
     ]
   },
 
+  // 10. 复位可配置默认参数次数（固定堆1，密码0574）
+  reset_flexcfg_area_times: {
+    id: 'reset_flexcfg_area_times',
+    name: '复位可配置默认参数次数',
+    topic: 'bms/host/s2d/b1/reset_flexcfg_area_times',
+    responseTopic: 'bms/bau/d2s/b1/reset_flexcfg_area_times',
+    dataType: 'u16', // 控制字2字节
+    uiType: 'input',
+    needConfirm: true,
+    confirmMessage: '确定要复位可配置默认参数次数吗？',
+    description: '输入密码0574后下设复位可配置默认参数次数（下发值为574）',
+    inputType: 'password', // 密码输入，结合useRemoteCommand中的requiredValue校验
+    requiredValue: 574, // useRemoteCommand内部校验下发值为574；前端弹窗单独校验0574
+    placeholder: '请输入密码'
+  },
+
+  // 11. 擦除可配置默认参数区（固定堆1，密码0574）
+  erase_flexcfg_area: {
+    id: 'erase_flexcfg_area',
+    name: '擦除可配置默认参数区',
+    topic: 'bms/host/s2d/b1/erase_flexcfg_area',
+    responseTopic: 'bms/bau/d2s/b1/erase_flexcfg_area',
+    dataType: 'u16', // 控制字2字节
+    uiType: 'input',
+    needConfirm: true,
+    confirmMessage: '确定要擦除可配置默认参数区吗？',
+    description: '输入密码0574后下设擦除可配置默认参数区（下发值为574）',
+    inputType: 'password', // 密码输入
+    requiredValue: 574, // 内部校验下发值为574
+    placeholder: '请输入密码'
+  },
+
   // 6. 查询接触器执行策略结果（堆级反馈查询命令）
   get_batt_stack_ctrl_switch_result: {
     id: 'get_batt_stack_ctrl_switch_result',

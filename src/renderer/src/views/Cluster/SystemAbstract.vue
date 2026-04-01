@@ -24,7 +24,8 @@ const CLASS_MAP = {
   CELL_SOH : '电芯SOH概要',
   BMU_VOLT: 'BMU电压概要',
   BMU_TEMP: 'BMU温度概要',
-  BMU_PLUGIN_TEMP: 'CNR温度概要'  // 动力接插件温度对应CNR温度概要
+  BMU_PLUGIN_TEMP: 'CNR温度概要',  // 动力接插件温度对应CNR温度概要
+  AFE_BUSBAR_TEMP: '铜排温度概要'  // 铜排温度概要信息
 }
 
 // 数据类型对应的小数位数配置
@@ -35,7 +36,8 @@ const DECIMAL_CONFIG = {
   CELL_SOH: 0,         // SOH：整数
   BMU_VOLT: 1,         // BMU电压：1位小数
   BMU_TEMP: 1,         // BMU温度：1位小数
-  BMU_PLUGIN_TEMP: 1   // 动力接插件温度：1位小数
+  BMU_PLUGIN_TEMP: 1,  // 动力接插件温度：1位小数
+  AFE_BUSBAR_TEMP: 1   // 铜排温度：1位小数
 }
 
 // 服务器发送的原始中文标签（用于数据匹配）
@@ -74,6 +76,11 @@ const ORIGINAL_PICK_MAP = {
     '极柱最大温度1(℃)','极柱最大温度2(℃)','极柱最大温度3(℃)',
     '平均温度(℃)','极柱最小温度1(℃)','极柱最小温度2(℃)',
     '极柱最小温度3(℃)','温度极差(℃)'
+  ],
+  AFE_BUSBAR_TEMP: [
+    '铜排最大温度1(℃)','铜排最大温度2(℃)','铜排最大温度3(℃)',
+    '平均温度(℃)','铜排最小温度1(℃)','铜排最小温度2(℃)',
+    '铜排最小温度3(℃)','温度极差(℃)'
   ]
 }
 
@@ -113,6 +120,11 @@ const PICK_MAP = computed(() => ({
     `${t('batteryInfo.summary.bmuPluginTemp.maxTemp1')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.maxTemp2')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.maxTemp3')}(℃)`,
     `${t('batteryInfo.summary.bmuPluginTemp.avgTemp')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.minTemp1')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.minTemp2')}(℃)`,
     `${t('batteryInfo.summary.bmuPluginTemp.minTemp3')}(℃)`, `${t('batteryInfo.summary.bmuPluginTemp.tempDiff')}(℃)`
+  ],
+  AFE_BUSBAR_TEMP: [
+    `${t('batteryInfo.summary.afeBusbarTemp.maxTemp1')}(℃)`, `${t('batteryInfo.summary.afeBusbarTemp.maxTemp2')}(℃)`, `${t('batteryInfo.summary.afeBusbarTemp.maxTemp3')}(℃)`,
+    `${t('batteryInfo.summary.afeBusbarTemp.avgTemp')}(℃)`, `${t('batteryInfo.summary.afeBusbarTemp.minTemp1')}(℃)`, `${t('batteryInfo.summary.afeBusbarTemp.minTemp2')}(℃)`,
+    `${t('batteryInfo.summary.afeBusbarTemp.minTemp3')}(℃)`, `${t('batteryInfo.summary.afeBusbarTemp.tempDiff')}(℃)`
   ]
 }))
 
@@ -292,7 +304,15 @@ function getNumberFieldName(valueLabel) {
     '极柱最大温度3(℃)': '极柱最大温度编号3',
     '极柱最小温度1(℃)': '极柱最小温度编号1',
     '极柱最小温度2(℃)': '极柱最小温度编号2',
-    '极柱最小温度3(℃)': '极柱最小温度编号3'
+    '极柱最小温度3(℃)': '极柱最小温度编号3',
+
+    // 铜排温度
+    '铜排最大温度1(℃)': '铜排最大温度编号1',
+    '铜排最大温度2(℃)': '铜排最大温度编号2',
+    '铜排最大温度3(℃)': '铜排最大温度编号3',
+    '铜排最小温度1(℃)': '铜排最小温度编号1',
+    '铜排最小温度2(℃)': '铜排最小温度编号2',
+    '铜排最小温度3(℃)': '铜排最小温度编号3'
   }
   
   return numberFieldMap[valueLabel] || null // 平均值、极差等不需要编号

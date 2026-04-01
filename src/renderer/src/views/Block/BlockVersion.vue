@@ -35,6 +35,10 @@
                 <Tag :value="sdCardWriteFailReasonText" :severity="getSdCardWriteFailSeverity()" />
               </div>
             </div>
+            <div class="info-item">
+              <span class="info-label">{{ t('blockVersionPage.labels.configurableDefaultParamRemainingCount') }}</span>
+              <span class="info-value">{{ getVersionValue('可配置默认参数剩余次数') }}</span>
+            </div>
           </div>
         </template>
       </Card>
@@ -103,6 +107,10 @@
               }}</span>
               <span class="info-value">{{ getVersionValue('BAU-退并簇算法版本号') }}</span>
             </div>
+            <div class="info-item">
+              <span class="info-label">{{ t('blockVersionPage.labels.configurableDefaultParamVersion') }}</span>
+              <span class="info-value">{{ getVersionValue('BAU-可配置默认参数版本号') }}</span>
+            </div>
           </div>
         </template>
       </Card>
@@ -129,6 +137,7 @@ const FIELD_TEMPLATES = {
     'SD卡剩余容量',
     'SD卡状态',
     'SD卡写失败原因',
+    '可配置默认参数剩余次数',
     'BAU产品编码',
     'BAU硬件版本号',
     'BAU软件版本号',
@@ -137,7 +146,8 @@ const FIELD_TEMPLATES = {
     'BAU-BCU协议版本号',
     'BAU事件记录版本号',
     'BAU-SOX算法版本号',
-    'BAU-退并簇算法版本号'
+    'BAU-退并簇算法版本号',
+    'BAU-可配置默认参数版本号'
   ]
 }
 

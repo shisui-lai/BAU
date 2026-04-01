@@ -17,13 +17,21 @@
         <template #body="{ data: row }">{{ row.left ? translateLabel(row.left) : '' }}</template>
       </Column>
       <Column :header="t('peripheral.deh.fieldValue')" :style="{ width: '25%' }" bodyClass="value-col">
-        <template #body="{ data: row }">{{ row.left ? formatValue(row.left) : '' }}</template>
+        <template #body="{ data: row }">
+          <span v-if="row.left" :class="{ 'fault-active': isFaultValue(row.left) }">
+            {{ formatValue(row.left) }}
+          </span>
+        </template>
       </Column>
       <Column :header="t('peripheral.deh.fieldName')" :headerStyle="{ width: '25%' }">
         <template #body="{ data: row }">{{ row.right ? translateLabel(row.right) : '' }}</template>
       </Column>
       <Column :header="t('peripheral.deh.fieldValue')" :style="{ width: '25%' }" bodyClass="value-col">
-        <template #body="{ data: row }">{{ row.right ? formatValue(row.right) : '' }}</template>
+        <template #body="{ data: row }">
+          <span v-if="row.right" :class="{ 'fault-active': isFaultValue(row.right) }">
+            {{ formatValue(row.right) }}
+          </span>
+        </template>
       </Column>
     </DataTable>
   </div>
@@ -41,6 +49,8 @@ import { DEH_SANHETONGFEI_FIELDS, DEH_YINGWEIKE_U3EC_FIELDS, DEH_EJ000113_FIELDS
 const { t, te } = useI18n()
 const blockStore = useBlockStore()
 usePageTypeDetection()
+
+const faultOnText = computed(() => t('faultOverview.hardwareLegend.faultOn'))
 
 const selectedBlockId = computed(() => {
   const selected = blockStore.selectedBlockForView
@@ -104,6 +114,17 @@ const parseRawData = (rawData) => {
 
 const displayData = computed(() => dehData.value.length > 0 ? dehData.value : getTemplateData())
 
+// 文字为“故障”或者“有故障”时显示红色
+const isFaultTextMatched = (v) => {
+  return v === faultOnText.value || v === '故障'
+}
+
+const isFaultValue = (field) => {
+  const v = formatValue(field)
+  if (!v || v === '---') return false
+  return isFaultTextMatched(v)
+}
+
 const leftData = computed(() => { const arr = (displayData.value || []).filter(el => el?.hide !== true); const half = Math.ceil(arr.length / 2); return arr.slice(0, half) })
 const rightData = computed(() => { const arr = (displayData.value || []).filter(el => el?.hide !== true); const half = Math.ceil(arr.length / 2); return arr.slice(half) })
 const pairedRows = computed(() => { const maxLen = Math.max(leftData.value.length, rightData.value.length); const rows = []; for (let i=0;i<maxLen;i++) rows.push({ left: leftData.value[i], right: rightData.value[i] }); return rows })
@@ -142,7 +163,7 @@ const handleBlockCommDevCfg = (event, msg) => {
   const data = parsed?.data || {}
   const dehType = typeof data.DehumidifierType === 'number' ? data.DehumidifierType : null
   if (dehType === null || Number.isNaN(dehType)) return
-  const normalized = dehType === 1 ? 1 : 0
+  const normalized = dehType >= 1 && dehType <= 3 ? dehType : 0
   selectedDehType.value = normalized
 }
 
@@ -210,4 +231,8 @@ watch(
 <style scoped>
 .fixed-table .p-datatable-table { table-layout: fixed; }
 .value-col { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fault-active {
+  color: #dc3545;
+  font-weight: 600;
+}
 </style>

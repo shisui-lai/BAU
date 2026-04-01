@@ -1,0 +1,298 @@
+三河同飞除湿空调数据结构						
+序号	参数名	单位	范围	偏移量	数据类型	备注
+1	"Machine Status
+整机状态"		[0,1]	0	uint16_t	0=停止，1=运行
+2	"Internal Fan
+内风机"		[0,1]	0	uint16_t	0=停止，1=运行
+3	"External Fan
+外风机"		[0,1]	0	uint16_t	0=停止，1=运行
+4	"Compressor
+压缩机"		[0,1]	0	uint16_t	0=停止，1=运行
+5	"Electric Heater
+电加热"		[0,1]	0	uint16_t	0=停止，1=运行
+6	"Reserved
+保留"			0	uint16_t	
+7	"Reserved
+保留"			0	uint16_t	
+8	"Reserved
+保留"			0	uint16_t	
+9	"Reserved
+保留"			0	uint16_t	
+10	"Defrost Temperature
+融霜温度"	0.1℃		0	uint16_t	实际值*10上传
+11	"Reserved
+保留"			0	uint16_t	
+12	"Condensation Temperature
+冷凝温度"	0.1℃		0	uint16_t	实际值*10上传
+13	"Cabinet Temperature
+柜内温度"	0.1℃		0	uint16_t	实际值*10上传
+14	"Cabinet Humidity
+柜内湿度"	%		0	uint16_t	实际值*1上传
+15	"Air Outlet Temperature
+出风温度"	0.1℃		0	uint16_t	实际值*10上传
+16	"Reserved
+保留"			0	uint16_t	
+17	"Reserved
+保留"			0	uint16_t	
+18	"Reserved
+保留"			0	uint16_t	
+19	"High Temperature Alarm
+高温告警"		00 正常，01 报警	0	uint16_t	只报警，不停机
+20	"Low Temperature Alarm
+低温告警"		00 正常，01 报警	0	uint16_t	只报警，不停机
+21	"High Humidity Alarm
+高湿告警"		00 正常，01 报警	0	uint16_t	只报警，不停机
+22	"Low Humidity Alarm
+低湿告警"		00 正常，01 报警	0	uint16_t	只报警，不停机
+23	"Coil Anti-Freeze
+盘管防冻"		00 正常，01 报警	0	uint16_t	不开压机，自动复位
+24	"Reserved
+保留"			0	uint16_t	
+25	"Defrost Probe Fault
+容霜探头故障"		00 正常，01 报警	0	uint16_t	只报警，不停机
+26	"Reserved
+保留"			0	uint16_t	
+27	"Condensation Probe Fault
+冷凝探头故障"		00 正常，01 报警	0	uint16_t	只报警，自动复位
+28	"Cabinet Temperature Probe Fault
+柜内温度探头故障"		00 正常，01 报警	0	uint16_t	"不开压机，不开加热，
+自动复位"
+29	"Air Outlet Humidity Probe Fault
+出风湿度探头故障"		00 正常，01 报警	0	uint16_t	
+30	"Humidity Probe Fault
+湿度探头故障"		00 正常，01 报警	0	uint16_t	"只报警，不停机，
+自动复位"
+31	"Internal Fan Fault
+内风机故障"		00 正常，01 报警	0	uint16_t	"停整机，手动复位或
+掉电重启上电复位"
+32	"Reserved
+保留"			0	uint16_t	
+33	"Compressor Fault
+压缩机故障"		00 正常，01 报警	0	uint16_t	不开压机，手动复位
+34	"Reserved
+保留"			0	uint16_t	
+35	"Reserved
+保留"			0	uint16_t	
+36	"High Pressure Alarm
+高压告警"		00 正常，01 报警	0	uint16_t	"不开压机，2H 后自动
+复位或掉电重启复位"
+37	"Low Pressure Alarm
+低压告警"		00 正常，01 报警	0	uint16_t	"不开压机，手动复位
+或掉电重启复位"
+38	"Reserved
+保留"			0	uint16_t	
+39	"Phase Sequence Alarm
+相序报警"		00 正常，01 报警	0	uint16_t	不停机，手动复位或掉电重启复位
+40	"Reserved
+保留"			0	uint16_t	
+41	"Refrigeration Point
+制冷点"	℃	[20,50]	0	uint16_t	"实际值*1 上传
+制冷设定点须大于加热设定点"
+42	"Refrigeration Hysteresis
+制冷回差"	℃	[1,15]	0	uint16_t	实际值*1 上传
+43	"Heating Point
+加热点"	℃	[-40,35]	0	uint16_t	"实际值*1 上传
+加热设定点须小于制冷设定点"
+44	"Heating Hysteresis
+加热回差"	℃	[1,15]	0	uint16_t	实际值*1 上传
+45	"Dehumidification Point
+除湿点"	%	[60,90]	0	uint16_t	实际值*1 上传
+46	"Dehumidification Hysteresis
+除湿回差"	%	[1,50]	0	uint16_t	实际值*1 上传
+47	"Cabinet Temperature Overheat Point
+柜内温度过高点"	℃	[30,70]	0	uint16_t	实际值*1 上传
+48	"Cabinet Temperature Underheat Point
+柜内温度过低点"	℃	[-40,30]	0	uint16_t	实际值*1 上传
+49	"Cabinet Humidity Overheat Point
+柜内湿度过高点"	%	[50,99]禁用	0	uint16_t	"实际值*1 上传
+柜内湿度过高点=100 时，禁用柜内湿度过高报警"
+50	"Reserved
+保留"			0	uint16_t	
+51	"Monitoring Switch
+监控开关机"		[0,1]	0	uint16_t	"0x01 开机
+0x00 关机，其它无效"
+52	"Forced Mode
+强制模式"		[0,4]	0	uint16_t	"0 为自动
+1 为强制制冷
+2 为强制制热
+3 为强制送风
+4 为强制待机"
+
+
+
+英维克U3-EC除湿机数据结构						
+序号	参数名	单位	范围	偏移量	数据类型	备注
+1	"Software Version
+软件版本"					
+2	"Machine Status
+整机状态"		"(0: Stop, 1: Run)
+（0：停止，1：运行）"			
+3	"Internal Fan
+内风机"					
+4	"External Fan
+外风机"					
+5	"Compressor
+压缩机"					
+6	"Electric Heater
+电加热"					
+7	"Emergency Fan
+应急风机"					
+8	"Coil Temperature
+盘管温度"	0.1℃				实际值*10 上传
+9	"Outdoor Temperature
+室外温度"	0.1℃				实际值*10 上传
+10	"Condensation Temperature
+冷凝温度"	0.1℃				实际值*10 上传
+11	"Indoor Temperature
+室内温度"	0.1℃				实际值*10 上传
+12	"Humidity
+湿度"	%				实际值*1 上传
+13	"Exhaust Temperature
+排气温度"	0.1℃				实际值*10 上传
+14	"Current
+电流"	0.001A				实际值*1000 上传
+15	"AC Voltage
+交流电压"	V				
+16	"DC Voltage
+直流电压"	0.1V				实际值*10 上传
+17	"High Temperature Alarm
+高温告警"					"0x00 正常
+0x01 告警"
+18	"Low Temperature Alarm
+低温告警"					
+19	"High Humidity Alarm
+高湿告警"					
+20	"Low Humidity Alarm
+低湿告警"					
+21	"Coil Anti-Freeze
+盘管防冻"					
+22	"Exhaust High Temperature
+排气高温"					
+23	"Coil Temperature Sensor Failure
+盘管温感失效"					
+24	"Outdoor Temperature Sensor Failure
+室外温感失效"					
+25	"Condensation Temperature Sensor Failure
+冷凝温感失效"					
+26	"Indoor Temperature Sensor Failure
+内温感失效"					
+27	"Exhaust Temperature Sensor Failure
+排气温感失效"					
+28	"Humidity Sensor Failure
+湿感失效"					
+29	"Internal Fan Fault
+内风机故障"					
+30	"External Fan Fault
+外风机故障"					
+31	"Compressor Fault
+压缩机故障"					
+32	"Electric Heater Fault
+电加热故障"					
+33	"Emergency Fan Fault
+应急风机故障"					
+34	"High Pressure Alarm
+高压告警"					
+35	"Low Pressure Alarm
+低压告警"					
+36	"Water Leakage Alarm
+水浸告警"					
+37	"Smoke Alarm
+烟感告警"					
+38	"Access Control Alarm
+门禁告警"					
+39	"High Pressure Lock
+高压锁定"					
+40	"Low Pressure Lock
+低压锁定"					
+41	"Exhaust Lock
+排气锁定"					
+42	"AC Overvoltage
+交流过压"					
+43	"AC Undervoltage
+交流欠压"					
+44	"AC Power Failure
+交流掉电"					
+45	"Phase Loss
+缺相"					
+46	"Frequency Anomaly
+频率异常"					
+47	"Reverse Phase
+逆相"					
+48	"DC Overvoltage
+直流过压"					
+49	"DC Undervoltage
+直流欠压"					
+50	"Power Fault
+电源故障"					
+51	"Refrigeration Point
+制冷点"	℃	[15,50]	0	uint16_t	"实际值*1 上传
+制冷设定点须大于加热设定点"
+52	"Refrigeration Hysteresis
+制冷回差"	℃	[1,10]	0	uint16_t	实际值*1 上传
+53	"Heating Point
+加热点"	℃	[-15,25]	0	int16_t	"实际值*1 上传
+加热设定点须小于制冷设定点"
+54	"Heating Hysteresis
+加热回差"	℃	[1,10]	0	uint16_t	实际值*1 上传
+55	"Dehumidification Point
+除湿点"	%	[40,90]	0	uint16_t	实际值*1 上传
+56	"Dehumidification Hysteresis
+除湿回差"	%	[1,30]	0	uint16_t	实际值*1 上传
+57	"Temperature Overheat Point
+高温点"	℃	[25,80]	0	uint16_t	实际值*1 上传
+58	"Temperature Underheat Point
+低温点"	℃	[-20,15]	0	uint16_t	实际值*1 上传
+59	"Humidity Overheat Point
+高湿点"	%	[0,100]	0	uint16_t	实际值*1 上传
+60	"Internal Fan Stop Point
+内风机停止点"	℃	[-20,50]	0	uint16_t	实际值*1 上传
+61	"Current Run Mode
+当前运行模式"		"0：待机；
+1：送风；
+2：保留；
+3：除湿；
+4：制冷；
+5：加热；"	
+
+
+
+E-J-000113除湿机数据结构							
+注：下面两个数据区，是连续的数据地址							
+寄存器		状态名称	读写	数据类型	回读的值（bit）	写入的值	
+十进制	16进制						
+34	0x22	控湿回路状态	读	bit	0：停止 1：开启		
+35	0x23	控温回路状态	读	bit	0：停止 1：开启	0000：升温 FF00：降温	
+36	0x24	控温方式	读/写	bit	0：降温 1：升温		
+37	0x25	风机模块回路状态	读	bit	0：正常 1：故障		
+38	0x26	除湿模块回路状态	读	bit	0：正常 1：故障		
+39	0x27	湿度传感器状态	读	bit	0：正常 1：故障		
+40	0x28	外部温度传感器状态	读	bit	0：正常 1：故障		
+41	0x29	备用	备用	bit	备用		
+42	0x2A	化霜状态	读	bit	0：正常 1：正在化霜		
+43	0x2B	控湿手工开关	读/写	bit	0：自动 1：手动开	FF00：开启 0000：关闭	
+44	0x2C	控温手动开关	读/写	bit	0：自动 1：手动开	FF00：开启 0000：关闭	
+45	0x2D	高温告警	读	bit	0：正常 1：告警		
+46	0x2E	露点温度回路工作状态	读	bit	0：关闭 1：开启	部分型号支持	
+							
+寄存器		状态名称	单位	数据类型	变比	读写	值说明
+十进制	16进制						
+1	0x1	环境温度值	℃	Sint16	/10	读	有符号
+2	0x2	环境湿度值	%RH	Uint16	/10	读	
+3	0x3	备用2					
+4	0x4	露点温度回路工作状态	℃	Sint16	/10	读	部分型号支持
+5	0x5	备用3					
+6	0x6	备用4					
+7	0x7	备用5					
+8	0x8	控温开启值	℃	Uint16	/10	读/写	取值范围：1-85
+9	0x9	控温停止值	℃	Uint16	/10	读/写	"升温：取值范围：启动值-3~启动值-19
+降温：取值范围：启动子+3~启动值+19"
+10	0xA	控湿开启值	%RH	Uint16	/10	读/写	取值范围：25-98
+11	0xB	控湿关闭值	%RH	Uint16	/10	读/写	取值范围：启动值-3~启动值-19
+12	0xC	高温报警上限值	℃	Uint16	/10	读/写	取值范围：60-95
+13	0xD	高温报警下限值	℃	Uint16	/10	读/写	取值范围：30-60
+14	0xE	露点温度启动值	℃	Uint16	/10	读/写	取值范围：5-80，部分型号支持
+15	0xF	露点温度回差值	℃	Uint16	/10	读/写	取值范围：1-10，部分型号支持
+		
+
+
+

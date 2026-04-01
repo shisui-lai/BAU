@@ -15,6 +15,30 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 
+// 堆报警阈值页面专用范围规则：仅作用于本页面，不影响其他页面的通用校验
+function getBlockAlarmThresholdRange(param) {
+  const type = String(param?.type || '').toLowerCase()
+  if (type === 'u16') return { min: 0, max: 65535 }
+  if (type === 's16') return { min: 0, max: 32767 }
+  return null
+}
+
+// 在通用数值校验通过后，追加本页面的业务范围校验
+function validateBlockAlarmThresholdRange(param, numericValue, i18n) {
+  const { t, te } = i18n || {}
+  const customRange = getBlockAlarmThresholdRange(param)
+  if (!customRange) return { valid: true }
+  if (numericValue < customRange.min || numericValue > customRange.max) {
+    const rangeText = `${customRange.min} ~ ${customRange.max}`
+    const msg =
+      te && te('toast.remoteControl.outOfRange')
+        ? t('toast.remoteControl.outOfRange', { range: rangeText })
+        : `越界范围：${rangeText}`
+    return { valid: false, message: msg }
+  }
+  return { valid: true }
+}
+
 const toastService = useToast()
 const blockStore = useBlockStore()
 const { t, locale, te } = useI18n()
@@ -158,6 +182,11 @@ function sendParametersWithValidation() {
         errors.push(`${p.label}: ${res.message}`)
         continue
       }
+      const rangeRes = validateBlockAlarmThresholdRange(p, Number(res.value), { t, te })
+      if (!rangeRes.valid) {
+        errors.push(`${p.label}: ${rangeRes.message}`)
+        continue
+      }
       updates.push({ key: p.key, value: res.value })
       continue
     }
@@ -171,6 +200,11 @@ function sendParametersWithValidation() {
     const res = validateNumericInput(p, String(val), { t, te })
     if (!res.valid) {
       errors.push(`${p.label}: ${res.message}`)
+      continue
+    }
+    const rangeRes = validateBlockAlarmThresholdRange(p, Number(res.value), { t, te })
+    if (!rangeRes.valid) {
+      errors.push(`${p.label}: ${rangeRes.message}`)
       continue
     }
     updates.push({ key: p.key, value: res.value })

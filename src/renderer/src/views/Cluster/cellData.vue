@@ -48,6 +48,7 @@ const DATA_TYPE_MAP = computed(() => ({
   BMU_VOLT:         { label: t('batteryInfo.dataTypes.bmuVolt'),     decimals: 1 },
   BMU_TEMP:         { label: t('batteryInfo.dataTypes.bmuTemp'),     decimals: 1 },
   BMU_PLUGIN_TEMP:  { label: t('batteryInfo.dataTypes.bmuPluginTemp'),     decimals: 1 },
+  AFE_BUSBAR_TEMP:  { label: t('batteryInfo.dataTypes.afeBusbarTemp'),     decimals: 1 },  // 铜排温度概要
   BMU_SOC:          { label: t('batteryInfo.dataTypes.bmuSOC'),      decimals: 1 },    // 协议修改新增
   // BMU_PLUGIN_TEMP2:  { label: '动力接插件温度2',     decimals: 1 }
   //decimals 保留小数位数，-1 表示不显示小数
@@ -729,6 +730,8 @@ watch(activeView, (newView, oldView) => {
     t('batteryInfo.clusterInfo.insulationRPlus'), t('batteryInfo.clusterInfo.insulationRMinus'),
     t('batteryInfo.clusterInfo.temperature1'), t('batteryInfo.clusterInfo.temperature2'), t('batteryInfo.clusterInfo.temperature3'), t('batteryInfo.clusterInfo.temperature4'), t('batteryInfo.clusterInfo.temperature5'),
     t('batteryInfo.clusterInfo.clusterSOC'), t('batteryInfo.clusterInfo.clusterRealSOC'), t('batteryInfo.clusterInfo.clusterSOH'), t('batteryInfo.clusterInfo.clusterSOE'), t('batteryInfo.clusterInfo.ocvExecCount'),
+    t('batteryInfo.clusterInfo.clusterPluginTempDiff'),
+    t('batteryInfo.clusterInfo.clusterPluginTempDiffPcs'),
     t('batteryInfo.clusterInfo.maxChargePower'), t('batteryInfo.clusterInfo.maxDischargePower'),
     t('batteryInfo.clusterInfo.singleChargeEnergy'), t('batteryInfo.clusterInfo.singleDischargeEnergy'),
     t('batteryInfo.clusterInfo.singleChargeCapacity'), t('batteryInfo.clusterInfo.singleDischargeCapacity'),
@@ -757,6 +760,9 @@ watch(activeView, (newView, oldView) => {
     '簇SOE(%)': t('batteryInfo.clusterInfo.clusterSOE'),
     '真实SOC(%)': t('batteryInfo.clusterInfo.clusterRealSOC'),
     'OCV执行次数': t('batteryInfo.clusterInfo.ocvExecCount'),
+    '簇端动力接插件温差值(℃)': t('batteryInfo.clusterInfo.clusterPluginTempDiff'),
+    '簇端动力接插件电池侧温差值(℃)': t('batteryInfo.clusterInfo.clusterPluginTempDiff'),
+    '簇端动力接插件PCS测温差值(℃)': t('batteryInfo.clusterInfo.clusterPluginTempDiffPcs'),
     '默认参数剩余次数': t('batteryInfo.clusterInfo.defaultParamRemainTimes'),
     '最大允充功率(kW)': t('batteryInfo.clusterInfo.maxChargePower'),
     '最大允放功率(kW)': t('batteryInfo.clusterInfo.maxDischargePower'),
@@ -797,6 +803,8 @@ watch(activeView, (newView, oldView) => {
     [t('batteryInfo.clusterInfo.clusterSOE')]: t('batteryInfo.units.percentage'),
     [t('batteryInfo.clusterInfo.clusterRealSOC')]: t('batteryInfo.units.percentage'),
     [t('batteryInfo.clusterInfo.ocvExecCount')]: '',
+    [t('batteryInfo.clusterInfo.clusterPluginTempDiff')]: t('batteryInfo.units.temperature'),
+    [t('batteryInfo.clusterInfo.clusterPluginTempDiffPcs')]: t('batteryInfo.units.temperature'),
     [t('batteryInfo.clusterInfo.maxChargePower')]: t('batteryInfo.units.power'),
     [t('batteryInfo.clusterInfo.maxDischargePower')]: t('batteryInfo.units.power'),
     [t('batteryInfo.clusterInfo.singleChargeEnergy')]: t('batteryInfo.units.energy'),
@@ -808,7 +816,7 @@ watch(activeView, (newView, oldView) => {
 
   function accentClass(label){
     if (/电压|绝缘 R\+|绝缘 R-|预充电压/.test(label)) return 'accent-blue'
-    if (/温度/.test(label)) return 'accent-amber'
+    if (/温度|温差/.test(label)) return 'accent-amber'
     if (/SOC|真实SOC/.test(label)) return 'accent-cyan'
     if (/SOH|SOE/.test(label)) return 'accent-cyan'
     if (/功率|电量|容量/.test(label)) return 'accent-purple'
@@ -962,6 +970,7 @@ watch(activeView, (newView, oldView) => {
     if (activeView.value === 'BMU_VOLT') return ['BMU电压'];
     if (activeView.value === 'BMU_TEMP') return ['BMU电路板温度'];
     if (activeView.value === 'BMU_PLUGIN_TEMP') return ['动力接插件温度1', '动力接插件温度2'];
+    if (activeView.value === 'AFE_BUSBAR_TEMP') return ['铜排温度'];
     if (activeView.value === 'BMU_SOC') return ['BMU SOC'];
     // if (activeView.value === 'BMU_PLUGIN_TEMP2') return ['动力接插件温度2'];
     return [];
@@ -982,6 +991,13 @@ watch(activeView, (newView, oldView) => {
     return `BMU${bmuNumber}-${pluginNumber}(℃) #${globalIndex}`
   }
 
+  // 铜排温度标签转换：BMU1-AFE1 铜排温度(℃) → BMU1-AFE1(℃)，与其他 BMU 分类风格一致
+  function transformAFEBusbarLabel(originalLabel) {
+    const match = originalLabel.match(/^BMU(\d+)-AFE(\d+)\s/)
+    if (match) return `BMU${match[1]}-AFE${match[2]}(℃)`
+    return originalLabel
+  }
+
   // BMU标签转换函数
   function transformBMULabel(originalLabel, dataType) {
     // 从原标签中提取BMU编号：BMU1 SOC(%) → BMU1 SOC(%)
@@ -1000,7 +1016,7 @@ watch(activeView, (newView, oldView) => {
   }
 
   const bmuRows = computed(() => {
-    if (!['BMU_VOLT', 'BMU_TEMP', 'BMU_PLUGIN_TEMP', 'BMU_SOC'].includes(activeView.value)) {
+    if (!['BMU_VOLT', 'BMU_TEMP', 'BMU_PLUGIN_TEMP', 'BMU_SOC', 'AFE_BUSBAR_TEMP'].includes(activeView.value)) {
       return [];
     }
     const secs = pickPack(selectedCluster.value, NEED_FIELDS.value) || []
@@ -1034,6 +1050,16 @@ watch(activeView, (newView, oldView) => {
       }
 
       return reorderedData
+    }
+
+    // 铜排温度：转换标签格式，与其他 BMU 分类保持一致
+    if (activeView.value === 'AFE_BUSBAR_TEMP') {
+      return secs.flatMap((sec) =>
+        sec.element.map((item) => ({
+          ...item,
+          label: transformAFEBusbarLabel(item.label)
+        }))
+      )
     }
 
     // 对于BMU_SOC、BMU_PRODUCT_CODE、BMU_VOLT、BMU_TEMP，需要转换标签
@@ -1094,7 +1120,7 @@ watch(activeView, (newView, oldView) => {
     </div>
     
     <!-- ▼▼ BMU 表卡片 ▼▼ -->
-    <SystemAbstract v-if="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH','BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC'].includes(activeView)"
+    <SystemAbstract v-if="['CELL_VOLT','CELL_TEMP','CELL_SOC','CELL_SOH','BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','AFE_BUSBAR_TEMP','BMU_SOC'].includes(activeView)"
                     :activeView="activeView"
                     :selectedCluster="selectedCluster" />
 
@@ -1135,7 +1161,8 @@ watch(activeView, (newView, oldView) => {
         </Column>
       </DataTable>
 
-    <div v-if="['BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC'].includes(activeView)"
+    <!-- BMU 具体数据卡片：含 BMU电压/板温/动力接插件温度/铜排温度/BMU_SOC -->
+    <div v-if="['BMU_VOLT','BMU_TEMP','BMU_PLUGIN_TEMP','BMU_SOC','AFE_BUSBAR_TEMP'].includes(activeView)"
          class="card-grid">
       <div v-for="e in bmuRows"
            :key="e.label"
@@ -1172,7 +1199,7 @@ watch(activeView, (newView, oldView) => {
 
   .cluster-info-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
     gap: 6px;
     align-items: stretch;
     padding: 0 8px;

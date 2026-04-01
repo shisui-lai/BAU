@@ -55,10 +55,13 @@ export function useFaultOverview() {
     CellDischargeOvertempFaultGrade: 'CellDischargeOvertempFaultGrade',
     CellDischargeUndertempFaultGrade: 'CellDischargeUndertempFaultGrade',
     CellSocTooHighFaultGrade: 'CellSocTooHighFaultGrade',
-    CellSocTooLowFaultGrade: 'CellSocTooLowFaultGrade'
+    CellSocTooLowFaultGrade: 'CellSocTooLowFaultGrade',
+    BusbarOvertempFaultGrade: 'BusbarOvertempFaultGrade',
+    BmuPluginTempDiffUpperLimitFaultGrade: 'BmuPluginTempDiffUpperLimitFaultGrade',
+    ClusterPluginTempDiffUpperLimitFaultGrade: 'ClusterPluginTempDiffUpperLimitFaultGrade'
   }
 
-  // 簇级故障名称映射表 - 不包含簇间故障（27个故障项）
+  // 簇级故障名称映射表 - 不包含簇间故障（30个故障项）
   const clusterFaultGradeNames = {
     CellVoltageDiffFaultGrade: 'CellVoltageDiffFaultGrade',
     CellTempDiffFaultGrade: 'CellTempDiffFaultGrade',
@@ -88,7 +91,10 @@ export function useFaultOverview() {
     CellDischargeOvertempFaultGrade: 'CellDischargeOvertempFaultGrade',
     CellDischargeUndertempFaultGrade: 'CellDischargeUndertempFaultGrade',
     CellSocTooHighFaultGrade: 'CellSocTooHighFaultGrade',
-    CellSocTooLowFaultGrade: 'CellSocTooLowFaultGrade'
+    CellSocTooLowFaultGrade: 'CellSocTooLowFaultGrade',
+    BusbarOvertempFaultGrade: 'BusbarOvertempFaultGrade',
+    BmuPluginTempDiffUpperLimitFaultGrade: 'BmuPluginTempDiffUpperLimitFaultGrade',
+    ClusterPluginTempDiffUpperLimitFaultGrade: 'ClusterPluginTempDiffUpperLimitFaultGrade'
   }
 
   // 辅助函数：从字段名获取故障等级名称
@@ -152,7 +158,10 @@ export function useFaultOverview() {
               单体电池放电过温故障等级: 'CellDischargeOvertempFaultGrade',
               单体电池放电欠温故障等级: 'CellDischargeUndertempFaultGrade',
               单体SOC过高故障等级: 'CellSocTooHighFaultGrade',
-              单体SOC过低故障等级: 'CellSocTooLowFaultGrade'
+              单体SOC过低故障等级: 'CellSocTooLowFaultGrade',
+              铜排过温告警等级: 'BusbarOvertempFaultGrade',
+              BMU动力接插件温差上限告警等级: 'BmuPluginTempDiffUpperLimitFaultGrade',
+              簇端动力接插件温差上限告警等级: 'ClusterPluginTempDiffUpperLimitFaultGrade'
             }
 
             const key = labelToKeyMap[item.label]
@@ -231,36 +240,8 @@ export function useFaultOverview() {
       氢气探测器反馈故障: 'HydrogenDetectorFeedbackFault',
       MSD反馈故障: 'MSDFeedbackFault',
       急停反馈故障: 'EmergencyStopFeedbackFault',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault2',
-      主负高边驱动反馈故障: 'MainNegHighSideFeedbackFault2',
-      预充高边驱动反馈故障: 'PrechargeHighSideFeedbackFault2',
+      柜体风机反馈故障: 'CabinetFanFeedbackFault',
+      熔断器反馈故障: 'FuseFeedbackFault',
       红灯高边驱动反馈故障: 'RedLampHighSideFeedbackFault',
       黄灯高边驱动反馈故障: 'YellowLampHighSideFeedbackFault',
       绿灯高边驱动反馈故障: 'GreenLampHighSideFeedbackFault',
@@ -270,6 +251,7 @@ export function useFaultOverview() {
       pcs封波高边驱动反馈故障: 'PCSSealedWaveHighSideFeedbackFault',
       辅助断路器控制高边驱动反馈故障: 'AuxCircuitBreakerControlHighSideFeedbackFault',
       排风系统控制高边驱动反馈故障: 'ExhaustSystemControlHighSideFeedbackFault',
+      柜体风机高边反馈故障: 'CabinetFanHighSideFault',
       制冷设备通信故障: 'CoolingDeviceCommFault2',
       PCS设备通信故障: 'PCSCommFault2',
       除湿机通信故障: 'DehumidifierCommFault2',
@@ -299,11 +281,21 @@ export function useFaultOverview() {
       单体温度探头掉线: 'SingleTempProbeDropped2',
       'BMU 1号 动力接插件温度断线': 'BMU1PowerConnectorTempDisconnected2',
       'BMU 2号 动力接插件温度断线': 'BMU2PowerConnectorTempDisconnected2',
-      '主正高边驱动反馈故障2': 'MainPosHighSideFeedbackFault2',
-      主正高边驱动反馈故障: 'MainPosHighSideFeedbackFault',
+      主正高边驱动反馈故障2: 'MainPosHighSideFeedbackFault2',
+      主负高边驱动反馈故障2: 'MainNegHighSideFeedbackFault2',
+      预充高边驱动反馈故障2: 'PrechargeHighSideFeedbackFault2',
       AFE通讯失联: 'AFECommLost2',
       BCU通讯故障: 'BCUCommFault_Stack',
-      BCU通信故障: 'BCUCommFault_Stack'
+      BCU通信故障: 'BCUCommFault_Stack',
+      铜排温度过高严重故障: 'AFEBusbarTempOverSevereFault',
+      铜排温度过高一般故障: 'AFEBusbarTempOverGeneralFault',
+      铜排温度过高轻微故障: 'AFEBusbarTempOverMildFault',
+      BMU动力接插件温差严重故障: 'BMUPowerConnectorTempDiffSevereFault',
+      BMU动力接插件温差一般故障: 'BMUPowerConnectorTempDiffGeneralFault',
+      BMU动力接插件温差轻微故障: 'BMUPowerConnectorTempDiffMildFault',
+      簇端动力接插件温差严重故障: 'ClusterEndPowerConnectorTempDiffSevereFault',
+      簇端动力接插件温差一般故障: 'ClusterEndPowerConnectorTempDiffGeneralFault',
+      簇端动力接插件温差轻微故障: 'ClusterEndPowerConnectorTempDiffMildFault'
     }
 
     hwData.forEach((section) => {
@@ -326,6 +318,17 @@ export function useFaultOverview() {
         })
       }
     })
+    // 确保熔断器反馈故障显示在柜体风机反馈故障之后（用户要求顺序）
+    const cabinetIdx = faults.findIndex((f) => f.name === 'CabinetFanFeedbackFault')
+    const fuseIdx = faults.findIndex((f) => f.name === 'FuseFeedbackFault')
+    if (cabinetIdx >= 0 && fuseIdx >= 0 && fuseIdx !== cabinetIdx + 1) {
+      // cabinetIdx >= 0：柜体风机故障存在
+      // fuseIdx >= 0：熔断器故障存在
+      // fuseIdx !== cabinetIdx + 1：熔断器不在柜体风机正后面
+      const [fuseItem] = faults.splice(fuseIdx, 1)
+      const insertPos = fuseIdx < cabinetIdx ? cabinetIdx : cabinetIdx + 1
+      faults.splice(insertPos, 0, fuseItem)
+    }
     return faults
   })
 
@@ -422,7 +425,10 @@ export function useFaultOverview() {
                 单体电池放电过温故障等级: 'CellDischargeOvertempFaultGrade',
                 单体电池放电欠温故障等级: 'CellDischargeUndertempFaultGrade',
                 单体SOC过高故障等级: 'CellSocTooHighFaultGrade',
-                单体SOC过低故障等级: 'CellSocTooLowFaultGrade'
+                单体SOC过低故障等级: 'CellSocTooLowFaultGrade',
+                铜排过温告警等级: 'BusbarOvertempFaultGrade',
+                BMU动力接插件温差上限告警等级: 'BmuPluginTempDiffUpperLimitFaultGrade',
+                簇端动力接插件温差上限告警等级: 'ClusterPluginTempDiffUpperLimitFaultGrade'
               }
 
               const baseKey = labelToBaseKeyMap[item.label]
@@ -442,7 +448,7 @@ export function useFaultOverview() {
     for (let i = 1; i <= clusterCount; i++) {
       const clusterFaults = []
 
-      // 处理所有27个故障项
+      // 处理所有30个故障项
       Object.keys(clusterFaultGradeNames).forEach((key) => {
         const clusterKey = `Cluster${i}${key}`
         const faultData = flatData[clusterKey]

@@ -11,7 +11,7 @@
     "language": "Language",
     "rememberMe": "Remember Password",
     "company": "Risen Energy Storage Technology company.",
-    "version": "Version v0.6.8"
+    "version": "Version v0.8.8"
   },
   "toast": {
     "common": {
@@ -189,6 +189,112 @@
     "blockCluster": "Block {0}/Cluster {1}"
   },
   "cluster_peripheral": {
+    "fire": {
+      "selectLabel": "Select Fire Controller Type",
+      "baseInfo": "Basic Information",
+      "detectorDetails": "Detector Details",
+      "noFire": "No Fire Controller",
+      "fireType": {
+        "三沃力源（sanvalor）": "Sanvalor",
+        "无消防控制器": "No Fire Controller"
+      },
+      "title": {
+        "title1": "Detector Number",
+        "title2": "Status",
+        "title3": "Alarm Level",
+        "title4": "Carbon Monoxide Data(ppm)",
+        "title5": "Temperature Data(℃)",
+        "title6": "Smoke Sensor Data(db/m)",
+        "title7": "VOC"
+      },
+      "labels": {
+        "fireLabel1": "Highest Alarm Level",
+        "fireLabel2": "Detector Status",
+        "fireLabel3": "Extinguisher Fault Status",
+        "fireLabel4": "Extinguisher Start Status",
+        "fireLabel5": "Key Status",
+        "fireLabel6": "Display Status",
+        "fireLabel7": "Detector Extinguisher Start Command",
+        "fireLabel8": "Forbid Alarm & Start",
+        "fireLabel9": "Forbid Auto Fire Extinguishing",
+        "fireLabel10": "Reset System Warning & Alarm",
+        "探测器编号": "Detector Number",
+        "状态": "Status",
+        "报警等级": "Alarm Level",
+        "一氧化碳浓度(ppm)": "Carbon Monoxide(ppm)",
+        "温度数据(℃)": "Temperature(℃)",
+        "烟雾数据(db/m)": "Smoke Data(db/m)",
+        "VOC": "VOC",
+        "紧急启动开关状态": "Emergency Start Switch Status",
+        "紧急停止开关状态": "Emergency Stop Switch Status",
+        "1号探测器状态": "Detector 1 Status",
+        "2号探测器状态": "Detector 2 Status",
+        "3号探测器状态": "Detector 3 Status",
+        "4号探测器状态": "Detector 4 Status",
+        "5号探测器状态": "Detector 5 Status",
+        "6号探测器状态": "Detector 6 Status",
+        "7号探测器状态": "Detector 7 Status",
+        "8号探测器状态": "Detector 8 Status",
+        "9号探测器状态": "Detector 9 Status",
+        "10号探测器状态": "Detector 10 Status",
+        "11号探测器状态": "Detector 11 Status",
+        "12号探测器状态": "Detector 12 Status",
+        "13号探测器状态": "Detector 13 Status",
+        "14号探测器状态": "Detector 14 Status",
+        "15号探测器状态": "Detector 15 Status",
+        "16号探测器状态": "Detector 16 Status",
+        "1号灭火器状态": "Extinguisher 1 Status",
+        "2号灭火器状态": "Extinguisher 2 Status",
+        "3号灭火器状态": "Extinguisher 3 Status",
+        "4号灭火器状态": "Extinguisher 4 Status",
+        "5号灭火器状态": "Extinguisher 5 Status",
+        "6号灭火器状态": "Extinguisher 6 Status",
+        "7号灭火器状态": "Extinguisher 7 Status",
+        "8号灭火器状态": "Extinguisher 8 Status",
+        "9号灭火器状态": "Extinguisher 9 Status",
+        "10号灭火器状态": "Extinguisher 10 Status",
+        "11号灭火器状态": "Extinguisher 11 Status",
+        "12号灭火器状态": "Extinguisher 12 Status",
+        "13号灭火器状态": "Extinguisher 13 Status",
+        "14号灭火器状态": "Extinguisher 14 Status",
+        "15号灭火器状态": "Extinguisher 15 Status",
+        "16号灭火器状态": "Extinguisher 16 Status",
+        "1号探测器": "Detector 1",
+        "2号探测器": "Detector 2",
+        "3号探测器": "Detector 3",
+        "4号探测器": "Detector 4",
+        "5号探测器": "Detector 5",
+        "6号探测器": "Detector 6",
+        "7号探测器": "Detector 7",
+        "8号探测器": "Detector 8",
+        "9号探测器": "Detector 9",
+        "10号探测器": "Detector 10",
+        "11号探测器": "Detector 11",
+        "12号探测器": "Detector 12",
+        "13号探测器": "Detector 13",
+        "14号探测器": "Detector 14",
+        "15号探测器": "Detector 15",
+        "16号探测器": "Detector 16"
+      },
+      "values": {
+        "正常": "Normal",
+        "探测器掉线": "Detector Offline",
+        "传感器故障": "Sensor Fault",
+        "一级预警": "Level 1 Warning",
+        "二级预警": "Level 2 Warning",
+        "一级报警": "Level 1 Alarm",
+        "二级报警": "Level 2 Alarm",
+        "故障": "Fault",
+        "已启动": "Started",
+        "按下": "Pressed",
+        "不禁止": "Not Forbidden",
+        "禁止": "Forbidden",
+        "复位系统预警、报警状态": "Reset Warning & Alarm",
+        "voc报警": "VOC Alarm",
+        "取消启动": "Cancel Start",
+        "启动": "Start"
+      }
+    },
     "pcs": {
       "types": {
         "none": "No PCS",
@@ -1037,10 +1143,7 @@
           "fan2Speed": "Fan 2 Actual Speed (rpm)",
           "fan3Speed": "Fan 3 Actual Speed (rpm)",
           "fan4Speed": "Fan 4 Actual Speed (rpm)",
-          "fanFaultStatusFan1": "Fan Fault Status - Fan 1",
-          "fanFaultStatusFan2": "Fan Fault Status - Fan 2",
-          "fanFaultStatusFan3": "Fan Fault Status - Fan 3",
-          "fanFaultStatusFan4": "Fan Fault Status - Fan 4",
+          "fanFaultStatusFan": "Fan Fault Status",
           "crankcaseHeater1": "Crankcase Heater 1 Status",
           "compressor1SpeedSet": "Compressor 1 Speed Set (Hz)",
           "compressor1SpeedActual": "Compressor 1 Actual Speed (Hz)",
@@ -1218,10 +1321,7 @@
           "ptcHeatStatus": { "0": "Off", "1": "On" },
           "eev1Status": { "0": "Standby", "1": "Off", "2": "On" },
           "eev2Status": { "0": "Standby", "1": "Off", "2": "On" },
-          "fanFaultStatusFan1": { "0": "Normal", "1": "Fault" },
-          "fanFaultStatusFan2": { "0": "Normal", "1": "Fault" },
-          "fanFaultStatusFan3": { "0": "Normal", "1": "Fault" },
-          "fanFaultStatusFan4": { "0": "Normal", "1": "Fault" },
+          "fanFaultStatusFan": { "0": "Normal", "1": "Fan 1 Fault", "17": "Fan 1 & Fan 2 Fault" },
           "compressor1Status_b0": { "0": "Standby", "1": "Run" },
           "compressor1Status_b1": { "0": "Off", "1": "On" },
           "compressor1Status_b2": { "0": "No", "1": "Yes" },
@@ -1639,6 +1739,7 @@
     "clusterPcs": "Cluster PCS",
     "clusterRef": "Cluster Cooling",
     "clusterDehumi": "Cluster Dehumidifier",
+    "clusterFire": "Fire Controller",
     "gpioData": "GPIO Data",
     "clusterVersion": "Cluster version",
     "disconnection": "Disconnect Info",
@@ -1800,7 +1901,9 @@
       "upgradeTypes": {
         "BAU升级": "BAU Upgrade",
         "BCU升级": "BCU Upgrade",
-        "BMU升级": "BMU Upgrade"
+        "BMU升级": "BMU Upgrade",
+        "BCU配置参数升级": "BCU Config Parameter Upgrade",
+        "BAU配置参数升级": "BAU Config Parameter Upgrade"
       },
       "bmuUpgradeTypes": {
         "单机常规升级": "Single Unit Regular Upgrade",
@@ -1855,7 +1958,10 @@
     },
     "cluster": {
       "cluster1to10": "Cluster 1-10:",
-      "cluster11to20": "Cluster 11-20:"
+      "cluster11to20": "Cluster 11-20:",
+      "heap1": "Block 1:",
+      "heap2": "Block 2:",
+      "clusterLabel": "Cluster {0}"
     },
     "result": {
       "deviceType": "Upgrade Device Type",
@@ -1866,7 +1972,8 @@
       "bauFaultCode": "BAU Upgrade Fault Code",
       "bmuFailedDevices": "BMU Upgrade Failed Devices",
       "progress": "Download Progress",
-      "clusterResult": "Cluster {clusterKey} Upgrade Results"
+      "clusterResult": "Cluster {clusterKey} Upgrade Results",
+      "noFault": "No Fault"
     },
     "version": {
       "bauVersion": "BAU Version",
@@ -1966,6 +2073,7 @@
       "bmuVolt": "BMU_Vol(V)",
       "bmuTemp": "BMU_Temp(℃)",
       "bmuPluginTemp": "Pole_Temp(℃)",
+      "afeBusbarTemp": "AFE Busbar Temp(℃)",
       "bmuSOC": "BMU SOC(%)",
       "bmuProductCode": "BMU Product Code"
     },
@@ -1986,10 +2094,12 @@
       "temperature4": "Temp4",
       "temperature5": "Temp5",
       "clusterSOC": "Cluster SOC",
-    "clusterSOH": "Cluster SOH",
-    "clusterSOE": "Cluster SOE",
-    "clusterRealSOC": "Real SOC",
-    "ocvExecCount": "OCV Exec Count",
+      "clusterSOH": "Cluster SOH",
+      "clusterSOE": "Cluster SOE",
+      "clusterRealSOC": "Real SOC",
+      "ocvExecCount": "OCV Exec Count",
+      "clusterPluginTempDiff": "Cluster Connector Cell-side Temperature Difference",
+      "clusterPluginTempDiffPcs": "Cluster Connector PCS-side Temperature Difference",
       "maxChargePower": "Max_Chrg_P",
       "maxDischargePower": "Max_Dis_P",
       "singleChargeEnergy": "Single_Chrg_E",
@@ -2110,6 +2220,16 @@
         "minTemp1": "Min Pole Temp1",
         "minTemp2": "Min Pole Temp2",
         "minTemp3": "Min Pole Temp3",
+        "tempDiff": "Temp Diff"
+      },
+      "afeBusbarTemp": {
+        "maxTemp1": "AFE Busbar Max Temp1",
+        "maxTemp2": "AFE Busbar Max Temp2",
+        "maxTemp3": "AFE Busbar Max Temp3",
+        "avgTemp": "Avg Temp",
+        "minTemp1": "AFE Busbar Min Temp1",
+        "minTemp2": "AFE Busbar Min Temp2",
+        "minTemp3": "AFE Busbar Min Temp3",
         "tempDiff": "Temp Diff"
       }
     }
@@ -2353,6 +2473,9 @@
       "cellDischargeUndertempFaultGrade": "Cell Discharge Undertemp Fault",
       "cellSocTooHighFaultGrade": "Cell SOC Too High Fault",
       "cellSocTooLowFaultGrade": "Cell SOC Too Low Fault",
+      "busbarOvertempFaultGrade": "Busbar Overtemperature Alarm",
+      "bmuPluginTempDiffUpperLimitFaultGrade": "BMU Power Connector Temp Diff Upper Limit Alarm",
+      "clusterPluginTempDiffUpperLimitFaultGrade": "Cluster Power Connector Temp Diff Upper Limit Alarm",
       "MainPosContactorFeedbackFault": "Main Positive Contactor Feedback Fault",
       "MainPosHighSideFeedbackFault": "Main Positive High-Side Driver Feedback Fault",
       "MainPosOxidation": "Main Positive Oxidation",
@@ -2384,6 +2507,8 @@
       "HydrogenDetectorFeedbackFault": "Hydrogen Detector Feedback Fault",
       "MSDFeedbackFault": "MSD Feedback Fault",
       "EmergencyStopFeedbackFault": "Emergency Stop Feedback Fault",
+      "CabinetFanFeedbackFault": "Cabinet Fan Feedback Fault",
+      "FuseFeedbackFault": "Fuse Feedback Fault",
       "MainPosHighSideFeedbackFault2": "Main Positive High-Side Driver Feedback Fault",
       "MainNegHighSideFeedbackFault2": "Main Negative High-Side Driver Feedback Fault",
       "PrechargeHighSideFeedbackFault2": "Precharge High-Side Driver Feedback Fault",
@@ -2396,6 +2521,7 @@
       "PCSSealedWaveHighSideFeedbackFault": "PCS Sealed-Wave High-Side Driver Feedback Fault",
       "AuxCircuitBreakerControlHighSideFeedbackFault": "Auxiliary Breaker Control High-Side Driver Feedback Fault",
       "ExhaustSystemControlHighSideFeedbackFault": "Exhaust System Control High-Side Driver Feedback Fault",
+      "CabinetFanHighSideFault": "Cabinet Fan High-Side Driver Feedback Fault",
       "CoolingDeviceCommFault2": "Cooling Device Communication Fault",
       "PCSCommFault2": "PCS Communication Fault",
       "DehumidifierCommFault2": "Dehumidifier Communication Fault",
@@ -2426,7 +2552,16 @@
       "BMU1PowerConnectorTempDisconnected2": "BMU 1 Power Connector Temp Disconnected",
       "BMU2PowerConnectorTempDisconnected2": "BMU 2 Power Connector Temp Disconnected",
       "AFECommLost2": "AFE Communication Lost",
-      "BCUCommFault_Stack": "BCU Communication Fault"
+      "BCUCommFault_Stack": "BCU Communication Fault",
+      "AFEBusbarTempOverSevereFault": "AFE Busbar Over Temperature Severe Fault",
+      "AFEBusbarTempOverGeneralFault": "AFE Busbar Over Temperature General Fault",
+      "AFEBusbarTempOverMildFault": "AFE Busbar Over Temperature Minor Fault",
+      "BMUPowerConnectorTempDiffSevereFault": "BMU Power Connector Temp Diff Severe Fault",
+      "BMUPowerConnectorTempDiffGeneralFault": "BMU Power Connector Temp Diff General Fault",
+      "BMUPowerConnectorTempDiffMildFault": "BMU Power Connector Temp Diff Minor Fault",
+      "ClusterEndPowerConnectorTempDiffSevereFault": "Cluster End Power Connector Temp Diff Severe Fault",
+      "ClusterEndPowerConnectorTempDiffGeneralFault": "Cluster End Power Connector Temp Diff General Fault",
+      "ClusterEndPowerConnectorTempDiffMildFault": "Cluster End Power Connector Temp Diff Minor Fault"
     }
   },
   "didoStatus": {
@@ -2468,6 +2603,7 @@
       "MSD反馈": "MSD Signal Feedback",
       "急停反馈": "Emergency Stop Signal Feedback",
       "柜体风机反馈": "Cabinet Fan Signal Feedback",
+      "熔断器反馈": "Fuse Signal Feedback",
       "主正接触器高边驱动反馈": "Main Positive Contactor High Side Signal Feedback",
       "主负接触器高边驱动反馈": "Main Negative Contactor High Side Signal Feedback",
       "预充接触器高边驱动反馈": "Precharge Contactor High Side Signal Feedback",
@@ -2573,7 +2709,9 @@
         "宁德280Ah(CB2W0)": "CATL 280Ah (CB2W0)",
         "海辰280Ah(ST280P100A)": "Hithium 280Ah (ST280P100A)",
         "亿纬314Ah(MB31)": "EVE 314Ah (MB31)",
-        "海辰314Ah(ST314P050A)": "Hithium 314Ah (ST314P050A)"
+        "海辰314Ah(ST314P050A)": "Hithium 314Ah (ST314P050A)",
+        "鹏辉314Ah(GSP71173204F)": "Penghui 314Ah (GSP71173204F)",
+        "融捷314Ah(RBA4F1)": "Rongjie 314Ah (RBA4F1)"
       },
       "除湿机设备类型": {
         "无除湿机设备": "No Dehumidifier",
@@ -2587,6 +2725,21 @@
       "簇压模式": {
         "高压采集模式": "High Voltage Collection Mode",
         "单体电压累加模式": "Cell Voltage Accumulation Mode"
+      },
+      "柜内风扇控制模式": {
+        "BCU最高温度": "BCU Highest Temperature",
+        "非环境温度的平均温度": "Average Non-ambient Temperature",
+        "BCU环境温度": "BCU Ambient Temperature"
+      },
+      "铜排温度": {
+        "不存在": "Not Available",
+        "存在": "Available"
+      },
+      "簇端动力接插件温差模式": {
+        "不处理": "Do Not Process",
+        "只处理电池端接插件": "Only Cell-side Connectors",
+        "处理所有接插件": "All Connectors",
+        "只处理PCS端接插件": "Only PCS-side Connectors"
       },
       "动力接插件温度": {
         "不存在": "Not Available",
@@ -2606,7 +2759,7 @@
       },
       "除湿机控制模式": {
         "单独控制": "Independent Control",
-        "基数地址控制": "Odd Address Control",
+        "奇数地址控制": "Odd Address Control",
         "偶数地址控制": "Even Address Control"
       },
       "禁止使能簇": {
@@ -2877,14 +3030,15 @@
         "powerConnectorTempSummary": "Power Connector Temperature Summary",
         "clusterSocSummary": "Cluster SOC Summary",
         "clusterVoltageSummary": "Cluster Voltage Summary",
-        "clusterCurrentSummary": "Cluster Current Summary"
+        "clusterCurrentSummary": "Cluster Current Summary",
+        "afeBusbarTempSummary": "AFE Busbar Temperature Summary"
       },
       "maxMinSubGroups": {
-        "cellVoltageRelated": "Stack Cell Voltage",
-        "cellTempRelated": "Stack Cell Temperature",
+      "cellVoltageRelated": "Block Cell Voltage",
+      "cellTempRelated": "Block Cell Temperature",
         "clusterVoltageRelated": "Cluster Voltage",
         "clusterSocRelated": "Cluster SOC",
-        "allowedTripsRelated": "Stack Limits and Trip Thresholds"
+        "allowedTripsRelated": "Block Limits and Trip Thresholds"
       },
       "parameters": {
         "簇总数": "Total Clusters",
@@ -3031,6 +3185,14 @@
         "动力接插件温度最小值包编号": "Power Connector Temperature Min Value Pack Number",
         "动力接插件温度平均值": "Power Connector Temperature Average Value",
         "动力接插件温度极差值": "Power Connector Temperature Difference Range Value",
+        "铜排温度最大值": "AFE Busbar Temperature Max Value",
+        "铜排温度最大值簇编号": "AFE Busbar Temperature Max Value Cluster Number",
+        "铜排温度最大值温度编号": "AFE Busbar Temperature Max Value Temperature Number",
+        "铜排温度最小值": "AFE Busbar Temperature Min Value",
+        "铜排温度最小值簇编号": "AFE Busbar Temperature Min Value Cluster Number",
+        "铜排温度最小值温度编号": "AFE Busbar Temperature Min Value Temperature Number",
+        "铜排温度平均值": "AFE Busbar Temperature Average Value",
+        "铜排温度极差值": "AFE Busbar Temperature Difference Range Value",
         "簇SOC平均值": "Cluster SOC Average Value",
         "簇SOC极差值": "Cluster SOC Difference Range Value",
         "簇电压平均值": "Cluster Voltage Average Value",
@@ -3391,8 +3553,67 @@
         "BCU环境温度严重报警值": "BCU Ambient Temperature - Severe Alarm Value",
         "BCU环境温度严重滤波时间": "BCU Ambient Temperature - Severe Alarm Filter Time",
         "BCU环境温度严重恢复值": "BCU Ambient Temperature - Severe Alarm Recovery Value",
-        "BCU环境温度严重恢复滤波时间": "BCU Ambient Temperature - Severe Alarm Recovery Filter Time"
-      ,
+        "BCU环境温度严重恢复滤波时间": "BCU Ambient Temperature - Severe Alarm Recovery Filter Time",
+        "温度1过温-轻微报警值": "RT1 Over-temperature - Minor Alarm Value",
+        "温度1过温-轻微报警滤波时间": "RT1 Over-temperature - Minor Alarm Filter Time",
+        "温度1过温-轻微恢复值": "RT1 Over-temperature - Minor Alarm Recovery Value",
+        "温度1过温-轻微恢复滤波时间": "RT1 Over-temperature - Minor Alarm Recovery Filter Time",
+        "温度1过温-一般报警值": "RT1 Over-temperature - General Alarm Value",
+        "温度1过温-一般报警滤波时间": "RT1 Over-temperature - General Alarm Filter Time",
+        "温度1过温-一般恢复值": "RT1 Over-temperature - General Alarm Recovery Value",
+        "温度1过温-一般恢复滤波时间": "RT1 Over-temperature - General Alarm Recovery Filter Time",
+        "温度1过温-严重报警值": "RT1 Over-temperature - Severe Alarm Value",
+        "温度1过温-严重报警滤波时间": "RT1 Over-temperature - Severe Alarm Filter Time",
+        "温度1过温-严重恢复值": "RT1 Over-temperature - Severe Alarm Recovery Value",
+        "温度1过温-严重恢复滤波时间": "RT1 Over-temperature - Severe Alarm Recovery Filter Time",
+        "温度2过温-轻微报警值": "RT2 Over-temperature - Minor Alarm Value",
+        "温度2过温-轻微报警滤波时间": "RT2 Over-temperature - Minor Alarm Filter Time",
+        "温度2过温-轻微恢复值": "RT2 Over-temperature - Minor Alarm Recovery Value",
+        "温度2过温-轻微恢复滤波时间": "RT2 Over-temperature - Minor Alarm Recovery Filter Time",
+        "温度2过温-一般报警值": "RT2 Over-temperature - General Alarm Value",
+        "温度2过温-一般报警滤波时间": "RT2 Over-temperature - General Alarm Filter Time",
+        "温度2过温-一般恢复值": "RT2 Over-temperature - General Alarm Recovery Value",
+        "温度2过温-一般恢复滤波时间": "RT2 Over-temperature - General Alarm Recovery Filter Time",
+        "温度2过温-严重报警值": "RT2 Over-temperature - Severe Alarm Value",
+        "温度2过温-严重报警滤波时间": "RT2 Over-temperature - Severe Alarm Filter Time",
+        "温度2过温-严重恢复值": "RT2 Over-temperature - Severe Alarm Recovery Value",
+        "温度2过温-严重恢复滤波时间": "RT2 Over-temperature - Severe Alarm Recovery Filter Time",
+        "温度3过温-轻微报警值": "RT3 Over-temperature - Minor Alarm Value",
+        "温度3过温-轻微报警滤波时间": "RT3 Over-temperature - Minor Alarm Filter Time",
+        "温度3过温-轻微恢复值": "RT3 Over-temperature - Minor Alarm Recovery Value",
+        "温度3过温-轻微恢复滤波时间": "RT3 Over-temperature - Minor Alarm Recovery Filter Time",
+        "温度3过温-一般报警值": "RT3 Over-temperature - General Alarm Value",
+        "温度3过温-一般报警滤波时间": "RT3 Over-temperature - General Alarm Filter Time",
+        "温度3过温-一般恢复值": "RT3 Over-temperature - General Alarm Recovery Value",
+        "温度3过温-一般恢复滤波时间": "RT3 Over-temperature - General Alarm Recovery Filter Time",
+        "温度3过温-严重报警值": "RT3 Over-temperature - Severe Alarm Value",
+        "温度3过温-严重报警滤波时间": "RT3 Over-temperature - Severe Alarm Filter Time",
+        "温度3过温-严重恢复值": "RT3 Over-temperature - Severe Alarm Recovery Value",
+        "温度3过温-严重恢复滤波时间": "RT3 Over-temperature - Severe Alarm Recovery Filter Time",
+        "温度4过温-轻微报警值": "RT4 Over-temperature - Minor Alarm Value",
+        "温度4过温-轻微报警滤波时间": "RT4 Over-temperature - Minor Alarm Filter Time",
+        "温度4过温-轻微恢复值": "RT4 Over-temperature - Minor Alarm Recovery Value",
+        "温度4过温-轻微恢复滤波时间": "RT4 Over-temperature - Minor Alarm Recovery Filter Time",
+        "温度4过温-一般报警值": "RT4 Over-temperature - General Alarm Value",
+        "温度4过温-一般报警滤波时间": "RT4 Over-temperature - General Alarm Filter Time",
+        "温度4过温-一般恢复值": "RT4 Over-temperature - General Alarm Recovery Value",
+        "温度4过温-一般恢复滤波时间": "RT4 Over-temperature - General Alarm Recovery Filter Time",
+        "温度4过温-严重报警值": "RT4 Over-temperature - Severe Alarm Value",
+        "温度4过温-严重报警滤波时间": "RT4 Over-temperature - Severe Alarm Filter Time",
+        "温度4过温-严重恢复值": "RT4 Over-temperature - Severe Alarm Recovery Value",
+        "温度4过温-严重恢复滤波时间": "RT4 Over-temperature - Severe Alarm Recovery Filter Time",
+        "温度5过温-轻微报警值": "RT5 Over-temperature - Minor Alarm Value",
+        "温度5过温-轻微报警滤波时间": "RT5 Over-temperature - Minor Alarm Filter Time",
+        "温度5过温-轻微恢复值": "RT5 Over-temperature - Minor Alarm Recovery Value",
+        "温度5过温-轻微恢复滤波时间": "RT5 Over-temperature - Minor Alarm Recovery Filter Time",
+        "温度5过温-一般报警值": "RT5 Over-temperature - General Alarm Value",
+        "温度5过温-一般报警滤波时间": "RT5 Over-temperature - General Alarm Filter Time",
+        "温度5过温-一般恢复值": "RT5 Over-temperature - General Alarm Recovery Value",
+        "温度5过温-一般恢复滤波时间": "RT5 Over-temperature - General Alarm Recovery Filter Time",
+        "温度5过温-严重报警值": "RT5 Over-temperature - Severe Alarm Value",
+        "温度5过温-严重报警滤波时间": "RT5 Over-temperature - Severe Alarm Filter Time",
+        "温度5过温-严重恢复值": "RT5 Over-temperature - Severe Alarm Recovery Value",
+        "温度5过温-严重恢复滤波时间": "RT5 Over-temperature - Severe Alarm Recovery Filter Time",
         "BMU 电压上限轻微报警值": "BMU Voltage Upper Limit - Minor Alarm Value",
         "BMU 电压上限轻微报警滤波时间": "BMU Voltage Upper Limit - Minor Alarm Filter Time",
         "BMU 电压上限轻微报警恢复值": "BMU Voltage Upper Limit - Minor Alarm Recovery Value",
@@ -3477,6 +3698,18 @@
         "动力接插件过温严重报警滤波时间": "Pack Connector Overtemperature - Severe Alarm Filter Time",
         "动力接插件过温严重报警恢复值": "Pack Connector Overtemperature - Severe Alarm Recovery Value",
         "动力接插件过温严重报警恢复滤波时间": "Pack Connector Overtemperature - Severe Alarm Recovery Filter Time",
+        "动力接插件温差上限-轻微报警值": "Pack Connector Temperature Difference Upper Limit - Minor Alarm Value",
+        "动力接插件温差上限-轻微报警滤波时间": "Pack Connector Temperature Difference Upper Limit - Minor Alarm Filter Time",
+        "动力接插件温差上限-轻微报警恢复值": "Pack Connector Temperature Difference Upper Limit - Minor Alarm Recovery Value",
+        "动力接插件温差上限-轻微报警恢复滤波时间": "Pack Connector Temperature Difference Upper Limit - Minor Alarm Recovery Filter Time",
+        "动力接插件温差上限-一般报警值": "Pack Connector Temperature Difference Upper Limit - General Alarm Value",
+        "动力接插件温差上限-一般报警滤波时间": "Pack Connector Temperature Difference Upper Limit - General Alarm Filter Time",
+        "动力接插件温差上限-一般报警恢复值": "Pack Connector Temperature Difference Upper Limit - General Alarm Recovery Value",
+        "动力接插件温差上限-一般报警恢复滤波时间": "Pack Connector Temperature Difference Upper Limit - General Alarm Recovery Filter Time",
+        "动力接插件温差上限-严重报警值": "Pack Connector Temperature Difference Upper Limit - Severe Alarm Value",
+        "动力接插件温差上限-严重报警滤波时间": "Pack Connector Temperature Difference Upper Limit - Severe Alarm Filter Time",
+        "动力接插件温差上限-严重报警恢复值": "Pack Connector Temperature Difference Upper Limit - Severe Alarm Recovery Value",
+        "动力接插件温差上限-严重报警恢复滤波时间": "Pack Connector Temperature Difference Upper Limit - Severe Alarm Recovery Filter Time",
         "单体电压上限-轻微报警值": "Cell Voltage Upper Limit - Minor Alarm Value",
         "单体电压上限-轻微报警滤波时间": "Cell Voltage Upper Limit - Minor Alarm Filter Time",
         "单体电压上限-轻微报警恢复值": "Cell Voltage Upper Limit - Minor Alarm Recovery Value",
@@ -4278,6 +4511,8 @@
       "主断分励脱扣": "Main Breaker Shunt Trip",
       "风扇控制": "Fan Control",
       "直流供电KM控制": "DC Power KM Control",
+      "封波控制": "Wave Suppression Control",
+      "清功率控制": "Power Clearing Control",
       "高边1": "High Side 1",
       "高边2": "High Side 2",
       "高边3": "High Side 3",
@@ -4440,6 +4675,7 @@
       "remainingCapacity": "Remaining Capacity",
       "status": "Status",
       "writeFailReason": "Write Fail Reason",
+      "configurableDefaultParamRemainingCount": "Configurable Default Param Remaining Count",
       "productCode": "Product Code",
       "hardwareVersion": "Hardware Version",
       "softwareVersion": "Software Version",
@@ -4448,12 +4684,14 @@
       "bcuProtocol": "BCU Protocol",
       "eventRecordVersion": "Event Record Version",
       "soxAlgorithmVersion": "SOX Algorithm Version",
-      "mergeSplitAlgorithmVersion": "Merge/Split Cluster Algorithm Version"
+      "mergeSplitAlgorithmVersion": "Merge/Split Cluster Algorithm Version",
+      "configurableDefaultParamVersion": "Configurable Default Param Version"
     },
     "fields": {
       "sdCardTotalCapacity": "SD Card Total Capacity",
       "sdCardRemainingCapacity": "SD Card Remaining Capacity",
       "sdCardStatus": "SD Card Status",
+      "configurableDefaultParamRemainingCount": "Configurable Default Param Remaining Count",
       "bauProductCode": "BAU Product Code",
       "bauHardwareVersion": "BAU Hardware Version",
       "bauSoftwareVersion": "BAU Software Version",
@@ -4462,7 +4700,8 @@
       "bauBcuProtocolVersion": "BAU-BCU Protocol Version",
       "bauEventRecordVersion": "BAU Event Record Version",
       "bauSoxAlgorithmVersion": "BAU-SOX Algorithm Version",
-      "bauMergeSplitAlgorithmVersion": "BAU-Merge/Split Cluster Algorithm Version"
+      "bauMergeSplitAlgorithmVersion": "BAU-Merge/Split Cluster Algorithm Version",
+      "bauConfigurableDefaultParamVersion": "BAU-Configurable Default Param Version"
     },
     "status": {
       "sdCardPathNotExists": "SD Card Path Not Exists",
@@ -4493,15 +4732,15 @@
       "startReading": "Start Reading",
       "stopReading": "Stop Reading",
       "sendParameters": "Send Parameters",
-      "stackVoltageDifference": "Stack Voltage Difference",
-      "stackCurrentDifference": "Stack Current Difference"
+      "blockVoltageDifference": "Block Voltage Difference",
+      "blockCurrentDifference": "Block Current Difference"
     },
     "parameterClasses": {
       "clusterAlarm": "Cluster Alarm Parameters",
       "packAlarm": "Pack Alarm Parameters",
       "cellAlarm": "Cell Alarm Parameters",
-      "堆端电压差值": "Stack Voltage Difference",
-      "堆端电流差值": "Stack Current Difference"
+      "堆端电压差值": "Block Voltage Difference",
+      "堆端电流差值": "Block Current Difference"
     },
     "severity": {
       "minor": "Minor",
@@ -4675,7 +4914,40 @@
     },
     "messages": {
       "noData": "No Data",
-      "selectBlock": "Please Select Block"
+      "selectBlock": "Please Select Block",
+      "flexMapPending": "Waiting for BAU DI/DO mapping (block_di_do_flexcfg_remap)…",
+      "flexMapUnassigned": "{ch}: no signal name in mapping table",
+      "flexMapLine": "{signal} · {channel}"
+    },
+    "flexSignals": {
+      "di": {
+        "1": "Fire Alarm Feedback",
+        "2": "Fire Fault Feedback",
+        "3": "Emergency Stop Feedback",
+        "4": "Fire Release Feedback",
+        "5": "DC SPD Feedback",
+        "6": "Access Door Feedback",
+        "7": "AC SPD Feedback",
+        "8": "Fuse Feedback",
+        "9": "Water Leak Feedback",
+        "10": "Particle Monitor 1 Feedback",
+        "11": "Particle Monitor 2 Feedback",
+        "12": "Battery Compartment Temp/Humidity Feedback",
+        "13": "UPS Feedback",
+        "14": "Isolation Switch 1 Feedback",
+        "15": "Isolation Switch 2 Feedback"
+      },
+      "do": {
+        "1": "1# BCP Close Control",
+        "2": "1# BCP Open Control",
+        "3": "2# BCP Close Control",
+        "4": "2# BCP Open Control",
+        "5": "Running Indicator",
+        "6": "Fault Indicator",
+        "7": "Auxiliary Power Shunt",
+        "8": "1# BMS Fault",
+        "9": "2# BMS Fault"
+      }
     },
     "parameters": {
       "系统DI输入状态": "System DI Input Status",
@@ -4750,7 +5022,7 @@
       "commDevConfig": "System Peripheral Device Config Parameters",
       "operateConfig": "System Operation Config Parameters",
       "refConfig": "System Water Cooler Config Parameters",
-      "socConfig": "System Stack SOC Config Parameters",
+      "socConfig": "System Block SOC Config Parameters",
       "portConfig": "System Port Config Parameters",
       "commonConfig": "Block Basic Config"
     },
@@ -4923,19 +5195,19 @@
       "最小并簇数": "Min Parallel Cluster Count",
       "使能簇配置1": "Enable Cluster Config 1",
       "使能簇配置2": "Enable Cluster Config 2",
-      "全部开路时堆电压是否为0": "Stack Voltage Zero When All Open",
-      "静置时堆SOC是否追随平均SOC": "Stack SOC Follow Avg SOC When Idle",
+      "全部开路时堆电压是否为0": "Block Voltage Zero When All Open",
+      "静置时堆SOC是否追随平均SOC": "Block SOC Follow Avg SOC When Idle",
       "平均SOC追随阈值": "Avg SOC Follow Threshold",
-      "堆SOC变化差值": "Stack SOC Change Diff",
+      "堆SOC变化差值": "Block SOC Change Diff",
       "是否存在BCP控制": "BCP Control Exists",
-      "堆SOC追赶斜率": "Stack SOC Catch Up Slope",
+      "堆SOC追赶斜率": "Block SOC Catch Up Slope",
       "充电SOC同步点": "Charge SOC Sync Point",
       "放电SOC同步点": "Discharge SOC Sync Point",
-      "堆电流有效阈值": "Stack Current Valid Threshold",
+      "堆电流有效阈值": "Block Current Valid Threshold",
       "BlockSOC取值阈值下限": "Block SOC Lower Threshold",
       "BlockSOC取值阈值上限": "Block SOC Upper Threshold",
       "显示SOC追赶真实SOC时间": "Display SOC Catch-up Time",
-      "堆显示SOC与堆真实SOC差值范围": "Stack Display SOC vs Real SOC Diff Range",
+      "堆显示SOC与堆真实SOC差值范围": "Block Display SOC vs Real SOC Diff Range",
       "簇欠压阈值": "Cluster Undervoltage Threshold",
       "簇过压阈值": "Cluster Overvoltage Threshold",
       "SOH循环次数下发": "SOH Cycle Count Set",
@@ -5099,7 +5371,14 @@
       "select": "Please select"
     },
     "dialogs": {
-      "operationConfirmation": "Operation Confirmation"
+      "operationConfirmation": "Operation Confirmation",
+      "passwordVerification": "Password Verification",
+      "passwordMessage": "Reset port config is a sensitive operation. Please enter the password to continue:",
+      "passwordLabel": "Password",
+      "passwordError": "Incorrect password, please try again"
+    },
+    "labels": {
+      "needPassword": "(Password required)"
     },
     "messages": {
       "invalidInput": "Invalid input",
@@ -5134,16 +5413,18 @@
       }
     },
     "commands": {
-      "下设电池堆控制开关": "Set Stack Contactor Operation",
+      "下设电池堆控制开关": "Set Block Contactor Operation",
       "强制消除电池堆保留故障": "Force Clear Saved Faults",
       "控制参数复位": "Reset Control Parameters",
       "下设周期性绝缘电阻检测指令": "Periodic Insulation Detection",
       "下设接触器自检指令": "Contactor Self-test",
       "下设重启BAU指令": "Restart BAU",
       "下设手动控制SD卡记录": "Manual SD Card Record Control",
-      "下设堆SOC": "Set Stack SOC",
+      "下设堆SOC": "Set Block SOC",
       "查询接触器执行策略结果": "Query Contactor Strategy Result",
-      "复位事件记录存储器": "Reset Event Record Flash"
+      "复位事件记录存储器": "Reset Event Record Flash",
+      "复位可配置默认参数次数": "Reset Configurable Default Param Times",
+      "擦除可配置默认参数区": "Erase Configurable Default Param Area"
     },
     "options": {
       "复位": "Reset",
@@ -5170,7 +5451,7 @@
       "复位系统端口配置参数": "Reset Port Config",
       "复位系统通讯设备配置参数": "Reset Communication Device Config",
       "复位系统操作配置参数": "Reset Operation Config",
-      "复位系统堆告警安装参数": "Reset Stack Alarm Install Params",
+      "复位系统堆告警安装参数": "Reset Block Alarm Install Params",
       "复位系统SOC配置参数": "Reset System SOC Config",
       "复位事件记录标志": "Reset Event Record Flag",
       "复位系统运行时间": "Reset System Runtime",
@@ -5242,11 +5523,13 @@
         "BMU板载温度无效": "Invalid BMU Board Temperature",
         "动力接插件1温度无效": "Invalid Pack Connector 1 Temperature",
         "动力接插件2温度无效": "Invalid Pack Connector 2 Temperature",
+        "熔断器反馈故障": "Fuse Feedback Fault",
         "簇温度1无效": "Invalid Cluster Temperature 1",
         "簇温度2无效": "Invalid Cluster Temperature 2",
         "簇温度3无效": "Invalid Cluster Temperature 3",
         "簇温度4无效": "Invalid Cluster Temperature 4",
         "簇温度5无效": "Invalid Cluster Temperature 5",
+        "铜排温度无效": "Busbar Temperature Invalid",
         "单体电压过压": "Cell Over Voltage Fault",
         "单体电压欠压": "Cell Under Voltage Fault",
         "单体充电过温": "Cell Over Temp During Charge Fault",
@@ -5260,7 +5543,10 @@
         "pack温度过温": "Pack Over Temperature Fault",
         "pack温度欠温": "Pack Under Temperature Fault",
         "1号动力接插件过温": "Pack connector1 Overtemperature Fault",
-        "2号动力接插件过温": "Pack connector2 Overtemperature Fault"
+        "2号动力接插件过温": "Pack connector2 Overtemperature Fault",
+        "铜排过温": "Busbar Overtemperature Fault",
+        "BMU动力接插件温差故障等级": "BMU Connector Temperature Difference Fault Grade",
+        "簇端动力接插件温差故障等级": "Cluster Connector Temperature Difference Fault Grade"
       },
       "outputFaultMap": {
         "单体过压严重总故障": "Cell Over Voltage Severe",
@@ -5305,6 +5591,9 @@
         "动力接插件2温度过高严重总故障": "Pack Connector2 Over Temperature Severe",
         "动力接插件2温度过高一般总故障": "Pack Connector2 Over Temperature General",
         "动力接插件2温度过高轻微总故障": "Pack Connector2 Over Temperature Minor",
+        "铜排温度过高严重故障": "AFE Busbar Over Temperature Severe Fault",
+        "铜排温度过高一般故障": "AFE Busbar Over Temperature General Fault",
+        "铜排温度过高轻微故障": "AFE Busbar Over Temperature Minor Fault",
         "单体压差过大严重故障": "Cell Volt Diff High Severe",
         "单体压差过大一般故障": "Cell Volt Diff High General",
         "单体压差过大轻微故障": "Cell Volt Diff High Minor",
@@ -5317,9 +5606,15 @@
         "BMU压差过大严重故障": "BMU Volt Diff High Severe",
         "BMU压差过大一般故障": "BMU Volt Diff High General",
         "BMU压差过大轻微故障": "BMU Volt Diff High Minor",
+        "BMU动力接插件温差严重故障": "BMU Power Connector Temp Diff Severe Fault",
+        "BMU动力接插件温差一般故障": "BMU Power Connector Temp Diff General Fault",
+        "BMU动力接插件温差轻微故障": "BMU Power Connector Temp Diff Minor Fault",
         "簇端过压严重故障": "Cluster Over Voltage Severe",
         "簇端过压一般故障": "Cluster Over Voltage General",
         "簇端过压轻微故障": "Cluster Over Voltage Minor",
+        "簇端动力接插件温差严重故障": "Cluster End Power Connector Temp Diff Severe Fault",
+        "簇端动力接插件温差一般故障": "Cluster End Power Connector Temp Diff General Fault",
+        "簇端动力接插件温差轻微故障": "Cluster End Power Connector Temp Diff Minor Fault",
         "簇端欠压轻微故障": "Cluster Under Voltage Minor",
         "绝缘电阻正对地轻微故障": "Positive Insulation Resistance Minor",
         "绝缘电阻负对地轻微故障": "Negative Insulation Resistance Minor",
@@ -5345,6 +5640,8 @@
         "消防反馈故障": "Fire Fighting Feedback Fault",
         "MSD信号反馈故障": "MSD Signal Feedback Fault",
         "急停反馈故障": "Emergency Stop Feedback Fault",
+        "柜体风机反馈故障": "Cabinet Fan Feedback Fault",
+        "熔断器反馈故障": "Fuse Feedback Fault",
         "主正高边驱动反馈故障": "Main Positive High-side Drive Feedback Fault",
         "主负高边驱动反馈故障": "Main Negative High-side Drive Feedback Fault",
         "预充高边驱动反馈故障": "Precharge High-side Drive Feedback Fault",
@@ -5607,6 +5904,11 @@
         "门禁故障信号": "Access Control Fault Signal",
         "交流浪涌告警": "AC Surge Alarm",
         "熔断器故障": "Fuse Fault",
+        "水浸故障": "Water Immersion Fault",
+        "微粒子监测1故障": "Particle Monitor 1 Fault",
+        "微粒子监测2故障": "Particle Monitor 2 Fault",
+        "电池仓温湿度故障": "Battery Compartment Temperature/Humidity Fault",
+        "UPS反馈故障": "UPS Feedback Fault",
         "铁电存储器故障": "FRAM Fault",
         "制冷设备通讯故障": "Chiller Communication Fault",
         "PCS通讯故障": "PCS Communication Fault",
@@ -5614,6 +5916,8 @@
         "I/O控制板通讯故障": "I/O Control Board Communication Fault",
         "BCU通讯故障": "BCU Communication Fault",
         "EMS通讯故障": "EMSCommFault",
+        "电表设备通讯故障": "Meter Device Communication Fault",
+        "消防设备通讯故障": "Fire Device Communication Fault",
         "预留字段": "Reserved Fields"
       },
       "blockTotalFault": {
@@ -5657,7 +5961,10 @@
         "单体SOC过高故障等级": "Cell SOC Too High Fault Grade",
         "单体SOC过低故障等级": "Cell SOC Too Low Fault Grade",
         "簇间压差过大故障": "Cluster Inter-voltage Difference Excessive Fault",
-        "簇间电流差过大故障": "Cluster Inter-current Difference Excessive Fault"
+        "簇间电流差过大故障": "Cluster Inter-current Difference Excessive Fault",
+        "铜排过温告警等级": "Busbar Overtemperature Alarm Grade",
+        "BMU动力接插件温差上限告警等级": "BMU Power Connector Temp Diff Upper Limit Alarm Grade",
+        "簇端动力接插件温差上限告警等级": "Cluster Power Connector Temp Diff Upper Limit Alarm Grade"
       },
       "blockCommLost": {
         "1#BCU通讯失联": "BCU Communication Lost #1",
@@ -5978,17 +6285,17 @@
           "workStatus": "Work Status Info",
           "maxChargeCurrent": "Max Charge Current (A)",
           "maxDischargeCurrent": "Max Discharge Current (A)",
-          "stackSoc": "Stack SOC (%)",
-          "chargeableEnergy": "Stack Chargeable Energy (kWh)",
-          "dischargeableEnergy": "Stack Dischargeable Energy (kWh)",
-          "stackVoltage": "Stack Total Voltage (V)",
-          "stackCurrent": "Stack Total Current (A)",
-          "cellMaxSoc": "Max Cell SOC in Stack (%)",
-          "cellMinSoc": "Min Cell SOC in Stack (%)",
-          "cellMaxVoltage": "Max Cell Voltage in Stack (V)",
-          "cellMinVoltage": "Min Cell Voltage in Stack (V)",
-          "cellMaxTemp": "Max Cell Temperature in Stack (℃)",
-          "cellMinTemp": "Min Cell Temperature in Stack (℃)",
+          "blockSoc": "Block SOC (%)",
+          "chargeableEnergy": "Block Chargeable Energy (kWh)",
+          "dischargeableEnergy": "Block Dischargeable Energy (kWh)",
+          "blockVoltage": "Block Total Voltage (V)",
+          "blockCurrent": "Block Total Current (A)",
+          "cellMaxSoc": "Max Cell SOC in Block (%)",
+          "cellMinSoc": "Min Cell SOC in Block (%)",
+          "cellMaxVoltage": "Max Cell Voltage in Block (V)",
+          "cellMinVoltage": "Min Cell Voltage in Block (V)",
+          "cellMaxTemp": "Max Cell Temperature in Block (℃)",
+          "cellMinTemp": "Min Cell Temperature in Block (℃)",
           "maxChargePower": "Max Allowable Charge Power (kW)",
           "maxDischargePower": "Max Acceptable Discharge Power (kW)"
         },
@@ -8109,7 +8416,6 @@
           "reversePhase": "Reverse Phase",
           "dcOvervoltage": "DC Overvoltage",
           "dcUndervoltage": "DC Undervoltage",
-          "powerFault": "Power Fault",
           "refrigerationPoint": "Refrigeration Point (°C)",
           "refrigerationHysteresis": "Refrigeration Hysteresis (°C)",
           "heatingPoint": "Heating Point (°C)",
@@ -8120,6 +8426,16 @@
           "temperatureUnderheatPoint": "Low Temperature Point (°C)",
           "humidityOverheatPoint": "High Humidity Point (%)",
           "internalFanStopPoint": "Internal Fan Stop Point (°C)",
+          "monitoringSwitch": "Monitoring Power Switch",
+          "issuedMaxControlTemp": "Issued Maximum Control Temperature (°C)",
+          "issuedMinControlTemp": "Issued Minimum Control Temperature (°C)",
+          "reservedControl": "Reserved",
+          "issuedControlHumidity": "Issued Control Humidity (%)",
+          "startRefrigerationCommand": "Start Refrigeration Command",
+          "startAirSupplyCommand": "Start Air Supply Command",
+          "startStandbyCommand": "Start Standby Command",
+          "enableElectricHeater": "Enable Electric Heater",
+          "powerFault": "Power Fault",
           "currentRunMode": "Current Run Mode"
         },
         "valueMap": {
@@ -8298,6 +8614,33 @@
             "3": "Dehumidification",
             "4": "Cooling",
             "5": "Heating"
+          },
+          "monitoringSwitch": {
+            "0": "Off",
+            "1": "On"
+          },
+          "startRefrigerationCommand": {
+            "0": "Off",
+            "1": "On"
+          },
+          "startAirSupplyCommand": {
+            "0": "Off",
+            "1": "On"
+          },
+          "startStandbyCommand": {
+            "0": "Off",
+            "1": "On"
+          },
+          "enableElectricHeater": {
+            "0": "Off",
+            "1": "On"
+          },
+          "forcedMode": {
+            "0": "Auto",
+            "1": "Force Cooling",
+            "2": "Force Heating",
+            "3": "Force Air Supply",
+            "4": "Force Standby"
           }
         }
       },
@@ -8418,14 +8761,26 @@
       "yijie": {
         "fields": {
           "dataLength": "Data Length",
+          "fireAddress": "Fire Device Address",
+          "commStatus": "Fire Device Communication Status",
           "hydrogen": "Hydrogen",
           "carbonMonoxide": "Carbon Monoxide"
+        },
+        "valueMap": {
+          "fireAddress": {
+            "1": "Block 1",
+            "2": "Block 2"
+          },
+          "commStatus": {
+            "0": "Normal",
+            "1": "Communication Error"
+          }
         }
       }
     },
     "meter": {
       "title": "Meter",
-      "subtitle": "Stack Meter Data Monitoring",
+      "subtitle": "Block Meter Data Monitoring",
       "blockSelect": "Block Select",
       "type": "Meter Type",
       "selectType": "Please select meter type",
@@ -8441,6 +8796,8 @@
       "dtsd1352": {
         "fields": {
           "dataLength": "Data Length",
+          "meterAddress": "Meter Address",
+          "commStatus": "Meter Communication Status",
           "combinedActiveEnergy": "Combined Active Energy (kWh)",
           "forwardTotalActiveEnergy": "Forward Total Active Energy (kWh)",
           "forwardSharpActiveEnergy": "Forward Sharp Active Energy (kWh)",
@@ -8515,6 +8872,16 @@
           "currentDemandReverseActive": "Current Reverse Active Demand",
           "currentDemandForwardReactive": "Current Forward Reactive Demand",
           "currentDemandReverseReactive": "Current Reverse Reactive Demand"
+        },
+        "valueMap": {
+          "meterAddress": {
+            "1": "Block 1",
+            "2": "Block 2"
+          },
+          "commStatus": {
+            "0": "Normal",
+            "1": "Communication Error"
+          }
         }
       }
     }
@@ -8575,7 +8942,7 @@
       "status": "Peripheral Status"
     },
     "kpi": {
-      "stackStatus": "Block States",
+      "blockStatus": "Block States",
       "totalCharge": "Total Charge (kWh)",
       "totalDischarge": "Total Discharge (kWh)",
       "ratedEnergy": "Rated Energy (kWh)",

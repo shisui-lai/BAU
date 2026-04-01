@@ -1,7 +1,7 @@
 <!-- 故障页面 - 使用 clusterStore 统一管理筛选状态 -->
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { parseFault, sortedAllFaults } from '../../composables/core/data-processing/common/parseFault'
+import { parseFault, pruneFaultsByBmuLimit, sortedAllFaults } from '../../composables/core/data-processing/common/parseFault'
 import { useClusterStore } from '../../stores/device/clusterStore'
 import { useBlockStore } from '../../stores/device/blockStore'
 import { useI18n } from 'vue-i18n'
@@ -61,6 +61,8 @@ function onBattParamRead(_e: unknown, msg: any) {
   }
   const prev = bmuLimitByBlock.value[blockId]
   bmuLimitByBlock.value[blockId] = limit!
+  // 同步清理存储层中“超出当前BMU上限”的历史故障，避免页面出现瞬时闪烁
+  pruneFaultsByBmuLimit(blockId, limit!)
   console.log(`[Fault.vue] 更新BMU上限: 堆=${blockId}, 上限=${limit}, 旧值=${prev ?? '无'}`)
 }
 

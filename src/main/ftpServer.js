@@ -114,7 +114,7 @@ function validateUpgradeFile(filePath) {
     if (stats.size > 100 * 1024 * 1024) return false // 限制100MB
 
     // 文件扩展名验证
-    const validExtensions = ['.bin', '.hex', '.fw', '.img', '.dat', '.pkg']
+    const validExtensions = ['.bin', '.hex', '.fw', '.img', '.dat', '.pkg', '.cfg']
     const ext = path.extname(fileName).toLowerCase()
     if (!validExtensions.includes(ext)) return false
 

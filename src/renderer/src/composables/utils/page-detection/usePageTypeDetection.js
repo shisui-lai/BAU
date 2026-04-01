@@ -29,15 +29,14 @@ export function usePageTypeDetection() {
     '/cluster/peripheral/ref': 'clusterread',
     '/Cluster/Peripheral/Dehumi': 'clusterread',
     '/cluster/peripheral/dehumi': 'clusterread',
+    '/Cluster/Peripheral/Fire': 'clusterread',
+    '/cluster/peripheral/fire': 'clusterread',
     '/Cluster/Fault': 'clusterread', // 故障页面
     '/cluster/fault': 'clusterread', // 故障页面（备用路由）
     '/FaultOverview': 'standalone', // 故障总览页面（独立页面：不显示顶栏选择器，在页面内提供选择器）
     '/fault-overview': 'standalone', // 故障总览页面（备用路由）
-    // 设备管理页面（独立页面：固定topic，无选择器）
-    '/Block/DeviceManagement': 'standalone',
     // BAU地址探测页面（独立页面：无选择器）
     '/Device/BauAddressDetection': 'standalone',
-    '/block/device-management': 'standalone',
     '/Peripheral/BlockPcs': 'blockread',
     '/Peripheral/BlockMeter': 'blockread',
     '/Peripheral/BlockFire': 'blockread',
@@ -64,12 +63,12 @@ export function usePageTypeDetection() {
     '/block/blockInfo': 'blockread', // 堆信息页面（备用路由）
     '/Block/BlockVersion': 'standalone', // 堆版本信息页面（独立页面，无选择器）
     '/block/blockVersion': 'standalone', // 堆版本信息页面（备用路由）
-    '/Block/BlockIO': 'blockread', // 堆IO状态页面（堆级只读页面）
-    '/block/blockIO': 'blockread', // 堆IO状态页面（备用路由）
+    '/Block/BlockIO': 'standalone', // 堆IO状态页面（堆级只读页面）
+    '/block/blockIO': 'standalone', // 堆IO状态页面（备用路由）
     '/Block/BlockSysAbstract': 'blockread', // 堆系统概要页面
     '/block/blockSysAbstract': 'blockread', // 堆系统概要页面（备用路由）
     '/Bau/address-adaptive': 'blockread', // 地址自适应页面
-    '/Bau/upgrade': 'blockread',
+    '/Bau/upgrade': 'standalone',
     '/Bau/eventRecord/event': 'blockread', // 系统时间与记录页面（堆级只读页面）
 
     // ================== 堆级遥调、遥控页面 (block-type) ==================

@@ -13,81 +13,157 @@
           <div class="command-section">
             <h3 class="section-title">{{ t('blockRemoteCommandPage.sections.controlCommands') }}</h3>
             <div class="command-grid">
-              <template v-for="command in controlCommandTableData" :key="command.id">
-                <div 
+              <div v-for="command in controlCommandTableData" :key="command.id">
+                <!-- 通用命令行：排除需要单独密码弹窗处理的命令 -->
+                <div
+                  v-if="command.id !== 'reset_flexcfg_area_times' && command.id !== 'erase_flexcfg_area'"
                   class="command-item"
                 >
-                <div class="command-label">
-                  {{ getCommandDisplayName(command.name) }}
-                  <Tag
-                    v-if="command.mode"
-                    :value="getModeLabel(command.mode)"
-                    :severity="getModeSeverity(command.mode)"
-                    class="mode-tag"
-                  />
-                </div>
-                <div class="flex align-items-center gap-2 flex-1 justify-content-end">
-                  <!-- 下拉选择类型 -->
-                  <div v-if="command.uiType === 'dropdown'" class="flex align-items-center gap-2">
-                    <Dropdown
-                      v-model="selectedValues[command.id]"
-                      :options="translateOptions(command.options)"
-                      optionLabel="label"
-                      optionValue="value"
-                      :placeholder="t('blockRemoteCommandPage.buttons.select') + getCommandDisplayName(command.name)"
-                      class="w-full"
-                      :disabled="executingCommands.has(command.id)"
+                  <div class="command-label">
+                    {{ getCommandDisplayName(command.name) }}
+                    <Tag
+                      v-if="command.mode"
+                      :value="getModeLabel(command.mode)"
+                      :severity="getModeSeverity(command.mode)"
+                      class="mode-tag"
                     />
                   </div>
+                  <div class="flex align-items-center gap-2 flex-1 justify-content-end">
+                    <!-- 下拉选择类型 -->
+                    <div v-if="command.uiType === 'dropdown'" class="flex align-items-center gap-2">
+                      <Dropdown
+                        v-model="selectedValues[command.id]"
+                        :options="translateOptions(command.options)"
+                        optionLabel="label"
+                        optionValue="value"
+                        :placeholder="t('blockRemoteCommandPage.buttons.select') + getCommandDisplayName(command.name)"
+                        class="w-full"
+                        :disabled="executingCommands.has(command.id)"
+                      />
+                    </div>
 
-                  <!-- 输入框类型 -->
-                  <div v-else-if="command.uiType === 'input'" class="flex align-items-center gap-2">
-                    <InputNumber
-                      v-model="selectedValues[command.id]"
-                      :placeholder="getInputPlaceholder(command.inputConfig?.placeholder)"
-                      :min="command.inputConfig?.min"
-                      :max="command.inputConfig?.max"
-                      :step="command.inputConfig?.step"
-                      :minFractionDigits="getFractionDigitsByScale(command.inputConfig?.scale)"
-                      :maxFractionDigits="getFractionDigitsByScale(command.inputConfig?.scale)"
-                      :suffix="command.inputConfig?.unit"
-                      class="w-full"
-                      :disabled="executingCommands.has(command.id)"
-                    />
-                  </div>
+                    <!-- 输入框类型：支持数字输入和密码输入 -->
+                    <div
+                      v-else-if="command.uiType === 'input'"
+                      class="flex align-items-center gap-2"
+                    >
+                      <!-- 密码输入：用于需要特定密码（如0574）的敏感命令 -->
+                      <InputText
+                        v-if="command.inputType === 'password'"
+                        v-model="selectedValues[command.id]"
+                        :placeholder="getInputPlaceholder(command.placeholder)"
+                        type="password"
+                        class="w-full"
+                        :disabled="executingCommands.has(command.id)"
+                      />
+                      <!-- 数字输入：用于数值型命令（如下设堆SOC） -->
+                      <InputNumber
+                        v-else
+                        v-model="selectedValues[command.id]"
+                        :placeholder="getInputPlaceholder(command.inputConfig?.placeholder)"
+                        :min="command.inputConfig?.min"
+                        :max="command.inputConfig?.max"
+                        :step="command.inputConfig?.step"
+                        :minFractionDigits="getFractionDigitsByScale(command.inputConfig?.scale)"
+                        :maxFractionDigits="getFractionDigitsByScale(command.inputConfig?.scale)"
+                        :suffix="command.inputConfig?.unit"
+                        class="w-full"
+                        :disabled="executingCommands.has(command.id)"
+                      />
+                    </div>
 
-                  <!-- 复选框组类型 - 直接展示 -->
-                  <div v-else-if="command.uiType === 'checkbox_group'" class="checkbox-group-control">
-                    <div class="checkbox-group-container">
-                      <div
-                        v-for="bitField in command.bitFields"
-                        :key="bitField.bit"
-                        class="checkbox-item"
-                      >
-                        <Checkbox
+                    <!-- 复选框组类型 -->
+                    <div
+                      v-else-if="command.uiType === 'checkbox_group'"
+                      class="checkbox-group-control"
+                    >
+                      <div class="checkbox-group-container">
+                        <div
+                          v-for="bitField in (command.id === 'reset_block_param' ? command.bitFields.filter(b => b.bit !== 2) : command.bitFields)"
+                          :key="bitField.bit"
+                          class="checkbox-item"
+                        >
+                          <Checkbox
                             :model-value="checkboxStates[command.id] && checkboxStates[command.id][bitField.bit]"
                             @update:model-value="(value) => handleCheckboxChange(command.id, bitField.bit, value)"
                             :inputId="'bit_' + command.id + '_' + bitField.bit"
                             :binary="true"
                             :disabled="executingCommands.has(command.id)"
                           />
-                        <label :for="'bit_' + command.id + '_' + bitField.bit" class="checkbox-label">
-                          {{ getOptionLabel(bitField.label) }}
-                        </label>
+                          <label :for="'bit_' + command.id + '_' + bitField.bit" class="checkbox-label">
+                            {{ getOptionLabel(bitField.label) }}
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <div class="flex justify-content-end">
+                    <Button
+                      :label="t('blockRemoteCommandPage.buttons.send')"
+                      icon="pi pi-send"
+                      class="p-button-sm p-button-success"
+                      @click="handleCommandClick(command)"
+                      :disabled="!canSendCommand(command) || executingCommands.has(command.id)"
+                      :loading="executingCommands.has(command.id)"
+                    />
+                  </div>
                 </div>
-                <div class="flex justify-content-end">
-                  <Button
-                    :label="t('blockRemoteCommandPage.buttons.send')"
-                    icon="pi pi-send"
-                    class="p-button-sm p-button-success"
-                    @click="handleCommandClick(command)"
-                    :disabled="!canSendCommand(command) || executingCommands.has(command.id)"
-                    :loading="executingCommands.has(command.id)"
-                  />
+
+                <!-- 复位系统端口配置参数：单独一行，无勾选框，点击发送后输入密码再发送 -->
+                <div v-if="command.id === 'reset_block_param'" class="command-item">
+                  <div class="command-label">
+                    {{ getOptionLabel('复位系统端口配置参数') }}
+                    <span class="password-hint">{{ t('blockRemoteCommandPage.labels.needPassword') }}</span>
+                  </div>
+                  <div class="flex align-items-center gap-2 flex-1 justify-content-end"></div>
+                  <div class="flex justify-content-end">
+                    <Button
+                      :label="t('blockRemoteCommandPage.buttons.send')"
+                      icon="pi pi-send"
+                      class="p-button-sm p-button-success"
+                      @click="handlePortParamSendClick()"
+                      :disabled="executingCommands.has('reset_block_param')"
+                      :loading="executingCommands.has('reset_block_param')"
+                    />
+                  </div>
                 </div>
+
+                <!-- 复位可配置默认参数次数：点击发送后弹出密码框，输入0574后下发控制字574 -->
+                <div v-if="command.id === 'reset_flexcfg_area_times'" class="command-item">
+                  <div class="command-label">
+                    {{ getCommandDisplayName(command.name) }}
+                    <span class="password-hint">{{ t('blockRemoteCommandPage.labels.needPassword') }}</span>
+                  </div>
+                  <div class="flex align-items-center gap-2 flex-1 justify-content-end"></div>
+                  <div class="flex justify-content-end">
+                    <Button
+                      :label="t('blockRemoteCommandPage.buttons.send')"
+                      icon="pi pi-send"
+                      class="p-button-sm p-button-success"
+                      @click="handleResetFlexcfgTimesClick()"
+                      :disabled="executingCommands.has('reset_flexcfg_area_times')"
+                      :loading="executingCommands.has('reset_flexcfg_area_times')"
+                    />
+                  </div>
+                </div>
+
+                <!-- 擦除可配置默认参数区：点击发送后弹出密码框，输入0574后下发控制字574 -->
+                <div v-if="command.id === 'erase_flexcfg_area'" class="command-item">
+                  <div class="command-label">
+                    {{ getCommandDisplayName(command.name) }}
+                    <span class="password-hint">{{ t('blockRemoteCommandPage.labels.needPassword') }}</span>
+                  </div>
+                  <div class="flex align-items-center gap-2 flex-1 justify-content-end"></div>
+                  <div class="flex justify-content-end">
+                    <Button
+                      :label="t('blockRemoteCommandPage.buttons.send')"
+                      icon="pi pi-send"
+                      class="p-button-sm p-button-success"
+                      @click="handleEraseFlexcfgAreaClick()"
+                      :disabled="executingCommands.has('erase_flexcfg_area')"
+                      :loading="executingCommands.has('erase_flexcfg_area')"
+                    />
+                  </div>
                 </div>
 
                 <!-- 接触器执行策略结果紧跟在“下设电池堆控制开关”之后显示 -->
@@ -96,13 +172,13 @@
                     {{ t('blockRemoteCommandPage.sections.contactorStrategyResult') }}
                   </div>
                   <div class="flex align-items-center gap-2 flex-1 justify-content-end">
-                    <div 
-                      v-for="item in feedbackStatusData" 
+                    <div
+                      v-for="item in feedbackStatusData"
                       :key="item.id"
                       class="flex align-items-center gap-2"
                     >
-                      <Tag 
-                        :value="getStatusDisplay(item.value)" 
+                      <Tag
+                        :value="getStatusDisplay(item.value)"
                         :severity="item.severity"
                         class="status-tag"
                       />
@@ -110,7 +186,7 @@
                   </div>
                   <div class="flex justify-content-end"></div>
                 </div>
-              </template>
+              </div>
             </div>
           </div>
           
@@ -149,6 +225,35 @@
         />
       </template>
     </Dialog>
+
+    <!-- 密码验证对话框（复位系统端口参数 / 复位/擦除可配置默认参数区 共用） -->
+    <Dialog
+      v-model:visible="showPasswordDialog"
+      :header="t('blockRemoteCommandPage.dialogs.passwordVerification')"
+      :modal="true"
+      :closable="true"
+      :style="{ width: '360px' }"
+      @hide="cancelPasswordDialog"
+    >
+      <div class="flex flex-column gap-3">
+        <p class="password-dialog-message">{{ getPasswordDialogMessage() }}</p>
+        <div class="field">
+          <label for="reset-port-password">{{ t('blockRemoteCommandPage.dialogs.passwordLabel') }}</label>
+          <InputText
+            id="reset-port-password"
+            v-model="inputPassword"
+            type="password"
+            @keyup.enter="confirmPasswordDialog"
+            autofocus
+          />
+        </div>
+        <div v-if="passwordError" class="password-error">{{ t('blockRemoteCommandPage.dialogs.passwordError') }}</div>
+      </div>
+      <template #footer>
+        <Button :label="t('blockRemoteCommandPage.buttons.cancel')" icon="pi pi-times" class="p-button-text" @click="cancelPasswordDialog" />
+        <Button :label="t('blockRemoteCommandPage.buttons.confirm')" icon="pi pi-check" @click="confirmPasswordDialog" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -160,8 +265,9 @@ import { useRemoteCommand } from '@/composables/core/data-processing/remote-cont
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useBlockSelect } from '@/composables/core/device-selection/useBlockSelect'
 import { parseBAUResponseCode, parseContactorExecutionResult } from '@/configs/commands/block/blockRemoteCommandConfig'
-// import { ERROR_CODES } from '../../../../main/table.js' // 已移除硬编码错误代码
+import { PAGE_PASSWORDS } from '@/configs/passwords'
 import Tag from 'primevue/tag'
+import InputText from 'primevue/inputtext'
 
 // Toast 组件
 const toast = useToast()
@@ -204,11 +310,12 @@ const {
   handleFeedbackQueryResponse
 } = useRemoteCommand({ selectorMode: 'block' })
 
-// ========== 计算属性 ==========
-
-
-
-// ========== 方法 ==========
+// 复位系统端口参数密码验证
+const showPasswordDialog = ref(false)
+const inputPassword = ref('')
+const passwordError = ref(false)
+// 当前需要密码验证的命令ID，用于区分不同敏感操作
+const currentPasswordCommandId = ref('reset_block_param')
 
 /** 获取模式标签文本 */
 function getModeLabel(mode) {
@@ -235,6 +342,15 @@ function getFractionDigitsByScale(scale) {
 }
 
 /**
+ * 根据当前密码命令ID，返回对应的提示文案
+ */
+function getPasswordDialogMessage() {
+  // 为保持所有敏感操作文案一致，这里统一使用配置中的提示文本
+  // 不在弹窗中直接暴露具体密码（如0574）
+  return t('blockRemoteCommandPage.dialogs.passwordMessage')
+}
+
+/**
  * 统一处理命令点击事件
  * @param {Object} command - 命令对象
  */
@@ -246,6 +362,81 @@ function handleCommandClick(command) {
   } else {
     handleCommandExecution(command.id, selectedValues[command.id], t, executeRemoteCommand)
   }
+}
+
+/** 密码验证通过后，根据当前命令ID发送对应控制字 */
+async function confirmPasswordDialog() {
+  // 1）复位系统端口配置参数：使用页面配置的密码
+  if (currentPasswordCommandId.value === 'reset_block_param') {
+    if (inputPassword.value !== PAGE_PASSWORDS.RESET_PORT) {
+      passwordError.value = true
+      return
+    }
+
+    showPasswordDialog.value = false
+    const result = await executeRemoteCommand('reset_block_param', 4)
+    inputPassword.value = ''
+    passwordError.value = false
+
+    if (result?.success) {
+      toast.add({
+        severity: 'success',
+        summary: t('toast.blockRemoteCommand.executeSuccess'),
+        detail: getOptionLabel('复位系统端口配置参数'),
+        life: 3000
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: t('toast.blockRemoteCommand.executeFailed'),
+        detail: result?.error || '',
+        life: 5000
+      })
+    }
+    return
+  }
+
+  // 2）复位/擦除可配置默认参数：密码固定为字符串"0574"，下发控制字574
+  if (currentPasswordCommandId.value === 'reset_flexcfg_area_times' || currentPasswordCommandId.value === 'erase_flexcfg_area') {
+    if (inputPassword.value !== '0574') {
+      passwordError.value = true
+      return
+    }
+
+    showPasswordDialog.value = false
+    const commandId = currentPasswordCommandId.value
+    const result = await executeRemoteCommand(commandId, 574)
+    const displayName =
+      commandId === 'reset_flexcfg_area_times'
+        ? getCommandDisplayName('复位可配置默认参数次数')
+        : getCommandDisplayName('擦除可配置默认参数区')
+
+    inputPassword.value = ''
+    passwordError.value = false
+
+    if (result?.success) {
+      toast.add({
+        severity: 'success',
+        summary: t('toast.blockRemoteCommand.executeSuccess'),
+        detail: displayName,
+        life: 3000
+      })
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: t('toast.blockRemoteCommand.executeFailed'),
+        detail: result?.error || '',
+        life: 5000
+      })
+    }
+    return
+  }
+}
+
+function cancelPasswordDialog() {
+  showPasswordDialog.value = false
+  inputPassword.value = ''
+  passwordError.value = false
 }
 
 /**
@@ -314,12 +505,34 @@ function canSendCommand(command) {
     return inputValue != null && inputValue !== ''
   }
   if (command.uiType === 'checkbox_group') {
-    // 检查是否有选中的复选框
-    return command.bitFields?.some(bitField => {
-      return checkboxStates[command.id] && checkboxStates[command.id][bitField.bit]
-    })
+    const fields = command.id === 'reset_block_param' ? command.bitFields.filter((b) => b.bit !== 2) : command.bitFields
+    return fields.some((bf) => checkboxStates[command.id]?.[bf.bit])
   }
   return true
+}
+
+/** 点击复位系统端口参数发送：弹出密码框，验证通过后直接发送 value=4 */
+function handlePortParamSendClick() {
+  inputPassword.value = ''
+  passwordError.value = false
+  currentPasswordCommandId.value = 'reset_block_param'
+  showPasswordDialog.value = true
+}
+
+/** 点击复位可配置默认参数次数：弹出密码框，验证通过后发送 command=574 */
+function handleResetFlexcfgTimesClick() {
+  inputPassword.value = ''
+  passwordError.value = false
+  currentPasswordCommandId.value = 'reset_flexcfg_area_times'
+  showPasswordDialog.value = true
+}
+
+/** 点击擦除可配置默认参数区：弹出密码框，验证通过后发送 command=574 */
+function handleEraseFlexcfgAreaClick() {
+  inputPassword.value = ''
+  passwordError.value = false
+  currentPasswordCommandId.value = 'erase_flexcfg_area'
+  showPasswordDialog.value = true
 }
 
 
@@ -773,6 +986,41 @@ function getStatusDisplay(value) {
   border-color: var(--primary-color);
   background: linear-gradient(135deg, var(--highlight-bg) 0%, var(--surface-hover) 100%);
   transform: translateX(2px);
+}
+
+/* 密码提示文字 */
+.password-hint {
+  font-size: 0.8rem;
+  color: var(--orange-500);
+  margin-left: 4px;
+}
+
+/* 密码对话框样式 */
+.password-dialog-message {
+  margin: 0 0 12px 0;
+  color: var(--text-color);
+  line-height: 1.5;
+}
+
+.password-dialog-message + .field {
+  margin-top: 0;
+}
+
+.password-error {
+  color: var(--red-500);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.password-dialog-message + .field label,
+.field label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.field .p-inputtext {
+  width: 100%;
 }
 
 .checkbox-label {

@@ -28,6 +28,7 @@ import {
   BLOCK_VERSION,
   BLOCK_SYS_ABSTRACT,
   BLOCK_IO_STATUS,
+  BLOCK_DI_DO_FLEXCFG_REMAP,
   BLOCK_ANALOG_FAULT_LEVEL,
   BLOCK_ANALOG_FAULT_GRADE,
   BLOCK_COMMON_PARAM_R,
@@ -597,17 +598,19 @@ export function processPackSummaryRAW(hexString) {
   const buf = toBuf(hexString)
   const view = dv(buf)
 
-  // 1. 解析 DataLength 和 bmuTotal
+  // 1. 解析 DataLength 和 bmuTotal / afePerBmu（BMU 下 AFE 数量）
   const { baseConfig: head, nextOffset: off1 } = parseByTable(
     view,
     [{ key: 'DataLength', type: 'u16' }],
     0
   )
   const bmuTotal = view.getUint8(off1, true)
-  const off2 = off1 + 1
+  const afePerBmu = view.getUint8(off1 + 1, true)
+  const off2 = off1 + 2
 
   // 2. 生成完整 schema（32 BMU + 故障 + 32 Volt + 32 Temp + ...）
-  const schema = PACK_SUMMARY(bmuTotal)
+  //    新协议在头部增加了 BMU 下 AFE 数量，因此需要同时传入 bmuTotal 与 afePerBmu
+  const schema = PACK_SUMMARY(bmuTotal, afePerBmu)
 
   // 3. 按 schema 完整解析 buffer - 使用新的解析函数
   const { baseConfig: bodyFlat } = parseByTableWithSkip(view, schema, off2)
@@ -628,9 +631,9 @@ export function processPackSummaryRAW(hexString) {
   //   data: result
   // };
 
-  // 封装消息
+  // 封装消息（同时返回 afePerBmu，便于前端或后续处理使用）
   return {
-    baseConfig: { DataLength: head.DataLength, bmuTotal },
+    baseConfig: { DataLength: head.DataLength, bmuTotal, afePerBmu },
     data: grouped
   }
 }
@@ -690,7 +693,7 @@ export function processHardwareFaultRAW(hex) {
   }
 }
 
-//解析二级故障数据
+// 解析二级故障数据（协议：DataLength 2B + bmuTotal 1B + afePerBmu 1B + 常规故障二级点表 62×2B）
 export function processSecondFaultRAW(hex) {
   const buf = toBuf(hex)
   const view = dv(buf)
@@ -702,23 +705,21 @@ export function processSecondFaultRAW(hex) {
     0
   )
 
-  // ② 读 BMU 数量
+  // ② 读 BMU 数量、BMU 下 AFE 数量（新协议增加 1 字节）
   const bmuTotal = view.getUint8(o1, true)
-  const o2 = o1 + 1 // 若协议还有 1B 对齐，再 +1
+  const afePerBmu = view.getUint8(o1 + 1, true)
+  const o2 = o1 + 2
 
-  // ③ schema & 正文解析
-  const schema = FAULT_LEVEL2_SCHEMA(bmuTotal)
+  // ③ 按 (bmuTotal, afePerBmu) 生成 schema，解析正文（62 个 u16）
+  const schema = FAULT_LEVEL2_SCHEMA(bmuTotal, afePerBmu)
   const DEBUG_SCHEMA = false
   if (DEBUG_SCHEMA) {
-    // console.log('=== SCHEMA START ===')
     schema.slice(0, 20).forEach((f, i) => console.log(i, f.key, f.type, f.bitsOf ?? ''))
-    // console.log('   ... total fields:', schema.length)
-    // console.log('=== SCHEMA END ===')
   }
   const { baseConfig: flat } = parseByTable(view, schema, o2)
 
   return {
-    baseConfig: { DataLength: head.DataLength, bmuTotal },
+    baseConfig: { DataLength: head.DataLength, bmuTotal, afePerBmu },
     data: groupByClass(schema, flat)
   }
 }
@@ -899,6 +900,29 @@ export function processBlockIoStatusRAW(hexString) {
   const { baseConfig: flat } = parseByTable(view, schema, off1)
 
   /* 4. 分组输出 */
+  return {
+    baseConfig: { DataLength: head.DataLength },
+    data: groupByClass(schema, flat)
+  }
+}
+
+/**
+ * 解析堆 DI/DO 灵活配置映射（topic: block_di_do_flexcfg_remap）
+ * 结构：2B DataLength + 36×u16；每项低 8 位为信号名编号，高 8 位为硬件通道编号（DIDO 附录 25）
+ */
+export function processBlockDiDoFlexcfgRemapRAW(hexString) {
+  const buf = toBuf(hexString)
+  const view = dv(buf)
+
+  const { baseConfig: head, nextOffset: off1 } = parseByTable(
+    view,
+    [{ key: 'DataLength', type: 'u16' }],
+    0
+  )
+
+  const schema = BLOCK_DI_DO_FLEXCFG_REMAP
+  const { baseConfig: flat } = parseByTable(view, schema, off1)
+
   return {
     baseConfig: { DataLength: head.DataLength },
     data: groupByClass(schema, flat)

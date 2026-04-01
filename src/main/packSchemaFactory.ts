@@ -264,9 +264,13 @@ export const CELL_HEADER = [
 // }
 
 // 新版本：固定生成32个BMU的完整数据，通过valid标记区分有效数据
-export function PACK_SUMMARY (bmuTotal: number): PackField[] {
+// 协议扩展：新增 BMU 下 AFE 数量参数，用于在 BMU 产品编码之后追加 铜排温度段
+export function PACK_SUMMARY (bmuTotal: number, afePerBmu: number): PackField[] {
   /* 最多 32，保险起见截断 */
   const n = Math.min(Math.max(bmuTotal, 0), 32)
+
+  // AFE 数量同样做简单保护，防止异常配置；实际寄存器数量为 n * afePerBmuSafe
+  const afePerBmuSafe = Math.max(0, afePerBmu | 0)
 
   const schema: PackField[] = []
 
@@ -386,6 +390,21 @@ export function PACK_SUMMARY (bmuTotal: number): PackField[] {
       type  : 'str14',
       valid : valid,
     })
+  }
+
+  /* n × AFE_PER_BMU × 铜排温度（按实际配置上报） --------------------- */  // 默认每个 AFE 有 1 个铜排温度，数量为 BMU 总数量 × BMU 下 AFE 数量
+  // 仅对 1..n 的 BMU 生成字段；若某些 AFE 物理上不存在，其值由设备侧按协议填 0 或无效值
+  for (let bmu = 1; bmu <= n; bmu++) {
+    for (let afe = 1; afe <= afePerBmuSafe; afe++) {
+      schema.push({
+        class : '铜排温度',
+        key   : `Bmu${bmu}Afe${afe}BusbarTemp`,
+        label : `BMU${bmu}-AFE${afe} 铜排温度(℃)`,
+        type  : 's16',
+        scale : 10,
+        valid : true
+      })
+    }
   }
 
   return schema
@@ -803,9 +822,11 @@ export function BMU_DEBUG_SCHEMA(bmuTotal: number, afePerBmu: number): PackField
 
 
 //   return s
-// }/* -------- 动态 故障等级 2 schema ---------- */
-export function FAULT_LEVEL2_SCHEMA(bmuTotal = 32): PackField[] {
+// }/* -------- 动态 故障等级 2 schema（协议：62×u16，含 铜排过温） ---------- */
+export function FAULT_LEVEL2_SCHEMA(bmuTotal = 32, afePerBmu = 0): PackField[] {
   const n = Math.min(Math.max(bmuTotal, 1), 32);
+  const afePerBmuSafe = Math.max(0, afePerBmu | 0);
+  const totalAfe = Math.min(n * afePerBmuSafe, 128);
   const s: PackField[] = [];
 
   /** ① 单体电池过压 / 欠压 / 温度 / SOC（单 bit，共 8 类） */
@@ -947,7 +968,7 @@ export function FAULT_LEVEL2_SCHEMA(bmuTotal = 32): PackField[] {
     });
   });
 
-  /** ⑤ 其他故障-2（固定7项，2-bit） */
+  /** ⑤ 其他故障-2（8 项 2-bit：含 bit14-15 BMU动力接插件温差故障等级） */
   s.push({
     class: '其他故障',
     key: 'Misc2',
@@ -964,6 +985,7 @@ export function FAULT_LEVEL2_SCHEMA(bmuTotal = 32): PackField[] {
     ['RT3OT', 'RT3过温'],
     ['RT4OT', 'RT4过温'],
     ['RT5OT', 'RT5过温'],
+    ['BmuPluginTempDiff', 'BMU动力接插件温差故障等级'],
   ].forEach(([key, label], idx) => {
     s.push({
       class: '其他故障',
@@ -976,6 +998,59 @@ export function FAULT_LEVEL2_SCHEMA(bmuTotal = 32): PackField[] {
       map: ALARM_MAP
     });
   });
+
+  /** ⑥ 其他故障-3（bit0-1 簇端动力接插件温差，bit2-15 预留） */
+  s.push({
+    class: '其他故障',
+    key: 'Misc3',
+    type: 'u16',
+    scale: 1,
+    hide: false,
+    label: ''
+  });
+  s.push({
+    class: '其他故障',
+    key: 'ClusterPluginTempDiff',
+    label: '簇端动力接插件温差故障等级',
+    type: 'bits',
+    bitsOf: 'Misc3',
+    bit: 0,
+    len: 2,
+    map: ALARM_MAP
+  });
+
+  /** ⑦ 预留 3 个 u16 */
+  s.push({ class: '预留', key: '_fault_l2_rsv1', label: '', type: 'skip2' });
+  s.push({ class: '预留', key: '_fault_l2_rsv2', label: '', type: 'skip2' });
+  s.push({ class: '预留', key: '_fault_l2_rsv3', label: '', type: 'skip2' });
+
+  /** ⑧ 铜排过温（16 个 u16，每寄存器 8 个 AFE×2bit，按 bmuTotal×afePerBmu 有效，最多 128） */
+  for (let g = 0; g < 16; g++) {
+    s.push({
+      class: '铜排过温',
+      key: `AfeBusbarOT${g + 1}`,
+      type: 'u16',
+      scale: 1,
+      hide: false,
+      label: ''
+    });
+    for (let i = 0; i < 8; i++) {
+      const afeId = g * 8 + i + 1;
+      const valid = afeId <= totalAfe;
+      s.push({
+        class: '铜排过温',
+        key: `AFE${afeId}_BusbarOT`,
+        label: `AFE${afeId} 铜排过温故障等级`,
+        type: 'bits',
+        bitsOf: `AfeBusbarOT${g + 1}`,
+        bit: i * 2,
+        len: 2,
+        map: ALARM_MAP,
+        valid,
+        hide: !valid
+      });
+    }
+  }
 
   return s;
 }
@@ -1651,7 +1726,7 @@ export function CLU_ANALOG_FAULT_LEVEL_SUM_SCHEMA(clusterCount: number): PackFie
       { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}BcuRt3OvertempSevere`, label: 'BCU RT3过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault1`, bit: 12 },
       { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}BcuRt4OvertempSevere`, label: 'BCU RT4过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault1`, bit: 13 },
       { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}BcuRt5OvertempSevere`, label: 'BCU RT5过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault1`, bit: 14 },
-      { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}AnalogSevereFault1Reserved`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault1`, bit: 15 }
+      { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}BusbarOvertempSevere`, label: '铜排过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault1`, bit: 15 }
     );
     
     // 第i簇严重故障2 (2字节)
@@ -1679,8 +1754,8 @@ export function CLU_ANALOG_FAULT_LEVEL_SUM_SCHEMA(clusterCount: number): PackFie
       { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}DischargeCellTempLowerLimitSevere`, label: '放电单体温度下限告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault2`, bit: 11 },
       { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}CellSocUpperLimitSevere`, label: '单体SOC上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault2`, bit: 12 },
       { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}CellSocLowerLimitSevere`, label: '单体SOC下限告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault2`, bit: 13 },
-      { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}AnalogSevereFault2Reserved`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault2`, bit: 14 },
-      { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}AnalogSevereFault2Reserved2`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault2`, bit: 15 }
+      { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}BmuPluginTempDiffUpperLimitSevere`, label: 'BMU动力接插件温差上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault2`, bit: 14 },
+      { class: `第${i}簇模拟量严重故障`, key: `Cluster${i}ClusterPluginTempDiffUpperLimitSevere`, label: '簇端动力接插件温差上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogSevereFault2`, bit: 15 }
     );
     
     // 第i簇一般故障1 (2字节)
@@ -1709,7 +1784,7 @@ export function CLU_ANALOG_FAULT_LEVEL_SUM_SCHEMA(clusterCount: number): PackFie
       { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}BcuRt3OvertempGeneral`, label: 'BCU RT3过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault1`, bit: 12 },
       { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}BcuRt4OvertempGeneral`, label: 'BCU RT4过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault1`, bit: 13 },
       { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}BcuRt5OvertempGeneral`, label: 'BCU RT5过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault1`, bit: 14 },
-      { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}AnalogGeneralFault1Reserved`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault1`, bit: 15 }
+      { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}BusbarOvertempGeneral`, label: '铜排过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault1`, bit: 15 }
     );
     
     // 第i簇一般故障2 (2字节)
@@ -1737,8 +1812,8 @@ export function CLU_ANALOG_FAULT_LEVEL_SUM_SCHEMA(clusterCount: number): PackFie
       { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}DischargeCellTempLowerLimitGeneral`, label: '放电单体温度下限告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault2`, bit: 11 },
       { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}CellSocUpperLimitGeneral`, label: '单体SOC上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault2`, bit: 12 },
       { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}CellSocLowerLimitGeneral`, label: '单体SOC下限告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault2`, bit: 13 },
-      { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}AnalogGeneralFault2Reserved`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault2`, bit: 14 },
-      { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}AnalogGeneralFault2Reserved2`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault2`, bit: 15 }
+      { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}BmuPluginTempDiffUpperLimitGeneral`, label: 'BMU动力接插件温差上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault2`, bit: 14 },
+      { class: `第${i}簇模拟量一般故障`, key: `Cluster${i}ClusterPluginTempDiffUpperLimitGeneral`, label: '簇端动力接插件温差上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogGeneralFault2`, bit: 15 }
     );
     
     // 第i簇轻微故障1 (2字节)
@@ -1767,7 +1842,7 @@ export function CLU_ANALOG_FAULT_LEVEL_SUM_SCHEMA(clusterCount: number): PackFie
       { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}BcuRt3OvertempMinor`, label: 'BCU RT3过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault1`, bit: 12 },
       { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}BcuRt4OvertempMinor`, label: 'BCU RT4过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault1`, bit: 13 },
       { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}BcuRt5OvertempMinor`, label: 'BCU RT5过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault1`, bit: 14 },
-      { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}AnalogMinorFault1Reserved`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault1`, bit: 15 }
+      { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}BusbarOvertempMinor`, label: '铜排过温告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault1`, bit: 15 }
     );
     
     // 第i簇轻微故障2 (2字节)
@@ -1795,8 +1870,8 @@ export function CLU_ANALOG_FAULT_LEVEL_SUM_SCHEMA(clusterCount: number): PackFie
       { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}DischargeCellTempLowerLimitMinor`, label: '放电单体温度下限告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault2`, bit: 11 },
       { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}CellSocUpperLimitMinor`, label: '单体SOC上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault2`, bit: 12 },
       { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}CellSocLowerLimitMinor`, label: '单体SOC下限告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault2`, bit: 13 },
-      { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}AnalogMinorFault2Reserved`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault2`, bit: 14 },
-      { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}AnalogMinorFault2Reserved2`, label: '预留', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault2`, bit: 15 }
+      { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}BmuPluginTempDiffUpperLimitMinor`, label: 'BMU动力接插件温差上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault2`, bit: 14 },
+      { class: `第${i}簇模拟量轻微故障`, key: `Cluster${i}ClusterPluginTempDiffUpperLimitMinor`, label: '簇端动力接插件温差上限告警', type: 'bit', bitsOf: `Cluster${i}AnalogMinorFault2`, bit: 15 }
     );
   }
   
@@ -1847,7 +1922,7 @@ export function CLU_ANALOG_FAULT_GRADE_SCHEMA(clusterCount: number): PackField[]
       { class: `第${i}簇模拟量故障等级2`, key: `Cluster${i}BcuRt3OvertempFaultGrade`, label: 'BCU RT3过温告警等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade2`, bit: 8, len: 2 },
       { class: `第${i}簇模拟量故障等级2`, key: `Cluster${i}BcuRt4OvertempFaultGrade`, label: 'BCU RT4过温告警等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade2`, bit: 10, len: 2 },
       { class: `第${i}簇模拟量故障等级2`, key: `Cluster${i}BcuRt5OvertempFaultGrade`, label: 'BCU RT5过温告警等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade2`, bit: 12, len: 2 },
-      { class: `第${i}簇模拟量故障等级2`, key: `Cluster${i}AnalogFaultGrade2Reserved`, label: '预留', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade2`, bit: 14, len: 2 }
+      { class: `第${i}簇模拟量故障等级2`, key: `Cluster${i}BusbarOvertempFaultGrade`, label: '铜排过温告警等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade2`, bit: 14, len: 2 }
     );
     
     // 第i簇故障等级3 (2字节) - 8个故障类型，每个2位
@@ -1888,7 +1963,8 @@ export function CLU_ANALOG_FAULT_GRADE_SCHEMA(clusterCount: number): PackField[]
       { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellDischargeUndertempFaultGrade`, label: '单体电池放电欠温故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 6, len: 2 },
       { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellSocTooHighFaultGrade`, label: '单体SOC过高故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 8, len: 2 },
       { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}CellSocTooLowFaultGrade`, label: '单体SOC过低故障等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 10, len: 2 },
-      { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}AnalogFaultGrade4Reserved`, label: '预留', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 12, len: 4 }
+      { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}BmuPluginTempDiffUpperLimitFaultGrade`, label: 'BMU动力接插件温差上限告警等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 12, len: 2 },
+      { class: `第${i}簇模拟量故障等级4`, key: `Cluster${i}ClusterPluginTempDiffUpperLimitFaultGrade`, label: '簇端动力接插件温差上限告警等级', type: 'bits', bitsOf: `Cluster${i}AnalogFaultGrade4`, bit: 14, len: 2 }
     );
     
   }

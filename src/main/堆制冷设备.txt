@@ -1,0 +1,771 @@
+三河同飞水冷机数据结构						
+序号	参数名	单位	范围	偏移量	数据类型	备注
+1	"Operating Status  
+运行状态"		[0,4]	0	uint16_t	"0：空闲 
+1：准备启动 
+2：运行 
+3：延时停机
+4：故障"
+2	"Relay Output Status  
+继电器输出状态"			0	uint16_t	"bit0:供水泵 （1：运行；0：停机）
+bit1:供水泵2 （1：运行；0：停机）
+bit2:风机1 （1：运行；0：停机）
+bit3:风机2 （1：运行；0：停机）
+bit4: 加热带1 （1：运行；0：停机）
+bit5:加热管 （1：运行；0：停机）
+bit6:报警输出（1：正常；0：故障）
+bit7:补液电磁阀 （1：运行；0：停
+机）
+bit8:补液泵 （1：运行；0：停机）
+bit9: 加热带2 （1：运行；0：停机）"
+3	"Supply Liquid Temperature  
+供液温度"	0.01℃		0	uint16_t	
+4	"Return Liquid Temperature  
+回液温度"	0.1℃		0	uint16_t	
+5	"System Evaporator 1 Inlet Temperature  
+系统蒸发1进口温度"	0.1℃		0	uint16_t	
+6	"System Evaporator 2 Inlet Temperature  
+系统蒸发2进口温度"	0.1℃		0	uint16_t	
+7	"Evaporator Outlet 1 Temperature  
+蒸发出口1温度"	0.1℃/0.1bar		0	uint16_t	
+8	"Evaporator Outlet 2 Temperature  
+蒸发出口2温度"	0.1℃/0.1bar		0	uint16_t	
+9	"Condenser Temperature 1/High Pressure 1  
+冷凝温度1/高压1压力"	0.1℃/0.1bar		0	uint16_t	
+10	"Condenser Temperature 2/High Pressure 2  
+冷凝温度2/高压2压力"	0.1℃/0.1bar		0	uint16_t	
+11	"Throttle 1 Electronic Expansion Current Opening  
+节流1电膨当前开度"	1步		0	uint16_t	
+12	"Throttle 2 Electronic Expansion Current Opening  
+节流2电膨当前开度"	1步		0	uint16_t	
+13	"Ambient Temperature  
+环境温度"	0.1℃		0	uint16_t	
+14	"Reserved  
+备用"			0	uint16_t	
+15	"Reserved  
+备用"			0	uint16_t	
+16	"Reserved  
+备用"			0	uint16_t	
+17	"Reserved  
+备用"			0	uint16_t	
+18	"Supply Water Pressure  
+供水压力"	0.1bar		0	uint16_t	
+19	"Return Water Pressure  
+回水压力"	0.1bar		0	uint16_t	
+20	"Fault Status 1  
+故 障 状 态 1"			0	uint16_t	"0：无故障，1：有故障
+bit2 系统1低压
+bit3 系统2低压
+bit4 压机过载
+bit5 液位故障
+bit6 供水泵过载
+bit7供水泵2过载
+bit9 加热管故障
+bit10 风机1过载
+bit11风机2过载
+bit12 相序错误
+bit13 备用故障
+bit14 流量故障
+bit15 气体压差故障"
+21	"Fault Status 2  
+故 障 状 态 2"			0	uint16_t	"0：无故障，1：有故障
+bit0 液温探头故障
+bit1 回液探头故障
+bit2 蒸进1探头故障
+bit3 蒸进2探头故障
+bit4 蒸出1探头故障
+bit5 蒸出2探头故障
+bit6 冷凝1探头故障
+bit7 冷凝2探头故障
+bit8 液温过高
+bit10 高压故障
+bit11 高压2故障
+bit12 高压报警锁定
+bit13 高压报警锁定
+bit14 2#冷凝温度未建立"
+22	"Fault Status 3  
+故 障 状 态 3"			0	uint16_t	"0：无故障，1：有故障
+bit0 供水压力传感器故障 
+bit1 补水压力传感器故障
+bit2 电导率传感器故障
+bit3 电导率过高
+bit4主板IIC出错
+bit5 备用
+bit6 变频器1通讯故障
+bit7 变频器1其它故障
+bit8 变频器2通讯故障
+bit9 变频器2其它故障
+bit10 备用
+bit11 备用
+bit12 回水压力过低故障
+bit13 供水压力过高故障
+bit14 液温过低
+bit15 第三方通讯故障"
+23	"Fault Status 4  
+故 障 状 态 4"			0	uint16_t	"0：无故障，1：有故障
+bit0 环温探头故障
+bit1 水泵变频器通讯故障
+bit2 水泵变频器其它故障
+bit3 低压1传感器故障
+bit4 低压2传感器故障
+bit5 高压1传感器故障
+bit6 高压2传感器故障
+bit7备用
+bit8备用
+bit9备用
+bit10备用
+bit11 备用
+bit12 三相电模块通讯故障
+bit13 三相电模块其它故障
+bit14 备用
+bit15 备用"
+24	"Fault Status 5  
+故障状态5"			0	uint16_t	"0：无故障，1：有故障
+bit0 风机1故障
+bit1 风机2故障
+bit2 风机3故障
+bit3 风机4故障
+bit4 风机5故障
+bit5 风机6故障
+bit6 风机模块通讯故障
+bit7备用
+bit8备用
+bit9泵1流量低
+bit10泵2流量低
+bit11 流量低
+bit12漏液报警
+bit13排气温度探头故障
+bit14 排气温度过高
+bit15排气温度过高锁定"
+25	"Operating Mode  
+工作模式"		[0,2]	0	uint16_t	"0:通过启动/停止进行开/关机控制。
+1：待机情况下，延时自动启动机组。
+2：远程控制开关闭合时，延时自动启动机组。"
+26	"Cooling Mode  
+制冷方式"		[0,4]	0	uint16_t	"0：关机模式：。
+1：制冷：水冷机自动控温，只能制冷，不启动加热。
+2：加热：水冷机自动控温，只能加热，不启动制冷。
+3：自循环：启动后，既不启动制冷，也不启动加热，只有水泵运转。
+4：自动：水冷机自动控温，既能制冷，有能启动加"
+27	"Cooling Set Value  
+制冷设置值"	0.1℃	[15.0,45.0]	0	uint16_t	
+28	"Cooling Control Hysteresis  
+制冷控制回差"	0.1℃	[0.0,9.9]	0	uint16_t	
+29	"Heating Set Value  
+制热设置值"	0.1℃	[15.0,45.0]	0	uint16_t	
+30	"Heating Control Hysteresis  
+制热控制回差"	0.1℃	[0.0,9.9]	0	uint16_t	
+31	"Temperature Control Target  
+控温对象"		[0,1]	0	uint16_t	"0：出液
+1：回液"
+32	"High Liquid Temperature Point  
+液温过高点"	0.1℃	[0.0,65.0]	0	uint16_t	
+33	"Low Liquid Temperature Point  
+液温过低点"	0.1℃	[-40.0,30.0]	0	uint16_t	
+34	"Low Return Liquid Pressure Point  
+回液压力过低点"	0.01	[0,15.00]	0	uint16_t	
+35	"High Outlet Liquid Pressure Point  
+出液压力过高点"	0.01	[0,15.00]	0	uint16_t	
+36	"Remote Signal  
+远程信号"		[0,1]	0	uint16_t	"0：禁用
+1：启用"
+37	"Auto Restart Delay Time  
+自启动延时时间"	S	[0,30]	0	uint16_t	
+38	"Communication Address  
+通信地址"		[0,128]	0	uint16_t	
+39	"Baud Rate  
+波特率"		[0,2]	0	uint16_t	"0:9600
+1:4800
+2:19200"
+40	"Low Flow Pump Cut-Off Alarm Value  
+流量低切泵报警值"		[0,300]	0	uint16_t	
+41	"High Conductivity Point  
+电导率过高点"		[0,200.0]	0	uint16_t	
+42	"Conductivity Reset Hysteresis  
+电导率复位回差"		[0,10.0]	0	uint16_t	
+
+
+
+
+
+英维克0513水冷机数据结构						
+序号	参数名	单位	范围	偏移量	数据类型	备注
+1	"Pump operating status
+水泵运行状态"		[0,1]		uint16_t	"0: Stop 1: Run
+0：停止 1：运行"
+2	"1# compressor operating state
+1#压缩机运行状态"		[0,1]		uint16_t	"0: Stop 1: Run
+0：停止 1：运行"
+3	"2# compressor operating state
+2#压缩机运行状态"		[0,1]		uint16_t	"0: Stop 1: Run
+0：停止 1：运行"
+4	"out-water temperature
+出水温度"	0.1℃		0	int16_t	
+5	"Return water temperature
+回水温度"	0.1℃		0	int16_t	
+6	"Outlet pressure
+出水压力"	0.1Bar		0	int16_t	
+7	"Return water pressure
+回水压力"	0.1Bar		0	int16_t	
+8	"Electric heating operation state
+电加热运行状态"		[0,1]		int16_t	"0: Stop 1: Run
+0：停止 1：运行"
+9	"1# System failure
+1#系统故障"				uint16_t	"0--No fault, 2--Faulty
+0--无故障， 2--有故障"
+10	"1# Total alarm
+1#总告警"				uint16_t	"General alarms 0--no alarms, 1--alarms 
+一般告警 0--无告警， 1--有告警 "
+11	"System water shortage alarm
+系统缺水告警"				uint16_t	"Important Alarm 0 - No such alarm, 1 - Alarm
+重要告警 0--无此告警， 1--告警"
+12	"1# High condensation pressure alarm
+1#冷凝压力过高告警"				uint16_t	"Important Alarm 0 - No such alarm, 1 - Alarm
+重要告警 0--无此告警， 1--告警"
+13	"2# High condensation pressure alarm
+2#冷凝压力过高告警"				uint16_t	"Important Alarm 0 - No such alarm, 1 - Alarm
+重要告警 0--无此告警， 1--告警"
+14	"The water outlet pressure is too high alarm
+出水压力过高告警"				uint16_t	"Important Alarm 0 - No such alarm, 1 - Alarm
+重要告警 0--无此告警， 1--告警"
+15	"The inlet water pressure is too low alarm
+进水压力过低告警"				uint16_t	"Important Alarm 0 - No such alarm, 1 - Alarm
+重要告警 0--无此告警， 1--告警"
+16	"Power Failure Alarm
+电源故障告警"				uint16_t	"Important Alarm 0 - No such alarm, 1 - Alarm
+重要告警 0--无此告警， 1--告警"
+17	"2# System failure
+2#系统故障"				uint16_t	"0--No fault, 2--Faulty
+0--无故障， 2--有故障"
+18	"2# Total alarm
+2#总告警"				uint16_t	"General alarms 0--no alarms, 1--alarms 
+一般告警 0--无告警， 1--有告警 "
+19	"Reserve
+保留"				uint16_t	
+20	"Cooling point
+制冷点"	0.1℃		0	int16_t	"The cooling point must be greater than or equal to the heating point
+制冷点须大于等于加热点"
+21	"Monitor power on and off
+监控开关机"		[0,1]		uint16_t	"0 monitoring shutdown; 1. Monitor the boot
+0监控关机 ;1监控开机"
+22	"The pump is manually required to enable
+水泵手动需求使能"				uint16_t	"0 unit automatic control pump; 2. Upper computer control, with enablement.
+0机组自动控制水泵 ;2上位机控制，有使能。"
+23	"Runtime control mode
+运行时控制模式"		[0,2]		uint16_t	"0: Backwater 
+1: Out of the water
+2: Monitor the temperature; When using the monitoring to issue temperature control air conditioners, you need to select 2: Monitor temperature
+0:回水 
+1:出水
+2:监控温度；使用监控下发温度控制空调时需选择2：监控温度"
+24	"Enable electric heating
+启用电加热"		[0,1]		uint16_t	"0 unenable electric heating 1 enables electric heating
+0不启用电加热1启用电加热"
+25	"Heating point
+加热点"	0.1℃		0	int16_t	"The cooling point must be greater than or equal to the heating point
+制冷点须大于等于加热点"
+26	"The outlet pressure is too high at the set point
+出水压力过高设定点"	0.01Bar	[0,1000]		uint16_t	"The outlet pressure is too high at the set point
+出水压力过高设定点"
+27	"The inlet pressure is too low at the set point
+进水压力过低设定点"	0.01Bar	[0,1000]		uint16_t	"The inlet pressure is too low at the set point
+进水压力过低设定点"
+28	"Pump speed requirements
+水泵转速需求"	0.10%	[0,1000]		uint16_t	"0 corresponds to 0%, and 1000 corresponds to 100%. If the issuance value is less than 10, the pump is not running.
+0对应0%，1000对应100%。下发值小于10，水泵不运行。"
+29	"BMS mode control
+BMS模式控制"		[0,4]		uint16_t	"0: Fully automatic 1: Manual refrigeration 2: Manual heating 3: Self-circulation 4: Stop
+0：全自动 1：手动制冷 2：手动制热 3：自循环 4：停止"
+30	"Monitor the maximum temperature of the delivery
+监控下发最大温度"	0.1℃	[-32767,32767]	0	int16_t	"Write 32767 when sensor fails
+传感器故障时写入32767"
+31	"Monitor the minimum temperature of the delivery
+监控下发最小温度"	0.1℃	[-32767,32767]	0	int16_t	"Write 32767 when sensor fails
+传感器故障时写入32767"
+
+
+
+
+英维克70513水冷机数据结构						
+序号	参数名	单位	范围	偏移量	数据类型	备注
+1	"Pump Speed
+水泵转速"	%	[0,100]	0	uint16_t	"0：停机
+>0：运行"
+2	"Compressor 1
+1#压缩机运行状
+态"		[0,1]	0	uint16_t	"0：停止
+1：运行"
+3	"Compressor 2
+2#压缩机运行状
+态"		[0,1]	0	uint16_t	
+4	"Electric Heating
+电加热运行状态"			0		
+5	"Condensing Fan
+冷凝风机运行状
+态"			0		
+6	"Effluent Temperature
+机组出水温度"	0.1℃	[-40,1200]	0	int16_t	
+7	"Inlet Water Temperature
+机组回水温度"	0.1℃	[-40,1200]	0	int16_t	
+8	"Outlet Pressure
+机组出水压力"	0.01Bar	[0,1000]	0	uint16_t	
+9	"Inlet Pressure
+机组回水压力"	0.01Bar	[0,1000]	0	uint16_t	
+10	"Ambient Temperature
+机组外环境温度"	0.1℃	[-40,1200]	0	int16_t	
+11	"Rehydration State
+补液状态"			0	uint16_t	"0x00：补液停止
+0x01：补液运行"
+12	"On-off Condition
+开关机状态"			0	uint16_t	"0x00：机组关机
+0x01：机组开机"
+13	"Local/Remote Status
+本地/远程状态"			0	uint16_t	"0x00：本地
+0x01：远程"
+14	"Alarm status
+告警状态"			0	uint16_t 	"8个寄存器
+详见下方告警点表"
+15	"Alarm level
+告警等级"			0	uint16_t	"0：无
+1：一级告警（液冷机组系统
+无法运行）
+2：二级告警（液冷机组降性
+能运行）
+3：三级告警（不影响液冷机
+组正常运行）"
+16	"Software version
+软件版本号"			0	uint16_t	上送的数值为16进制数
+17	"Hardware version
+硬件版本"			0	uint16_t	上送的数值为16进制数
+18	"Unit Mode Control
+液冷机组控制模式"		[0,4]	0	uint16_t	"0：机组自动控制模式；
+1：制冷模式；
+2：制热模式；
+3：泵循环（1，2，3 都
+是 BMS 控制模式，且水
+泵转速由水泵转速设定
+控
+制）；
+4：停止模式（除控制电
+部分运行外，其他器件
+均不运行）。"
+19	"The Unit Switch Is Enabled
+机组开关机使能"		[0,1]	0	uint16_t	"0：监控关机；
+1：监控开机。"
+20	"Pump Speed Setting
+水泵转速设定"		[0,100]	0	uint16_t	"0：停机；
+>0：运行。
+下 发 值 低 于 水 泵 下 限
+速%按下限速运行，且返
+回下限速运行%"
+21	"The fan snow removal is enabled
+冷凝风机除雪使能"		[0,1]	0	uint16_t	"0：关闭；
+1：开启。"
+22	"Water temperature target control
+水温目标控制模式"		[0,2]	0	uint16_t	"0：出水温度；
+1：回水温度；
+2：监控温度（最大和最
+小温度）；
+3：监控温度（平均温
+度）。
+使用监控下发最大温度
+和监控下发最小温度控
+制冷水机时需选择 2；
+使用监控下发平均温度
+控制冷水机时需选择 3。"
+23	"Operation system cold point
+机组制冷点"	0.1℃	[50,350]	0	int16_t	制冷点须大于等于加热点。
+24	"Run hot spot
+机组加热点"	0.1℃	[50,350]	0	int16_t	
+25	"High water pressure alarm set point
+出水压力过高告警设定点"	0.01Bar	[0,1000]	0	uint16_t	
+26	"Low water pressure alarm set point
+回水压力过低告警设定点"	0.01Bar	[0,1000]	0	uint16_t	
+27	"Refrigeration sensitivity
+制冷灵敏度"	0.1℃	[10,150]	0	int16_t	
+28	"Heating sensitivity
+制热灵敏度"	0.1℃	[10,150]	0	int16_t	
+29	"Outlet water high temperature alarm set point
+出水高温告警设定点"	0.1℃	[100,500]	0	int16_t	
+30	"Outlet water low temperature alarm set point
+出水低温告警设定点"	0.1℃	[-300,150]	0	int16_t	
+31	"Monitor the maximum temperature
+监控下发最大温度"	0.1℃	[-400,1200]	0	int16_t	"Write 32767 when sensor fails
+传感器故障时写入32767"
+32	"Monitor and send the minimum temperature
+监控下发最小温度"	0.1℃	[-400,1200]	0	int16_t	"Write 32767 when sensor fails
+传感器故障时写入32767"
+33	"Monitor the average temperature
+监控下发平均温度"	0.1℃	[-400,1200]	0	int16_t	"Write 32767 when sensor fails
+传感器故障时写入32767"
+						
+告警状态列表						
+序号	名称	告警逻辑说明	数据地址	"数据位
+（bit位：0正常，1告警）"		
+1	系统缺水告警	水系统水量少	告警状态 31	bit0		
+2	1#冷凝压力过高告警	1#冷凝压力高于告警值	告警状态 31	bit1		
+3	2#冷凝压力过高告警	2#冷凝压力高于告警值	告警状态 31	bit2		
+4	出水压力过高告警	出水压力高于告警值	告警状态 31	bit3		
+5	回水压力过低告警	回水压力低于告警值	告警状态 31	bit4		
+6	预留	预留	告警状态 31	bit5-bit15		
+7	预留	预留	告警状态 32	bit0-bit15		
+8	1#排气温感失效	温度传感器故障	告警状态 33	bit0		
+9	1#冷凝温感失效	温度传感器故障	告警状态 33	bit1		
+10	2#排气温感失效	温度传感器故障	告警状态 33	bit2		
+11	2#冷凝温感失效	温度传感器故障	告警状态 33	bit3		
+12	回水温感故障	温度传感器故障	告警状态 33	bit4		
+13	出水温感故障	温度传感器故障	告警状态 33	bit5		
+14	环境温感失效	温度传感器故障	告警状态 33	bit6		
+15	异常掉电告警	机组异常掉电	告警状态 33	bit7		
+16	1#高压压力传感器失效	压力传感器故障	告警状态 33	bit8		
+17	2#高压压力传感器失效	压力传感器故障	告警状态 33	bit9		
+18	补水箱低水位	补水箱缺水	告警状态 33	bit10		
+19	预留	预留	告警状态 33	bit11		
+20	预留	预留	告警状态 33	bit12		
+21	回水压力传感器故障	压力传感器故障	告警状态 33	bit13		
+22	出水压力传感器故障	压力传感器故障	告警状态 33	bit14		
+23	预留	预留	告警状态 33	bit15		
+24	预留	预留	告警状态 34	bit0-bit15		
+25	1#高压力锁定	频繁触发高压开关动作告警	告警状态 35	bit0		
+26	1#排气过温锁定	频繁触发排气过温告警	告警状态 35	bit1		
+27	1#系统低压力告警锁定	频繁触发氟系统的低压压力低告警	告警状态 35	bit2		
+28	1#低压压力传感器失效	压力传感器故障	告警状态 35	bit3		
+29	1#蒸发出口温感失效	温度传感器故障	告警状态 35	bit4		
+30	1#压缩机变频器故障	压缩机变频器上报故障	告警状态 35	bit5		
+31	1#压机变频器通信故障	压缩机变频器通信超时	告警状态 35	bit6		
+32	1#外风机变频器故障	外风机变频器上报故障	告警状态 35	bit7		
+33	1#外风机变频器通信故障	外风机变频器通信超时	告警状态 35	bit8		
+34	2#高压力锁定	频繁触发高压开关动作告警	告警状态 35	bit9		
+35	2#排气过温锁定	频繁触发排气温度过告警	告警状态 35	bit10		
+36	2#系统低压力告警锁定	频繁触发氟系统的低压压力低告警	告警状态 35	bit11		
+37	2#低压压力传感器失效	压力传感器故障	告警状态 35	bit12		
+38	2#蒸发出口温感失效	温度传感器故障	告警状态 35	bit13		
+39	2#压缩机变频器故障	压缩机变频器上报故障	告警状态 35	bit14		
+40	2#压机变频器通信故障	压缩机变频器通信超时	告警状态 35	bit15		
+41	扩展模块通信故障	扩展模块通信超时	告警状态 36	bit0		
+42	2#外风机变频器故障	外风机变频器上报故障	告警状态 36	bit1		
+43	2#外风机变频器通信故障	外风机变频器通信超时	告警状态 36	bit2		
+44	水泵压差低	水泵前后的压差值偏小	告警状态 36	bit3		
+45	回水温感故障&出水温感故障	回水和出水温度传感器同时故障	告警状态 36	bit4		
+46	电源故障	"输入电源出现过压或欠压或缺
+相或逆相"	告警状态 36	bit5		
+47	回水压力传感器故障&出水压力传感器故障	回水和出水压力传感器同时故障	告警状态 36	bit6		
+48	预留		告警状态 36	bit7		
+49	1#循环水泵变频器故障	循环水泵变频器上送故障	告警状态 36	bit8		
+50	1#循环水泵变频器通信故障	循环水泵变频器通信超时	告警状态 36	bit9		
+51	1#电加热故障锁定	频繁触发电加热故障告警	告警状态 36	bit10		
+52	出水高温	出水温度高于告警值	告警状态 36	bit11		
+53	出水低温	出水温度低于告警值	告警状态 36	bit12		
+54	1#循环水泵过热保护告警锁定	循环水泵内部温度过高	告警状态 36	bit13		
+55	2#循环水泵过热保护告警锁定	循环水泵内部温度过高	告警状态 36	bit14		
+56	1#循环水泵过载保护锁定	循环水泵运行电流过高	告警状态 36	bit15		
+57	2#循环水泵过载保护锁定	循环水泵运行电流过高	告警状态 37	bit0		
+58	2#循环水泵变频器故障	水泵变频器上送故障	告警状态 37	bit1		
+59	2#循环水泵变频器通信故障	水泵变频器通信超时	告警状态 37	bit2		
+60	2#电加热故障锁定	频繁触发电加热故障告警	告警状态 37	bit3		
+61	APF 故障	APF 出现故障	告警状态 37	bit4		
+62	DC_DC1 模块故障	DC_DC1 模块出现故障	告警状态 37	bit5		
+63	DC_DC2 模块故障	DC_DC2 模块出现故障	告警状态 37	bit6		
+64	预留	预留	告警状态 37	bit7-bit15		
+65	预留	预留	告警状态 38	bit0-bit15		
+
+
+
+
+
+柯诺威1(T-A-000040)水冷机数据结构						
+序号	参数名	单位	范围	偏移量	数据类型	备注
+1	模式		[0,3]	0	uint16_t	"0：待机;
+1：制冷;
+2：加热;
+3：自循环（只开启水泵）;"
+2	设定温度	1℃	[-40,55]	-40	uint16_t	"设定制冷和制热模式的目标温度
+如：60表示20℃"
+3	进水温度	1℃	[-40,210]	-40	uint16_t	如：60表示20℃
+4	出水温度	1℃	[-40,210]	-40	uint16_t	如：60表示20℃
+5	环境温度	1℃	[-40,210]	-40	uint16_t	如：60表示20℃
+6	1#排气温度	1℃	[-40,210]	-40	uint16_t	如：60表示20℃
+7	进水压力	0.1BarA	[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+8	出水压力	0.1BarA	[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+9	1#吸气压力	0.1BarA	[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+10	1#排气压力	0.1BarA	[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+11	水泵转速	百分比（1%）	[0,100]	0	uint16_t	如：80表示水泵转速80%
+12	风机转速	百分比（1%）	[0,100]	0	uint16_t	如：80表示风机转速80%
+13	1#压缩机转速	1RPM	[0,6000]	0	uint16_t	如：2000表示压缩机转速2000
+14	心跳	1	[0,65535]	0	uint16_t	心跳每秒累加一次
+15	软件版本		[0,65535]	0	uint16_t	
+16	故障等级		[0,3]	0	uint16_t	"0:无故障；1：1级故障；2：2级故障；3：3级故障。
+1级故障等级最高，3级故障等级最低。
+1级故障：水冷机整机停机；
+2级故障：制冷系统停机(压缩机、冷凝风机停止)；
+3级故障：水冷机继续运行；"
+17	1#吸气温度		[-40,210]	-40	uint16_t	如：60表示20℃
+18	2#吸气温度		[-40,210]	-40	uint16_t	如：60表示20℃
+19	2#排气温度		[-40,210]	-40	uint16_t	如：60表示20℃
+20	2#吸气压力		[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+21	2#排气压力		[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+22	2#压缩机转速		[0,6000]	0	uint16_t	如：2000表示压缩机转速2000
+
+
+
+
+
+柯诺威2(T-A-000048)水冷机数据结构						
+序号	参数名	单位	范围	偏移量	数据类型	备注
+1	模式		[0,3]	0	uint16_t	"0：待机;
+1：制冷;
+2：加热;
+3：自循环（只开启水泵）;"
+2	设定温度	1℃	[-40,55]	0	int16_t	"设定制冷和制热模式的目标温度
+如：20表示20℃"
+3	进水温度	1℃	[-40,210]	0	int16_t	如：20表示20℃
+4	出水温度	1℃	[-40,210]	0	int16_t	如：20表示20℃
+5	环境温度	1℃	[-40,210]	0	int16_t	如：20表示20℃
+6	排气温度	1℃	[-40,210]	0	int16_t	如：20表示20℃
+7	进水压力	0.1BarA	[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+8	出水压力	0.1BarA	[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+9	吸气压力	0.1BarA	[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+10	排气压力	0.1BarA	[0,400]	0	uint16_t	如：20表示2.0BarA(绝压)
+11	水泵转速	百分比（1%）	[0,100]	0	uint16_t	如：80表示水泵转速80%
+12	风机转速	百分比（1%）	[0,100]	0	uint16_t	如：80表示风机转速80%
+13	压缩机转速	1RPM	[0,6000]	0	uint16_t	如：2000表示压缩机转速2000
+14	心跳	1	[0,65535]	0	uint16_t	心跳每秒累加一次
+15	软件版本		[0,65535]	0	uint16_t	
+16	故障等级		[0,3]	0	uint16_t	"0:无故障；1：1级故障；2：2级故障；3：3级故障。
+1级故障等级最高，3级故障等级最低。
+1级故障：水冷机整机停机；
+2级故障：制冷系统停机(压缩机、冷凝风机停止)；
+3级故障：水冷机继续运行；"
+17	故障状态1		[0,65535]	0	uint16_t	"0：无故障；1：有故障。
+Bit0: 高压压力过高
+Bit1: 低压压力过低
+Bit2: 水泵1故障
+Bit3: PTC过温故障
+Bit4: 风扇1故障
+Bit5: 出水温度传感器故障
+Bit6: 进水温度传感器故障
+Bit7: DCDC PFC故障
+Bit8: 高压压力开关故障
+Bit9: 进水压力传感器故障
+Bit10: 出水压力传感器故障
+Bit11: 高压压力传感器故障
+Bit12: 低压压力传感器故障
+Bit13: 压缩机通信故障
+Bit14: 压缩机控制器故障
+Bit15: BMS通信丢失故障"
+18	故障状态2		[0,65535]	0	uint16_t	"0：无故障；1：有故障。
+Bit0: 进水压力过低
+Bit1: 出水压力过高
+Bit2: 高压继电器1故障
+Bit3: 高压继电器2故障
+Bit4: ACDC1过压故障
+Bit5: ACDC1欠压故障
+Bit6: ACDC2欠压故障
+Bit7: ACDC2过压故障
+Bit8: 进出水压力过低故障
+Bit9: 排气温度传感器故障
+Bit10: 预留
+Bit11: 进出水压力过高故障
+Bit12: 吸气温度传感器故障
+Bit13: Exv通信丢失故障
+Bit14: Exv控制器故障
+Bit15: EXV位置故障"
+19	故障状态3		[0,65535]	0	uint16_t	"0：无故障；1：有故障。
+Bit0: 水泵1通讯丢失故障
+Bit1: 水泵2通讯丢失故障
+Bit2: 水泵2故障
+Bit3: DCDC1通讯丢失故障
+Bit4: DCDC1故障
+Bit5: DCDC2通讯丢失故障
+Bit6: DCDC2故障
+Bit7: 风扇2故障
+Bit8: 风扇3故障
+Bit9: 风扇4故障
+Bit10: 风扇5故障
+Bit11: 风扇6故障
+Bit12: 风扇7故障
+Bit13: 风扇8故障
+Bit14: 风扇9故障
+Bit15: 温度传感器故障"
+20	故障状态4		[0,65535]	0	uint16_t	"0：无故障；1：有故障。
+Bit0: 湿度传感器故障
+Bit1: ACDC3过压故障
+Bit2: ACDC3欠压故障
+Bit3: 水泵PFC故障
+Bit4: 预留
+Bit5: 预留
+Bit6: 预留
+Bit7: 预留
+Bit8: 预留
+Bit9: 预留
+Bit10: 预留
+Bit11: 预留
+Bit12: 预留
+Bit13: 预留
+Bit14: 预留
+Bit15: 预留"
+21	故障码		[0,65535]		uint16_t	
+22	预留				uint16_t	
+23	湿度	%	[0,100]		uint16_t	
+
+
+
+
+
+
+均能水冷机数据结构						
+序号	参数名	单位	范围	偏移量	数据类型	备注
+1	开关机控制		[0,1]	0	uint16_t	"0: 关机；
+1: 开机"
+2	模式设定		[0,3]	0	uint16_t	"0: 自动；
+1: 制冷；
+2: 制热；
+3: 自循环"
+3	温度控制方式		[0,1]	0	uint16_t	"0: 出水；
+1: 进水"
+4	进水制冷设定温度	0.1℃	[50,400]	0	uint16_t	实际值 ×10（如寄存器值为 250 对应 25.0℃）
+5	出水制冷设定温度	0.1℃	[50,400]	0	uint16_t	实际值 ×10
+6	进水制热设定温度	0.1℃	[50,400]	0	uint16_t	实际值 ×10
+7	出水制热设定温度	0.1℃	[50,400]	0	uint16_t	实际值 ×10
+8	开关机状态		[0,6]	0	uint16_t	"0：远程关机；
+1：远程开机；2：通讯关机；3：通讯开机；4：关机；
+5：开机；
+6：手动调机"
+9	机组运行模式		[0,4]	0	uint16_t	"1:制冷 
+2：制热 
+3：待机；
+4：自循环"
+10	舱体温度	0.1℃		0	uint16_t	实际值 ×10
+11	舱体湿度	%		0	uint16_t	
+12	环境温度	0.1℃		0	uint16_t	实际值 ×10
+13	进水温度	0.1℃		0	uint16_t	实际值 ×10
+14	出水温度	0.1℃		0	uint16_t	实际值 ×10
+15	进水压力	0.01bar		0	uint16_t	实际值 ×100
+16	出水压力	0.01bar		0	uint16_t	实际值 ×100
+17	电芯温度	0.1℃		0	uint16_t	实际值 ×10
+18	实际温度控制方式		[0,2]	0	uint16_t	"0：进水 
+1：出水 
+2：电芯"
+19	进出水压差	0.01bar		0	uint16_t	实际值 ×100
+20	进出水温差	0.1℃		0	uint16_t	实际值 ×10
+21	当前故障码			0	uint16_t	"显示'E'+寄存器值(10机制，保留3位)
+寄存器值为0，表示无故障"
+E001,电源故障,
+E002,机型拨码错误,
+E003,消防告警,
+E004,室外环境温度传感器故障,
+E005,温湿度传感器故障,
+E006,进水温度传感器故障,
+E007,出水温度传感器故障,
+E008,进水压力传感器故障,
+E009,出水压力传感器故障,
+E010,电加热故障锁定,
+E011,湿度过高报警,
+E012,进出水温差过大保护,
+E013,风机故障,
+E014,风机故障锁定,
+E015,缺水告警,
+E016,压缩机选择异常,
+E017,制冷超环温保护,
+E018,温湿度通讯故障,
+E019,变频水泵1驱动故障锁定,
+E020,变频水泵2驱动故障锁定,
+E021,水泵1驱动通讯故障,
+E022,水泵2驱动通讯故障,
+E023,补液水箱缺液告警,
+E024,储水箱水位保护,
+E025,预留,
+E028,预留,
+E030,冬季防冻运行保护,
+E031,预留,
+E035,变频水泵2驱动故障,
+E036,电加热故障,
+E037,预留,
+E049,风机2故障,
+E050,风机3故障,
+E051,风机4故障,
+E052,风机5故障,
+E053,风机6故障,
+E054,风机7故障,
+E055,风机8故障,
+E056,风机9故障,
+E057,风机10故障,
+E058,风机11故障,
+E059,风机12故障,
+E060,风机13故障,
+E061,风机14故障,
+E062,风机15故障,
+E063,风机16故障,
+E064,风机1故障（锁定）,
+E065,风机2故障（锁定）,
+E066,风机3故障（锁定）,
+E067,风机4故障（锁定）,
+E068,风机5故障(锁定),
+E069,风机6故障(锁定),
+E070,风机7故障(锁定),
+E071,风机8故障(锁定),
+E072,风机9故障(锁定),
+E073,风机10故障(锁定),
+E074,风机11故障(锁定),
+E075,风机12故障(锁定),
+E076,风机13故障(锁定),
+E077,风机14故障(锁定),
+E078,风机15故障(锁定),
+E079,风机16故障(锁定),
+E080,风机驱动1故障,
+E081,风机驱动2故障,
+E082,风机驱动3故障,
+E083,预留,
+E089,风机驱动2故障(锁定),
+E090,风机驱动3故障(锁定),
+E091,预留,
+E097,风机驱动2通讯故障,
+E098,风机驱动3通讯故障,
+E099,预留,
+E201,预留,
+E203,预留,
+E206,系统n低压过低保护锁定,【注：此部分 n = 1】
+E207,系统n制冷剂泄露保护,【注：此部分 n = 1】
+E208,系统n排气温度过高锁定,【注：此部分 n = 1】
+E209,系统n吸气温度过高锁定,【注：此部分 n = 1】
+E210,系统n吸气过热度过低锁定,【注：此部分 n = 1】
+E211,系统n排气温度异常,【注：此部分 n = 1】
+E212,系统n低压过高保护锁定,【注：此部分 n = 1】
+E213,预留,【注：此部分 n = 1】
+E221,压缩机n驱动故障,【注：此部分 n = 1】
+E222,压缩机n驱动故障锁定,【注：此部分 n = 1】
+E223,预留,【注：此部分 n = 1】
+E226,系统n排气温度传感器故障,【注：此部分 n = 1】
+E227,系统n低压压力传感器故障,【注：此部分 n = 1】
+E228,系统n高压压力传感器故障,【注：此部分 n = 1】
+E229,系统n压缩机过流保护,【注：此部分 n = 1】
+E230,系统n高压保护,【注：此部分 n = 1】
+E231,系统n低压过低保护,【注：此部分 n = 1】
+E232,系统n低压过高保护,【注：此部分 n = 1】
+E233,系统n排气温度过高,【注：此部分 n = 1】
+E234,系统n吸气温度过高,【注：此部分 n = 1】
+E235,系统n吸气过热度过低,【注：此部分 n = 1】
+E236,预留,【注：此部分 n = 1】
+E301,预留,
+E303,预留,
+E306,系统n低压过低保护锁定,
+E307,系统n制冷剂泄露保护,
+E308,系统n排气温度过高锁定,
+E309,系统n吸气温度过高锁定,【注：此部分 n = 2】
+E310,系统n吸气过热度过低锁定,【注：此部分 n = 2】
+E311,系统n排气温度异常,【注：此部分 n = 2】
+E312,系统n低压过高保护锁定,【注：此部分 n = 2】
+E313,预留,【注：此部分 n = 2】
+E321,压缩机n驱动故障,【注：此部分 n = 2】
+E322,压缩机n驱动故障锁定,【注：此部分 n = 2】
+E323,预留,【注：此部分 n = 2】
+E326,系统n排气温度传感器故障,【注：此部分 n = 2】
+E327,系统n低压压力传感器故障,【注：此部分 n = 2】
+E328,系统n高压压力传感器故障,【注：此部分 n = 2】
+E329,系统n压缩机过流保护,【注：此部分 n = 2】
+E330,系统n高压保护,【注：此部分 n = 2】
+E331,系统n低压过低保护,【注：此部分 n = 2】
+E332,系统n低压过高保护,【注：此部分 n = 2】
+E333,系统n排气温度过高,【注：此部分 n = 2】
+E334,系统n吸气温度过高,【注：此部分 n = 2】
+E335,系统n吸气过热度过低,【注：此部分 n = 2】

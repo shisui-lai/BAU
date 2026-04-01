@@ -163,8 +163,10 @@ const FAULT_NAMES_MAP = computed(() => ({
     'CellDischargeOvertempFaultGrade': t('faultOverview.faultNames.cellDischargeOvertempFaultGrade'),
     'CellDischargeUndertempFaultGrade': t('faultOverview.faultNames.cellDischargeUndertempFaultGrade'),
     'CellSocTooHighFaultGrade': t('faultOverview.faultNames.cellSocTooHighFaultGrade'),
-    'CellSocTooLowFaultGrade': t('faultOverview.faultNames.cellSocTooLowFaultGrade')
-    ,
+    'CellSocTooLowFaultGrade': t('faultOverview.faultNames.cellSocTooLowFaultGrade'),
+    'BusbarOvertempFaultGrade': t('faultOverview.faultNames.busbarOvertempFaultGrade'),
+    'BmuPluginTempDiffUpperLimitFaultGrade': t('faultOverview.faultNames.bmuPluginTempDiffUpperLimitFaultGrade'),
+    'ClusterPluginTempDiffUpperLimitFaultGrade': t('faultOverview.faultNames.clusterPluginTempDiffUpperLimitFaultGrade'),
     'MainPosContactorFeedbackFault': t('faultOverview.faultNames.MainPosContactorFeedbackFault'),
     'MainPosHighSideFeedbackFault': t('faultOverview.faultNames.MainPosHighSideFeedbackFault'),
     'MainPosOxidation': t('faultOverview.faultNames.MainPosOxidation'),
@@ -196,6 +198,8 @@ const FAULT_NAMES_MAP = computed(() => ({
     'HydrogenDetectorFeedbackFault': t('faultOverview.faultNames.HydrogenDetectorFeedbackFault'),
     'MSDFeedbackFault': t('faultOverview.faultNames.MSDFeedbackFault'),
     'EmergencyStopFeedbackFault': t('faultOverview.faultNames.EmergencyStopFeedbackFault'),
+    'CabinetFanFeedbackFault': t('faultOverview.faultNames.CabinetFanFeedbackFault'),
+    'FuseFeedbackFault': t('faultOverview.faultNames.FuseFeedbackFault'),
     'MainPosHighSideFeedbackFault2': t('faultOverview.faultNames.MainPosHighSideFeedbackFault2'),
     'MainNegHighSideFeedbackFault2': t('faultOverview.faultNames.MainNegHighSideFeedbackFault2'),
     'PrechargeHighSideFeedbackFault2': t('faultOverview.faultNames.PrechargeHighSideFeedbackFault2'),
@@ -208,6 +212,7 @@ const FAULT_NAMES_MAP = computed(() => ({
     'PCSSealedWaveHighSideFeedbackFault': t('faultOverview.faultNames.PCSSealedWaveHighSideFeedbackFault'),
     'AuxCircuitBreakerControlHighSideFeedbackFault': t('faultOverview.faultNames.AuxCircuitBreakerControlHighSideFeedbackFault'),
     'ExhaustSystemControlHighSideFeedbackFault': t('faultOverview.faultNames.ExhaustSystemControlHighSideFeedbackFault'),
+    'CabinetFanHighSideFault': t('faultOverview.faultNames.CabinetFanHighSideFault'),
     'CoolingDeviceCommFault2': t('faultOverview.faultNames.CoolingDeviceCommFault2'),
     'PCSCommFault2': t('faultOverview.faultNames.PCSCommFault2'),
     'DehumidifierCommFault2': t('faultOverview.faultNames.DehumidifierCommFault2'),
@@ -238,7 +243,16 @@ const FAULT_NAMES_MAP = computed(() => ({
     'BMU1PowerConnectorTempDisconnected2': t('faultOverview.faultNames.BMU1PowerConnectorTempDisconnected2'),
     'BMU2PowerConnectorTempDisconnected2': t('faultOverview.faultNames.BMU2PowerConnectorTempDisconnected2'),
     'AFECommLost2': t('faultOverview.faultNames.AFECommLost2'),
-    'BCUCommFault_Stack': t('faultOverview.faultNames.BCUCommFault_Stack')
+    'BCUCommFault_Stack': t('faultOverview.faultNames.BCUCommFault_Stack'),
+    'AFEBusbarTempOverSevereFault': t('faultOverview.faultNames.AFEBusbarTempOverSevereFault'),
+    'AFEBusbarTempOverGeneralFault': t('faultOverview.faultNames.AFEBusbarTempOverGeneralFault'),
+    'AFEBusbarTempOverMildFault': t('faultOverview.faultNames.AFEBusbarTempOverMildFault'),
+    'BMUPowerConnectorTempDiffSevereFault': t('faultOverview.faultNames.BMUPowerConnectorTempDiffSevereFault'),
+    'BMUPowerConnectorTempDiffGeneralFault': t('faultOverview.faultNames.BMUPowerConnectorTempDiffGeneralFault'),
+    'BMUPowerConnectorTempDiffMildFault': t('faultOverview.faultNames.BMUPowerConnectorTempDiffMildFault'),
+    'ClusterEndPowerConnectorTempDiffSevereFault': t('faultOverview.faultNames.ClusterEndPowerConnectorTempDiffSevereFault'),
+    'ClusterEndPowerConnectorTempDiffGeneralFault': t('faultOverview.faultNames.ClusterEndPowerConnectorTempDiffGeneralFault'),
+    'ClusterEndPowerConnectorTempDiffMildFault': t('faultOverview.faultNames.ClusterEndPowerConnectorTempDiffMildFault')
   }))
 
 // 使用堆选择composable

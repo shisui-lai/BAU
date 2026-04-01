@@ -732,6 +732,7 @@ const renderParameterList = computed(() => {
     const day = mapped.find(p => p.key === 'productionDay')?.currentValue
     const index = mapped.find(p => p.key === 'productionIndex')?.currentValue
 
+    // 生产编码：由年/月/日/编号四个 u16 拼接展示。允许任一段为 0，一律左侧补零：年/月/日各 2 位、编号 4 位（如 0→00/0000，3→0003，10→0010）。
     let productionCodeValue = '-'
     if (
       year !== undefined && year !== null &&
@@ -744,11 +745,11 @@ const renderParameterList = computed(() => {
       const dNum = Number(day)
       const nNum = Number(index)
 
-      if (yNum && mNum && dNum && nNum !== null && nNum !== undefined) {
-        const y = String(yNum)
+      if ([yNum, mNum, dNum, nNum].every((v) => Number.isFinite(v))) {
+        const y = String(yNum).padStart(2, '0')
         const m = String(mNum).padStart(2, '0')
         const d = String(dNum).padStart(2, '0')
-        const n = String(nNum)
+        const n = String(nNum).padStart(4, '0')
         productionCodeValue = `${y}${m}${d}${n}`
       }
     }

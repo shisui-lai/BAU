@@ -52,7 +52,8 @@ export const countWordsForFields = (fields) => {
   for (const field of list) {
     const isDerivedBits = (field?.type === 'bit' || field?.type === 'bits') && field?.bitsOf
     if (isDerivedBits) continue
-    const wordLength = typeof field?.wordLength === 'number' && field.wordLength > 0 ? field.wordLength : 1
+    const wordLength =
+      typeof field?.wordLength === 'number' && field.wordLength > 0 ? field.wordLength : 1
     count += wordLength
   }
   return count
@@ -64,7 +65,7 @@ export const countWordsForFields = (fields) => {
  */
 export const buildTemplateData = (fields) => {
   const list = Array.isArray(fields) ? fields : []
-  return list.map(field => {
+  return list.map((field) => {
     const isDerivedBits = (field.type === 'bit' || field.type === 'bits') && field.bitsOf
     return {
       class: field.class,
@@ -124,7 +125,12 @@ export const parseFieldTableData = (rawData, fields) => {
       }
 
       const bit = typeof field.bit === 'number' ? field.bit : Number(field.bit || 0)
-      const len = field.type === 'bits' ? (typeof field.len === 'number' ? field.len : Number(field.len || 1)) : 1
+      const len =
+        field.type === 'bits'
+          ? typeof field.len === 'number'
+            ? field.len
+            : Number(field.len || 1)
+          : 1
       const mask = len >= 16 ? 0xffff : (1 << len) - 1
       const decoded = (baseWord >> bit) & mask
 
@@ -149,7 +155,8 @@ export const parseFieldTableData = (rawData, fields) => {
       continue
     }
 
-    const wordLength = typeof field.wordLength === 'number' && field.wordLength > 0 ? field.wordLength : 1
+    const wordLength =
+      typeof field.wordLength === 'number' && field.wordLength > 0 ? field.wordLength : 1
     if (wordIndex + wordLength > rawData.length) {
       result.push({
         class: field.class,

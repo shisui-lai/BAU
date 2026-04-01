@@ -101,6 +101,22 @@ const router = createRouter({
           meta: { visibleForGuest: true }
         },
         {
+          path: '/Cluster/Peripheral/Fire',
+          name: 'ClusterFire',
+          component: () =>
+            import(
+              /* webpackPrefetch: true */
+              /* webpackChunkName: "clusterFire" */
+              '@/views/Cluster/Peripheral/Fire.vue'
+            ),
+          meta: { visibleForGuest: true }
+        },
+        {
+          path: '/Cluster/Fire',
+          redirect: '/Cluster/Peripheral/Fire',
+          meta: { visibleForGuest: true }
+        },
+        {
           path: '/Cluster/cellData',
           name: 'cellData',
           component: () =>
@@ -278,17 +294,6 @@ const router = createRouter({
           meta: { visibleForGuest: true } // 所有用户可见
         },
         {
-          path: 'DeviceManagement',
-          name: 'DeviceManagement',
-          component: () =>
-            import(
-              /* webpackPrefetch: true */
-              /* webpackChunkName: "deviceManagement" */
-              '@/views/Block/DeviceManagement.vue'
-            ),
-          meta: { visibleForGuest: false } // 仅管理员
-        },
-        {
           path: 'BlockAlarmThreshold',
           name: 'BlockAlarmThreshold',
           component: () =>
@@ -347,10 +352,7 @@ const router = createRouter({
         {
           path: 'BlockMeter',
           name: 'BlockMeter',
-          component: () =>
-            import(
-              '@/views/Peripheral/BlockMeter.vue'
-            ),
+          component: () => import('@/views/Peripheral/BlockMeter.vue'),
           meta: { visibleForGuest: true }
         },
         {
@@ -378,10 +380,7 @@ const router = createRouter({
         {
           path: 'BlockFire',
           name: 'BlockFire',
-          component: () =>
-            import(
-              '@/views/Peripheral/BlockFire.vue'
-            ),
+          component: () => import('@/views/Peripheral/BlockFire.vue'),
           meta: { visibleForGuest: true }
         }
       ]

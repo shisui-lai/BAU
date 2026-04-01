@@ -72,8 +72,23 @@ export const DROPDOWN_CONFIGS = {
       ],
       除湿机控制模式: [
         { label: '单独控制', value: 0 },
-        { label: '基数地址控制', value: 1 },
+        { label: '奇数地址控制', value: 1 },
         { label: '偶数地址控制', value: 2 }
+      ],
+      柜内风扇控制模式: [
+        { label: 'BCU最高温度', value: 0 },
+        { label: '非环境温度的平均温度', value: 1 },
+        { label: 'BCU环境温度', value: 2 }
+      ],
+      铜排温度: [
+        { label: '不存在', value: 0 },
+        { label: '存在', value: 1 }
+      ],
+      簇端动力接插件温差模式: [
+        { label: '不处理', value: 0 },
+        { label: '只处理电池端接插件', value: 1 },
+        { label: '处理所有接插件', value: 2 },
+        { label: '只处理PCS端接插件', value: 3 }
       ],
       禁止使能簇: [
         { label: '禁止', value: 0x5bb5 },
@@ -185,7 +200,9 @@ export const DROPDOWN_CONFIGS = {
         { label: '宁德280Ah(CB2W0)', value: 3 },
         { label: '海辰280Ah(ST280P100A)', value: 4 },
         { label: '亿纬314Ah(MB31)', value: 5 },
-        { label: '海辰314Ah(ST314P050A)', value: 6 }
+        { label: '海辰314Ah(ST314P050A)', value: 6 },
+        { label: '鹏辉314Ah(GSP71173204F)', value: 7 },
+        { label: '融捷314Ah(RBA4F1)', value: 8 }
       ],
 
       均衡模式选项: [

@@ -231,7 +231,8 @@ const translateSysAbstractClassTitle = (cls) => {
     '动力接插件温度概要': t('config.blockInfoPage.sysAbstractClasses.powerConnectorTempSummary'),
     '簇SOC概要': t('config.blockInfoPage.sysAbstractClasses.clusterSocSummary'),
     '簇电压概要': t('config.blockInfoPage.sysAbstractClasses.clusterVoltageSummary'),
-    '簇电流概要': t('config.blockInfoPage.sysAbstractClasses.clusterCurrentSummary')
+    '簇电流概要': t('config.blockInfoPage.sysAbstractClasses.clusterCurrentSummary'),
+    '铜排温度概要': t('config.blockInfoPage.sysAbstractClasses.afeBusbarTempSummary')
   }
   return map[cls] || cls
 }

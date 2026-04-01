@@ -889,6 +889,46 @@ export function parseFault (msg: any) {
   throttledUpdate()
 }
 
+/* ---------- 根据BMU上限清理超限故障（仅存储层） ---------- */
+/**
+ * 在获取到某堆的BMU上限后，清理该堆下所有 bmu > limit 的历史故障记录。
+ * 这样可以避免旧配置残留导致的“先显示后过滤”闪烁现象。
+ * @param blockId 当前堆号（如 1）
+ * @param limit 当前堆BMU上限（如 5）
+ */
+export function pruneFaultsByBmuLimit(blockId: number, limit: number) {
+  if (!Number.isFinite(blockId) || blockId <= 0) return
+  if (!Number.isFinite(limit) || limit <= 0) return
+
+  let deletedCount = 0
+  const targetPrefix = `${blockId}-`
+
+  for (const [clusterKey, faultMap] of rawFaultData.entries()) {
+    if (!clusterKey.startsWith(targetPrefix)) continue
+
+    let clusterDeleted = 0
+    for (const [label, record] of faultMap.entries()) {
+      const bmu = typeof record?.bmu === 'number' ? record.bmu : null
+      if (bmu !== null && bmu > limit) {
+        faultMap.delete(label)
+        deletedCount++
+        clusterDeleted++
+      }
+    }
+
+    if (faultMap.size === 0) {
+      rawFaultData.delete(clusterKey)
+      clusterMutationCounter.delete(clusterKey)
+    } else if (clusterDeleted > 0) {
+      clusterMutationCounter.set(clusterKey, (clusterMutationCounter.get(clusterKey) ?? 0) + 1)
+    }
+  }
+
+  if (deletedCount > 0) {
+    throttledUpdate()
+  }
+}
+
 
 /* ---------- 根据系统配置清理无效堆簇的故障数据 ---------- */
 /**

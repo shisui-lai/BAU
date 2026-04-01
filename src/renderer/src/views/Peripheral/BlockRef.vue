@@ -53,14 +53,27 @@ import { usePageTypeDetection } from '@/composables/utils/page-detection/usePage
 // 参考簇外设：进入页面自动读取堆“系统外围设备配置参数”并选择制冷设备类型
 import { parseParameterReadResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { buildTemplateData, countWordsForFields, parseFieldTableData } from '@/composables/core/data-processing/common/useFieldTableParser'
-import { REF_SANHETONGFEI_FIELDS, REF_YINGWEIKE_0513_FIELDS, REF_YINGWEIKE_70513_FIELDS, REF_KENUOWEI1_FIELDS, REF_KENUOWEI2_FIELDS, REF_JUNNENG_FIELDS } from '../../../../main/table.js'
+import {
+  REF_SANHETONGFEI_FIELDS,
+  REF_SANHETONGFEI_DEVICE2_FIELDS,
+  REF_YINGWEIKE_0513_FIELDS,
+  REF_YINGWEIKE_0513_DEVICE2_FIELDS,
+  REF_YINGWEIKE_70513_FIELDS,
+  REF_YINGWEIKE_70513_DEVICE2_FIELDS,
+  REF_KENUOWEI1_FIELDS,
+  REF_KENUOWEI1_DEVICE2_FIELDS,
+  REF_KENUOWEI2_FIELDS,
+  REF_KENUOWEI2_DEVICE2_FIELDS,
+  REF_JUNNENG_FIELDS,
+  REF_JUNNENG_DEVICE2_FIELDS
+} from '../../../../main/table.js'
 
 const { t, te } = useI18n()
 
-// 使用堆store
+const faultOnText = computed(() => t('faultOverview.hardwareLegend.faultOn'))
+
 const blockStore = useBlockStore()
 
-// 使用页面类型自动检测
 usePageTypeDetection()
 
 // 从堆store获取选中的堆ID
@@ -139,9 +152,34 @@ const getWordsPerDevice = () => {
   return countWordsForFields(getCurrentRefFields())
 }
 
-// 解析原始数据
-const parseRawData = (rawData) => {
-  return parseFieldTableData(rawData, getCurrentRefFields())
+// 协议约定：第一台设备 2+102*2=206 字节(103字)，后续每台 102*2=204 字节(102字)
+const FIRST_DEVICE_WORDS = 103
+const SUBSEQUENT_DEVICE_WORDS = 102
+
+// 获取第二台及后续设备的字段表（无 dataLength，从 refAddress 开始）
+const getDevice2Fields = () => {
+  switch (selectedRefType.value) {
+    case 1:
+      return REF_SANHETONGFEI_DEVICE2_FIELDS
+    case 2:
+      return REF_YINGWEIKE_0513_DEVICE2_FIELDS
+    case 3:
+      return REF_YINGWEIKE_70513_DEVICE2_FIELDS
+    case 4:
+      return REF_KENUOWEI1_DEVICE2_FIELDS
+    case 5:
+      return REF_KENUOWEI2_DEVICE2_FIELDS
+    case 6:
+      return REF_JUNNENG_DEVICE2_FIELDS
+    default:
+      return getCurrentRefFields()
+  }
+}
+
+// 解析原始数据；deviceIndex=0 为第一台（含 dataLength），deviceIndex>=1 为后续台（无 dataLength，从 206 字节开始）
+const parseRawData = (rawData, deviceIndex = 0) => {
+  const fields = deviceIndex >= 1 ? getDevice2Fields() : getCurrentRefFields()
+  return parseFieldTableData(rawData, fields)
 }
 
 const deviceDisplayList = computed(() => {
@@ -178,17 +216,33 @@ const handleRefData = (event, msg) => {
     return
   }
   const configuredCount = coolingDeviceCount.value && coolingDeviceCount.value > 0 ? coolingDeviceCount.value : 1
-  const maxByLength = wordsPerDevice > 0 ? Math.floor(raw.length / wordsPerDevice) : 0
-  const deviceCount = maxByLength > 0 ? Math.min(configuredCount, maxByLength) : 1
+  // 统一协议：第一台 103 字(206 字节)，第二台从 206 字节开始 102 字。所有制冷设备类型相同逻辑
+  let deviceCount = 1
+  if (raw.length >= 205) {
+    deviceCount = Math.min(
+      configuredCount,
+      1 + Math.floor((raw.length - FIRST_DEVICE_WORDS) / SUBSEQUENT_DEVICE_WORDS)
+    )
+  } else if (raw.length >= FIRST_DEVICE_WORDS) {
+    deviceCount = 1
+  } else {
+    deviceCount = 0
+  }
   const devices = []
+  if (deviceCount === 0) {
+    refDevices.value = []
+    refData.value = []
+    return
+  }
   if (deviceCount === 1) {
-    devices.push(parseRawData(raw))
+    const segment = raw.length >= 205 ? raw.slice(0, FIRST_DEVICE_WORDS) : raw
+    devices.push(parseRawData(segment, 0))
   } else {
     for (let i = 0; i < deviceCount; i++) {
-      const start = i * wordsPerDevice
-      const end = start + wordsPerDevice
+      const start = i === 0 ? 0 : FIRST_DEVICE_WORDS + (i - 1) * SUBSEQUENT_DEVICE_WORDS
+      const end = i === 0 ? FIRST_DEVICE_WORDS : FIRST_DEVICE_WORDS + i * SUBSEQUENT_DEVICE_WORDS
       const segment = raw.slice(start, end)
-      devices.push(parseRawData(segment))
+      devices.push(parseRawData(segment, i))
     }
   }
   refDevices.value = devices
@@ -292,10 +346,16 @@ const formatValue = (el) => {
   return String(value)
 }
 
+// 文字为“故障”或者“有故障”时显示红色
+const isFaultTextMatched = (v) => {
+  return v === faultOnText.value || v === '故障'
+}
+
 const isFault = (el) => {
   if (!el) return false
-  if (el.parentKey && el.parentKey.startsWith('faultStatus')) return el.rawValue === 1
-  return false
+  const v = formatValue(el)
+  if (!v || v === '---') return false
+  return isFaultTextMatched(v)
 }
 
 // 生命周期钩子

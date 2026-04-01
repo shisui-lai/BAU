@@ -12,6 +12,7 @@ import { useDataReceptionStore } from '@/stores/communication/dataReceptionStore
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useSystemConfigStore } from '@/stores/system/systemConfigStore'
 import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
@@ -26,6 +27,8 @@ const isFullScreen = computed(() => route.meta.fullScreen)
 // 功能：监控MQTT数据接收状态，提供5秒超时检测和智能配置读取
 const dataReceptionStore = useDataReceptionStore()
 const toast = useToast()
+// PrimeVue 应用内确认框（避免 Electron 下同步 window.confirm 关闭后键盘焦点异常、整窗无法输入的问题）
+const confirm = useConfirm()
 
 // 初始化页面类型检测
 const pageTypeDetection = usePageTypeDetection()
@@ -144,22 +147,38 @@ function onMqttDisconnected() {
 // 处理状态指示器点击事件
 function handleStatusClick() {
   if (mqttStore.status === 'connecting' || mqttStore.status === 'reconnecting') {
-    // 如果正在连接或重连，显示确认对话框
-    if (confirm('正在连接中，是否要取消连接并重新配置？')) {
-      mqttStore.disconnect()
-      displayMqttDialog.value = true
-    }
+    // 如果正在连接或重连，使用应用内确认（语义与原 window.confirm 一致：确定则断开并打开配置）
+    confirm.require({
+      message: '正在连接中，是否要取消连接并重新配置？',
+      header: t('mqtt.title'),
+      icon: 'pi pi-exclamation-triangle',
+      rejectClass: 'p-button-secondary p-button-outlined',
+      rejectLabel: '取消',
+      acceptLabel: '确定',
+      accept: () => {
+        mqttStore.disconnect()
+        displayMqttDialog.value = true
+      }
+    })
   } else {
     // 其他状态直接打开配置弹窗
     displayMqttDialog.value = true
   }
 }
 
-// 断开连接功能
+// 断开连接功能（仍导出为 async 以保持 inject/defineExpose 的调用方兼容；实际在用户点击「确定」后异步执行断开）
 async function handleDisconnect() {
-  if (confirm('确定要断开MQTT连接吗？')) {
-    await mqttStore.disconnect()
-  }
+  confirm.require({
+    message: '确定要断开MQTT连接吗？',
+    header: t('mqtt.title'),
+    icon: 'pi pi-question-circle',
+    rejectClass: 'p-button-secondary p-button-outlined',
+    rejectLabel: '取消',
+    acceptLabel: '确定',
+    accept: async () => {
+      await mqttStore.disconnect()
+    }
+  })
 }
 
 // 检查MQTT连接状态

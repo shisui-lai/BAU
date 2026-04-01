@@ -26,7 +26,7 @@
             <div v-for="item in systemDI" :key="item.key" class="io-item">
               <div class="io-info">
                 <span class="io-label">{{ translateParameter(item.label) }}</span>
-                <span class="io-remark">{{ translateRemark(item.remark) }}</span>
+                <span v-if="flexCaptionForItem(item)" class="io-remark">{{ flexCaptionForItem(item) }}</span>
               </div>
               <div class="io-status-indicator">
                 <div class="led-indicator" :class="getLEDClass(item.value)">{{ formatBinary(item.value) }}</div>
@@ -44,7 +44,7 @@
             <div v-for="item in systemDO" :key="item.key" class="io-item">
               <div class="io-info">
                 <span class="io-label">{{ translateParameter(item.label) }}</span>
-                <span class="io-remark">{{ translateRemark(item.remark) }}</span>
+                <span v-if="flexCaptionForItem(item)" class="io-remark">{{ flexCaptionForItem(item) }}</span>
               </div>
               <div class="io-status-indicator">
                 <div class="led-indicator" :class="getLEDClass(item.value)">{{ formatBinary(item.value) }}</div>
@@ -63,7 +63,7 @@
             <div v-for="item in ioControlDI" :key="item.key" class="io-item">
               <div class="io-info">
                 <span class="io-label">{{ translateParameter(item.label) }}</span>
-                <span class="io-remark">{{ translateRemark(item.remark) }}</span>
+                <span v-if="flexCaptionForItem(item)" class="io-remark">{{ flexCaptionForItem(item) }}</span>
               </div>
               <div class="io-status-indicator">
                 <div class="led-indicator" :class="getLEDClass(item.value)">{{ formatBinary(item.value) }}</div>
@@ -81,7 +81,7 @@
             <div v-for="item in ioControlDO" :key="item.key" class="io-item">
               <div class="io-info">
                 <span class="io-label">{{ translateParameter(item.label) }}</span>
-                <span class="io-remark">{{ translateRemark(item.remark) }}</span>
+                <span v-if="flexCaptionForItem(item)" class="io-remark">{{ flexCaptionForItem(item) }}</span>
               </div>
               <div class="io-status-indicator">
                 <div class="led-indicator" :class="getLEDClass(item.value)">{{ formatBinary(item.value) }}</div>
@@ -134,7 +134,8 @@ const {
   ioControlDO,
   ioHeartbeat,
   getIOStatusText,
-  getIOStatusSeverity
+  getIOStatusSeverity,
+  flexCaptionForItem
 } = useBlockIO(selectedBlock)
 
 // 添加调试日志
@@ -159,11 +160,6 @@ const getLEDClass = (value) => {
 // 翻译函数
 const translateParameter = (label) => {
   return t(`blockIOStatusPage.parameters.${label}`, label)
-}
-
-const translateRemark = (remark) => {
-  if (!remark) return ''
-  return t(`blockIOStatusPage.remarks.${remark}`, remark)
 }
 
 const translateIOStatus = (value) => {

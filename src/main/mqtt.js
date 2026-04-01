@@ -40,6 +40,7 @@ import {
   parseBlockVersionRAW,
   parseBlockSysAbstractRAW,
   processBlockIoStatusRAW,
+  processBlockDiDoFlexcfgRemapRAW,
   parseCluAnalogFaultLevelSumRAW,
   parseBlockAnalogFaultLevelRAW,
   parseBlockAnalogFaultGradeRAW,
@@ -800,14 +801,15 @@ const processBlockRefData = (hex) => {
   const view = dv(buf)
 
   if (buf.length < 206) {
-    // 103个uint16 = 206字节
+    // 第一台设备：2+102*2=206 字节；两台设备：206+204=410 字节
     console.warn('[processBlockRefData] 数据长度不足:', buf.length)
     return { baseConfig: {}, data: [] }
   }
 
-  // 解析103个原始uint16数据
+  // 协议：第一台 103 字，后续每台 102 字。2 台共 205 字 = 410 字节
+  const wordCount = buf.length >= 410 ? 205 : 103
   const rawData = []
-  for (let i = 0; i < 103; i++) {
+  for (let i = 0; i < wordCount; i++) {
     rawData.push(view.getUint16(i * 2, true)) // 小端序
   }
 
@@ -946,6 +948,39 @@ const processClusterDehumiData = (hex) => {
   }
 }
 
+/**
+ * 簇级消防控制器数据解析（三沃力源 sanvalor 协议）
+ * 数据格式：数据长度(2字节) + 消防控制器数据(128 * 2字节)
+ * topic: bms/bau/d2s/bM/cN/fire_controller
+ */
+const processClusterFireControllerData = (hex) => {
+  const buf = toBuf(hex)
+  if (buf.length < 2) {
+    console.warn('[processClusterFireControllerData] 数据长度不足:', buf.length)
+    return { baseConfig: {}, data: [] }
+  }
+
+  const view = dv(buf)
+  const dataLength = view.getUint16(0, true)
+
+  const rawData = []
+  const maxRegs = 128
+  const availableRegs = Math.floor((buf.length - 2) / 2)
+  const count = Math.min(maxRegs, Math.max(0, availableRegs))
+  for (let i = 0; i < count; i++) {
+    rawData.push(view.getUint16(2 + i * 2, true))
+  }
+
+  if (count < maxRegs) {
+    console.warn('[processClusterFireControllerData] 寄存器数量不足:', { bufLen: buf.length, count })
+  }
+
+  return {
+    baseConfig: { dataLength },
+    data: rawData
+  }
+}
+
 /* ---------- 8 种三级故障：自动带入 kind ---------- */
 const parseCellOv_L3 = thirdL3('cell_ov')
 const parseCellUv_L3 = thirdL3('cell_uv')
@@ -1053,7 +1088,7 @@ const TOPIC_TABLE_MAP = {
   // 堆PCS数据
   block_pcs: processBlockPcsData,
   block_meter: processBlockMeterData,
-    // 堆制冷设备数据
+  // 堆制冷设备数据
   block_ref: processBlockRefData,
   block_deh: processBlockDehData,
   block_fire_dev: processBlockFireData,
@@ -1061,6 +1096,7 @@ const TOPIC_TABLE_MAP = {
   pcs: processClusterPcsData,
   ref: processClusterRefData,
   dehumi: processClusterDehumiData,
+  fire_controller: processClusterFireControllerData,
 
   // SOX参数处理器
   real_time_save_r: processRealTimeSaveData,
@@ -1128,6 +1164,8 @@ const TOPIC_TABLE_MAP = {
   block_sys_abstract: parseBlockSysAbstractRAW,
   // 堆IO状态
   block_io_status: processBlockIoStatusRAW,
+  // 堆 DI/DO 灵活配置映射（用于 IO 页面按硬件通道匹配真实信号名）
+  block_di_do_flexcfg_remap: processBlockDiDoFlexcfgRemapRAW,
 
   // 簇模拟量故障三级汇总
   clu_analog_fault_level_sum: parseCluAnalogFaultLevelSumRAW,
@@ -1178,6 +1216,8 @@ const TOPIC_TABLE_MAP = {
   manual_ctrl_sd_record: createRemoteCommandParser('manual_ctrl_sd_record'),
   // 下设堆SOC - BAU应答
   set_block_soc: createRemoteCommandParser('set_block_soc'),
+  // 下设复位事件记录存储器 - BAU应答
+  reset_event_record_flash: createRemoteCommandParser('reset_event_record_flash'),
   // 堆模式反馈查询应答处理器 - BAU应答
   get_batt_stack_ctrl_switch_result: createQueryCommandParser('get_batt_stack_ctrl_switch_result'),
   // 升级应答处理器 - BAU应答
@@ -1362,9 +1402,14 @@ function connectMqtt(config) {
         process.send({ type: 'mqtt-offline', data: {} })
       })
 
-      // 重连事件
+      // 重连事件（mqtt 库在首次连接失败后进入定时重试时会触发）
       client.on('reconnect', () => {
         console.log('[MQTT Child]  正在自动重连...')
+        // 【与「第一次连接」行为对齐】isConnecting 仅在 connect 成功时被置为 false；若首次一直连不上，
+        // isConnecting 会长期为 true，导致用户「取消重连」后再次发起 MQTT_CONNECT 仍被「连接正在进行中」拒绝。
+        // 进入库的自动重连阶段即表示「本轮首次握手已结束」，此处清除标志；手动改连前仍须先断开/取消重连，
+        // 由 connectMqtt 开头对 client.reconnecting 的校验保证（正在自动重连中则拒绝新连接）。
+        isConnecting = false
         // 重连时重置健康检查数据，准备新的连接
         resetHealthCheckData()
         try {
@@ -1384,6 +1429,8 @@ function connectMqtt(config) {
 function disconnectMqtt() {
   return new Promise((resolve) => {
     if (!client) {
+      // 无客户端时也复位，避免异常路径下 isConnecting 残留导致后续无法再次连接
+      isConnecting = false
       resolve()
       return
     }

@@ -171,18 +171,18 @@ export const useUpgradeStore = defineStore('upgrade', () => {
       }
 
       // 根据升级类型填充特定数据
-      if (upgradeType === '0xA000') {
-        // BAU升级：BCU和BMU相关字段保持为0
-        console.log('[Upgrade] BAU升级模式，BCU和BMU字段保持为0')
-      } else if (upgradeType === '0xA001') {
-        // BCU升级：填充簇选择，BMU相关为0
+      if (upgradeType === '0xA000' || upgradeType === '0xA004') {
+        // BAU升级 / BAU配置参数升级：BCU和BMU相关字段保持为0，不需要选择簇
+        console.log('[Upgrade] BAU/BAU配置参数升级模式，BCU和BMU字段保持为0')
+      } else if (upgradeType === '0xA001' || upgradeType === '0xA003') {
+        // BCU升级 / BCU配置参数升级：填充簇选择，BMU相关为0
         upgradeParamData.bcuSelection1 = buildClusterSelection(
           upgradeParams.value.bcuSelection1 || []
         )
         upgradeParamData.bcuSelection2 = buildClusterSelection(
           upgradeParams.value.bcuSelection2 || []
         )
-        console.log('[Upgrade] BCU升级模式，填充簇选择状态')
+        console.log('[Upgrade] BCU/BCU配置参数升级模式，填充簇选择状态')
       } else if (upgradeType === '0xA002') {
         // BMU升级：需要BCU选择状态来指定对哪一簇的BMU进行升级
         upgradeParamData.bcuSelection1 = buildClusterSelection(

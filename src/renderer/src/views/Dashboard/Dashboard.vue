@@ -961,8 +961,8 @@ const kpiItems = computed(() => {
   const dailyCharge = formatBlocks((m) => getValue(m, 'dailyChargeEnergy'))
   const dailyDischarge = formatBlocks((m) => getValue(m, 'dailyDischargeEnergy'))
   const power = formatBlocks((m) => {
-    const v = (getValue(m, 'stackVoltage')).toFixed(1)
-    const c = (getValue(m, 'stackCurrent')).toFixed(1)
+    const v = (getValue(m, 'blockVoltage')).toFixed(1)
+    const c = (getValue(m, 'blockCurrent')).toFixed(1)
     return ((parseFloat(v) * parseFloat(c)) / 1000).toFixed(2)
   })
   const cycleCount = formatBlocks((m) => getValue(m, 'batterySystemCycleCount'))
@@ -972,7 +972,7 @@ const kpiItems = computed(() => {
   const onlineClusters = formatBlocks((m) => getValue(m, 'onlineClusters'))
   
   return [
-    { title: t('dashboardPage.kpi.stackStatus'), value: statusText, unit: '', icon: 'pi pi-cog', route: '/block/status' },
+    { title: t('dashboardPage.kpi.blockStatus'), value: statusText, unit: '', icon: 'pi pi-cog', route: '/block/status' },
     { title: t('dashboardPage.kpi.totalCharge'), value: totalCharge, unit: '', icon: 'pi pi-bolt', route: '/block/energy' },
     { title: t('dashboardPage.kpi.totalDischarge'), value: totalDischarge, unit: '', icon: 'pi pi-bolt', route: '/block/energy' },
     { title: t('dashboardPage.kpi.ratedEnergy'), value: ratedEnergy, unit: '', icon: 'pi pi-bolt', route: '/block/monitor' },
@@ -991,29 +991,29 @@ const kpiItems = computed(() => {
 
 const getBlockSoc = (blockId) => {
   const map = getBlockSummary(blockId)
-  const val = getValue(map, 'stackSOC', 0)
+  const val = getValue(map, 'blockSOC', 0)
   return (val).toFixed(1)
 }
 
 const getBlockSoh = (blockId) => {
   const map = getBlockSummary(blockId)
-  const val = getValue(map, 'stackSOH', 100)
+  const val = getValue(map, 'blockSOH', 100)
   return (val).toFixed(1)
 }
 
 const getBlockFaultStatus = (blockId) => {
   const map = getBlockSummary(blockId)
-  return parseInt(getValue(map, 'stackFaultStatus', 0))
+  return parseInt(getValue(map, 'blockFaultStatus', 0))
 }
 
 const getBlockVoltage = (blockId) => {
   const map = getBlockSummary(blockId)
-  return parseFloat(getValue(map, 'stackVoltage', 0)).toFixed(1)
+  return parseFloat(getValue(map, 'blockVoltage', 0)).toFixed(1)
 }
 
 const getBlockCurrent = (blockId) => {
   const map = getBlockSummary(blockId)
-  return parseFloat(getValue(map, 'stackCurrent', 0)).toFixed(1)
+  return parseFloat(getValue(map, 'blockCurrent', 0)).toFixed(1)
 }
 
 const getFaultStatusText = (level) => {
@@ -1100,7 +1100,7 @@ const getSocHue = (soc) => {
 
 // 充放电状态 (用于动画) - Deprecated single block version, keeping for safety if referenced elsewhere but template uses new ones
 const chargeDischargeState = computed(() => {
-  const curr = getValue(currentBlockData.value, 'stackCurrent', 0)
+  const curr = getValue(currentBlockData.value, 'blockCurrent', 0)
   if (curr > 10) return 'charging' 
   if (curr < -10) return 'discharging'
   return 'idle'

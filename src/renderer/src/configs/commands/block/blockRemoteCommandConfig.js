@@ -212,6 +212,23 @@ export const blockRemoteCommandConfig = {
     placeholder: '请输入密码'
   },
 
+  // 12. 擦除 HardFault 事件记录存储区（协议固定为堆 b1；控制字 574；事件页内单独下发，不依赖多堆勾选）
+  // uiType: hidden — 不在堆遥控表格展示，仅在「事件记录」页 HardFault 卡片内调用
+  erase_hardfault_record_area: {
+    id: 'erase_hardfault_record_area',
+    name: '擦除hardfault事件记录存储区',
+    topic: 'bms/host/s2d/b1/erase_hardfault_record_area',
+    responseTopic: 'bms/bau/d2s/b1/erase_hardfault_record_area',
+    dataType: 'u16',
+    uiType: 'hidden',
+    needConfirm: true,
+    confirmMessage: '确定要擦除hardfault事件记录存储区吗？',
+    description: '输入密码574后下设擦除（控制字574，2字节小端）；topic 固定 b1',
+    inputType: 'password',
+    requiredValue: 574,
+    placeholder: '请输入密码'
+  },
+
   // 6. 查询接触器执行策略结果（堆级反馈查询命令）
   get_batt_stack_ctrl_switch_result: {
     id: 'get_batt_stack_ctrl_switch_result',

@@ -1,3 +1,4 @@
+<!-- 首页仪表盘：堆/簇实时状态、KPI、电池簇监控与外围入口（BMS Dashboard） -->
 <template>
   <div class="dashboard-container">
     <!-- 顶部标题栏（科技 HUD 风格） -->
@@ -103,9 +104,9 @@
                    <div class="battery-cap"></div>
                   <div class="battery-glass-body">
                     <!-- 液体 -->
-                    <div class="battery-liquid" :style="{ height: getBlockSoc(block.value) + '%' }">
-                       <div class="liquid-surface" v-if="getBlockSoc(block.value) > 0"></div>
-                       <div class="liquid-bubbles" v-if="getBlockSoc(block.value) > 0"></div>
+                    <div class="battery-liquid" :style="{ height: getBlockSocPercent(block.value) + '%' }">
+                       <div class="liquid-surface" v-if="getBlockSocPercent(block.value) > 0"></div>
+                       <div class="liquid-bubbles" v-if="getBlockSocPercent(block.value) > 0"></div>
                     </div>
                     
                     <!-- 状态图标/文字 -->
@@ -160,10 +161,10 @@
                 <!-- 状态圆环 (SOH & 故障状态)（最右侧） -->
                    <div class="status-rings">
                      <div class="ring-item">
-                       <div class="tech-ring" :style="{ '--percent': getBlockSoh(block.value) + '%' }">
+                       <div class="tech-ring" :style="{ '--percent': getBlockSohPercent(block.value) + '%' }">
                           <svg viewBox="0 0 36 36" class="circular-chart">
                             <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                            <path class="circle" :stroke-dasharray="`${getBlockSoh(block.value)}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" :stroke-dasharray="`${getBlockSohPercent(block.value)}, 100`" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                           </svg>
                           <div class="ring-text">
                             <span class="val">{{ getBlockSoh(block.value) }}</span>
@@ -345,9 +346,9 @@
                      <div class="battery-cap"></div>
                      <div class="battery-glass-body">
                         <!-- 液体（波浪与气泡） -->
-                        <div class="battery-liquid" :style="{ height: cluster.soc + '%' }">
-                           <div class="liquid-surface" v-if="cluster.soc > 0"></div>
-                           <div class="liquid-bubbles" v-if="cluster.soc > 0"></div>
+                        <div class="battery-liquid" :style="{ height: cluster.socHeight + '%' }">
+                           <div class="liquid-surface" v-if="cluster.socHeight > 0"></div>
+                           <div class="liquid-bubbles" v-if="cluster.socHeight > 0"></div>
                         </div>
                         
                         <!-- 叠加信息（V、A、SOC） -->
@@ -410,6 +411,36 @@ const clusterStore = useClusterStore()
 const systemConfigStore = useSystemConfigStore()
 const { selectedBlock } = useBlockSelect()
 const { t, te, locale } = useI18n()
+
+/**
+ * 判断是否为协议层约定的“无效传感器读数”（与 cellData.vue 中 formatCell 逻辑对齐）。
+ * 设备常以 0x7FFF(32767) 表示无采集/无效；经不同分辨率缩放后会表现为 3276.7、32.767 等。
+ * @param {*} v 原始或已换算后的数值
+ * @returns {boolean}
+ */
+function isInvalidSensorValue(v) {
+  if (v === null || v === undefined || v === '') return false
+  const n = Number(v)
+  if (!Number.isFinite(n)) return false
+  if (n === 32767) return true
+  if (n === 3276.7 || n === 32.767) return true
+  if (Math.abs(n - 3276.7) < 0.05) return true
+  if (Math.abs(n - 32.767) < 0.001) return true
+  return false
+}
+
+/**
+ * 首页展示用数值格式化：无效读数显示为 ---，避免 3276.7 等误导运行人员。
+ * @param {*} val
+ * @param {number} decimals
+ * @returns {string}
+ */
+function formatDashboardMetric(val, decimals = 1) {
+  if (isInvalidSensorValue(val)) return '---'
+  const n = Number(val)
+  if (!Number.isFinite(n)) return '---'
+  return n.toFixed(decimals)
+}
 
 // 注入 Layout 提供的 MQTT 控制方法
 const handleStatusClick = inject('handleStatusClick')
@@ -961,8 +992,11 @@ const kpiItems = computed(() => {
   const dailyCharge = formatBlocks((m) => getValue(m, 'dailyChargeEnergy'))
   const dailyDischarge = formatBlocks((m) => getValue(m, 'dailyDischargeEnergy'))
   const power = formatBlocks((m) => {
-    const v = (getValue(m, 'blockVoltage')).toFixed(1)
-    const c = (getValue(m, 'blockCurrent')).toFixed(1)
+    const vRaw = getValue(m, 'blockVoltage', 0)
+    const cRaw = getValue(m, 'blockCurrent', 0)
+    if (isInvalidSensorValue(vRaw) || isInvalidSensorValue(cRaw)) return '---'
+    const v = Number(vRaw).toFixed(1)
+    const c = Number(cRaw).toFixed(1)
     return ((parseFloat(v) * parseFloat(c)) / 1000).toFixed(2)
   })
   const cycleCount = formatBlocks((m) => getValue(m, 'batterySystemCycleCount'))
@@ -992,13 +1026,33 @@ const kpiItems = computed(() => {
 const getBlockSoc = (blockId) => {
   const map = getBlockSummary(blockId)
   const val = getValue(map, 'blockSOC', 0)
-  return (val).toFixed(1)
+  return formatDashboardMetric(val, 1)
+}
+
+/** SOC 用于液柱高度（0–100），无效读数按 0 处理，避免 '---%' 破坏样式 */
+const getBlockSocPercent = (blockId) => {
+  const map = getBlockSummary(blockId)
+  const val = getValue(map, 'blockSOC', 0)
+  if (isInvalidSensorValue(val)) return 0
+  const n = Number(val)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(100, Math.max(0, n))
 }
 
 const getBlockSoh = (blockId) => {
   const map = getBlockSummary(blockId)
   const val = getValue(map, 'blockSOH', 100)
-  return (val).toFixed(1)
+  return formatDashboardMetric(val, 1)
+}
+
+/** SOH 圆环进度（0–100），无效读数不铺满圆环 */
+const getBlockSohPercent = (blockId) => {
+  const map = getBlockSummary(blockId)
+  const val = getValue(map, 'blockSOH', 100)
+  if (isInvalidSensorValue(val)) return 0
+  const n = Number(val)
+  if (!Number.isFinite(n)) return 0
+  return Math.min(100, Math.max(0, n))
 }
 
 const getBlockFaultStatus = (blockId) => {
@@ -1008,12 +1062,12 @@ const getBlockFaultStatus = (blockId) => {
 
 const getBlockVoltage = (blockId) => {
   const map = getBlockSummary(blockId)
-  return parseFloat(getValue(map, 'blockVoltage', 0)).toFixed(1)
+  return formatDashboardMetric(getValue(map, 'blockVoltage', 0), 1)
 }
 
 const getBlockCurrent = (blockId) => {
   const map = getBlockSummary(blockId)
-  return parseFloat(getValue(map, 'blockCurrent', 0)).toFixed(1)
+  return formatDashboardMetric(getValue(map, 'blockCurrent', 0), 1)
 }
 
 const getFaultStatusText = (level) => {
@@ -1101,6 +1155,7 @@ const getSocHue = (soc) => {
 // 充放电状态 (用于动画) - Deprecated single block version, keeping for safety if referenced elsewhere but template uses new ones
 const chargeDischargeState = computed(() => {
   const curr = getValue(currentBlockData.value, 'blockCurrent', 0)
+  if (isInvalidSensorValue(curr)) return 'idle'
   if (curr > 10) return 'charging' 
   if (curr < -10) return 'discharging'
   return 'idle'
@@ -1187,6 +1242,8 @@ const getBlockClusterStates = (blockId) => {
     let volt = '0.0'
     let curr = '0.0'
     let soc = '0.0'
+    /** 液柱高度用 0–100，与展示字符串 soc 分离，避免无效值显示为 3276.7% */
+    let socHeight = 0
     
     // 始终读取数据，不依赖 Enable 状态
     const clusterKey = `${blkNum}-${i + 1}`
@@ -1220,7 +1277,9 @@ const getBlockClusterStates = (blockId) => {
     const fmt = (v, d) => {
       if (v === '–' || v === '--' || v == null) return '–'
       const n = Number(v)
-      return Number.isFinite(n) ? n.toFixed(d) : '–'
+      if (!Number.isFinite(n)) return '–'
+      if (isInvalidSensorValue(n)) return '---'
+      return n.toFixed(d)
     }
     const vmaxRaw = pickClusterSysAbstractValue(clusterKey, SYS_ABSTRACT_CLASSES.CELL_VOLT, SYS_ABSTRACT_LABELS.MAX_CELL_VOLT_1)
     const vminRaw = pickClusterSysAbstractValue(clusterKey, SYS_ABSTRACT_CLASSES.CELL_VOLT, SYS_ABSTRACT_LABELS.MIN_CELL_VOLT_1)
@@ -1260,9 +1319,13 @@ const getBlockClusterStates = (blockId) => {
           // 其他状态 (如 3:断开, 4:自检) 视为断开，isCharge/isDisch/isIdle 保持 false
       }
       
-      volt = (clusterVolt).toFixed(1)
-      curr = (clusterCurr).toFixed(1)
-      soc = (clusterSoc).toFixed(1)
+      volt = formatDashboardMetric(clusterVolt, 1)
+      curr = formatDashboardMetric(clusterCurr, 1)
+      soc = formatDashboardMetric(clusterSoc, 1)
+      if (!isInvalidSensorValue(clusterSoc)) {
+        const sn = Number(clusterSoc)
+        if (Number.isFinite(sn)) socHeight = Math.min(100, Math.max(0, sn))
+      }
     }
 
     // 状态判定逻辑
@@ -1294,6 +1357,7 @@ const getBlockClusterStates = (blockId) => {
       volt,
       curr,
       soc,
+      socHeight,
       vmax,
       vmin,
       tmax,

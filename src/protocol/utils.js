@@ -46,7 +46,8 @@ import {
   BAU_UPGRADE_RESULT_FIELDS,
   SYS_RUN_TIME_R,
   EVENT_RECORD_FLAG_R,
-  EVENT_RECORD_R
+  EVENT_RECORD_R,
+  HARD_FAULT_RECORD_R
 } from '../main/table'
 
 /* ---------- BMU Debug Data Parser ---------- */
@@ -115,6 +116,52 @@ export const pick = {
     const rawValue = v.getUint16(o, true)
     return rawValue.toString(16).toUpperCase()
   }
+}
+
+function decodeMacParamFromView(view, byteOffset) {
+  const w0 = view.getUint16(byteOffset, true)
+  const w1 = view.getUint16(byteOffset + 2, true)
+  const w2 = view.getUint16(byteOffset + 4, true)
+  const bytes = [
+    w0 & 0xff,
+    (w0 >>> 8) & 0xff,
+    w1 & 0xff,
+    (w1 >>> 8) & 0xff,
+    w2 & 0xff,
+    (w2 >>> 8) & 0xff
+  ]
+  return bytes.map((b) => b.toString(16).padStart(2, '0')).join(':')
+}
+
+export function parseMacParamStringToBytes(str) {
+  if (typeof str !== 'string') return null
+  const parts = str.trim().split(':')
+  if (parts.length !== 6) return null
+  const bytes = []
+  for (const p of parts) {
+    if (!/^[0-9A-Fa-f]{2}$/i.test(p)) return null
+    const n = parseInt(p, 16)
+    if (!Number.isFinite(n) || n < 0 || n > 255) return null
+    bytes.push(n)
+  }
+  return bytes
+}
+
+export function validateMacParamString(str) {
+  if (!str || typeof str !== 'string') return false
+  return /^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(str.trim())
+}
+
+export function encodeMacParamStringToBuffer(view, byteOffset, rawStr) {
+  const bytes = parseMacParamStringToBytes(String(rawStr ?? '').trim())
+  if (!bytes) return false
+  const w0 = bytes[0] | (bytes[1] << 8)
+  const w1 = bytes[2] | (bytes[3] << 8)
+  const w2 = bytes[4] | (bytes[5] << 8)
+  view.setUint16(byteOffset, w0, true)
+  view.setUint16(byteOffset + 2, w1, true)
+  view.setUint16(byteOffset + 4, w2, true)
+  return true
 }
 
 /* ---------- 通用表驱动解析 ---------- */
@@ -219,6 +266,15 @@ export function parseByTable(view, table, start = 0) {
       base[key] = `${b0}.${b1}.${b2}.${b3}`
       cache[key] = base[key]
       off += 4
+      continue
+    }
+
+    /* ---------- MAC（6 字节 = 3×小端 u16，与堆端口配置寄存器布局一致） ------ */
+    if (type === 'mac') {
+      const macStr = decodeMacParamFromView(view, off)
+      base[key] = macStr
+      cache[key] = macStr
+      off += 6
       continue
     }
 
@@ -377,6 +433,22 @@ export function parseByTableWithSkip(view, table, start = 0) {
       continue
     }
 
+    /* ---------- 原始字节块（如 HardFault CallStack 64B；hide 时仍推进 off）---- */
+    if (type === 'bytes') {
+      const len = Number(fld.length) || 0
+      if (off + len > view.byteLength) {
+        throw new RangeError(
+          `[parseByTableWithSkip] 字段 ${key} (bytes) 越界: off=${off}, len=${len}, view=${view.byteLength}`
+        )
+      }
+      const bytes = new Uint8Array(view.buffer, view.byteOffset + off, len)
+      off += len
+      if (shouldStore) {
+        base[key] = Array.from(bytes)
+      }
+      continue
+    }
+
     /* ---------- 普通字段解析 ---------------------------------------- */
     let rawValue
     try {
@@ -502,6 +574,7 @@ export function serialize(schema, dataObj, offset, length) {
     if (f.type.startsWith('skip')) return sum + Number(f.type.slice(4)) / 2
     if (f.type.startsWith('u32') || f.type.startsWith('s32')) return sum + 2
     if (f.type === 'ipv4') return sum + 2 // 4 字节 = 2 寄存器
+    if (f.type === 'mac') return sum + 3 // 6 字节 = 3 寄存器
     return sum + (f.count || 1)
   }, 0)
 
@@ -554,6 +627,23 @@ export function serialize(schema, dataObj, offset, length) {
       pos += 1
       full[pos] = b3
       pos += 1
+      continue
+    }
+
+    /* MAC：冒号分十六进制字符串写入 6 字节（3×小端 u16） */
+    if (type === 'mac') {
+      const raw = dataObj[key]
+      const bytes = typeof raw === 'string' ? parseMacParamStringToBytes(raw.trim()) : null
+      if (!bytes) {
+        for (let i = 0; i < 6; i++) {
+          full[pos + i] = 0
+        }
+      } else {
+        for (let i = 0; i < 6; i++) {
+          full[pos + i] = bytes[i]
+        }
+      }
+      pos += 6
       continue
     }
 
@@ -3168,6 +3258,111 @@ export function parseEventRecordRAW(payload) {
     // 为了向后兼容，保留单条记录的字段（第一条记录）
     data: records.length > 0 ? records[0].data : [],
     rawRegisters: records.length > 0 ? records[0].rawRegisters : [],
+    rawBuffer: records.length > 0 ? records[0].rawBuffer : null
+  }
+}
+
+/**
+ * 解析HardFault事件记录（hardfault_record_r）
+ * 本函数严格遵循用户定义的协议格式，与event_record_r使用完全相同的错误处理和解析流程
+ * 
+ * 协议格式：
+ * - 失败响应：1字节故障码（与event_record_r完全一致，显示toast）
+ * - 成功响应：数据长度(2字节) + hardfault事件记录数据(256字节 * 最多16条)
+ * 
+ * 每条记录256字节详细结构（见table.js中HARD_FAULT_RECORD_R定义）：
+ * - 时间(BCD): 年月日周时分秒
+ * - 事件类型、软件版本、栈深度
+ * - CPU寄存器组 (R0-R3, R12, LR, PC, PSR, 各种Fault Status Register)
+ * - Call Stack (根据栈深度解析，最多16级)
+ * - 预留区 + CRC16校验
+ * 
+ * @param {string|Buffer} payload - 十六进制字符串或Buffer
+ * @returns {Object} 解析结果 {error, baseConfig, records, data}
+ *                   失败时error=true并携带错误信息（用于toast）
+ */
+export function parseHardfaultRecordRAW(payload) {
+  const buf = Buffer.isBuffer(payload)
+    ? payload
+    : Buffer.from(String(payload).replace(/\s+/g, ''), 'hex')
+
+  if (buf.length === 0) return null
+
+  // 失败响应处理：1字节故障码（与event_record_r、event_record_flag_r完全一致）
+  // 这保证了“失败时按照相同方式显示toast弹窗”的要求
+  if (buf.length === 1) {
+    const errorCode = buf.readUInt8(0)
+    console.error(`hardfault_record_r error: ${errorCode}`)
+    return {
+      error: true,
+      baseConfig: {},
+      data: { code: errorCode, message: ERROR_CODES[errorCode] || '未知错误' }
+    }
+  }
+
+  // 成功响应处理
+  const dataLen = buf.readUInt16LE(0) // 前2字节为数据长度
+
+  // 每条HardFault记录固定256字节（用户定义）
+  const RECORD_DATA_SIZE = 256
+  const RECORD_TOTAL_SIZE = RECORD_DATA_SIZE
+
+  const remainingData = buf.length - 2
+  const recordCount = Math.min(Math.floor(remainingData / RECORD_DATA_SIZE), 16) // 最多16条（用户定义）
+
+  if (dataLen !== remainingData && recordCount > 0) {
+    console.warn(`[parseHardfaultRecordRAW] 数据长度不匹配: header=${dataLen}, actual=${remainingData}`)
+  }
+
+  const records = []
+  let offset = 2 // 从数据长度后开始
+
+  for (let i = 0; i < recordCount; i++) {
+    if (offset + RECORD_DATA_SIZE > buf.length) {
+      console.warn(`[parseHardfaultRecordRAW] 第${i}条记录数据不足`)
+      break
+    }
+
+    const recordDataBuf = buf.slice(offset, offset + RECORD_DATA_SIZE)
+    offset += RECORD_DATA_SIZE
+
+    // 创建DataView用于parseByTable（简单复用现有工具）
+    const view = new DataView(
+      recordDataBuf.buffer,
+      recordDataBuf.byteOffset,
+      recordDataBuf.byteLength
+    )
+
+    // 使用 HARD_FAULT_RECORD_R + parseByTableWithSkip：含 hide 的预留字段仍推进字节偏移，
+    // 否则寄存器/CallStack 会与固件实际布局错位；bytes 类型在 parseByTableWithSkip 中已实现。
+    const { baseConfig: parsedBaseConfig } = parseByTableWithSkip(view, HARD_FAULT_RECORD_R)
+
+    const baseConfig = {
+      DataLength: dataLen,
+      RecordIndex: i,
+      RecordCount: recordCount,
+      ...parsedBaseConfig
+    }
+
+    // groupByClass用于按'硬故障记录'分类显示，与现有event record一致
+    const data = groupByClass(HARD_FAULT_RECORD_R, baseConfig)
+
+    records.push({
+      RecordIndex: i,
+      baseConfig,
+      data,
+      rawBuffer: Buffer.from(recordDataBuf)
+    })
+  }
+
+  return {
+    error: false,
+    baseConfig: {
+      DataLength: dataLen,
+      RecordCount: recordCount
+    },
+    records,
+    data: records.length > 0 ? records[0].data : {},
     rawBuffer: records.length > 0 ? records[0].rawBuffer : null
   }
 }

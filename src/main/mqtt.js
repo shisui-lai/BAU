@@ -64,6 +64,7 @@ import {
   parseSysRunTimeRAW,
   parseEventRecordFlagRAW,
   parseEventRecordRAW,
+  parseHardfaultRecordRAW,
   parseBmuDebugRAW
 } from '../protocol/utils'
 import {
@@ -73,6 +74,11 @@ import {
   getEventReadingState,
   getEventExportStats
 } from './eventRecordExport'
+import {
+  startReadingHardfault,
+  processHardfaultRecordResponse,
+  getHardfaultReadingState
+} from './hardfaultRecordExport'
 // 【限流优化】已注释掉限流机制，改为直接发送
 // 原因：1) 速率计算已移到子进程，渲染进程负担已减轻
 //       2) 限流器存在内存管理复杂度
@@ -745,6 +751,7 @@ const processFactoryCalibParamData = withResponseCheck((buf) =>
 ) //协议修改新增
 const processEventRecordFlagData = withResponseCheck((hex) => parseEventRecordFlagRAW(hex))
 const processEventRecordData = withResponseCheck((hex) => parseEventRecordRAW(hex))
+const processHardfaultRecordData = withResponseCheck((hex) => parseHardfaultRecordRAW(hex))
 
 // PCS数据处理函数 - 只解析原始数据，不使用字段表
 const processBlockPcsData = (hex) => {
@@ -1195,6 +1202,10 @@ const TOPIC_TABLE_MAP = {
   // 事件记录数据
   event_record_r: processEventRecordData,
 
+  // HardFault事件记录（新增，按照用户需求：bms/host/s2d/b1/hardfault_record_r 0xFF 下发）
+  // 响应topic: bms/bau/d2s/b1/hardfault_record_r
+  hardfault_record_r: processHardfaultRecordData,
+
   // 堆系统端口配置参数
   block_port_cfg_r: withResponseCheck((hex) => parseBlockPortCfgRAW(hex)),
   block_port_cfg_w: parseWriteResponse,
@@ -1220,6 +1231,12 @@ const TOPIC_TABLE_MAP = {
   reset_event_record_flash: createRemoteCommandParser('reset_event_record_flash'),
   // 堆模式反馈查询应答处理器 - BAU应答
   get_batt_stack_ctrl_switch_result: createQueryCommandParser('get_batt_stack_ctrl_switch_result'),
+  // 复位可配置默认参数次数 - BAU应答（堆1固定）
+  reset_flexcfg_area_times: createRemoteCommandParser('reset_flexcfg_area_times'),
+  // 擦除可配置默认参数区 - BAU应答（堆1固定）
+  erase_flexcfg_area: createRemoteCommandParser('erase_flexcfg_area'),
+  // 擦除 HardFault 事件记录存储区 - BAU应答
+  erase_hardfault_record_area: createRemoteCommandParser('erase_hardfault_record_area'),
   // 升级应答处理器 - BAU应答
   upgrade: createRemoteCommandParser('upgrade'),
 
@@ -1753,6 +1770,15 @@ function setupMessageHandler() {
       }
     }
 
+    // ========== HardFault 记录（简化流程：单次 ff / 单次应答，写 TXT 见 hardfaultRecordExport） ==========
+    if (suffix === 'hardfault_record_r') {
+      const hfState = getHardfaultReadingState()
+      if (hfState.isReadingHardfault && hfState.hardfaultReadingBlockId === blockId) {
+        processHardfaultRecordResponse(result, blockId)
+        return 
+      }
+    }
+
     let sendOk = null
     let sendMs = null
     try {
@@ -1907,6 +1933,38 @@ process.on('message', (message) => {
   if (cmd === 'CANCEL_READ_EVENT') {
     const { blockId } = message
     cancelReadingEvent(blockId)
+    return
+  }
+
+  // ========== HardFault 记录读取（单次下发 0xFF，应答后写 TXT） ==========
+  if (cmd === 'START_READ_HARDFAULT') {
+    const { exportDir, blockId } = message
+    const bid = Number(blockId) || 1
+
+    if (!client || !isConnected) {
+      console.error('[MQTT Child] MQTT未连接，无法读取 HardFault 记录')
+      process.send({
+        type: 'hardfaultReadError',
+        data: {
+          blockId: bid,
+          error: 'MQTT未连接'
+        }
+      })
+      return
+    }
+
+    try {
+      startReadingHardfault(exportDir || '', bid, client)
+    } catch (e) {
+      console.error('[MQTT Child] HardFault 读取启动失败:', e)
+      process.send({
+        type: 'hardfaultReadError',
+        data: {
+          blockId: bid,
+          error: e?.message || String(e)
+        }
+      })
+    }
     return
   }
 

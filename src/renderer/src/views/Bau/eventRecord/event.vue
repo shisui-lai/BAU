@@ -115,6 +115,95 @@
       </div>
     </div>
 
+    <!-- HardFault事件记录卡片：路径、选目录、读取、擦除同一行； -->
+    <div class="card hardfault-record p-4 mb-3">
+      <h5>{{ t('eventTime.hardfault.cardTitle') }}</h5>
+      <div class="export-card p-4 rounded-lg">
+        <!-- 左侧：路径；右侧：三个操作按钮靠右（ml-auto） -->
+        <div class="flex align-items-center mb-4 gap-2 flex-wrap w-full">
+          <div class="flex align-items-center gap-2 min-w-0" style="flex: 1 1 auto">
+            <i class="pi pi-folder-open text-lg flex-shrink-0"></i>
+            <span class="font-medium flex-shrink-0">{{ t('eventTime.hardfault.exportPath') }}</span>
+            <div class="truncate text-sm" style="max-width: 280px">
+              {{ hardfaultStore?.exportDir || t('eventTime.hardfault.noDir') }}
+            </div>
+          </div>
+          <div class="flex align-items-center gap-2 flex-shrink-0 ml-auto">
+            <Button
+              class="p-button-sm p-button-outlined"
+              :label="t('eventTime.hardfault.selectFolder')"
+              icon="pi pi-pencil"
+              @click="hardfaultStore.selectExportDir"
+              :disabled="hardfaultStore.isErasing"
+              style="min-width: 4rem"
+            />
+            <Button
+              class="p-button-sm p-button-primary"
+              :label="t('eventTime.hardfault.readBtn')"
+              icon="pi pi-download"
+              @click="hardfaultStore.readHardfault"
+              :disabled="!hardfaultStore.canRead || hardfaultStore.isErasing"
+            />
+            <Button
+              class="p-button-sm p-button-danger p-button-outlined"
+              :label="t('eventTime.hardfault.eraseBtn')"
+              icon="pi pi-trash"
+              :loading="hardfaultStore.isErasing"
+              @click="hardfaultStore.openEraseHardfaultStorageDialog"
+              :disabled="hardfaultStore.isErasing"
+            />
+          </div>
+        </div>
+
+        <div v-if="hardfaultStore.validCount > 0" class="mt-1 text-green-600 text-sm">
+          {{ t('eventTime.hardfault.savedCount', { n: hardfaultStore.validCount }) }}
+        </div>
+      </div>
+    </div>
+
+    <!-- HardFault 擦除存储区：密码 0574，与堆遥控「擦除可配置默认参数区」一致 -->
+    <Dialog
+      v-model:visible="hardfaultStore.showErasePasswordDialog"
+      :header="t('blockRemoteCommandPage.dialogs.passwordVerification')"
+      :modal="true"
+      :closable="true"
+      :style="{ width: '420px' }"
+      @hide="hardfaultStore.cancelEraseHardfaultStorage"
+    >
+      <div class="hardfault-erase-dialog">
+        <p class="mb-3">{{ t('eventTime.hardfault.erasePasswordHint') }}</p>
+        <div class="field">
+          <label for="hardfault-erase-pwd">{{ t('blockRemoteCommandPage.dialogs.passwordLabel') }}</label>
+          <InputText
+            id="hardfault-erase-pwd"
+            v-model="hardfaultStore.erasePasswordInput"
+            type="password"
+            class="w-full"
+            autocomplete="off"
+            @keyup.enter="hardfaultStore.confirmEraseHardfaultStorage"
+          />
+        </div>
+        <div v-if="hardfaultStore.erasePasswordError" class="text-red-500 text-sm mt-2">
+          {{ t('blockRemoteCommandPage.dialogs.passwordError') }}
+        </div>
+      </div>
+      <template #footer>
+        <Button
+          :label="t('blockRemoteCommandPage.buttons.cancel')"
+          icon="pi pi-times"
+          class="p-button-text"
+          @click="hardfaultStore.cancelEraseHardfaultStorage"
+        />
+        <Button
+          :label="t('blockRemoteCommandPage.buttons.confirm')"
+          icon="pi pi-check"
+          class="p-button-success"
+          :loading="hardfaultStore.isErasing"
+          @click="hardfaultStore.confirmEraseHardfaultStorage"
+        />
+      </template>
+    </Dialog>
+
     <!-- 事件记录读取 -->
     <div class="card readEvent p-4 mb-3">
       <h5>{{ t('eventTime.title6') }}</h5>
@@ -261,7 +350,9 @@ import { useEventStore } from '@/stores/eventStore'
 import { useRecentEventsStore } from '@/stores/recentEventsStore'
 import { parseParameterReadResponse, parseParameterWriteResponse, serializeParameterData } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { BLOCK_TIME_CFG_R } from '../../../../../main/table.js'
+import { useHardfaultRecord } from '@/composables/useHardfaultRecord' 
 import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
 import Checkbox from 'primevue/checkbox'
@@ -276,6 +367,7 @@ const confirm = useConfirm()
 const blockStore = useBlockStore()
 const exportStore = useEventStore()
 const recentStore = useRecentEventsStore()
+const hardfaultStore = useHardfaultRecord()  
 
 // 缓存Key
 const LS_TIME_KEY = 'eventTime:times'

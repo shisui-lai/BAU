@@ -751,7 +751,7 @@ function parseNetworkSpeed(raw) {
  * 辅助函数：解析网卡序号
  */
 function parseNetworkCard(raw) {
-  const cardMap = { 0: '网卡1', 1: '网卡2' }
+  const cardMap = { 1: '网卡1', 2: '网卡2' }
   return cardMap[raw] !== undefined ? cardMap[raw] : `${raw}(未定义)`
 }
 

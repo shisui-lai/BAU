@@ -11,7 +11,7 @@
     "language": "Language",
     "rememberMe": "Remember Password",
     "company": "Risen Energy Storage Technology company.",
-    "version": "Version v0.8.8"
+    "version": "Version v0.9.3"
   },
   "toast": {
     "common": {
@@ -4350,12 +4350,8 @@
         "网卡2 首选DNS": "Network Card 2 Primary DNS",
         "网卡2 备用DNS": "Network Card 2 Secondary DNS",
         "网卡2 端口": "Network Card 2 Port",
-        "网卡1 MAC地址1": "Network Card 1 MAC Address 1",
-        "网卡1 MAC地址2": "Network Card 1 MAC Address 2",
-        "网卡1 MAC地址3": "Network Card 1 MAC Address 3",
-        "网卡2 MAC地址1": "Network Card 2 MAC Address 1",
-        "网卡2 MAC地址2": "Network Card 2 MAC Address 2",
-        "网卡2 MAC地址3": "Network Card 2 MAC Address 3",
+        "网卡1 MAC地址": "Network Card 1 MAC Address",
+        "网卡2 MAC地址": "Network Card 2 MAC Address",
         "MQTT服务器IP": "MQTT Server IP",
         "MQTT服务器端口": "MQTT Server Port",
         "网卡1速度": "Network Card 1 Speed",
@@ -5068,7 +5064,8 @@
       "clusterCheckbox": "Cluster Enable Bit"
     },
     "placeholders": {
-      "ipAddress": "192.168.1.1"
+      "ipAddress": "192.168.1.1",
+      "macAddress": "aa:bb:cc:dd:ee:ff"
     },
     "parameters": {
       "远方就地场景": "Remote/Local Scenario",
@@ -5424,7 +5421,8 @@
       "查询接触器执行策略结果": "Query Contactor Strategy Result",
       "复位事件记录存储器": "Reset Event Record Flash",
       "复位可配置默认参数次数": "Reset Configurable Default Param Times",
-      "擦除可配置默认参数区": "Erase Configurable Default Param Area"
+      "擦除可配置默认参数区": "Erase Configurable Default Param Area",
+      "擦除hardfault事件记录存储区": "Erase HardFault Event Record Storage"
     },
     "options": {
       "复位": "Reset",
@@ -6009,6 +6007,19 @@
       "第3次系统记录": "Third System Record"
     },
     "title6": "Event Record Reading",
+    "hardfault": {
+      "cardTitle": "HardFault Event Records",
+      "exportPath": "Save Path",
+      "noDir": "No folder selected",
+      "selectFolder": "Select Folder",
+      "readBtn": "Read HardFault Records",
+      "eraseBtn": "Erase Storage",
+      "erasePasswordHint": "This will erase the HardFault event record storage on the device. Enter your confirmation password.",
+      "eraseCmdSent": "Erase command sent; waiting for BAU response",
+      "readCmdSent": "Read command sent",
+      "exportTxtSuccess": "Saved {count} valid record(s) to {fileName}",
+      "savedCount": "Saved {n} valid record(s)"
+    },
     "tableTile1": "Parameters",
     "tableTile2": "Values",
     "tableTile3": "Unit",

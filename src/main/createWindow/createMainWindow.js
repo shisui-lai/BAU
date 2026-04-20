@@ -1,4 +1,4 @@
-﻿;('use strict')
+;('use strict')
 import { BrowserWindow, app, dialog, screen, Menu } from 'electron'
 import { is } from '@electron-toolkit/utils'
 import { join } from 'path'
@@ -97,7 +97,8 @@ function createMainWindow() {
       sandbox: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      nodeIntegration: false
+      nodeIntegration: false,
+      backgroundThrottling: false // 禁用后台节流
     }
   })
   mainWindow.once('ready-to-show', () => {

@@ -10571,7 +10571,7 @@ export const SOC_CFG_PARAM_R = [
     return {
       class: 'SOC算法参数',
       key: `chargeCorrectStep97${i + 1}`,
-      label: `充电修正步长表${i + 1} - ${rates[i]}`,
+      label: `充电修正步长表(97)%${i + 1} - ${rates[i]}`,
       type: 'u16',
       scale: 1,
       unit: 'mV'
@@ -10619,7 +10619,7 @@ export const SOC_CFG_PARAM_R = [
     return {
       class: 'SOC算法参数',
       key: `chargeCorrectStep99${i + 1}`,
-      label: `充电修正步长表${i + 1} - ${rates[i]}`,
+      label: `充电修正步长表(99)%${i + 1} - ${rates[i]}`,
       type: 'u16',
       scale: 1,
       unit: 'mV'
@@ -16021,13 +16021,9 @@ export const BLOCK_PORT_CFG_R = [
   { class: '系统端口配置参数', key: 'Eth2_DNS2', label: '网卡2 备用DNS', type: 'ipv4' },
   { class: '系统端口配置参数', key: 'Eth2_Port', label: '网卡2 端口', type: 'u16' },
 
-  // —— MAC 地址（各 3×u16）——
-  { class: '系统端口配置参数', key: 'Eth1_MAC_H', label: '网卡1 MAC地址1', type: 'u16' },
-  { class: '系统端口配置参数', key: 'Eth1_MAC_M', label: '网卡1 MAC地址2', type: 'u16' },
-  { class: '系统端口配置参数', key: 'Eth1_MAC_L', label: '网卡1 MAC地址3', type: 'u16' },
-  { class: '系统端口配置参数', key: 'Eth2_MAC_H', label: '网卡2 MAC地址1', type: 'u16' },
-  { class: '系统端口配置参数', key: 'Eth2_MAC_M', label: '网卡2 MAC地址2', type: 'u16' },
-  { class: '系统端口配置参数', key: 'Eth2_MAC_L', label: '网卡2 MAC地址3', type: 'u16' },
+  // —— MAC：每网卡一行，类型 mac，占 6 字节（等同原 3×u16 小端布局）——
+  { class: '系统端口配置参数', key: 'Eth1_MAC', label: '网卡1 MAC地址', type: 'mac' },
+  { class: '系统端口配置参数', key: 'Eth2_MAC', label: '网卡2 MAC地址', type: 'mac' },
 
   // —— MQTT ——
   { class: '系统端口配置参数', key: 'MQTT_ServerIP', label: 'MQTT服务器IP', type: 'ipv4' },
@@ -19900,6 +19896,291 @@ export const EVENT_RECORD_R = [
 
   // 字段105：CRC16（2字节）
   { class: '事件记录数据', key: 'CRC16', label: 'CRC16', type: 'u16', scale: 1, hide: false }
+]
+
+// ========== HardFault事件记录（hardfault_record_r）==========
+// 本文件作用：定义所有MQTT/协议参数的字段表，用于parseByTable统一解析
+// 新增：HardFault事件记录字段表（每条记录256字节，共支持16条）
+// 协议格式：数据长度(2字节) + [256字节记录 * N条]
+// 每条记录详细结构（严格按用户定义，偏移量精确匹配）：
+export const HARD_FAULT_RECORD_R = [
+  // ==================== 时间字段 (BCD编码) ====================
+  // 序号0: 年 (偏移量0, 2字节, BCD码，如0x23表示2023年)
+  {
+    class: '硬故障记录',
+    key: 'Year',
+    label: '年',
+    type: 'u16',
+    scale: 1
+  },
+
+  // 序号1: 月 (偏移量2, 2字节, BCD码)
+  {
+    class: '硬故障记录',
+    key: 'Month',
+    label: '月',
+    type: 'u16',
+    scale: 1
+  },
+
+  // 序号2: 日 (偏移量4, 2字节, BCD码)
+  {
+    class: '硬故障记录',
+    key: 'Day',
+    label: '日',
+    type: 'u16',
+    scale: 1
+  },
+
+  // 序号3: 周 (偏移量6, 2字节, BCD码)
+  {
+    class: '硬故障记录',
+    key: 'Week',
+    label: '周',
+    type: 'u16',
+    scale: 1
+  },
+
+  // 序号4: 时 (偏移量8, 2字节, BCD码)
+  {
+    class: '硬故障记录',
+    key: 'Hour',
+    label: '时',
+    type: 'u16',
+    scale: 1
+  },
+
+  // 序号5: 分 (偏移量10, 2字节, BCD码)
+  {
+    class: '硬故障记录',
+    key: 'Minute',
+    label: '分',
+    type: 'u16',
+    scale: 1
+  },
+
+  // 序号6: 秒 (偏移量12, 2字节, BCD码)
+  {
+    class: '硬故障记录',
+    key: 'Second',
+    label: '秒',
+    type: 'u16',
+    scale: 1
+  },
+
+  // 序号7: 事件类型 (偏移量14, 2字节, 默认10000)
+  {
+    class: '硬故障记录',
+    key: 'EventType',
+    label: '事件类型',
+    type: 'u16',
+    scale: 1
+  },
+
+  // ==================== 版本与栈信息 ====================
+  // 序号8: 软件版本号 (偏移量16, 20字节, ASCII字符串)
+  {
+    class: '硬故障记录',
+    key: 'SoftwareVersion',
+    label: '软件版本号',
+    type: 'str20'
+  },
+
+  // 序号9: 栈深度 (偏移量36, 2字节, 最大16级)
+  {
+    class: '硬故障记录',
+    key: 'StackDepth',
+    label: '栈深度',
+    type: 'u16',
+    scale: 1
+  },
+
+  // 序号10: 预留1 (偏移量38, 2字节)
+  {
+    class: '硬故障记录',
+    key: 'Reserved1',
+    label: '预留1',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+
+  // ==================== CPU寄存器 (大部分4字节uint32) ====================
+  // 序号11-20: 各种寄存器状态（R0~HFSR）
+  {
+    class: '硬故障记录',
+    key: 'R0',
+    label: '寄存器R0',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'R1',
+    label: '寄存器R1',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'R2',
+    label: '寄存器R2',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'R3',
+    label: '寄存器R3',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'R12',
+    label: '寄存器R12',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'LR',
+    label: '寄存器LR (Link Register)',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'PC',
+    label: '寄存器PC (Program Counter)',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'PSR',
+    label: '寄存器PSR',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'SYSHNDCTRL',
+    label: '寄存器SYSHNDCTRL',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'HFSR',
+    label: '寄存器HFSR (Hard Fault Status)',
+    type: 'u32',
+    scale: 1
+  },
+
+  // 序号21-30: 故障状态寄存器和地址寄存器
+  {
+    class: '硬故障记录',
+    key: 'MFSR',
+    label: '寄存器MFSR',
+    type: 'u8',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'Reserved2',
+    label: '预留2',
+    type: 'u8',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '硬故障记录',
+    key: 'MMAR',
+    label: '寄存器MMAR',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'BFSR',
+    label: '寄存器BFSR',
+    type: 'u8',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'Reserved3',
+    label: '预留3',
+    type: 'u8',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '硬故障记录',
+    key: 'BFAR',
+    label: '寄存器BFAR',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'UFSR',
+    label: '寄存器UFSR',
+    type: 'u16',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'Reserved4',
+    label: '预留4',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  },
+  {
+    class: '硬故障记录',
+    key: 'DFSR',
+    label: '寄存器DFSR',
+    type: 'u32',
+    scale: 1
+  },
+  {
+    class: '硬故障记录',
+    key: 'AFSR',
+    label: '寄存器AFSR',
+    type: 'u32',
+    scale: 1
+  },
+
+  // 序号31: Call Stack（CPU 调用栈：偏移104起64字节，最多16个 u32 小端地址，与 StackDepth 对应）
+  {
+    class: '硬故障记录',
+    key: 'CallStack',
+    label: '调用栈 (Call Stack)',
+    type: 'bytes',
+    length: 64
+  },
+
+  // 序号32: 预留5 (偏移量168, 86字节)
+  {
+    class: '硬故障记录',
+    key: 'Reserved5',
+    label: '预留5',
+    type: 'bytes',
+    length: 86,
+    hide: true
+  },
+
+  // 序号33: CRC16 (最后2字节，用于验证记录完整性)
+  {
+    class: '硬故障记录',
+    key: 'CRC16',
+    label: 'CRC16校验',
+    type: 'u16',
+    scale: 1,
+    hide: true
+  }
 ]
 
 export const EN_CLUSTER_HARDWARE_SUM = [

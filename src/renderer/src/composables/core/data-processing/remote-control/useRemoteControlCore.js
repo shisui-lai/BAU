@@ -8,6 +8,7 @@ import { useBlockStore } from '@/stores/device/blockStore'
 import { registerAutoReadFunction } from '@/composables/utils/useAutoReadScheduler'
 import { getDropdownConfig, isDropdownParameter } from '@/configs/ui/dropdownConfigs'
 import { ERROR_CODES } from '../../../../../../main/table.js'
+import { encodeMacParamStringToBuffer } from '../../../../../../protocol/utils.js'
 
 /**
  * 通用遥调错误码映射
@@ -31,6 +32,7 @@ export function getParameterFieldByteSize(fieldType) {
     s32: 4, // 有符号32位整数
     f32: 4, // 32位浮点数
     ipv4: 4, // IPv4 地址（4字节）
+    mac: 6, // MAC 地址（6字节 = 3×小端 u16，与堆端口配置一致）
     hex16: 2, // 十六进制16位整数（2字节）
     bit: 0, // bit字段不占用额外字节空间（从父字段提取）
     bits: 0 // bits字段不占用额外字节空间（从父字段提取）
@@ -88,18 +90,13 @@ export function writeParameterFieldValue(dataView, byteOffset, valueType, value)
     return
   }
 
-  // IPv4: 接受字符串 "192.168.1.1"，转换为4字节网络序
-  if (valueType === 'ipv4') {
-    const ipString = String(value)
-    const parts = ipString.split('.')
-    if (parts.length === 4) {
-      parts.forEach((part, index) => {
-        const octet = parseInt(part, 10) || 0
-        dataView.setUint8(byteOffset + index, Math.max(0, Math.min(255, octet)))
-      })
-    } else {
-      // 默认IP: 0.0.0.0
-      dataView.setUint32(byteOffset, 0, false) // 网络序（大端序）
+  // MAC：冒号分十六进制字符串，写入 3×小端 u16（与 protocol/utils parseByTable 一致）
+  if (valueType === 'mac') {
+    const ok = encodeMacParamStringToBuffer(dataView, byteOffset, String(value ?? ''))
+    if (!ok) {
+      dataView.setUint16(byteOffset, 0, true)
+      dataView.setUint16(byteOffset + 2, 0, true)
+      dataView.setUint16(byteOffset + 4, 0, true)
     }
     return
   }
@@ -412,6 +409,9 @@ export function createDefaultParameterData(fieldDefinitionTable, logPrefix) {
         if (parameterField.type === 'ipv4') {
           // IPv4 类型使用字符串格式
           defaultParameterData[parameterField.key] = '0.0.0.0'
+        } else if (parameterField.type === 'mac') {
+          // MAC 类型使用冒号分十六进制（与 BAU 探测页展示习惯一致）
+          defaultParameterData[parameterField.key] = '00:00:00:00:00:00'
         } else if (parameterField.type === 'hex16') {
           // hex16 类型使用字符串格式
           defaultParameterData[parameterField.key] = '0'
@@ -1154,6 +1154,11 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
       return parameterValue
     }
 
+    // MAC 类型直接返回字符串
+    if (parameterDefinition.type === 'mac') {
+      return parameterValue
+    }
+
     // hex16类型直接返回字符串，不转换为数值
     if (parameterDefinition.type === 'hex16') {
       return parameterValue
@@ -1239,6 +1244,11 @@ export function useRemoteControlCore(remoteControlConfig, toastService, options 
   function setParameterInputValue(parameterDefinition, inputValue) {
     // IPv4类型直接返回字符串，不转换为数值
     if (parameterDefinition.type === 'ipv4') {
+      return inputValue
+    }
+
+    // MAC 类型直接返回字符串
+    if (parameterDefinition.type === 'mac') {
       return inputValue
     }
 

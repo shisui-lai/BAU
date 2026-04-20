@@ -11,7 +11,7 @@
     "language": "语言",
     "rememberMe": "记住密码",
     "company": "东方日升储能技术有限公司",
-    "version": "版本 v0.8.8"
+    "version": "版本 v0.9.3"
   },
   "toast": {
     "common": {
@@ -2780,12 +2780,8 @@
         "网卡2 首选DNS": "网卡2 首选DNS",
         "网卡2 备用DNS": "网卡2 备用DNS",
         "网卡2 端口": "网卡2 端口",
-        "网卡1 MAC地址1": "网卡1 MAC地址1",
-        "网卡1 MAC地址2": "网卡1 MAC地址2",
-        "网卡1 MAC地址3": "网卡1 MAC地址3",
-        "网卡2 MAC地址1": "网卡2 MAC地址1",
-        "网卡2 MAC地址2": "网卡2 MAC地址2",
-        "网卡2 MAC地址3": "网卡2 MAC地址3",
+        "网卡1 MAC地址": "网卡1 MAC地址",
+        "网卡2 MAC地址": "网卡2 MAC地址",
         "MQTT服务器IP": "MQTT服务器IP",
         "MQTT服务器端口": "MQTT服务器端口",
         "网卡1速度": "网卡1速度",
@@ -3496,7 +3492,8 @@
       "clusterCheckbox": "簇使能位"
     },
     "placeholders": {
-      "ipAddress": "192.168.1.1"
+      "ipAddress": "192.168.1.1",
+      "macAddress": "aa:bb:cc:dd:ee:ff"
     },
     "parameters": {
       "BMU总数量": "BMU总数量",
@@ -3734,7 +3731,8 @@
       "查询接触器执行策略结果": "查询接触器执行策略结果",
       "复位事件记录存储器": "复位事件记录存储器",
       "复位可配置默认参数次数": "复位可配置默认参数次数",
-      "擦除可配置默认参数区": "擦除可配置默认参数区"
+      "擦除可配置默认参数区": "擦除可配置默认参数区",
+      "擦除hardfault事件记录存储区": "擦除 HardFault 事件记录存储区"
     },
     "options": {
       "复位": "复位",
@@ -4289,6 +4287,19 @@
       "第3次系统记录": "第3次系统记录"
     },
     "title6": "事件记录读取",
+    "hardfault": {
+      "cardTitle": "HardFault 事件记录",
+      "exportPath": "保存路径",
+      "noDir": "未选择文件夹",
+      "selectFolder": "选择文件夹",
+      "readBtn": "读取 HardFault 记录",
+      "eraseBtn": "擦除存储区",
+      "erasePasswordHint": "此操作将擦除设备上 HardFault 事件记录存储区，请输入确认密码。",
+      "eraseCmdSent": "擦除指令已下发，请等待 BAU 应答",
+      "readCmdSent": "读取指令已下发",
+      "exportTxtSuccess": "已保存 {count} 条有效记录至 {fileName}",
+      "savedCount": "已保存 {n} 条有效记录"
+    },
     "tableTile1": "参数",
     "tableTile2": "值",
     "tableTile3": "单位",

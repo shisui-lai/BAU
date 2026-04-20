@@ -611,5 +611,9 @@ export const DEFAULT_BLOCK_CONFIG_PARAMS = {
   IdleHeat_SetHeatTemp: 0,
   IdleHeat_ControlMode: 0,
   IdleStopHeatCond3_MinCellTemp: 0,
-  IdleStopHeatCond4_AvgCellTemp: 0
+  IdleStopHeatCond4_AvgCellTemp: 0,
+
+  // ========== 系统端口配置（BLOCK_PORT_CFG_R 中的字符串型字段，首屏占位） ==========
+  Eth1_MAC: '00:00:00:00:00:00',
+  Eth2_MAC: '00:00:00:00:00:00'
 }

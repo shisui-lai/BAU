@@ -7,8 +7,8 @@ import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 
 // 显示版本号
-const version = 'v0.8.8 4.1'
-// 获取MQTT store
+const version = 'v0.9.3 4.20'
+// 获取MQTT store 
 const mqttStore = useMqttStore()
 
 // 从AppLayout注入的方法

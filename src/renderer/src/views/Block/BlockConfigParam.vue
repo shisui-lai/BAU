@@ -1,4 +1,4 @@
-<!-- 堆配置参数页面 - 包含系统簇端电池配置、系统通讯设备配置、系统操作配置三类参数 -->
+<!-- 堆遥调参数页面：电池/通讯/操作/水冷/SOC/端口(含 IPv4 与 MAC 字符串编辑)/公共配置等 -->
 <script setup>
 import { useToast } from 'primevue/usetoast'
 import { onMounted, onUnmounted, onActivated, onDeactivated, ref, computed, watch } from 'vue'
@@ -8,6 +8,7 @@ import { useRetryLogic } from '@/composables/utils/useRetryLogic'
 import { useRemoteControlCore, serializeParameterData, parseParameterReadResponse, parseParameterWriteResponse } from '@/composables/core/data-processing/remote-control/useRemoteControlCore'
 import { usePageTypeDetection } from '@/composables/utils/page-detection/usePageTypeDetection'
 import { useRawInputCache, isNumericType, validateNumericInput, validateIPv4 } from '@/composables/utils/useParameterInput'
+import { validateMacParamString } from '../../../../protocol/utils.js'
 import { useBlockStore } from '@/stores/device/blockStore'
 import { BLOCK_BATT_PARAM_R, BLOCK_COMM_DEV_CFG_R, BLOCK_OPERATE_CFG_R, BLOCK_SOC_PARAM_R, BLOCK_REF_PARAM_R, BLOCK_PORT_CFG_R, BLOCK_COMMON_PARAM_R } from '../../../../main/table.js'
 import { useBlockCommonParam } from '@/composables/core/data-processing/parameter-management/useBlockCommonParam'
@@ -106,7 +107,7 @@ function getFieldByteSize(t) {
   if (typeof t === 'string' && t.startsWith('skip')) return Number(t.slice(4))
   // bits字段不占用独立字节空间
   if (t === 'bits' || t === 'bit') return 0
-  const map = { u8:1,s8:1,u16:2,s16:2,u32:4,s32:4,f32:4, ipv4:4 }
+  const map = { u8: 1, s8: 1, u16: 2, s16: 2, u32: 4, s32: 4, f32: 4, ipv4: 4, mac: 6 }
   return map[t] || 2
 }
 
@@ -425,35 +426,23 @@ const {
   defaultData: DEFAULT_BLOCK_CONFIG_PARAMS
 })
 
-// ===== IPv4校验与带校验的下发（端口Tab） =====
-// IPv4校验复用通用工具
-
+// ===== IPv4 / MAC 输入框样式（端口 Tab 与 sendParametersWithValidation 中校验配合） =====
 function getIPv4InputClass(value) {
   if (!value || value === '0.0.0.0') return ''
   return validateIPv4(value) ? '' : 'ipv4-invalid'
 }
 
-function sendPortParametersWithValidation() {
-  const ipv4Errors = []
-  const list = portEnhancedParameterList?.value || []
-  list.forEach(param => {
-    if (param.type === 'ipv4') {
-      const value = getPortParameterInputValue(param, param.currentValue)
-      if (value && value !== '0.0.0.0' && !validateIPv4(String(value))) {
-        ipv4Errors.push(`${param.label || param.key}: "${value}"`)
-      }
-    }
-  })
-  if (ipv4Errors.length > 0) {
-    toastService.add({
-      severity: 'error',
-      summary: t('blockConfigParamPage.messages.ipFormatError'),
-      detail: t('blockConfigParamPage.messages.ipFormatErrorDetail', [ipv4Errors.join('\n')]),
-      life: 8000
-    })
-    return
-  }
-  sendPortParameters()
+/** 端口配置 MAC：非全零且格式不合法时标红（与 IPv4 逻辑对称） */
+function getMacInputClass(value) {
+  if (!value || value === '00:00:00:00:00:00') return ''
+  return validateMacParamString(String(value)) ? '' : 'mac-invalid'
+}
+
+// 前端写保护：这两个 MAC 在堆遥调页面仅允许展示，不允许在输入框中编辑
+const FRONTEND_DISABLED_MAC_KEYS = new Set(['Eth1_MAC', 'Eth2_MAC'])
+
+function isMacInputDisabled(parameter) {
+  return !!parameter?.key && FRONTEND_DISABLED_MAC_KEYS.has(parameter.key)
 }
 
 // ===== 原文缓存：复用 composable（跨Tab使用动态前缀） =====
@@ -493,6 +482,15 @@ function sendParametersWithValidation(){
       continue
     }
 
+    // MAC 专用校验（端口Tab，与 IPv4 同一策略：全零占位不提示错误）
+    if (p.type === 'mac') {
+      const v = getInputValue(p, p.currentValue)
+      if (v && v !== '00:00:00:00:00:00' && !validateMacParamString(String(v))) {
+        errors.push(`${p.label || p.key}: "${v}"`)
+      }
+      continue
+    }
+
     // 数值型参数统一校验
     if (isNumericType(p)){
       const raw = getRawInput(p)
@@ -524,7 +522,7 @@ function sendParametersWithValidation(){
   if (activeType.value === 'common') sendCommonParameters()
   else if (activeType.value === 'batt') sendBatteryParameters()
   else if (activeType.value === 'comm') sendCommDevParameters()
-  else if (activeType.value === 'port') sendPortParameters() // IPv4已在前面校验
+  else if (activeType.value === 'port') sendPortParameters() // IPv4/MAC 已在前面校验
   else if (activeType.value === 'operate') sendOperateParameters()
   else if (activeType.value === 'ref') sendRefParameters()
   else sendSocParameters()
@@ -1341,6 +1339,17 @@ function selectAllClusters(parameterDefinition) {
             :placeholder="t('blockConfigParamPage.placeholders.ipAddress')"
           />
 
+          <!-- MAC：与 ipv4 相同为字符串读写，占位符为六位十六进制 -->
+          <InputText
+            v-else-if="data && data.type === 'mac'"
+            :model-value="getInputValue(data, data.currentValue)"
+            @update:model-value="val => updateValue(data.key, setInputValue(data, val))"
+            :disabled="currentIsReading || isMacInputDisabled(data)"
+            size="small"
+            :class="['w-full', getMacInputClass(getInputValue(data, data.currentValue))]"
+            :placeholder="t('blockConfigParamPage.placeholders.macAddress')"
+          />
+
           <!-- 簇使能位配置参数 -->
           <div v-else-if="data && data.type === 'u16' && data.clusterRange" class="cluster-checkbox-container">
             <div class="cluster-checkboxes">
@@ -1472,6 +1481,11 @@ function selectAllClusters(parameterDefinition) {
 
 /* IPv4 无效样式提示 */
 .ipv4-invalid :deep(.p-inputtext) {
+  border-color: var(--red-500);
+}
+
+/* MAC 无效样式提示（与 IPv4 一致） */
+.mac-invalid :deep(.p-inputtext) {
   border-color: var(--red-500);
 }
 </style>

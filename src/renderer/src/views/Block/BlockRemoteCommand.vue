@@ -652,6 +652,8 @@ function handleRemoteCommandResponseWithToast(msg) {
     'manual_ctrl_sd_record': t('blockRemoteCommandPage.commands.下设手动控制SD卡记录'),
     'set_block_soc': t('blockRemoteCommandPage.commands.下设堆SOC'),
     'reset_event_record_flash': t('blockRemoteCommandPage.commands.复位事件记录存储器'),
+    'reset_flexcfg_area_times': t('blockRemoteCommandPage.commands.复位可配置默认参数次数'),
+    'erase_flexcfg_area': t('blockRemoteCommandPage.commands.擦除可配置默认参数区'),
     'get_batt_stack_ctrl_switch_result': t('blockRemoteCommandPage.commands.查询接触器执行策略结果')
   }
 
@@ -726,6 +728,8 @@ onMounted(() => {
   window.electron.ipcRenderer.removeAllListeners?.('MANUAL_CTRL_SD_RECORD')
   window.electron.ipcRenderer.removeAllListeners?.('RESET_EVENT_RECORD_FLASH')
   window.electron.ipcRenderer.removeAllListeners?.('SET_BLOCK_SOC')
+  window.electron.ipcRenderer.removeAllListeners?.('RESET_FLEXCFG_AREA_TIMES')
+  window.electron.ipcRenderer.removeAllListeners?.('ERASE_FLEXCFG_AREA')
   window.electron.ipcRenderer.removeAllListeners?.('GET_BATT_STACK_CTRL_SWITCH_RESULT')
 
   // 监听堆模式遥控命令应答
@@ -738,6 +742,8 @@ onMounted(() => {
   window.electron.ipcRenderer.on('MANUAL_CTRL_SD_RECORD', onRemoteCommandResponse)
   window.electron.ipcRenderer.on('RESET_EVENT_RECORD_FLASH', onRemoteCommandResponse)
   window.electron.ipcRenderer.on('SET_BLOCK_SOC', onRemoteCommandResponse)
+  window.electron.ipcRenderer.on('RESET_FLEXCFG_AREA_TIMES', onRemoteCommandResponse)
+  window.electron.ipcRenderer.on('ERASE_FLEXCFG_AREA', onRemoteCommandResponse)
   // 监听堆模式反馈查询应答
   window.electron.ipcRenderer.on('GET_BATT_STACK_CTRL_SWITCH_RESULT', onRemoteCommandResponse)
   
@@ -781,6 +787,8 @@ onUnmounted(() => {
   window.electron.ipcRenderer.removeAllListeners('MANUAL_CTRL_SD_RECORD', onRemoteCommandResponse)
   window.electron.ipcRenderer.removeAllListeners('RESET_EVENT_RECORD_FLASH', onRemoteCommandResponse)
   window.electron.ipcRenderer.removeAllListeners('SET_BLOCK_SOC', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('RESET_FLEXCFG_AREA_TIMES', onRemoteCommandResponse)
+  window.electron.ipcRenderer.removeAllListeners('ERASE_FLEXCFG_AREA', onRemoteCommandResponse)
   window.electron.ipcRenderer.removeAllListeners('GET_BATT_STACK_CTRL_SWITCH_RESULT', onRemoteCommandResponse)
 })
 

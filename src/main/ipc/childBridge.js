@@ -36,40 +36,32 @@ export function createMessageHandler(processManager, mainWindow) {
 
     if (msg.type === 'data-rate-update') {
       pendingSetImmediateCount++
-      setImmediate(() => {
-        mainWindow.webContents.send('data-rate-update', msg.data)
-        pendingSetImmediateCount--
-      })
+      mainWindow.webContents.send('data-rate-update', msg.data)
+      pendingSetImmediateCount--
       diagLogger.debug('forward-data-rate-update', '', { rate: msg?.data?.rate })
       return
     }
 
     if (msg.type === 'readEventProgress') {
       pendingSetImmediateCount++
-      setImmediate(() => {
-        mainWindow.webContents.send('update-readEventProgress', msg.data)
-        pendingSetImmediateCount--
-      })
+      mainWindow.webContents.send('update-readEventProgress', msg.data)
+      pendingSetImmediateCount--
       diagLogger.debug('forward-readEventProgress', '', { data: msg.data })
       return
     }
 
     if (msg.type === 'readEventCompleted') {
       pendingSetImmediateCount++
-      setImmediate(() => {
-        mainWindow.webContents.send('export-completed', msg.data)
-        pendingSetImmediateCount--
-      })
+      mainWindow.webContents.send('export-completed', msg.data)
+      pendingSetImmediateCount--
       diagLogger.info('forward-readEventCompleted', '', { data: msg.data })
       return
     }
 
     if (msg.type === 'readEventRecentFinal') {
       pendingSetImmediateCount++
-      setImmediate(() => {
-        mainWindow.webContents.send('readEventRecentFinal', msg.data)
-        pendingSetImmediateCount--
-      })
+      mainWindow.webContents.send('readEventRecentFinal', msg.data)
+      pendingSetImmediateCount--
       diagLogger.info('forward-readEventRecentFinal', '', {
         count: Array.isArray(msg?.data?.rows) ? msg.data.rows.length : 0
       })
@@ -78,30 +70,24 @@ export function createMessageHandler(processManager, mainWindow) {
 
     if (msg.type === 'readEventError') {
       pendingSetImmediateCount++
-      setImmediate(() => {
-        mainWindow.webContents.send('readEventErrorFromMain', msg.data)
-        pendingSetImmediateCount--
-      })
+      mainWindow.webContents.send('readEventErrorFromMain', msg.data)
+      pendingSetImmediateCount--
       diagLogger.error('forward-readEventError', '', { data: msg.data })
       return
     }
 
     if (msg.type === 'readEventCanceled') {
       pendingSetImmediateCount++
-      setImmediate(() => {
-        mainWindow.webContents.send('export-canceled', msg.data)
-        pendingSetImmediateCount--
-      })
+      mainWindow.webContents.send('export-canceled', msg.data)
+      pendingSetImmediateCount--
       diagLogger.warn('forward-readEventCanceled', '', { data: msg.data })
       return
     }
 
-    // 默认转发
+    // 默认转发 - 同步发送避免后台节流延迟
     pendingSetImmediateCount++
-    setImmediate(() => {
-      mainWindow.webContents.send(msg.type, msg.data)
-      pendingSetImmediateCount--
-    })
+    mainWindow.webContents.send(msg.type, msg.data)
+    pendingSetImmediateCount--
     if (msg.type === 'crash-summary') {
       diagLogger.error('forward-crash-summary', msg.data)
     }
@@ -120,13 +106,11 @@ export function createMessageHandler(processManager, mainWindow) {
       msg.type !== 'heartbeat'
     ) {
       pendingSetImmediateCount++
-      setImmediate(() => {
-        mainWindow.webContents.send('mqtt-data-heartbeat', {
-          timestamp: Date.now(),
-          messageType: msg.type
-        })
-        pendingSetImmediateCount--
+      mainWindow.webContents.send('mqtt-data-heartbeat', {
+        timestamp: Date.now(),
+        messageType: msg.type
       })
+      pendingSetImmediateCount--
       diagLogger.debug('forward-heartbeat', '', { type: msg.type })
     }
   }

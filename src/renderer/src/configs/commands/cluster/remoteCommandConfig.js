@@ -260,7 +260,8 @@ export const REMOTE_COMMANDS = {
       { label: '复位pack诊断参数', value: 8, bit: 3 },
       { label: '复位电芯诊断参数', value: 16, bit: 4 },
       { label: '复位sox参数', value: 64, bit: 6 },
-      { label: '复位sop map', value: 128, bit: 7 }
+      { label: '复位sop map', value: 128, bit: 7 },
+      { label: '复位配置参数', value: 2048, bit: 11 }
     ]
   },
 
@@ -275,8 +276,7 @@ export const REMOTE_COMMANDS = {
       { label: '复位实时保存数据', value: 32, bit: 5 },
       { label: '复位出厂校准参数', value: 256, bit: 8 },
       { label: '复位事件记录标志', value: 512, bit: 9 },
-      { label: '复位系统运行时间', value: 1024, bit: 10 },
-      { label: '复位配置参数', value: 2048, bit: 11 }
+      { label: '复位系统运行时间', value: 1024, bit: 10 }
     ]
   },
 
@@ -392,6 +392,19 @@ export const REMOTE_COMMANDS = {
     placeholder: '请输入密码',
     confirmRequired: true,
     confirmMessage: '确定要擦除可配置默认参数区吗？'
+  },
+
+  // ========== HardFault事件记录读取 ==========
+  // 新增命令：对应 bms/host/s2d/b1/hardfault_record_r 0xFF
+  // 设备响应后由 parseHardfaultRecordRAW 处理（后端已配置）
+  // 只统计valid记录（EventType===10000 且 CRC16校验通过）
+  hardfault_record_r: {
+    name: '读取HardFault事件记录',
+    topic: 'hardfault_record_r',
+    dataType: 'u8',
+    value: 0xFF, // 固定命令值，按照用户需求下发0xFF
+    confirmRequired: true,
+    confirmMessage: '确定要读取HardFault事件记录吗？（设备将返回最多16条记录，仅有效记录会保存为TXT）'
   },
 
   set_sox_ekf_soc: {

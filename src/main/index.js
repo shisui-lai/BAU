@@ -588,6 +588,25 @@ function createWindow() {
     return true // 立即 resolve
   })
 
+  /**
+   * HardFault 读取：与事件记录类似，由 MQTT 子进程置状态、下发 0xFF、收应答后写 TXT
+   * @param {{ exportDir: string, blockId?: number }} payload
+   */
+  ipcMain.handle('start-hardfault-read', (_e, payload) => {
+    const exportDir = payload?.exportDir
+    const blockId = Number(payload?.blockId) || 1
+    const currentTask = processManager.getMQTTTask()
+    if (!currentTask || currentTask.killed) {
+      return { success: false, error: 'MQTT进程未运行' }
+    }
+    currentTask.send({
+      cmd: 'START_READ_HARDFAULT',
+      exportDir: exportDir || '',
+      blockId
+    })
+    return { success: true }
+  })
+
   // MQTT连接管理
   ipcMain.handle('mqtt-connect', async (_e, config) => {
     console.log('[Main] 🔗 收到MQTT连接请求:', config)
